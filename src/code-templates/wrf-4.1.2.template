@@ -1,0 +1,54 @@
+
+date
+echo "Slurm Job ID: ${SLURM_JOB_ID}"
+
+
+export     build_path=<<<build_path>>>
+export install_prefix=<<<install_prefix>>>
+export    wrf_version=<<<version>>>
+export       compiler=<<<compiler>>>
+export            mpi=<<<mpi>>>
+export         netcdf=<<<netcdf>>>
+export           hdf5=<<<hdf5>>>
+export     config_opt=<<<config_opt>>>
+export       nest_opt=<<<nest_opt>>>
+export    config_file=<<<config_file>>>
+
+#test configure inputs
+if [[ $config_file == "none" && ( -z "$config_opt" || -z "$nest_opt" ) ]]; then
+    echo "Either configure.wrf must be specified OR both compile option AND nest option must be specified." ; exit 1
+fi
+
+#load modules
+ml reset
+ml $compiler
+ml $mpi
+ml $netcdf
+ml $hdf5
+ml git
+ml 
+
+#source envs
+export NETCDF=$TACC_NETCDF_DIR
+export HDF5=$TACC_HDF5_DIR
+
+mkdir -p ${install_prefix}
+cd ${install_prefix}
+
+rm -r WRF*
+git clone https://github.com/wrf-model/WRF
+cd WRF
+
+pwd
+
+#configure step
+if [ -z "$config_file" ]; then
+    printf "$config_opt\n$nest_opt\n" | ./configure > configure.log
+else
+    config_path=$(readlink -f $config_file)
+    cp $config_file configure.wrf
+fi
+
+./compile -j <<<threads>>> em_real &> compile.log
+
+date
