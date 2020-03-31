@@ -28,8 +28,8 @@ def main():
 
 
 
-    code_cfg = utils.read_cfg_file(utils.check_cmd_args(args.code))
-    sched_cfg = utils.read_cfg_file(args.sched)
+    code_cfg =  utils.read_cfg_file(utils.check_cmd_args(args.code))
+    sched_cfg = utils.read_cfg_file(utils.check_cmd_args(args.sched))
 
 
     #exception.var_not_filled(utils.exception_log)
