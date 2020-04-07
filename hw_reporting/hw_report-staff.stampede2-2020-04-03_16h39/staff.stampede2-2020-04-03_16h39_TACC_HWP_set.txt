@@ -1,4 +1,0 @@
-TACC_HWP_set VERBOSE option --show (or -s)
-TACC_HWP_set VERBOSE $Id: TACC_HWP_set.c,v 1.6 2018/02/05 19:00:52 mccalpin Exp mccalpin $
-TACC_HWP_set This is not a Skylake Xeon Processor. Exiting....
-TACC_HWP_set   This processor is DisplayFamily_DisplayModel  06_4F
