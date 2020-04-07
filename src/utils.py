@@ -46,11 +46,11 @@ def start_logging(name,
     file_handler = lg.FileHandler(file, mode="w", encoding="utf8")
     file_handler.setFormatter(formatter)
 
-    #stream_handler = lg.StreamHandler(stream=sys.stderr)
-    #stream_handler.setFormatter(formatter)
+    stream_handler = lg.StreamHandler(stream=sys.stderr)
+    stream_handler.setFormatter(formatter)
 
     logger.addHandler(file_handler)
-    #logger.addHandler(stream_handler)
+    logger.addHandler(stream_handler)
 
     return logger
 
