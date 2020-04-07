@@ -18,6 +18,8 @@ hostname            = str(socket.gethostname())
 base_dir            = str(os.getcwd())
 sl                  = "/"
 
+configs_dir         = "cfgs"
+
 settings_cfg        = "settings.cfg"
 settings_section    = "settings"
 settings_parser     = cp.RawConfigParser()
@@ -74,7 +76,7 @@ def read_cfg_file(cfg):
     utils.init_log.debug("parsing " + cfg + " file")
 
     cfg_parser = cp.RawConfigParser()
-    cfg_parser.read(cfg)
+    cfg_parser.read(configs_dir + sl + cfg)
 
     cfg_dict = {}
     for section in cfg_parser.sections():
