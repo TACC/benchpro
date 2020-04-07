@@ -7,6 +7,7 @@ __pycache__/
 *.so
 
 # Distribution / packaging
+hw_reporting/hw_report*
 .Python
 build/
 develop-eggs/
