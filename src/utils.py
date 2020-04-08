@@ -7,6 +7,7 @@ import pprint as pp
 import re
 import shutil as su
 import socket
+import subprocess
 import sys
 
 # Local Imports
@@ -127,13 +128,13 @@ def test_template(script):
     key = "<<<.*>>>"
     nomatch = re.findall(key,script)
     if len(nomatch) > 0:
-        print("Missing build parameters were found in build script!")
+        print("Missing build parameters were found in build template!")
         print(nomatch)
         if exit_on_warn:
             print ("Exit on warn is set in settings.cfg, exiting")
             sys.exit(1)
     else:
-        print("All build parameters were find, continuing")
+        print("All build parameters were filled, continuing")
 
 # Write template to file
 def write_template(script_file, script):
@@ -142,11 +143,14 @@ def write_template(script_file, script):
 
 # Submit build script to scheduler
 def submit_job(script_file):
-
     if dry_run:
         print ("This was a dryrun, job script created at " + script_file)
     else:
-        print ("Submitting to the scheduler for real")
+        print ("Submitting build script to Slurm...")
+        #try:
+        process = subprocess.run("sbasdah "+script_file, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+        #except ImportError as e:
+
 
 # Main methond for generating and submitting build script
 def build_code(code_cfg, sched_cfg):
