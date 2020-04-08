@@ -6,9 +6,13 @@ import pprint as pp
 import sys
 
 # Local Imports
-import src.exception as exception
-import src.utils as utils
-
+try:
+    import src.exception as exception
+    import src.utils as utils
+except ImportError as e:
+    print("It appears that you might be using Python2, please use Python3.")
+    print(e)
+    sys.exit(1)
 
 def main():
     # Initialization

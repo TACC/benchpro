@@ -66,7 +66,9 @@ def check_cmd_args(arg):
         arg += ".cfg"
 
     if not os.path.isfile(arg):
-        exception.input_missing(input, exception_log)
+        arg = "." + sl + configs_dir + sl + arg
+        if not os.path.isfile(arg):
+            exception.input_missing(input, exception_log)
 
     return arg
 
@@ -76,7 +78,7 @@ def read_cfg_file(cfg):
     utils.init_log.debug("parsing " + cfg + " file")
 
     cfg_parser = cp.RawConfigParser()
-    cfg_parser.read(configs_dir + sl + cfg)
+    cfg_parser.read(cfg)
 
     cfg_dict = {}
     for section in cfg_parser.sections():
