@@ -16,7 +16,6 @@ except ImportError as e:
 
 def main():
     # Initialization
-    utils.init_log.debug("init_log initialized")
     utils.exception_log.debug("excpetion_log initialized")
     utils.build_log.debug("build_log initialized")
 

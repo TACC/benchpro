@@ -30,14 +30,13 @@ dry_run = settings_parser.getboolean(           settings_section,   "dry_run")
 exit_on_missing = settings_parser.getboolean(   settings_section,   "exit_on_missing")
 exit_on_missing = settings_parser.getboolean(   settings_section,   "exit_on_missing")
 log_level = settings_parser.getint(             settings_section,   "log_level")
-init_log_file = settings_parser.get(            settings_section,   "init_log_file")
 exception_log_file = settings_parser.get(       settings_section,   "exception_log_file")
 build_log_file = settings_parser.get(           settings_section,   "build_log_file")
 
 
 
 def start_logging(name,
-                  file=init_log_file,
+                  file,
                   level=log_level):
 
     formatter = lg.Formatter("{0} %(levelname)s : ".format(name) + str(hostname) + ": " + str(user) + ": " +
@@ -57,7 +56,6 @@ def start_logging(name,
 
     return logger
 
-init_log = utils.start_logging("INIT")
 exception_log = utils.start_logging("EXCEPTION", file=exception_log_file)
 build_log = utils.start_logging("BUILD", file=build_log_file)
 
@@ -76,7 +74,7 @@ def check_cmd_args(arg):
 # Read cfg file into dict
 def read_cfg_file(cfg):
 
-    utils.init_log.debug("parsing " + cfg + " file")
+    utils.build_log.debug("parsing " + cfg + " file")
 
     cfg_parser = cp.RawConfigParser()
     cfg_parser.read(cfg)
@@ -87,8 +85,8 @@ def read_cfg_file(cfg):
         for value in cfg_parser.options(section):
             cfg_dict[section][value] = cfg_parser.get(section, value)
 
-    utils.init_log.debug(cfg + " file parsed contents:")
-    utils.init_log.debug(pp.pformat(cfg_dict))
+    utils.build_log.debug(cfg + " file parsed contents:")
+    utils.build_log.debug(pp.pformat(cfg_dict))
     return cfg_dict
 
 # Create directories if needed
@@ -144,12 +142,14 @@ def write_template(script_file, script):
 # Submit build script to scheduler
 def submit_job(script_file):
     if dry_run:
-        print ("This was a dryrun, job script created at " + script_file)
+        utils.build_log.debug("This was a dryrun, job script created at " + script_file)
     else:
-        print ("Submitting build script to Slurm...")
-        #try:
-        process = subprocess.run("sbasdah "+script_file, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
-        #except ImportError as e:
+        utils.build_log.debug("Submitting build script to Slurm...")
+        try:
+            process = subprocess.run("sbatch "+script_file, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+        except subprocess.CalledProcessError as e:
+            utils.exception_log.debug("Failed to submit job to scheduler")
+            utils.exception_log.debug(e)
 
 
 # Main methond for generating and submitting build script
