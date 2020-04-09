@@ -3,7 +3,7 @@ date
 echo "Slurm Job ID: ${SLURM_JOB_ID}"
 
 export     build_path=<<<build_path>>>
-export install_prefix=<<<install_prefix>>>
+export   install_path=<<<install_path>>>
 export       compiler=<<<compiler>>>
 export            mpi=<<<mpi>>>
 export          fftw3=<<<fftw3>>>
@@ -24,7 +24,7 @@ ml ${metis}
 ml
 
 export lib_dir=${build_path}/libs
-export PATH=${install_prefix}/bin:$PATH
+export PATH=${install_path}/bin:$PATH
 
 mpiicc --version
 mpirun --version
@@ -42,7 +42,7 @@ export CFLAGS="${CFLAGS} -fPIC"
 
 #install parmetis
 tar -xf parmetis-4.0.3.tar.gz && cd parmetis-4.0.3
-make config cc=mpiicc cxx=mpiicpc prefix=${lib_dir}/parmetis
+make config cc=mpiicc cxx=mpiicpc path=${lib_dir}/parmetis
 make -j<<<threads>>>
 make install
 
@@ -57,7 +57,7 @@ export CFLAGS=""
 
 cd ${build_path}/swiftsim
 ./autogen.sh
-./configure --prefix=${install_prefix} --enable-mpi --enable-optimization --enable-parallel-hdf5 \
+./configure --prefix=${install_path} --enable-mpi --enable-optimization --enable-parallel-hdf5 \
             --with-gsl=$TACC_GSL_DIR --with-fftw=$TACC_FFTW3_DIR --with-hdf5=$TACC_HDF5_BIN/h5pcc \
             --with-metis=$TACC_METIS_DIR --with-parmetis=${lib_dir}/parmetis --with-jemalloc=${lib_dir}/jemalloc
 make -j<<<threads>>>

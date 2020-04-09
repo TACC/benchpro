@@ -2,7 +2,7 @@ date
 echo "Slurm Job ID: ${SLURM_JOB_ID}"
 
 export     build_path=<<<build_path>>>
-export install_prefix=<<<install_prefix>>>
+export   install_path=<<<install_path>>>
 export       compiler=<<<compiler>>>
 export            mpi=<<<mpi>>>
 export    lmp_version=<<<version>>>

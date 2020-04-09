@@ -4,7 +4,7 @@ echo "Slurm Job ID: ${SLURM_JOB_ID}"
 
 
 export     build_path=<<<build_path>>>
-export install_prefix=<<<install_prefix>>>
+export   install_path=<<<install_path>>>
 export    wrf_version=<<<version>>>
 export       compiler=<<<compiler>>>
 export            mpi=<<<mpi>>>
@@ -32,10 +32,9 @@ ml
 export NETCDF=$TACC_NETCDF_DIR
 export HDF5=$TACC_HDF5_DIR
 
-mkdir -p ${install_prefix}
-cd ${install_prefix}
+mkdir -p ${install_path}
+cd ${install_path}
 
-rm -r WRF*
 git clone https://github.com/wrf-model/WRF
 cd WRF
 
@@ -43,12 +42,12 @@ pwd
 
 #configure step
 if [ -z "$config_file" ]; then
-    printf "$config_opt\n$nest_opt\n" | ./configure > configure.log
+    printf "$config_opt\n$nest_opt\n" | ./configure 
 else
     config_path=$(readlink -f $config_file)
     cp $config_file configure.wrf
 fi
 
-./compile -j <<<threads>>> em_real &> compile.log
+./compile -j <<<threads>>> em_real
 
 date

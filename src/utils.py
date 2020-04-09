@@ -27,7 +27,7 @@ settings_parser     = cp.RawConfigParser()
 settings_parser.read(settings_cfg)
 
 dry_run = settings_parser.getboolean(           settings_section,   "dry_run")
-exit_on_missing = settings_parser.getboolean(   settings_section,   "exit_on_missing")
+overwrite = settings_parser.getboolean(         settings_section,   "overwrite")
 exit_on_missing = settings_parser.getboolean(   settings_section,   "exit_on_missing")
 log_level = settings_parser.getint(             settings_section,   "log_level")
 exception_log_file = settings_parser.get(       settings_section,   "exception_log_file")
@@ -91,17 +91,30 @@ def read_cfg_file(cfg):
 
 # Create directories if needed
 def make_dir(path):
+
     if not os.path.exists(path):
         os.makedirs(path)
+
+    elif overwrite:
+        utils.build_log.debug("Deleting old build project in "+path+" because 'overwrite=True' in settings.cfg")
+        su.rmtree(path)
+        os.makedirs(path)
+
+    else:
+       utils.exception_log.debug("Project directory "+path+" already exists and 'overwrite=False' in settings.cfg. Exitting.") 
+       sys.exit(1)
 
 # Check build params, add defaults if needed
 def set_default_paths(build_dict, build_path):
 
+    if not "project_path" in build_dict.keys():
+        build_dict["project_path"] = build_path
+
     if not "build_path" in build_dict.keys():
         build_dict["build_path"] = build_path + sl + "build"
 
-    if not "install_prefix" in build_dict.keys():
-        build_dict["install_prefix"] = build_path + sl + "install"
+    if not "install_path" in build_dict.keys():
+        build_dict["install_path"] = build_path + sl + "install"
 
     return build_dict
 
@@ -116,7 +129,7 @@ def construct_template(sched_template, build_template, job_script):
 def populate_template(template_opts, script):
 
     for key in template_opts:
-        print("replace " + "<<<" + key + ">>> with " + template_opts[key])
+        utils.build_log.debug("replace " + "<<<" + key + ">>> with " + template_opts[key])
         script = script.replace("<<<" + key + ">>>", template_opts[key])
     return script
 
@@ -126,13 +139,13 @@ def test_template(script):
     key = "<<<.*>>>"
     nomatch = re.findall(key,script)
     if len(nomatch) > 0:
-        print("Missing build parameters were found in build template!")
-        print(nomatch)
-        if exit_on_warn:
-            print ("Exit on warn is set in settings.cfg, exiting")
+        utils.build_log.debug("Missing build parameters were found in build template!")
+        utils.build_log.debug(nomatch)
+        if exit_on_missing:
+            utils.build_log.debug("exit_on_missing=Truet in settings.cfg, exiting")
             sys.exit(1)
     else:
-        print("All build parameters were filled, continuing")
+        utils.build_log.debug("All build parameters were filled, continuing")
 
 # Write template to file
 def write_template(script_file, script):
@@ -146,7 +159,24 @@ def submit_job(script_file):
     else:
         utils.build_log.debug("Submitting build script to Slurm...")
         try:
-            process = subprocess.run("sbatch "+script_file, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+            cmd = subprocess.run("sbatch "+script_file, shell=True, check=True, capture_output=True, universal_newlines=True)
+
+            utils.build_log.debug(cmd.stdout)
+            utils.build_log.debug(cmd.stderr)
+
+            job_id = ""
+            i = 0
+            jobid_line = "Submitted batch job"
+
+            # Find job ID
+            for line in cmd.stdout.splitlines():
+                if jobid_line in line:
+                    job_id = line.split(" ")[-1]
+
+            cmd = subprocess.run("squeue -a --job "+job_id, shell=True, check=True, capture_output=True, universal_newlines=True)
+            utils.build_log.debug(cmd.stdout)
+            utils.build_log.debug(cmd.stderr)
+
         except subprocess.CalledProcessError as e:
             utils.exception_log.debug("Failed to submit job to scheduler")
             utils.exception_log.debug(e)

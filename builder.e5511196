@@ -1,0 +1,505 @@
+Resetting modules to system default. Reseting $MODULEPATH back to system default. All extra directories will be removed from $MODULEPATH.
+
+Currently Loaded Modules:
+  1) autotools/1.1   4) TACC              7) impi/18.0.2     10) hdf5/1.10.4
+  2) cmake/3.16.1    5) intel/18.0.2      8) python2/2.7.15  11) git/2.24.1
+  3) xalt/2.8        6) libfabric/1.7.0   9) netcdf/4.6.2
+
+ 
+
+Cloning into 'WRF'...
+Updating files:   4% (189/4592)Updating files:   5% (230/4592)Updating files:   6% (276/4592)Updating files:   7% (322/4592)Updating files:   8% (368/4592)Updating files:   8% (401/4592)Updating files:   9% (414/4592)Updating files:  10% (460/4592)Updating files:  11% (506/4592)Updating files:  12% (552/4592)Updating files:  13% (597/4592)Updating files:  13% (631/4592)Updating files:  14% (643/4592)Updating files:  15% (689/4592)Updating files:  16% (735/4592)Updating files:  17% (781/4592)Updating files:  18% (827/4592)Updating files:  19% (873/4592)Updating files:  19% (893/4592)Updating files:  20% (919/4592)Updating files:  21% (965/4592)Updating files:  22% (1011/4592)Updating files:  23% (1057/4592)Updating files:  23% (1095/4592)Updating files:  24% (1103/4592)Updating files:  25% (1148/4592)Updating files:  26% (1194/4592)Updating files:  27% (1240/4592)Updating files:  28% (1286/4592)Updating files:  29% (1332/4592)Updating files:  30% (1378/4592)Updating files:  30% (1398/4592)Updating files:  31% (1424/4592)Updating files:  32% (1470/4592)Updating files:  33% (1516/4592)Updating files:  34% (1562/4592)Updating files:  35% (1608/4592)Updating files:  35% (1637/4592)Updating files:  36% (1654/4592)Updating files:  37% (1700/4592)Updating files:  38% (1745/4592)Updating files:  39% (1791/4592)Updating files:  40% (1837/4592)Updating files:  40% (1861/4592)Updating files:  41% (1883/4592)Updating files:  42% (1929/4592)Updating files:  43% (1975/4592)Updating files:  44% (2021/4592)Updating files:  44% (2046/4592)Updating files:  45% (2067/4592)Updating files:  46% (2113/4592)Updating files:  46% (2154/4592)Updating files:  47% (2159/4592)Updating files:  48% (2205/4592)Updating files:  49% (2251/4592)Updating files:  49% (2267/4592)Updating files:  50% (2296/4592)Updating files:  51% (2342/4592)Updating files:  52% (2388/4592)Updating files:  53% (2434/4592)Updating files:  54% (2480/4592)Updating files:  54% (2524/4592)Updating files:  55% (2526/4592)Updating files:  56% (2572/4592)Updating files:  57% (2618/4592)Updating files:  58% (2664/4592)Updating files:  59% (2710/4592)Updating files:  60% (2756/4592)Updating files:  60% (2760/4592)Updating files:  61% (2802/4592)Updating files:  62% (2848/4592)Updating files:  63% (2893/4592)Updating files:  64% (2939/4592)Updating files:  65% (2985/4592)Updating files:  66% (3031/4592)Updating files:  67% (3077/4592)Updating files:  67% (3096/4592)Updating files:  68% (3123/4592)Updating files:  69% (3169/4592)Updating files:  70% (3215/4592)Updating files:  71% (3261/4592)Updating files:  72% (3307/4592)Updating files:  72% (3311/4592)Updating files:  73% (3353/4592)Updating files:  74% (3399/4592)Updating files:  75% (3444/4592)Updating files:  76% (3490/4592)Updating files:  77% (3536/4592)Updating files:  78% (3582/4592)Updating files:  78% (3583/4592)Updating files:  79% (3628/4592)Updating files:  80% (3674/4592)Updating files:  81% (3720/4592)Updating files:  82% (3766/4592)Updating files:  82% (3793/4592)Updating files:  83% (3812/4592)Updating files:  84% (3858/4592)Updating files:  85% (3904/4592)Updating files:  85% (3935/4592)Updating files:  86% (3950/4592)Updating files:  87% (3996/4592)Updating files:  87% (4037/4592)Updating files:  88% (4041/4592)Updating files:  89% (4087/4592)Updating files:  90% (4133/4592)Updating files:  91% (4179/4592)Updating files:  92% (4225/4592)Updating files:  92% (4231/4592)Updating files:  93% (4271/4592)Updating files:  94% (4317/4592)Updating files:  95% (4363/4592)Updating files:  96% (4409/4592)Updating files:  96% (4428/4592)Updating files:  97% (4455/4592)Updating files:  98% (4501/4592)Updating files:  99% (4547/4592)Updating files:  99% (4568/4592)Updating files: 100% (4592/4592)Updating files: 100% (4592/4592), done.
+Intel(R) Fortran Intel(R) 64 Compiler for applications running on Intel(R) 64, Version 18.0.2.199 Build 20180210
+Copyright (C) 1985-2018 Intel Corporation.  All rights reserved.
+
+ar: creating libesmf_time.a
+ar: creating ./libio_grib_share.a
+ar: creating ../libio_grib1.a
+0.06user 0.05system 0:00.20elapsed 55%CPU (0avgtext+0avgdata 38436maxresident)k
+0inputs+184outputs (0major+19838minor)pagefaults 0swaps
+0.20user 0.06system 0:00.28elapsed 95%CPU (0avgtext+0avgdata 42212maxresident)k
+48inputs+504outputs (0major+22470minor)pagefaults 0swaps
+0.33user 0.06system 0:00.49elapsed 80%CPU (0avgtext+0avgdata 44500maxresident)k
+0inputs+432outputs (0major+21627minor)pagefaults 0swaps
+0.44user 0.12system 0:00.87elapsed 65%CPU (0avgtext+0avgdata 48492maxresident)k
+0inputs+728outputs (0major+23157minor)pagefaults 0swaps
+ar: creating libwrfio_int.a
+
+real	0m0.348s
+user	0m0.209s
+sys	0m0.069s
+0.14user 0.14system 0:00.40elapsed 70%CPU (0avgtext+0avgdata 34516maxresident)k
+136inputs+1928outputs (0major+45259minor)pagefaults 0swaps
+ar: creating libfftpack.a
+0.57user 0.06system 0:00.65elapsed 97%CPU (0avgtext+0avgdata 49448maxresident)k
+0inputs+504outputs (0major+23458minor)pagefaults 0swaps
+0.23user 0.07system 0:00.33elapsed 95%CPU (0avgtext+0avgdata 50720maxresident)k
+0inputs+368outputs (0major+23868minor)pagefaults 0swaps
+registry.c(63): warning #266: function "sym_forget" declared implicitly
+    sym_forget() ;
+    ^
+
+registry.c(135): warning #266: function "gen_io_boilerplate" declared implicitly
+    gen_io_boilerplate() ;  /* 20091213 jm.  Generate the io_boilerplate_temporary.inc file */
+    ^
+
+registry.c(137): warning #266: function "init_parser" declared implicitly
+    init_parser() ;
+    ^
+
+registry.c(217): warning #266: function "pre_parse" declared implicitly
+    if ( pre_parse( dir, fp_in, fp_tmp ) ) {
+         ^
+
+registry.c(237): warning #266: function "check_dimspecs" declared implicitly
+    check_dimspecs() ;
+    ^
+
+registry.c(247): warning #266: function "gen_actual_args_new" declared implicitly
+    gen_actual_args_new( "inc" ) ;
+    ^
+
+registry.c(249): warning #266: function "gen_dummy_args_new" declared implicitly
+    gen_dummy_args_new( "inc" ) ;
+    ^
+
+registry.c(251): warning #266: function "gen_dummy_decls_new" declared implicitly
+    gen_dummy_decls_new( "inc" ) ;
+    ^
+
+registry.c(253): warning #266: function "gen_namelist_statements" declared implicitly
+    gen_namelist_statements("inc") ;
+    ^
+
+registry.c(263): warning #266: function "gen_nest_interp" declared implicitly
+    gen_nest_interp( "inc" ) ;
+    ^
+
+registry.c(264): warning #266: function "gen_nest_v_interp" declared implicitly
+    gen_nest_v_interp( "inc") ; /*KAL added this for vertical interpolation*/
+    ^
+
+registry.c(266): warning #266: function "gen_streams" declared implicitly
+    gen_streams("inc") ;
+    ^
+
+registry.c(269): warning #266: function "gen_comms" declared implicitly
+    gen_comms( "inc" ) ;    /* this is either package supplied (by copying a */
+    ^
+
+reg_parse.c(229): warning #266: function "tolower" declared implicitly
+            x = tolower(tokens[F_DIMS][i]) ;
+                ^
+
+reg_parse.c(458): warning #266: function "tolower" declared implicitly
+  	if ( tolower(tokens[FIELD_STAG][i]) == 'x' || sw_all_x_staggered ) field_struct->stag_x = 1 ;
+  	     ^
+
+reg_parse.c(459): warning #266: function "tolower" declared implicitly
+  	if ( tolower(tokens[FIELD_STAG][i]) == 'y' || sw_all_y_staggered ) field_struct->stag_y = 1 ;
+  	     ^
+
+reg_parse.c(460): warning #266: function "tolower" declared implicitly
+  	if ( tolower(tokens[FIELD_STAG][i]) == 'z' ) field_struct->stag_z = 1 ;
+  	     ^
+
+reg_parse.c(461): warning #266: function "tolower" declared implicitly
+          if ( tolower(tokens[FIELD_STAG][i]) == 'v' )
+               ^
+
+reg_parse.c(463): warning #266: function "tolower" declared implicitly
+          if ( tolower(tokens[FIELD_STAG][i]) == 'm' )
+               ^
+
+reg_parse.c(465): warning #266: function "tolower" declared implicitly
+          if ( tolower(tokens[FIELD_STAG][i]) == 'f' )
+               ^
+
+reg_parse.c(467): warning #266: function "tolower" declared implicitly
+          if ( tolower(tokens[FIELD_STAG][i]) == 'n' )
+               ^
+
+reg_parse.c(487): warning #266: function "tolower" declared implicitly
+  	  x = tolower(tmp[i]) ;
+  	      ^
+
+reg_parse.c(527): warning #266: function "tolower" declared implicitly
+  	  x = tolower(tokens[FIELD_IO][i]) ;
+  	      ^
+
+misc.c(434): warning #266: function "getpid" declared implicitly
+    sprintf(tempfile,"regtmp1%d",getpid()) ;
+                                 ^
+
+misc.c(449): warning #266: function "getpid" declared implicitly
+    sprintf(tempfile,"regtmp1%d",getpid()) ;
+                                 ^
+
+misc.c(467): warning #266: function "toupper" declared implicitly
+    for ( p = str ; *p ; p++ ) *p = toupper(*p) ; 
+                                    ^
+
+misc.c(477): warning #266: function "tolower" declared implicitly
+    for ( p = str ; *p ; p++ ) *p = tolower(*p) ; 
+                                    ^
+
+gen_allocs.c(111): warning #266: function "make_upper_case" declared implicitly
+      make_upper_case(dname_tmp) ;
+      ^
+
+gen_scalar_indices.c(218): warning #266: function "make_lower_case" declared implicitly
+                    make_lower_case(fname2)  ;
+                    ^
+
+gen_config.c(135): warning #266: function "sym_forget" declared implicitly
+    sym_forget() ;
+    ^
+
+gen_config.c(167): warning #266: function "toupper" declared implicitly
+                    fputc(toupper(*i),fp); 
+                          ^
+
+gen_config.c(172): warning #266: function "toupper" declared implicitly
+                       fputc(toupper(*i),fp); 
+                             ^
+
+gen_config.c(178): warning #266: function "toupper" declared implicitly
+                      fputc(toupper(*i),fp); 
+                            ^
+
+gen_config.c(418): warning #266: function "sym_forget" declared implicitly
+    sym_forget() ;
+    ^
+
+sym.c(73): warning #266: function "create_ht" declared implicitly
+      create_ht( &symtab ) ;
+      ^
+
+sym.c(77): warning #266: function "exit" declared implicitly
+  	exit(1) ;
+  	^
+
+sym.c(153): warning #266: function "create_ht" declared implicitly
+    create_ht( &symtab ) ;
+    ^
+
+sym.c(157): warning #266: function "exit" declared implicitly
+        exit(1) ;
+        ^
+
+symtab_gen.c(62): warning #266: function "hash" declared implicitly
+      index = hash( name ) ;
+              ^
+
+gen_irr_diag.c(131): warning #266: function "toupper" declared implicitly
+              wstrg1[i] = toupper( wstrg1[i] );
+                          ^
+
+gen_interp.c(96): warning #266: function "gen_nest_interp2" declared implicitly
+      gen_nest_interp2( fp, Domain.fields, NULL, down_path[ipath], (down_path[ipath]==FORCE_DOWN)?2:2 );
+      ^
+
+gen_comms.c(341): warning #266: function "make_upper_case" declared implicitly
+          make_upper_case(commname) ;
+          ^
+
+gen_comms.c(367): warning #266: function "make_upper_case" declared implicitly
+        make_upper_case(commname) ;
+        ^
+
+gen_comms.c(1229): warning #303: explicit type is missing ("int" assumed)
+  gen_packs_halo ( FILE *fp , node_t *p, char *shw, int xy /* 0=y,1=x */ , int pu /* 0=pack,1=unpack */, char * packname, char * commname, int always_interp_mp )   
+  ^
+
+gen_comms.c(1452): warning #303: explicit type is missing ("int" assumed)
+  gen_packs ( FILE *fp , node_t *p, int shw, int xy /* 0=y,1=x */ , int pu /* 0=pack,1=unpack */, char * packname, char * commname )   
+  ^
+
+gen_comms.c(1665): warning #266: function "make_upper_case" declared implicitly
+      make_upper_case(commname) ;
+      ^
+
+gen_comms.c(1868): warning #266: function "make_upper_case" declared implicitly
+      make_upper_case(commname) ;
+      ^
+
+gen_comms.c(2002): warning #266: function "make_upper_case" declared implicitly
+      make_upper_case(commname) ;
+      ^
+
+gen_comms.c(2144): warning #266: function "make_upper_case" declared implicitly
+        make_upper_case(commname) ;
+        ^
+
+gen_wrf_io.c(36): warning #266: function "sym_forget" declared implicitly
+    OP_F(fp,"wrf_bdyout.inc") ;
+    ^
+
+gen_wrf_io.c(334): warning #266: function "make_upper_case" declared implicitly
+            make_upper_case(dname) ;
+            ^
+
+gen_streams.c(25): warning #266: function "gen_io_domain_defs" declared implicitly
+    gen_io_domain_defs( fp ) ;
+    ^
+
+gen_streams.c(33): warning #266: function "gen_set_timekeeping_defs" declared implicitly
+    gen_set_timekeeping_defs( fp ) ;
+    ^
+
+gen_streams.c(41): warning #266: function "gen_set_timekeeping_alarms" declared implicitly
+    gen_set_timekeeping_alarms( fp ) ;
+    ^
+
+gen_streams.c(49): warning #266: function "gen_io_form_for_dataset" declared implicitly
+    gen_io_form_for_dataset( fp ) ;
+    ^
+
+gen_streams.c(57): warning #266: function "gen_io_form_for_stream" declared implicitly
+    gen_io_form_for_stream( fp ) ;
+    ^
+
+gen_streams.c(65): warning #266: function "gen_switches_and_alarms" declared implicitly
+    gen_switches_and_alarms( fp ) ;
+    ^
+
+gen_streams.c(73): warning #266: function "gen_check_auxstream_alarms" declared implicitly
+    gen_check_auxstream_alarms( fp ) ;
+    ^
+
+gen_streams.c(81): warning #266: function "gen_fine_stream_input" declared implicitly
+    gen_fine_stream_input( fp ) ;
+    ^
+
+gen_streams.c(89): warning #266: function "gen_med_auxinput_in" declared implicitly
+    gen_med_auxinput_in( fp ) ;
+    ^
+
+gen_streams.c(97): warning #266: function "gen_med_hist_out_opens" declared implicitly
+    gen_med_hist_out_opens( fp ) ;
+    ^
+
+gen_streams.c(105): warning #266: function "gen_med_hist_out_closes" declared implicitly
+    gen_med_hist_out_closes( fp ) ;
+    ^
+
+gen_streams.c(113): warning #266: function "gen_med_auxinput_in_closes" declared implicitly
+    gen_med_auxinput_in_closes( fp ) ;
+    ^
+
+gen_streams.c(121): warning #266: function "gen_med_last_solve_io" declared implicitly
+    gen_med_last_solve_io( fp ) ;
+    ^
+
+gen_streams.c(129): warning #266: function "gen_med_open_esmf_calls" declared implicitly
+    gen_med_open_esmf_calls( fp ) ;
+    ^
+
+gen_streams.c(137): warning #266: function "gen_med_find_esmf_coupling" declared implicitly
+    gen_med_find_esmf_coupling( fp ) ;
+    ^
+
+gen_streams.c(145): warning #266: function "gen_shutdown_closes" declared implicitly
+    gen_shutdown_closes( fp ) ;
+    ^
+
+gen_streams.c(542): warning #303: explicit type is missing ("int" assumed)
+  gen_med_open_esmf_calls ( FILE *fp )
+  ^
+
+gen_streams.c(572): warning #303: explicit type is missing ("int" assumed)
+  gen_med_find_esmf_coupling ( FILE *fp )
+  ^
+
+opening Registry/registry.dimspec
+including Registry/registry.dimspec
+opening Registry/registry.em_shared_collection
+including Registry/registry.em_shared_collection
+opening Registry/Registry.EM_COMMON
+including Registry/Registry.EM_COMMON
+opening Registry/registry.io_boilerplate
+including Registry/registry.io_boilerplate
+opening Registry/io_boilerplate_temporary.inc
+including Registry/io_boilerplate_temporary.inc
+
+real	0m0.113s
+user	0m0.029s
+sys	0m0.057s
+opening Registry/registry.fire
+including Registry/registry.fire
+opening Registry/registry.avgflx
+including Registry/registry.avgflx
+opening Registry/registry.stoch
+including Registry/registry.stoch
+opening Registry/registry.les
+including Registry/registry.les
+opening Registry/registry.cam
+including Registry/registry.cam
+opening Registry/registry.clm
+including Registry/registry.clm
+opening Registry/registry.lake
+including Registry/registry.lake
+opening Registry/registry.ssib
+including Registry/registry.ssib
+opening Registry/registry.noahmp
+including Registry/registry.noahmp
+opening Registry/registry.sbm
+including Registry/registry.sbm
+opening Registry/registry.diags
+including Registry/registry.diags
+opening Registry/registry.afwa
+including Registry/registry.afwa
+opening Registry/registry.rasm_diag
+including Registry/registry.rasm_diag
+opening Registry/registry.elec
+including Registry/registry.elec
+
+real	0m0.109s
+user	0m0.032s
+sys	0m0.065s
+opening Registry/registry.bdy_perturb
+including Registry/registry.bdy_perturb
+opening Registry/registry.hyb_coord
+including Registry/registry.hyb_coord
+opening Registry/registry.new3d_wif
+including Registry/registry.new3d_wif
+opening Registry/registry.trad_fields
+including Registry/registry.trad_fields
+
+real	0m0.211s
+user	0m0.102s
+sys	0m0.051s
+
+real	0m0.527s
+user	0m0.447s
+sys	0m0.058s
+
+real	0m0.101s
+user	0m0.043s
+sys	0m0.046s
+
+real	0m0.109s
+user	0m0.043s
+sys	0m0.055s
+Registry INFO variable counts: 0d 2346 1d 123 2d 1119 3d 931
+Packages in gen_scalar_indices1
+REGISTRY WARNING: o3rad: o3rad_b is not a variable or number; ignoring it
+REGISTRY WARNING: o3rad: o3rad_bt is not a variable or number; ignoring it
+REGISTRY WARNING: aerod(grid%sm31,grid%sm32,grid%sm33,itrace): aerod_b is not a variable or number; ignoring it
+REGISTRY WARNING: aerod(grid%sm31,grid%sm32,grid%sm33,itrace): aerod_bt is not a variable or number; ignoring it
+REGISTRY WARNING: aerocu(grid%sm31,grid%sm32,grid%sm33,itrace): aerocu_b is not a variable or number; ignoring it
+REGISTRY WARNING: aerocu(grid%sm31,grid%sm32,grid%sm33,itrace): aerocu_bt is not a variable or number; ignoring it
+REGISTRY WARNING: om_tmp: om_tmp_b is not a variable or number; ignoring it
+REGISTRY WARNING: om_tmp: om_tmp_bt is not a variable or number; ignoring it
+REGISTRY WARNING: om_s: om_s_b is not a variable or number; ignoring it
+REGISTRY WARNING: om_s: om_s_bt is not a variable or number; ignoring it
+REGISTRY WARNING: om_u: om_u_b is not a variable or number; ignoring it
+REGISTRY WARNING: om_u: om_u_bt is not a variable or number; ignoring it
+REGISTRY WARNING: om_v: om_v_b is not a variable or number; ignoring it
+REGISTRY WARNING: om_v: om_v_bt is not a variable or number; ignoring it
+REGISTRY WARNING: om_ml: om_ml_b is not a variable or number; ignoring it
+REGISTRY WARNING: om_ml: om_ml_bt is not a variable or number; ignoring it
+REGISTRY WARNING: field_sf: field_sf_b is not a variable or number; ignoring it
+REGISTRY WARNING: field_sf: field_sf_bt is not a variable or number; ignoring it
+REGISTRY WARNING: field_pbl: field_pbl_b is not a variable or number; ignoring it
+REGISTRY WARNING: field_pbl: field_pbl_bt is not a variable or number; ignoring it
+REGISTRY WARNING: field_conv: field_conv_b is not a variable or number; ignoring it
+REGISTRY WARNING: field_conv: field_conv_bt is not a variable or number; ignoring it
+REGISTRY WARNING: ru_tendf_stoch: ru_tendf_stoch_b is not a variable or number; ignoring it
+REGISTRY WARNING: ru_tendf_stoch: ru_tendf_stoch_bt is not a variable or number; ignoring it
+REGISTRY WARNING: rv_tendf_stoch: rv_tendf_stoch_b is not a variable or number; ignoring it
+REGISTRY WARNING: rv_tendf_stoch: rv_tendf_stoch_bt is not a variable or number; ignoring it
+REGISTRY WARNING: rt_tendf_stoch: rt_tendf_stoch_b is not a variable or number; ignoring it
+REGISTRY WARNING: rt_tendf_stoch: rt_tendf_stoch_bt is not a variable or number; ignoring it
+REGISTRY WARNING: rand_pert: rand_pert_b is not a variable or number; ignoring it
+REGISTRY WARNING: rand_pert: rand_pert_bt is not a variable or number; ignoring it
+REGISTRY WARNING: pattern_spp_conv: pattern_spp_conv_b is not a variable or number; ignoring it
+REGISTRY WARNING: pattern_spp_conv: pattern_spp_conv_bt is not a variable or number; ignoring it
+REGISTRY WARNING: pattern_spp_pbl: pattern_spp_pbl_b is not a variable or number; ignoring it
+REGISTRY WARNING: pattern_spp_pbl: pattern_spp_pbl_bt is not a variable or number; ignoring it
+REGISTRY WARNING: pattern_spp_lsm: pattern_spp_lsm_b is not a variable or number; ignoring it
+REGISTRY WARNING: pattern_spp_lsm: pattern_spp_lsm_bt is not a variable or number; ignoring it
+REGISTRY WARNING: rstoch: rstoch_b is not a variable or number; ignoring it
+REGISTRY WARNING: rstoch: rstoch_bt is not a variable or number; ignoring it
+REGISTRY WARNING: field_u_tend_perturb: field_u_tend_perturb_b is not a variable or number; ignoring it
+REGISTRY WARNING: field_u_tend_perturb: field_u_tend_perturb_bt is not a variable or number; ignoring it
+REGISTRY WARNING: field_v_tend_perturb: field_v_tend_perturb_b is not a variable or number; ignoring it
+REGISTRY WARNING: field_v_tend_perturb: field_v_tend_perturb_bt is not a variable or number; ignoring it
+REGISTRY WARNING: field_t_tend_perturb: field_t_tend_perturb_b is not a variable or number; ignoring it
+REGISTRY WARNING: field_t_tend_perturb: field_t_tend_perturb_bt is not a variable or number; ignoring it
+ADVISORY: RSL_LITE version of gen_comms is linked in with registry program.
+
+real	0m0.139s
+user	0m0.059s
+sys	0m0.065s
+
+real	0m0.135s
+user	0m0.038s
+sys	0m0.058s
+
+real	0m0.143s
+user	0m0.044s
+sys	0m0.057s
+
+real	0m0.146s
+user	0m0.042s
+sys	0m0.064s
+
+real	0m0.147s
+user	0m0.076s
+sys	0m0.062s
+
+real	0m0.414s
+user	0m0.266s
+sys	0m0.093s
+
+real	0m1.381s
+user	0m1.261s
+sys	0m0.103s
+
+real	0m10.505s
+user	0m10.047s
+sys	0m0.382s
+
+real	0m3.592s
+user	0m3.395s
+sys	0m0.114s
+
+real	0m0.787s
+user	0m0.634s
+sys	0m0.075s
+
+real	0m0.766s
+user	0m0.656s
+sys	0m0.066s
+
+real	0m14.544s
+user	0m13.642s
+sys	0m0.283s
+
+real	0m17.392s
+user	0m15.951s
+sys	0m0.317s
+
+real	0m0.329s
+user	0m0.208s
+sys	0m0.060s
+
+real	0m0.318s
+user	0m0.200s
+sys	0m0.070s
+
+real	0m25.732s
+user	0m24.760s
+sys	0m0.494s
+slurmstepd: error: *** JOB 5511196 ON c591-102 CANCELLED AT 2020-04-09T14:57:04 ***
+make[2]: *** Deleting file `nl_get_1_routines.o'
+make[1]: *** [framework] Terminated
+make: *** [framework_only] Terminated
+make[2]: *** Deleting file `nl_get_0_routines.o'
+make[2]: *** Deleting file `module_alloc_space_7.o'
+make[2]: *** Deleting file `module_alloc_space_1.o'
+make[2]: *** [module_alloc_space_1.o] Terminated
+make[2]: *** [module_alloc_space_7.o] Terminated
+make[2]: *** [nl_get_0_routines.o] Terminated
+make[2]: *** [nl_get_1_routines.o] Terminated
