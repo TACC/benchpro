@@ -1,0 +1,8 @@
+local install_dir = "<<<install_dir>>>"
+
+setenv("<<<caps_code>>>_DIR", install_dir)
+prepend_path("PATH",     pathJoin(install_dir, "<<<bin_dir>>>"))
+
+always_load(<<<mods>>>)
+family("<<<code>>>")
+

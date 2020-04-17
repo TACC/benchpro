@@ -16,6 +16,9 @@ import src.utils as utils
 
 user                = str(os.getlogin())
 hostname            = str(socket.gethostname())
+if ("." in hostname):
+    hostname = '.'.join(map(str, hostname.split('.')[0:2]))
+
 base_dir            = str(os.getcwd())
 sl                  = "/"
 
@@ -33,13 +36,14 @@ log_level = settings_parser.getint(             settings_section,   "log_level")
 exception_log_file = settings_parser.get(       settings_section,   "exception_log_file")
 build_log_file = settings_parser.get(           settings_section,   "build_log_file")
 
-
+exception_log=''
+build_log=''
 
 def start_logging(name,
                   file,
                   level=log_level):
 
-    formatter = lg.Formatter("{0} %(levelname)s : ".format(name) + str(hostname) + ": " + str(user) + ": " +
+    formatter = lg.Formatter("{0} %(levelname)s: ".format(name) + str(hostname) + ": " + str(user) + ": " +
                              "%(asctime)s: %(filename)s;%(funcName)s();%(lineno)d: %(message)s")
 
     logger = lg.getLogger(name)
@@ -56,9 +60,6 @@ def start_logging(name,
 
     return logger
 
-exception_log = utils.start_logging("EXCEPTION", file=exception_log_file)
-build_log = utils.start_logging("BUILD", file=build_log_file)
-
 def check_cmd_args(arg):
 
     if not ".cfg" in arg:
@@ -74,8 +75,6 @@ def check_cmd_args(arg):
 # Read cfg file into dict
 def read_cfg_file(cfg):
 
-    utils.build_log.debug("parsing " + cfg + " file")
-
     cfg_parser = cp.RawConfigParser()
     cfg_parser.read(cfg)
 
@@ -85,8 +84,6 @@ def read_cfg_file(cfg):
         for value in cfg_parser.options(section):
             cfg_dict[section][value] = cfg_parser.get(section, value)
 
-    utils.build_log.debug(cfg + " file parsed contents:")
-    utils.build_log.debug(pp.pformat(cfg_dict))
     return cfg_dict
 
 # Create directories if needed
@@ -185,6 +182,17 @@ def submit_job(script_file):
 # Main methond for generating and submitting build script
 def build_code(code_cfg, sched_cfg):
 
+    utils.exception_log = utils.start_logging("EXCEPTION", file=exception_log_file)
+    utils.build_log = utils.start_logging("BUILD", file=build_log_file)
+
+    utils.build_log.debug("Builder started with the following inputs:")
+    for seg in code_cfg:
+        utils.build_log.debug("["+seg+"]")
+        #utils.build_log.debug("[",seg,"]")
+        for line in code_cfg[seg]:
+            utils.build_log.debug(line+"="+code_cfg[seg][line])
+            #utils.build_log.debug(line[0], line[1])
+
     #split input config files
     general_opts    = code_cfg['general']
     sched_opts      = sched_cfg['scheduler']
@@ -194,8 +202,8 @@ def build_code(code_cfg, sched_cfg):
     sched   = sched_opts['type']
 
     # Get file paths for generating build script from templates
-    sched_template      = base_dir + sl + "src" + sl + "job-scripts" + sl + sched + ".template"
-    build_template      = base_dir + sl + "src" + sl + "code-templates" + sl + code + "-" + version + ".template"
+    sched_template      = base_dir + sl + "src" + sl + "job-templates" + sl + sched + ".template"
+    build_template      = base_dir + sl + "src" + sl + "build-templates" + sl + code + "-" + version + ".template"
     build_path          = base_dir + sl + "build" + sl + code + sl + version
     script_file         = build_path + sl + code + "-build." + sched
 
