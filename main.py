@@ -7,26 +7,13 @@ import sys
 
 # Local Imports
 try:
+    import src.utils as utils
     import src.exception as exception
     import src.cleanup as cleanup
 except ImportError as e:
     print("You had an import error, you might be using Python2. Please use Python3.")
     print(e)
     sys.exit(1)
-
-def launch_builder(args):
-
-    import src.utils as utils
-    # Initialization
-#    utils.exception_log.debug("excpetion_log initialized")
-#    utils.build_log.debug("build_log initialized")
-
-    # Evaulate & format user inputs
-    code_cfg =  utils.read_cfg_file(utils.check_cmd_args(args.code))
-    sched_cfg = utils.read_cfg_file(utils.check_cmd_args(args.sched))
-
-    # Build code
-    utils.build_code(code_cfg, sched_cfg)
 
 def main():
 
@@ -39,24 +26,42 @@ def main():
                             type=str, help="Name of the scheduler cfg file.")
     cmd_parser.add_argument("--clean", default=False, action='store_true',
                             help="Cleanup temp and log files.")
+    cmd_parser.add_argument("--show", default=False, action='store_true',
+                            help="Show all installed applications.")
     cmd_parser.add_argument("--remove", default="none",
                             help="Remove an installed application, format=[code]/[version]")
 
 
     args = cmd_parser.parse_args()
 
-    #cleanup and exit
+    # Cleanup and exit
     if args.clean:
-        cleanup.clean()
-        print("Exitting")
+        cleanup.clean_temp_files()
+        print("")
+        print("")
+        print("Done")
         sys.exit(0)
 
+    # Print list and exit
+    if args.show:
+        utils.show_installed()
+        print("")
+        print("")
+        print("Done")
+        sys.exit(0)
+
+    # Remove installation and exit
     if args.remove != "none":
         cleanup.remove_app(args.remove)
-        print("Exitting")
+        print("")
+        print("")
+        print("Done")
         sys.exit(0)
 
-    launch_builder(args)
+
+
+    # Start builder
+    utils.build_code(args)
 
     return 0
 

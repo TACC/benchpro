@@ -10,6 +10,7 @@ def find_matching_files(search_dict):
         file_list += glob.glob(search)
     return file_list   
 
+# Delete matching files
 def clean_matching_files(file_list):
     tally=0
     for f in file_list:
@@ -20,26 +21,34 @@ def clean_matching_files(file_list):
             print("Error cleaning the file", f)
     return tally
 
-
+# Delete appliation and module file 
 def delete_dir(code_dict):
 
     sl = "/"
-    top_dir = str(os.getcwd()) + sl + "build"
+
+    top_dir = str(os.getcwd())
+    if not code_dict[0] == "build":
+        top_dir += sl + "build"
+
     app_dir = ""
     for d in code_dict:
         app_dir = app_dir + sl + d 
 
-    mod_dir = top_dir + sl + "modulefiles" + app_dir
+    mod_dir = top_dir + sl + "modulefiles" + sl.join(app_dir.split(sl)[:-1])
     app_dir = top_dir + app_dir
 
+
     if os.path.isdir(app_dir):
-        print("Removing appliation installed in "+app_dir+" continuing in 10 seconds...")
+        print("Removing application installed in "+app_dir)
+        print("Continuing in 10 seconds...")
         time.sleep(10)
         su.rmtree(app_dir)
+        print("")
         print("Application removed.")
 
         try:
             su.rmtree(mod_dir)
+            print("Module removed.")
 
         except:
             print("Warning, no module file located in "+mod_dir+". Skipping.")
@@ -48,7 +57,7 @@ def delete_dir(code_dict):
         print("No application found in "+app_dir)
 
 
-def clean():
+def clean_temp_files():
     print("Cleaning up temp files...")
     search_dict = ['*.o*',
                    '*.e*',

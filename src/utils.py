@@ -13,6 +13,8 @@ import sys
 # Local Imports
 import src.exception as exception
 import src.utils as utils
+import src.module as module
+import src.cfg_handler as cfg_handler
 
 user                = str(os.getlogin())
 hostname            = str(socket.gethostname())
@@ -30,6 +32,7 @@ settings_parser     = cp.RawConfigParser()
 settings_parser.read(settings_cfg)
 
 dry_run = settings_parser.getboolean(           settings_section,   "dry_run")
+use_default_paths = settings_parser.getboolean( settings_section,   "use_default_paths")
 overwrite = settings_parser.getboolean(         settings_section,   "overwrite")
 exit_on_missing = settings_parser.getboolean(   settings_section,   "exit_on_missing")
 log_level = settings_parser.getint(             settings_section,   "log_level")
@@ -60,31 +63,27 @@ def start_logging(name,
 
     return logger
 
-def check_cmd_args(arg):
 
-    if not ".cfg" in arg:
-        arg += ".cfg"
+def get_subdirs(base):
+    return [name for name in os.listdir(base)
+        if os.path.isdir(os.path.join(base, name))]
 
-    if not os.path.isfile(arg):
-        arg = "." + sl + configs_dir + sl + arg
-        if not os.path.isfile(arg):
-            exception.input_missing(input, exception_log)
+def recurse_down(app_dir):
 
-    return arg
+    for d in get_subdirs(app_dir):
+        if d != 'modulefiles':
+            new_dir = app_dir + sl + d
+            if d[0].isdigit():
+                print("    "+sl.join(new_dir.split(sl, 2)[2:]))
+            else:
+                recurse_down(new_dir)
 
-# Read cfg file into dict
-def read_cfg_file(cfg):
 
-    cfg_parser = cp.RawConfigParser()
-    cfg_parser.read(cfg)
-
-    cfg_dict = {}
-    for section in cfg_parser.sections():
-        cfg_dict[section] = {}
-        for value in cfg_parser.options(section):
-            cfg_dict[section][value] = cfg_parser.get(section, value)
-
-    return cfg_dict
+def show_installed():
+    print("Currently installed applications:")
+    print("---------------------------------")
+    app_dir = "."+sl+"build" 
+    recurse_down(app_dir)
 
 # Create directories if needed
 def make_dir(path):
@@ -98,8 +97,16 @@ def make_dir(path):
         os.makedirs(path)
 
     else:
-       utils.exception_log.debug("Project directory "+path+" already exists and 'overwrite=False' in settings.cfg. Exitting.") 
+       utils.exception_log.debug("Project directory "+path+" already exists and 'overwrite=False' in settings.cfg.") 
+       utils.exception_log.debug("Exitting")
+
        sys.exit(1)
+
+# Convert module name to directory name
+def get_label(compiler):
+    comp_ver = compiler.split("/")
+    label = comp_ver[0]+comp_ver[1].split(".")[0]
+    return label
 
 # Check build params, add defaults if needed
 def set_default_paths(build_dict, build_path):
@@ -180,36 +187,60 @@ def submit_job(script_file):
 
 
 # Main methond for generating and submitting build script
-def build_code(code_cfg, sched_cfg):
+def build_code(args):
 
+    # Init loggers
     utils.exception_log = utils.start_logging("EXCEPTION", file=exception_log_file)
     utils.build_log = utils.start_logging("BUILD", file=build_log_file)
+
+    # Process code and scheduler cfg files
+    code_cfg =  cfg_handler.check_code_cfg (cfg_handler.read_cfg_file(args.code,  utils.exception_log), use_default_paths, utils.exception_log)
+    sched_cfg = cfg_handler.check_sched_cfg(cfg_handler.read_cfg_file(args.sched, utils.exception_log), use_default_paths, utils.exception_log)
 
     utils.build_log.debug("Builder started with the following inputs:")
     for seg in code_cfg:
         utils.build_log.debug("["+seg+"]")
-        #utils.build_log.debug("[",seg,"]")
         for line in code_cfg[seg]:
-            utils.build_log.debug(line+"="+code_cfg[seg][line])
-            #utils.build_log.debug(line[0], line[1])
+            utils.build_log.debug("  "+line+"="+code_cfg[seg][line])
 
     #split input config files
     general_opts    = code_cfg['general']
+    mod_opts        = code_cfg['modules']
+    build_opts      = code_cfg['build']
+    run_opts        = code_cfg['run']
+
     sched_opts      = sched_cfg['scheduler']
 
-    code    = general_opts['code']
-    version = general_opts['version']
-    sched   = sched_opts['type']
+    # alias vars
+    system          = general_opts['system']
+    code            = general_opts['code']
+    version         = general_opts['version']
+    arch            = build_opts['arch']
+
+    compiler        = get_label(mod_opts['compiler'])
+    mpi             = get_label(mod_opts['mpi'])
+
+
+    sched           = sched_opts['type']
 
     # Get file paths for generating build script from templates
     sched_template      = base_dir + sl + "src" + sl + "job-templates" + sl + sched + ".template"
     build_template      = base_dir + sl + "src" + sl + "build-templates" + sl + code + "-" + version + ".template"
-    build_path          = base_dir + sl + "build" + sl + code + sl + version
+
+    build_path          = ''
+    if general_opts['build_prefix']:
+        build_path = general_opts['build_prefix']
+    else:
+        build_path = base_dir + sl + "build" + sl + system + sl + compiler + sl + mpi + sl  + code
+        if arch:
+            build_path += sl + arch + sl + version
+        else:
+            build_path += sl + version
+        general_opts['build_prefix'] = build_path
+
     script_file         = build_path + sl + code + "-build." + sched
 
-    build_opts              = utils.set_default_paths(code_cfg['build'], build_path)
-    build_opts["code"]      = code
-    build_opts["version"]   = version
+    build_opts              = utils.set_default_paths(build_opts, build_path)
 
     utils.make_dir(build_path)
 
@@ -219,6 +250,8 @@ def build_code(code_cfg, sched_cfg):
     script = open(script_file).read()
 
     # Contextualize build template with input.cfg vars
+    script = utils.populate_template(general_opts, script)
+    script = utils.populate_template(mod_opts, script)
     script = utils.populate_template(build_opts, script)
     script = utils.populate_template(sched_opts, script)
 
@@ -227,6 +260,8 @@ def build_code(code_cfg, sched_cfg):
 
     # Write template to file
     utils.write_template(script_file, script)
+
+    module.make_mod(general_opts, build_opts, mod_opts, exit_on_missing, utils.build_log, utils.exception_log)
 
     # Submit build script to scheduler
     utils.submit_job(script_file)
