@@ -8,8 +8,7 @@ import sys
 # Local Imports
 try:
     import src.utils as utils
-    import src.exception as exception
-    import src.cleanup as cleanup
+    import src.input_handler as input_handler
 except ImportError as e:
     print("You had an import error, you might be using Python2. Please use Python3.")
     print(e)
@@ -22,29 +21,39 @@ def main():
         description='Provide the cgf input file for you code you with to compile')
     cmd_parser.add_argument("--code", default="default.cfg",
                             type=str, help="Name of the code cfg file.")
-    cmd_parser.add_argument("--sched", default="sched.cfg",
+    cmd_parser.add_argument("--sched", default="slurm.cfg",
                             type=str, help="Name of the scheduler cfg file.")
     cmd_parser.add_argument("--clean", default=False, action='store_true',
                             help="Cleanup temp and log files.")
-    cmd_parser.add_argument("--show", default=False, action='store_true',
+    cmd_parser.add_argument("--installed", default=False, action='store_true',
                             help="Show all installed applications.")
+    cmd_parser.add_argument("--available", default=False, action='store_true',
+                            help="Show all available application profiles.")
     cmd_parser.add_argument("--remove", default="none",
-                            help="Remove an installed application, format=[code]/[version]")
+                            help="Remove an installed application, use output of --show-installed for formatting")
 
 
     args = cmd_parser.parse_args()
 
     # Cleanup and exit
     if args.clean:
-        cleanup.clean_temp_files()
+        input_handler.clean_temp_files()
         print("")
         print("")
         print("Done")
         sys.exit(0)
 
-    # Print list and exit
-    if args.show:
-        utils.show_installed()
+    # Show isntalled and exit
+    if args.installed:
+        input_handler.show_installed()
+        print("")
+        print("")
+        print("Done")
+        sys.exit(0)
+
+    # Show available and exit
+    if args.available:
+        input_handler.show_available()
         print("")
         print("")
         print("Done")
@@ -52,13 +61,11 @@ def main():
 
     # Remove installation and exit
     if args.remove != "none":
-        cleanup.remove_app(args.remove)
+        input_handler.remove_app(args.remove)
         print("")
         print("")
         print("Done")
         sys.exit(0)
-
-
 
     # Start builder
     utils.build_code(args)

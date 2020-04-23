@@ -4,6 +4,8 @@ import os
 import time
 import shutil as su
 
+sl                  = "/"
+
 def find_matching_files(search_dict):
     file_list=[]
     for search in search_dict:
@@ -23,8 +25,6 @@ def clean_matching_files(file_list):
 
 # Delete appliation and module file 
 def delete_dir(code_dict):
-
-    sl = "/"
 
     top_dir = str(os.getcwd())
     if not code_dict[0] == "build":
@@ -84,4 +84,30 @@ def clean_temp_files():
 def remove_app(code_str):
     code_dict=code_str.split("/")
     delete_dir(code_dict)
+
+def get_subdirs(base):
+    return [name for name in os.listdir(base)
+        if os.path.isdir(os.path.join(base, name))]
+
+def recurse_down(app_dir):
+
+    for d in get_subdirs(app_dir):
+        if d != 'modulefiles':
+            new_dir = app_dir + sl + d
+            if d[0].isdigit():
+                print("    "+sl.join(new_dir.split(sl, 2)[2:]))
+            else:
+                recurse_down(new_dir)
+
+def show_installed():
+    print("Currently installed applications:")
+    print("---------------------------------")
+    app_dir = "."+sl+"build" 
+    recurse_down(app_dir)
+
+
+def show_available():
+    print("Available application profiles:")
+    print("---------------------------------")
+
 

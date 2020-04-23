@@ -1,0 +1,9 @@
+#!/bin/bash
+#SBATCH -J <<<job_label>>>
+#SBATCH -o <<<project_path>>>/<<<job_label>>>.o%j
+#SBATCH -e <<<project_path>>>/<<<job_label>>>.e%j
+#SBATCH -p <<<queue>>>
+#SBATCH -t <<<runtime>>>
+#SBATCH -N 1
+#SBATCH -n <<<threads>>>
+#SBATCH -A <<<account>>>
