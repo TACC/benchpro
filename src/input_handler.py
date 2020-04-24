@@ -102,5 +102,10 @@ def show_installed():
 def show_available():
     print("Available application profiles:")
     print("---------------------------------")
-    
-    print("TBD")
+    app_dir = "."+sl+"config"+sl+"codes"+sl
+    temp_files = glob.glob(app_dir+"*.cfg")    
+    for f in temp_files:
+        code = f.split('/')[-1]
+        if not code == "default.cfg":
+            print("    "+code[:-4])
+ 
