@@ -8,8 +8,8 @@ export            mpi=<<<mpi>>>
 export    opf_version=<<<version>>>
 
 ml reset
-ml compiler
-ml mpi
+ml $compiler
+ml $mpi
 ml
 
 mkdir -p ${build_path} && cd ${build_path}

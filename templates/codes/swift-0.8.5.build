@@ -14,13 +14,13 @@ export          metis=<<<metis>>>
 
 #load modules
 ml reset
-ml ${compiler}
-ml ${mpi}
-ml ${cmake}
-ml ${fftw3}
-ml ${gsl}
-ml ${phdf5}
-ml ${metis}
+ml $compiler
+ml $mpi
+ml $cmake
+ml $fftw3
+ml $gsl
+ml $phdf5
+ml $metis
 ml
 
 export lib_dir=${build_path}/libs
@@ -42,7 +42,7 @@ export CFLAGS="${CFLAGS} -fPIC"
 
 #install parmetis
 tar -xf parmetis-4.0.3.tar.gz && cd parmetis-4.0.3
-make config cc=mpiicc cxx=mpiicpc path=${lib_dir}/parmetis
+make config cc=mpiicc cxx=mpiicpc prefix=${lib_dir}/parmetis
 make -j<<<threads>>>
 make install
 

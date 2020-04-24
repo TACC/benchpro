@@ -1,4 +1,3 @@
-
 # System Imports
 import configparser as cp
 import logging as lg
@@ -129,10 +128,8 @@ def submit_job(script_file):
             utils.exception_log.debug("Failed to submit job to scheduler")
             utils.exception_log.debug(e)
 
-
 # Main methond for generating and submitting build script
 def build_code(args):
-
     # Init loggers
     utils.exception_log = utils.start_logging("EXCEPTION", file=exception_log_file)
     utils.build_log = utils.start_logging("BUILD", file=build_log_file)
@@ -156,7 +153,6 @@ def build_code(args):
         for line in sched_cfg[seg]:
             utils.build_log.debug("  "+line+"="+sched_cfg[seg][line])
 
-
     #split input config files
     general_opts    = code_cfg['general']
     mod_opts        = code_cfg['modules']
@@ -164,8 +160,6 @@ def build_code(args):
     run_opts        = code_cfg['run']
 
     sched_opts      = sched_cfg['scheduler']
-
-
 
     # alias vars
     system          = general_opts['system']
@@ -202,8 +196,9 @@ def build_code(args):
     utils.make_dir(build_path)
 
     sched_template      = base_dir + sl + template_dir + sl + "sched" + sl + sched + ".template"
-    build_template      = base_dir + sl + template_dir + sl + "codes" + sl + code + "-" + version + ".template"
+    build_template      = base_dir + sl + template_dir + sl + "codes" + sl + code + "-" + version + ".build"
     compiler_template   = base_dir + sl + template_dir + sl + "compile_flags.template" 
+    module_template     = base_dir + sl + template_dir + sl + "codes" + sl + code + "-" + version + ".module"
 
     # Generate build script
     template_handler.construct_template(sched_template, compiler_template, build_template, script_file)
@@ -219,7 +214,7 @@ def build_code(args):
     template_handler.write_template(script_file, script)
 
 
-    module.make_mod(general_opts, build_opts, mod_opts, exit_on_missing, utils.build_log, utils.exception_log)
+    module.make_mod(module_template, general_opts, build_opts, mod_opts, exit_on_missing, utils.build_log, utils.exception_log)
 
     # Submit build script to scheduler
     utils.submit_job(script_file)

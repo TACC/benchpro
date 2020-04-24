@@ -1,4 +1,3 @@
-
 # System Imports
 import re
 import shutil as su
@@ -13,9 +12,7 @@ def construct_template(sched_template, compiler_template, build_template, job_sc
 
 # Contextualize build template with input.cfg vars
 def populate_template(template_opts, script, build_logger):
-
     for key in template_opts:
-
         print(key)
         build_logger.debug("replace " + "<<<" + key + ">>> with " + template_opts[key])
         script = script.replace("<<<" + key + ">>>", template_opts[key])
@@ -23,7 +20,6 @@ def populate_template(template_opts, script, build_logger):
 
 # Check for unpopulated vars in template file
 def test_template(script, exit_on_missing, build_logger, exception_logger):
-
     key = "<<<.*>>>"
     nomatch = re.findall(key,script)
     if len(nomatch) > 0:

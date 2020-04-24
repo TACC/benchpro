@@ -1,4 +1,3 @@
-
 import glob
 import os
 import time
@@ -25,7 +24,6 @@ def clean_matching_files(file_list):
 
 # Delete appliation and module file 
 def delete_dir(code_dict):
-
     top_dir = str(os.getcwd())
     if not code_dict[0] == "build":
         top_dir += sl + "build"
@@ -36,7 +34,6 @@ def delete_dir(code_dict):
 
     mod_dir = top_dir + sl + "modulefiles" + sl.join(app_dir.split(sl)[:-1])
     app_dir = top_dir + app_dir
-
 
     if os.path.isdir(app_dir):
         print("Removing application installed in "+app_dir)
@@ -56,7 +53,6 @@ def delete_dir(code_dict):
     else:
         print("No application found in "+app_dir)
 
-
 def clean_temp_files():
     print("Cleaning up temp files...")
     search_dict = ['*.o*',
@@ -67,7 +63,6 @@ def clean_temp_files():
     file_list = find_matching_files(search_dict)
 
     if file_list:
-
         print("Found the following files to delete:")
         for f in file_list:
             print(f)
@@ -90,7 +85,6 @@ def get_subdirs(base):
         if os.path.isdir(os.path.join(base, name))]
 
 def recurse_down(app_dir):
-
     for d in get_subdirs(app_dir):
         if d != 'modulefiles':
             new_dir = app_dir + sl + d
@@ -105,9 +99,8 @@ def show_installed():
     app_dir = "."+sl+"build" 
     recurse_down(app_dir)
 
-
 def show_available():
     print("Available application profiles:")
     print("---------------------------------")
-
-
+    
+    print("TBD")

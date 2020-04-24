@@ -1,20 +1,16 @@
-
 # System Imports
 import configparser as cp
 import os
 import sys
 
 sl                  = "/"
-
 configs_dir         = "config"
 code_cfg_dir        = "codes"
 sched_cfg_dir       = "sched"
-
 system_cfg_file     = "system.cfg"
 
 # Check cfg file exists
 def check_file(cfg_type, cfg_name, exception_logger):
-
     if not ".cfg" in cfg_name:
         cfg_name += ".cfg"
 
@@ -24,15 +20,12 @@ def check_file(cfg_type, cfg_name, exception_logger):
 
     cfg_path = "./"
 
-    print(cfg_path+cfg_name)
     if not os.path.isfile(cfg_path+cfg_name):
         cfg_path += configs_dir + sl
 
-    print(cfg_path+cfg_name)
     if not os.path.isfile(cfg_path+cfg_name):
         cfg_path += subdir + sl
 
-    print(cfg_path+cfg_name)
     if not os.path.isfile(cfg_path+cfg_name):
         exception_logger.debug("ERROR: Input file \"" + cfg_name + "\" not found.")
         exception_logger.debug("Exitting")
@@ -42,7 +35,6 @@ def check_file(cfg_type, cfg_name, exception_logger):
 
 # Read cfg file into dict
 def read_cfg_file(cfg_file, exception_logger):
-
     cfg_parser = cp.RawConfigParser()
     cfg_parser.read(cfg_file)
 
@@ -56,13 +48,11 @@ def read_cfg_file(cfg_file, exception_logger):
 
 # Check the contents of code input cfg file for issues
 def check_code_cfg_contents(cfg_dict, use_default_paths, build_logger, exception_logger):
-
     # Check for missing essential parameters in general section
     if not cfg_dict['general']['code'] or not cfg_dict['general']['version'] or not cfg_dict['general']['system']:
         exception_logger.debug("ERROR: Missing parameter detected in "+ cfg_dict['metadata']['cfg_file'])
         exception_logger.debug("ERROR: Please ensure at least 'code', 'version' and 'system' are defined in the [general] section.")
         exception_logger.debug("Exitting")
-
         sys.exit(1)
 
     # Check for conflicting parameter combinations
@@ -97,7 +87,6 @@ def check_code_cfg_contents(cfg_dict, use_default_paths, build_logger, exception
 
 # Check the contents of schede input cfg file for issues
 def check_sched_cfg_contents(cfg_dict, use_default_paths, build_logger, exception_logger):
-
     # Check for missing essential parameters in general section
     if not cfg_dict['scheduler']['type'] or not cfg_dict['scheduler']['queue'] or not cfg_dict['scheduler']['account']:
         exception_logger.debug("ERROR: Missing parameter detected in "+ cfg_dict['metadata']['cfg_file'])
@@ -115,7 +104,6 @@ def check_sched_cfg_contents(cfg_dict, use_default_paths, build_logger, exceptio
     return cfg_dict
 
 def get_cfg(cfg_type, cfg_name, use_default_paths, build_logger, exception_logger):
-
     cfg_file = check_file(cfg_type, cfg_name, exception_logger)
     cfg_dict = read_cfg_file(cfg_file, exception_logger)
 

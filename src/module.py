@@ -64,13 +64,12 @@ def make_mod_dir(code_dict, build_log, exception_log):
     return mod_dir
 
 # Copy template to target dir
-def copy_mod_template(code, mod_file, build_log, exception_log):
-
-    template_file = top_dir + sl + "src" + sl + "module-templates" + sl + code + ".template"
+def copy_mod_template(template_file, code, mod_file, build_log, exception_log):
 
     if not os.path.exists(template_file):
-        exception_log.debug(code+" template file not available at "+template_file)
-        exception_log.debug("Exitting")
+        build_log.debug("WARNING: "+code+" module template file not available at "+template_file)
+        build_log.debug("WARNING: using a generic module template")
+        template_file = "/".join(template_file.split("/")[:-1])+sl+"generic.module"
 
     with open(mod_file,'wb') as out:
         with open(template_file,'rb') as inp:
@@ -78,7 +77,6 @@ def copy_mod_template(code, mod_file, build_log, exception_log):
 
 # Replace <<<>>> vars in copied template
 def populate_mod_template(module, code_dict, build_log, exception_log):
-
     code_dict['mods'] = ', '.join('"{0}"'.format(w) for w in code_dict['mods'])
     code_dict['caps_code'] = code_dict['code'].upper()
 
@@ -110,7 +108,7 @@ def write_mod_file(module, mod_file):
         f.write(module)
 
 # Make module for compiled appliation
-def make_mod(general_opts, build_opts, mod_opts, exit_on_missing, build_log, exception_log):
+def make_mod(template_file, general_opts, build_opts, mod_opts, exit_on_missing, build_log, exception_log):
 
     code_dict = {'mods' : []}
     code_dict['compiler'] = mod_opts['compiler']
@@ -126,12 +124,10 @@ def make_mod(general_opts, build_opts, mod_opts, exit_on_missing, build_log, exc
 
     check_inputs(code_dict, build_log, exception_log)
     mod_file = make_mod_dir(code_dict, build_log, exception_log) + sl + code_dict['version'] + ".lua"
-    copy_mod_template(code_dict['code'], mod_file, build_log, exception_log)
+    copy_mod_template(template_file, code_dict['code'], mod_file, build_log, exception_log)
 
     module = open(mod_file).read()
     module = populate_mod_template(module, code_dict, build_log, exception_log)
     test_mod_file(module, exit_on_missing, build_log, exception_log)
     write_mod_file(module, mod_file)
-
-
 

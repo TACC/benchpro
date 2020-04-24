@@ -38,33 +38,21 @@ def main():
     # Cleanup and exit
     if args.clean:
         input_handler.clean_temp_files()
-        print("")
-        print("")
-        print("Done")
         sys.exit(0)
 
     # Show isntalled and exit
     if args.installed:
         input_handler.show_installed()
-        print("")
-        print("")
-        print("Done")
         sys.exit(0)
 
     # Show available and exit
     if args.available:
         input_handler.show_available()
-        print("")
-        print("")
-        print("Done")
         sys.exit(0)
 
     # Remove installation and exit
     if args.remove != "none":
         input_handler.remove_app(args.remove)
-        print("")
-        print("")
-        print("Done")
         sys.exit(0)
 
     # Start builder

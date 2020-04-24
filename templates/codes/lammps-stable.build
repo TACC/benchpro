@@ -8,8 +8,8 @@ export            mpi=<<<mpi>>>
 export    lmp_version=<<<version>>>
 
 ml reset
-ml compiler
-ml mpi
+ml $compiler
+ml $mpi
 ml
 
 mkdir -p ${build_path} && cd ${build_path}
@@ -26,4 +26,4 @@ make yes-user-omp
 
 make package-status
 
-make intel_cpu_intelmpi -j <<threads>>>
+make intel_cpu_intelmpi -j <<<threads>>>
