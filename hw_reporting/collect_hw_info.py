@@ -24,13 +24,16 @@ check_exe = "lshw"
 out_dir = working_dir + "/" + "hw_report-"+host+"-"+date
 
 # Check cmd args
-if sys.argv[1] == "clean":
-    print("Cleaning up.")
-    for d in glob.glob("hw_report-*"):
-        shutil.rmtree(d)
-    sys.exit(1)
+try:
+    if sys.argv[1] == "clean":
+        print("Cleaning up.")
+        for d in glob.glob("hw_report-*"):
+            shutil.rmtree(d)
+        sys.exit(1)
 
-
+except:
+   print("")
+ 
 # Make output dir
 if not os.path.exists(out_dir):
     os.makedirs(out_dir)
