@@ -2,6 +2,7 @@
 
 # System Imports
 import argparse
+import os
 import pprint as pp
 import sys
 
@@ -21,7 +22,7 @@ def main():
         description='Provide the cgf input file for you code you with to compile')
     cmd_parser.add_argument("--code", default="default.cfg",
                             type=str, help="Name of the code cfg file.")
-    cmd_parser.add_argument("--sched", default="slurm.cfg",
+    cmd_parser.add_argument("--sched", default="system",
                             type=str, help="Name of the scheduler cfg file.")
     cmd_parser.add_argument("--clean", default=False, action='store_true',
                             help="Cleanup temp and log files.")
@@ -34,6 +35,10 @@ def main():
 
 
     args = cmd_parser.parse_args()
+
+    # Use system default scheduler profile 
+    if args.sched == "system":
+        args.sched = "slurm-"+os.getenv('TACC_SYSTEM')+".cfg"
 
     # Cleanup and exit
     if args.clean:

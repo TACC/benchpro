@@ -139,8 +139,6 @@ def build_code(args):
     sched_cfg =    cfg_handler.get_cfg('sched',    args.sched, use_default_paths, utils.build_log, utils.exception_log)
     compiler_cfg = cfg_handler.get_cfg('compiler', 'compile-flags.cfg', use_default_paths, utils.build_log, utils.exception_log) 
 
-    print(compiler_cfg)
-
     # Print inputs to log
     utils.build_log.debug("Builder started with the following inputs:")
     for seg in code_cfg:
@@ -173,8 +171,6 @@ def build_code(args):
 
     compiler_opts   = compiler_cfg['common']
     compiler_opts.update(compiler_cfg[compiler_type])
-
-    print(compiler_opts)
 
     sched           = sched_opts['type']
 

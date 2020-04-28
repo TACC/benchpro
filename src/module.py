@@ -83,7 +83,7 @@ def populate_mod_template(module, code_dict, build_log, exception_log):
     if not code_dict['bin_dir']:
         code_dict['bin_dir'] = 'bin'
 
-    code_dict['install_dir'] = top_dir + sl + "build" + sl + code_dict['system'] + sl + get_label(code_dict['compiler']) + sl + get_label(code_dict['mpi']) + sl + code_dict['code'] + sl + code_dict['version'] + sl + "install"
+    code_dict['install_dir'] = top_dir + sl + "build" + sl + code_dict['system'] + sl + get_label(code_dict['compiler']) + sl + get_label(code_dict['mpi']) + sl + code_dict['code'] + sl + code_dict['arch'] + sl + code_dict['version'] + sl + "install"
 
     for key in code_dict:
         build_log.debug("replace " + "<<<" + key + ">>> with " + code_dict[key])

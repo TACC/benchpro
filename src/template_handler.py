@@ -13,7 +13,6 @@ def construct_template(sched_template, compiler_template, build_template, job_sc
 # Contextualize build template with input.cfg vars
 def populate_template(template_opts, script, build_logger):
     for key in template_opts:
-        print(key)
         build_logger.debug("replace " + "<<<" + key + ">>> with " + template_opts[key])
         script = script.replace("<<<" + key + ">>>", template_opts[key])
     return script
