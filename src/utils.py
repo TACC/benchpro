@@ -1,5 +1,6 @@
 # System Imports
 import configparser as cp
+from datetime import datetime
 import logging as lg
 import os
 import pprint as pp
@@ -8,17 +9,22 @@ import shutil as su
 import socket
 import subprocess
 import sys
+import time
 
 # Local Imports
 import src.utils as utils
+import src.input_tester as input_tester
 import src.module as module
 import src.cfg_handler as cfg_handler
 import src.template_handler as template_handler
+import src.splash as splash
 
 user                = str(os.getlogin())
 hostname            = str(socket.gethostname())
 if ("." in hostname):
     hostname = '.'.join(map(str, hostname.split('.')[0:2]))
+
+time_str            = datetime.now().strftime("%Y-%m-%d_%Hh%M")
 
 base_dir            = str(os.getcwd())
 sl                  = "/"
@@ -54,16 +60,16 @@ def start_logging(name,
     file_handler = lg.FileHandler(file, mode="w", encoding="utf8")
     file_handler.setFormatter(formatter)
 
-    stream_handler = lg.StreamHandler(stream=sys.stderr)
-    stream_handler.setFormatter(formatter)
+    #stream_handler = lg.StreamHandler(stream=sys.stderr)
+    #stream_handler.setFormatter(formatter)
 
     logger.addHandler(file_handler)
-    logger.addHandler(stream_handler)
+    #logger.addHandler(stream_handler)
 
     return logger
 
 # Create directories if needed
-def make_dir(path):
+def install(path, script):
 
     if not os.path.exists(path):
         os.makedirs(path)
@@ -76,8 +82,17 @@ def make_dir(path):
     else:
        utils.exception_log.debug("Project directory "+path+" already exists and 'overwrite=False' in settings.cfg.") 
        utils.exception_log.debug("Exitting")
-
        sys.exit(1)
+
+    os.rename(script, path+sl+script)
+
+# Log cfg contents
+def send_inputs_to_log(cfg):
+    utils.build_log.debug("Builder started with the following inputs:")
+    for seg in cfg:
+        utils.build_log.debug("["+seg+"]")
+        for line in cfg[seg]:
+            utils.build_log.debug("  "+line+"="+cfg[seg][line])
 
 # Convert module name to directory name
 def get_label(compiler):
@@ -102,16 +117,18 @@ def set_default_paths(build_dict, build_path):
 # Submit build script to scheduler
 def submit_job(script_file):
     if dry_run:
+        print("This was a dryrun, job script created at " + script_file)
         utils.build_log.debug("This was a dryrun, job script created at " + script_file)
     else:
-        utils.build_log.debug("Submitting build script to Slurm...")
+        print("Submitting build script to scheduler")
+        utils.build_log.debug("Submitting build script to scheduler...")
         try:
             cmd = subprocess.run("sbatch "+script_file, shell=True, check=True, capture_output=True, universal_newlines=True)
 
             utils.build_log.debug(cmd.stdout)
             utils.build_log.debug(cmd.stderr)
 
-            job_id = ""
+            job_id = ''
             i = 0
             jobid_line = "Submitted batch job"
 
@@ -120,7 +137,10 @@ def submit_job(script_file):
                 if jobid_line in line:
                     job_id = line.split(" ")[-1]
 
+            time.sleep(2)
             cmd = subprocess.run("squeue -a --job "+job_id, shell=True, check=True, capture_output=True, universal_newlines=True)
+
+            print(cmd.stdout)
             utils.build_log.debug(cmd.stdout)
             utils.build_log.debug(cmd.stderr)
 
@@ -131,25 +151,20 @@ def submit_job(script_file):
 # Main methond for generating and submitting build script
 def build_code(args):
     # Init loggers
-    utils.exception_log = utils.start_logging("EXCEPTION", file=exception_log_file)
-    utils.build_log = utils.start_logging("BUILD", file=build_log_file)
+    utils.exception_log = utils.start_logging("EXCEPTION", file=exception_log_file+"_"+time_str)
+    utils.build_log = utils.start_logging("BUILD", file=build_log_file+"_"+time_str)
 
-    # Process code and scheduler cfg files
-    code_cfg  =    cfg_handler.get_cfg('code',     args.code,  use_default_paths, utils.build_log, utils.exception_log)
-    sched_cfg =    cfg_handler.get_cfg('sched',    args.sched, use_default_paths, utils.build_log, utils.exception_log)
+    # Print splash
+    splash.print_splash()
+
+    # Parse config input files
+    code_cfg  =    cfg_handler.get_cfg('code',     args.code,           use_default_paths, utils.build_log, utils.exception_log)
+    sched_cfg =    cfg_handler.get_cfg('sched',    args.sched,          use_default_paths, utils.build_log, utils.exception_log)
     compiler_cfg = cfg_handler.get_cfg('compiler', 'compile-flags.cfg', use_default_paths, utils.build_log, utils.exception_log) 
 
     # Print inputs to log
-    utils.build_log.debug("Builder started with the following inputs:")
-    for seg in code_cfg:
-        utils.build_log.debug("["+seg+"]")
-        for line in code_cfg[seg]:
-            utils.build_log.debug("  "+line+"="+code_cfg[seg][line])
-
-    for seg in sched_cfg:
-        utils.build_log.debug("["+seg+"]")
-        for line in sched_cfg[seg]:
-            utils.build_log.debug("  "+line+"="+sched_cfg[seg][line])
+    send_inputs_to_log(code_cfg)
+    send_inputs_to_log(sched_cfg)
 
     #split input config files
     general_opts    = code_cfg['general']
@@ -159,42 +174,36 @@ def build_code(args):
 
     sched_opts      = sched_cfg['scheduler']
 
-    # alias vars
-    system          = general_opts['system']
-    code            = general_opts['code']
-    version         = general_opts['version']
-    arch            = build_opts['arch']
-
-    compiler        = get_label(mod_opts['compiler'])
-    compiler_type   = mod_opts['compiler'].split('/')[0]
-    mpi             = get_label(mod_opts['mpi'])
-
     compiler_opts   = compiler_cfg['common']
-    compiler_opts.update(compiler_cfg[compiler_type])
 
-    sched           = sched_opts['type']
+    # Input Checks 
+    for mod in mod_opts: 
+        input_tester.check_module_exists(mod_opts[mod], utils.exception_log)    
+
+    # Check if version is string, if so make int alias using date
+    
+    compiler_type   = mod_opts['compiler'].split('/')[0]
+    compiler_opts.update(compiler_cfg[compiler_type])
 
     build_path          = ''
     if general_opts['build_prefix']:
         build_path = general_opts['build_prefix']
     else:
-        build_path = base_dir + sl + "build" + sl + system + sl + compiler + sl + mpi + sl  + code
-        if arch:
-            build_path += sl + arch + sl + version
+        build_path = base_dir + sl + "build" + sl + general_opts['system'] + sl + get_label(mod_opts['compiler']) + sl + get_label(mod_opts['mpi']) + sl  + general_opts['code']
+        if build_opts['arch']:
+            build_path += sl + build_opts['arch'] + sl + general_opts['version']
         else:
-            build_path += sl + version
+            build_path += sl + general_opts['version']
         general_opts['build_prefix'] = build_path
 
-    script_file         = build_path + sl + code + "-build." + sched
+    script_file         = general_opts['code'] + "-build." + sched_opts['type']
 
     build_opts          = utils.set_default_paths(build_opts, build_path)
 
-    utils.make_dir(build_path)
-
-    sched_template      = base_dir + sl + template_dir + sl + "sched" + sl + sched + ".template"
-    build_template      = base_dir + sl + template_dir + sl + "codes" + sl + code + "-" + version + ".build"
+    sched_template      = base_dir + sl + template_dir + sl + "sched" + sl + sched_opts['type'] + ".template"
+    build_template      = base_dir + sl + template_dir + sl + "codes" + sl + general_opts['code'] + "-" + general_opts['version'] + ".build"
     compiler_template   = base_dir + sl + template_dir + sl + "compile_flags.template" 
-    module_template     = base_dir + sl + template_dir + sl + "codes" + sl + code + "-" + version + ".module"
+    module_template     = base_dir + sl + template_dir + sl + "codes" + sl + general_opts['code'] + "-" + general_opts['version'] + ".module"
 
     # Generate build script
     template_handler.construct_template(sched_template, compiler_template, build_template, script_file)
@@ -207,10 +216,18 @@ def build_code(args):
     script = template_handler.populate_template(compiler_opts, script, utils.build_log)
 
     template_handler.test_template(script, exit_on_missing, utils.build_log, utils.exception_log)
+
+
     template_handler.write_template(script_file, script)
+    
+    mod_path, mod_file = module.make_mod(module_template, general_opts, build_opts, mod_opts, exit_on_missing, utils.build_log, utils.exception_log)
 
-
-    module.make_mod(module_template, general_opts, build_opts, mod_opts, exit_on_missing, utils.build_log, utils.exception_log)
+    # Make project and module directories, move build and module files
+    utils.install(build_path, script_file)
+    print("Build script location:", build_path)
+    utils.install(mod_path, mod_file)
+    print("Module file location :,", mod_path)
 
     # Submit build script to scheduler
     utils.submit_job(script_file)
+

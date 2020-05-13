@@ -5,6 +5,7 @@ import shutil as su
 
 sl                  = "/"
 
+# Get list of files matching search 
 def find_matching_files(search_dict):
     file_list=[]
     for search in search_dict:
@@ -53,6 +54,7 @@ def delete_dir(code_dict):
     else:
         print("No application found in "+app_dir)
 
+# Clean up temp files such as logs
 def clean_temp_files():
     print("Cleaning up temp files...")
     search_dict = ['*.o*',
@@ -93,12 +95,14 @@ def recurse_down(app_dir):
             else:
                 recurse_down(new_dir)
 
+# Print currently installed apps, used together with 'remove' 
 def show_installed():
     print("Currently installed applications:")
     print("---------------------------------")
     app_dir = "."+sl+"build" 
     recurse_down(app_dir)
 
+# Print list apps available to be installed from cfg files 
 def show_available():
     print("Available application profiles:")
     print("---------------------------------")

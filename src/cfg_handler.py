@@ -107,7 +107,11 @@ def get_cfg(cfg_type, cfg_name, use_default_paths, build_logger, exception_logge
     cfg_file = check_file(cfg_type, cfg_name, exception_logger)
     cfg_dict = read_cfg_file(cfg_file, exception_logger)
 
-    if cfg_type == 'code':    check_code_cfg_contents (cfg_dict, use_default_paths, build_logger, exception_logger)
-    elif cfg_type == 'sched': check_sched_cfg_contents(cfg_dict, use_default_paths, build_logger, exception_logger)
+    if cfg_type == 'code':    
+        print("Using code cfg file     :", cfg_file)
+        check_code_cfg_contents (cfg_dict, use_default_paths, build_logger, exception_logger)
+    elif cfg_type == 'sched': 
+        print("Using scheduler cfg file:", cfg_file)
+        check_sched_cfg_contents(cfg_dict, use_default_paths, build_logger, exception_logger)
 
     return cfg_dict
