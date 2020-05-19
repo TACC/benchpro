@@ -3,6 +3,8 @@ import re
 import shutil as su
 import sys
 
+import src.exception as exception
+
 # Copy template files for population
 def construct_template(sched_template, compiler_template, build_template, job_script):
     with open(job_script,'wb') as out:
@@ -25,8 +27,7 @@ def test_template(script, exit_on_missing, build_logger, exception_logger):
         build_logger.debug("Missing build parameters were found in build template!")
         build_logger.debug(nomatch)
         if exit_on_missing:
-            exception_logger.debug("exit_on_missing=True in settings.cfg, exiting")
-            sys.exit(1)
+            exception.error_and_quit(exception_logger, "Missing parameters were found in build template and exit_on_missing=True in settings.cfg:"+nomatch)
     else:
         build_logger.debug("All build parameters were filled, continuing")
 

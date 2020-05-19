@@ -2,6 +2,8 @@ from datetime import datetime
 import os
 import socket
 
+sl           = '/'
+
 # Print welcome splash
 def print_splash():
     print("")
@@ -12,8 +14,8 @@ def print_splash():
     print("")
 
     print("--------------------------------------")
-    print("User       :", str(os.getlogin()))
-    print("System     :", str(socket.gethostname()))
-    print("Project dir:", str(os.getcwd()))
-    print("Date       :", datetime.now())
-
+    print("User         :", str(os.getlogin()))
+    print("System       :", str(socket.gethostname()))
+    print("Builder dir  :", sl.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
+    print("Date         :", datetime.now())
+    print("")

@@ -11,7 +11,7 @@ try:
     import src.utils as utils
     import src.input_handler as input_handler
 except ImportError as e:
-    print("You had an import error, you might be using Python2. Please use Python3.")
+    print("You had an import error, you might be using Python2. Please run 'source load.sh'")
     print(e)
     sys.exit(1)
 
@@ -19,8 +19,8 @@ def main():
 
     # Parse cmdline args
     cmd_parser = argparse.ArgumentParser(
-        description='Provide the cgf input file for you code you with to compile')
-    cmd_parser.add_argument("--code", default="default.cfg",
+        description='This is a builder tool for managing appliation benchmarks.')
+    cmd_parser.add_argument("--install", default=False,
                             type=str, help="Name of the code cfg file.")
     cmd_parser.add_argument("--sched", default="system",
                             type=str, help="Name of the scheduler cfg file.")
@@ -46,20 +46,24 @@ def main():
         sys.exit(0)
 
     # Show isntalled and exit
-    if args.installed:
+    elif args.installed:
         input_handler.show_installed()
         sys.exit(0)
 
     # Show available and exit
-    if args.available:
+    elif args.available:
         input_handler.show_available()
         sys.exit(0)
 
     # Remove installation and exit
-    if args.remove != "none":
+    elif args.remove != "none":
         input_handler.remove_app(args.remove)
         sys.exit(0)
 
+    # Code name not provided
+    elif not args.install:
+        print("Try 'build.py --help' for more information.")
+        sys.exit(0)
     # Start builder
     utils.build_code(args)
 

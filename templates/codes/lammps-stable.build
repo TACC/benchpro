@@ -6,6 +6,7 @@ export   install_path=<<<install_path>>>
 export       compiler=<<<compiler>>>
 export            mpi=<<<mpi>>>
 export    lmp_version=<<<version>>>
+export      opt_flags=<<<opt_flags>>>
 
 ml reset
 ml $compiler

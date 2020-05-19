@@ -1,6 +1,7 @@
 # System Imports
 import configparser as cp
 from datetime import datetime
+import glob
 import logging as lg
 import os
 import pprint as pp
@@ -13,8 +14,8 @@ import time
 
 # Local Imports
 import src.utils as utils
-import src.input_tester as input_tester
-import src.module as module
+import src.exception as exception
+import src.module_handler as module_handler
 import src.cfg_handler as cfg_handler
 import src.template_handler as template_handler
 import src.splash as splash
@@ -26,13 +27,15 @@ if ("." in hostname):
 
 time_str            = datetime.now().strftime("%Y-%m-%d_%Hh%M")
 
-base_dir            = str(os.getcwd())
 sl                  = "/"
+base_dir            = sl.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1])
+
+timeout             = 5
 
 settings_cfg        = "settings.cfg"
 settings_section    = "settings"
 settings_parser     = cp.RawConfigParser()
-settings_parser.read(settings_cfg)
+settings_parser.read(base_dir + sl + settings_cfg)
 
 template_dir        = "templates"
 
@@ -44,12 +47,16 @@ log_level = settings_parser.getint(             settings_section,   "log_level")
 exception_log_file = settings_parser.get(       settings_section,   "exception_log_file")
 build_log_file = settings_parser.get(           settings_section,   "build_log_file")
 
+error_installing = False
+
 exception_log=''
 build_log=''
 
 def start_logging(name,
                   file,
                   level=log_level):
+
+    print('{:25}'.format(name+' log file'), ":", str(file))
 
     formatter = lg.Formatter("{0}: ".format(name) + str(user) + "@" +str(hostname) + ": " +
                              "%(asctime)s: %(filename)s;%(funcName)s();%(lineno)d: %(message)s")
@@ -68,23 +75,54 @@ def start_logging(name,
 
     return logger
 
+# Check if an existing installation exists
+def check_for_previous_install(path):
+    if os.path.exists(path):
+        if overwrite:
+            utils.build_log.debug("WARNING: It seems this app is already installed. Deleting old build in "+path+" because 'overwrite=True' in settings.cfg")
+
+            print()
+            print("WARNING: Application directory already exists and 'overwrite=True' in settings.cfg, continuing in 5 seconds...")
+            print()
+
+            time.sleep(timeout)            
+            print("No going back now...")
+
+            su.rmtree(path)
+        else:
+            exception.error_and_quit(utils.exception_log, "It seems this app is already installed in "+path+". The install directory already exists and 'overwrite=False' in settings.cfg")
+
 # Create directories if needed
-def install(path, script):
-
+def create_install_dir(path):
+    # Try to create build directory
     if not os.path.exists(path):
-        os.makedirs(path)
+        try:
+            os.makedirs(path)
+        except:
+            exception.error_and_quit(utils.exception_log, "Failed to make directory "+path)
 
-    elif overwrite:
-        utils.build_log.debug("Deleting old build project in "+path+" because 'overwrite=True' in settings.cfg")
-        su.rmtree(path)
-        os.makedirs(path)
+# Move files to install directory
+def install(path, obj):
 
-    else:
-       utils.exception_log.debug("Project directory "+path+" already exists and 'overwrite=False' in settings.cfg.") 
-       utils.exception_log.debug("Exitting")
-       sys.exit(1)
+    # Get file name
+    new_obj_name = obj
+    if '/' in obj: new_obj_name = obj.split("/")[-1]
+    # Strip tmp prefix from file
+    if 'tmp.' in obj: new_obj_name = obj[4:]
 
-    os.rename(script, path+sl+script)
+    try: 
+        su.copyfile(obj, path+sl+new_obj_name)
+    except IOError  as e:
+        print(e)
+        exception.error_and_quit(utils.exception_log, "Failed to move "+obj+" to "+path+sl+new_obj_name)
+
+# Check if module is available on the system
+def check_module_exists(module):
+    try:
+        cmd = subprocess.run("module spider "+module, shell=True, check=True, capture_output=True, universal_newlines=True)
+
+    except subprocess.CalledProcessError as e:
+       exception.error_and_quit(utils.exception_log, "module "+module+" not available on this system")
 
 # Log cfg contents
 def send_inputs_to_log(cfg):
@@ -94,14 +132,8 @@ def send_inputs_to_log(cfg):
         for line in cfg[seg]:
             utils.build_log.debug("  "+line+"="+cfg[seg][line])
 
-# Convert module name to directory name
-def get_label(compiler):
-    comp_ver = compiler.split("/")
-    label = comp_ver[0]+comp_ver[1].split(".")[0]
-    return label
-
 # Check build params, add defaults if needed
-def set_default_paths(build_dict, build_path):
+def set_build_paths(build_dict, build_path):
 
     if not "project_path" in build_dict.keys():
         build_dict["project_path"] = build_path
@@ -150,23 +182,27 @@ def submit_job(script_file):
 
 # Main methond for generating and submitting build script
 def build_code(args):
-    # Init loggers
-    utils.exception_log = utils.start_logging("EXCEPTION", file=exception_log_file+"_"+time_str)
-    utils.build_log = utils.start_logging("BUILD", file=build_log_file+"_"+time_str)
 
     # Print splash
     splash.print_splash()
 
+    # Init loggers
+    utils.exception_log = utils.start_logging("EXCEPTION", file=exception_log_file+"_"+time_str+".log")
+    utils.build_log = utils.start_logging("BUILD", file=build_log_file+"_"+time_str+".log")
+
     # Parse config input files
-    code_cfg  =    cfg_handler.get_cfg('code',     args.code,           use_default_paths, utils.build_log, utils.exception_log)
+    code_cfg  =    cfg_handler.get_cfg('code',     args.install,           use_default_paths, utils.build_log, utils.exception_log)
     sched_cfg =    cfg_handler.get_cfg('sched',    args.sched,          use_default_paths, utils.build_log, utils.exception_log)
     compiler_cfg = cfg_handler.get_cfg('compiler', 'compile-flags.cfg', use_default_paths, utils.build_log, utils.exception_log) 
+
+    print('{:25}'.format('Using application config'), ":", code_cfg['metadata']['cfg_file'])
+    print('{:25}'.format('Using scheduler config'), ":", sched_cfg['metadata']['cfg_file'])
 
     # Print inputs to log
     send_inputs_to_log(code_cfg)
     send_inputs_to_log(sched_cfg)
 
-    #split input config files
+    #split input config file)s
     general_opts    = code_cfg['general']
     mod_opts        = code_cfg['modules']
     build_opts      = code_cfg['build']
@@ -178,32 +214,33 @@ def build_code(args):
 
     # Input Checks 
     for mod in mod_opts: 
-        input_tester.check_module_exists(mod_opts[mod], utils.exception_log)    
+        check_module_exists(mod_opts[mod])    
 
     # Check if version is string, if so make int alias using date
     
     compiler_type   = mod_opts['compiler'].split('/')[0]
     compiler_opts.update(compiler_cfg[compiler_type])
 
-    build_path          = ''
-    if general_opts['build_prefix']:
-        build_path = general_opts['build_prefix']
-    else:
-        build_path = base_dir + sl + "build" + sl + general_opts['system'] + sl + get_label(mod_opts['compiler']) + sl + get_label(mod_opts['mpi']) + sl  + general_opts['code']
-        if build_opts['arch']:
-            build_path += sl + build_opts['arch'] + sl + general_opts['version']
-        else:
-            build_path += sl + general_opts['version']
-        general_opts['build_prefix'] = build_path
+    # Check if build dir already exists
+    check_for_previous_install(general_opts['build_prefix'])
 
-    script_file         = general_opts['code'] + "-build." + sched_opts['type']
+    # Add build dirs to dict
+    build_opts          = utils.set_build_paths(build_opts, general_opts['build_prefix'])
 
-    build_opts          = utils.set_default_paths(build_opts, build_path)
+    # Name of tmp build script
+    script_file         = "tmp." + general_opts['code'] + "-build." + sched_opts['type']
 
+    # Template files
     sched_template      = base_dir + sl + template_dir + sl + "sched" + sl + sched_opts['type'] + ".template"
     build_template      = base_dir + sl + template_dir + sl + "codes" + sl + general_opts['code'] + "-" + general_opts['version'] + ".build"
     compiler_template   = base_dir + sl + template_dir + sl + "compile_flags.template" 
     module_template     = base_dir + sl + template_dir + sl + "codes" + sl + general_opts['code'] + "-" + general_opts['version'] + ".module"
+
+    # Use generic module template if not found for this application
+    if not os.path.exists(module_template):
+        utils.build_log.debug("WARNING: "+general_opts['code']+" module template file not available at "+module_template)
+        utils.build_log.debug("WARNING: using a generic module template")
+        module_template = "/".join(module_template.split("/")[:-1])+sl+"generic.module"
 
     # Generate build script
     template_handler.construct_template(sched_template, compiler_template, build_template, script_file)
@@ -217,17 +254,36 @@ def build_code(args):
 
     template_handler.test_template(script, exit_on_missing, utils.build_log, utils.exception_log)
 
-
+    # Write build script to temp location
     template_handler.write_template(script_file, script)
     
-    mod_path, mod_file = module.make_mod(module_template, general_opts, build_opts, mod_opts, exit_on_missing, utils.build_log, utils.exception_log)
+    # Generate module in temp location
+    mod_path, mod_file = module_handler.make_mod(module_template, general_opts, build_opts, mod_opts, exit_on_missing, overwrite, utils.build_log, utils.exception_log)
 
-    # Make project and module directories, move build and module files
-    utils.install(build_path, script_file)
-    print("Build script location:", build_path)
+    
+    # Make build dir and move tmp file
+    utils.create_install_dir(general_opts['build_prefix'])
+    utils.install(general_opts['build_prefix'], script_file)
+    print('{:25}'.format('Build script location'), ":", general_opts['build_prefix'])
+
+    # Make module dir and move tmp file
+    utils.create_install_dir(mod_path)
     utils.install(mod_path, mod_file)
-    print("Module file location :,", mod_path)
+    print('{:25}'.format('Module file location'), ":", mod_path)
+
+    # Copy code and sched cfg & template files for building run scripts
+    provenance_path = general_opts['build_prefix']+sl+"build_files"
+    utils.create_install_dir(provenance_path)
+
+    utils.install(provenance_path, code_cfg['metadata']['cfg_file'])
+    utils.install(provenance_path, sched_cfg['metadata']['cfg_file'])
+    utils.install(provenance_path, sched_template)
+    utils.install(provenance_path, build_template)
+    utils.install(provenance_path, module_template)
+
+    # Clean up tmp files
+    exception.remove_tmp_files()
 
     # Submit build script to scheduler
-    utils.submit_job(script_file)
+    utils.submit_job(general_opts['build_prefix']+sl+script_file[4:])
 
