@@ -28,7 +28,7 @@ benchtool --remove stampede2/intel18/impi18/lammps/skylake/stable
 
 #H3 Code config file
 Contains parameters which populate the template file
-Label             | Required? | Description
+|Label             | Required? | Description
 | ---             | --- | ---
 |[general]        |   | 
 |code             | Y | Label for application
