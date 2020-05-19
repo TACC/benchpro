@@ -21,52 +21,57 @@ def main():
     cmd_parser = argparse.ArgumentParser(
         description='This is a builder tool for managing appliation benchmarks.')
     cmd_parser.add_argument("--install", default=False,
-                            type=str, help="Name of the code cfg file.")
+                            type=str, help="Name of the code cfg file to install")
     cmd_parser.add_argument("--sched", default="system",
                             type=str, help="Name of the scheduler cfg file.")
+    cmd_parser.add_argument("--run", default=False,
+                            type=str, help="Run an installed application, run '--show-installed' for valid options.")
     cmd_parser.add_argument("--clean", default=False, action='store_true',
                             help="Cleanup temp and log files.")
     cmd_parser.add_argument("--installed", default=False, action='store_true',
                             help="Show all installed applications.")
-    cmd_parser.add_argument("--available", default=False, action='store_true',
+    cmd_parser.add_argument("--avail", default=False, action='store_true',
                             help="Show all available application profiles.")
-    cmd_parser.add_argument("--remove", default="none",
-                            help="Remove an installed application, use output of --show-installed for formatting")
+    cmd_parser.add_argument("--remove", default=False,
+                            help="Remove an installed application, run '--show-installed' for valid options.")
 
 
     args = cmd_parser.parse_args()
+    print()
 
     # Use system default scheduler profile 
     if args.sched == "system":
         args.sched = "slurm-"+os.getenv('TACC_SYSTEM')+".cfg"
 
+    # Start builder
+    if args.install:
+        utils.build_code(args)
+
+    # Start runner
+    elif args.run:
+        utils.build_code(args)
+
     # Cleanup and exit
-    if args.clean:
+    elif args.clean:
         input_handler.clean_temp_files()
-        sys.exit(0)
 
     # Show isntalled and exit
     elif args.installed:
         input_handler.show_installed()
-        sys.exit(0)
 
     # Show available and exit
-    elif args.available:
+    elif args.avail:
         input_handler.show_available()
-        sys.exit(0)
 
     # Remove installation and exit
-    elif args.remove != "none":
+    elif args.remove:
         input_handler.remove_app(args.remove)
-        sys.exit(0)
 
-    # Code name not provided
-    elif not args.install:
+    # No seletion provided
+    else:
         print("Try 'build.py --help' for more information.")
-        sys.exit(0)
-    # Start builder
-    utils.build_code(args)
 
+    print()
     return 0
 
 if __name__ == "__main__":

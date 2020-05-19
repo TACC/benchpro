@@ -73,6 +73,10 @@ def check_code_cfg_contents(cfg_dict, use_default_paths, build_logger, exception
     arch_file = check_file('arch', configs_dir+sl+arch_cfg_file, exception_logger)
     arch_dict = read_cfg_file(arch_file, exception_logger)
 
+
+    # Extract compiler type
+    cfg_dict['build']['compiler_type']   = cfg_dict['modules']['compiler'].split('/')[0]
+
     # Get core count for given system
     try:
         cfg_dict['build']['cores'] = system_dict[cfg_dict['general']['system']]['cores']
@@ -94,7 +98,7 @@ def check_code_cfg_contents(cfg_dict, use_default_paths, build_logger, exception
 
             # Add custom opts to arch opts
             try:
-                cfg_dict['build']['opt_flags'] = "'" + cfg_dict['build']['opt_flags'].replace('"', '').replace('\'', '') + " " + arch_dict[cfg_dict['build']['arch']]['avx'].replace('\'', '') + "'"
+                cfg_dict['build']['opt_flags'] = "'" + cfg_dict['build']['opt_flags'].replace('"', '').replace('\'', '') + " " + arch_dict[cfg_dict['build']['arch']][cfg_dict['build']['compiler_type']].replace('\'', '') + "'"
             except:
                 exception.error_and_quit(exception_logger, "No default optimization flags for "+cfg_dict['build']['arch']+" found in "+arch_cfg_file)
 
@@ -117,7 +121,7 @@ def check_code_cfg_contents(cfg_dict, use_default_paths, build_logger, exception
 
         # Get optimization flags for arch
         try:
-            cfg_dict['build']['opt_flags'] = arch_dict[cfg_dict['build']['arch']]['avx']
+            cfg_dict['build']['opt_flags'] = arch_dict[cfg_dict['build']['arch']][cfg_dict['build']['compiler_type']]
         except:
             exception.error_and_quit(exception_logger, "No default optimization flags for "+cfg_dict['build']['arch']+" found in "+arch_cfg_file)
 

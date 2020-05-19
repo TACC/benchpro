@@ -1,3 +1,4 @@
+
 import glob
 import os
 import time
@@ -42,7 +43,7 @@ def clean_temp_files():
         for f in file_list:
             print(f)
 
-        print("Continuing in", timeout, "seconds...")
+        print("Proceeding in", timeout, "seconds...")
         time.sleep(timeout)
         print("No going back now...")
         deleted = clean_matching_files(file_list)
@@ -70,7 +71,7 @@ def remove_app(code_str):
     app_dir = top_dir + sl + code_str
 
     print("Removing application installed in "+app_dir)
-    print("Continuing in", timeout, "seconds...")
+    print("Proceeding in", timeout, "seconds...")
     time.sleep(timeout)
     print("No going back now...")
 
@@ -83,6 +84,7 @@ def remove_app(code_str):
         print("Warning: Failed to remove application directory "+app_dir)
         print("Skipping")
 
+    print()
     # Detele module dir
     try:
         su.rmtree(mod_dir)
@@ -90,8 +92,6 @@ def remove_app(code_str):
     except:
         print("Warning: no associated module located in "+mod_dir)
         print("Skipping")
-
-    print()
 
 # Get all sub directories 
 def get_subdirs(base):
@@ -115,7 +115,6 @@ def show_installed():
     app_dir = base_dir+sl+"build" 
     start = app_dir.count(sl)
     recurse_down(app_dir, start, start, start+5)
-    print()
 
 # Print applications that can be installed from available cfg files 
 def show_available():
@@ -127,4 +126,3 @@ def show_available():
         code = f.split('/')[-1]
         if not code == "default.cfg":
             print("    "+code[:-4])
-    print()

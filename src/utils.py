@@ -187,8 +187,8 @@ def build_code(args):
     splash.print_splash()
 
     # Init loggers
-    utils.exception_log = utils.start_logging("EXCEPTION", file=exception_log_file+"_"+time_str+".log")
-    utils.build_log = utils.start_logging("BUILD", file=build_log_file+"_"+time_str+".log")
+    utils.exception_log = utils.start_logging("EXCEPTION", file=base_dir+sl+exception_log_file+"_"+time_str+".log")
+    utils.build_log = utils.start_logging("BUILD", file=base_dir+sl+build_log_file+"_"+time_str+".log")
 
     # Parse config input files
     code_cfg  =    cfg_handler.get_cfg('code',     args.install,           use_default_paths, utils.build_log, utils.exception_log)
@@ -210,16 +210,13 @@ def build_code(args):
 
     sched_opts      = sched_cfg['scheduler']
 
-    compiler_opts   = compiler_cfg['common']
+    # Get compiler cmds for gcc/intel
+    compiler_opts = compiler_cfg['common']
+    compiler_opts.update(compiler_cfg[build_opts['compiler_type']])
 
     # Input Checks 
     for mod in mod_opts: 
         check_module_exists(mod_opts[mod])    
-
-    # Check if version is string, if so make int alias using date
-    
-    compiler_type   = mod_opts['compiler'].split('/')[0]
-    compiler_opts.update(compiler_cfg[compiler_type])
 
     # Check if build dir already exists
     check_for_previous_install(general_opts['build_prefix'])
@@ -249,6 +246,8 @@ def build_code(args):
     script = template_handler.populate_template(general_opts, script, utils.build_log)
     script = template_handler.populate_template(mod_opts, script, utils.build_log)
     script = template_handler.populate_template(build_opts, script, utils.build_log)
+    script = template_handler.populate_template(run_opts, script, utils.build_log)
+
     script = template_handler.populate_template(sched_opts, script, utils.build_log)
     script = template_handler.populate_template(compiler_opts, script, utils.build_log)
 
