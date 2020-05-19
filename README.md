@@ -29,6 +29,7 @@ benchtool --remove stampede2/intel18/impi18/lammps/skylake/stable
 
 ### Code config file
 Contains parameters which populate the template file
+
 | Label            | Required?  | Description                                                                      |
 |------------------|------------|----------------------------------------------------------------------------------|
 | [general]        |            | -                                                                                |
