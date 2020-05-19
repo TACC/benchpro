@@ -51,7 +51,7 @@ Contains parameters which populate the template file
 | collect_hw_stats | N          | Runs the hardware state collection tool                                          |
 
 You can define as many additional labels as needed for your application. Eg: additional modules, build options etc.
-This file must be located in `configs/codes`, with the naming scheme [code]_build.cfg
+This file must be located in `configs/codes`, with the naming scheme `[code]_build.cfg`
 
 ### 2. Code template file
 
@@ -59,17 +59,25 @@ This file is the template for the scheduler job script which will compile the ap
 Variables are defined with `<<<[label]>>>` and populated with the variables defined in the config file above.
 The label in the template must match the label used in the config file.  
 
-This file must be located in `templates/codes`, with the naming scheme [code]-[version].build 
+This file must be located in `templates/codes`, with the naming scheme `[code]-[version].build` 
 
 ### 3. Module template file (optional)
 
 You can define you own Lua module template, otherwise a generic one will be created for you.
-
+This file must be located in `templates/codes`, with the naming scheme `[code]-[version].module` 
 
 ## Directory structure
 
-./config - input config files for codes and schedulers
+./config - input config files for codes and schedulers 
+
+
 ./build - default output directory for builds
+
+
 ./src - contains Python functions 
+
+
 ./hw_reporting - tool generate hardware state
+
+
 ./templates - input template files 
