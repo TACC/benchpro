@@ -32,15 +32,15 @@ Global settings are defined in the file `settings.cfg`
 | Label            | Default  | Description                                                                      |
 |------------------|------------|----------------------------------------------------------------------------------|
 | **[builder]**    |            | -                                                                            |
-|dry_run           | True       | Generates job script but does not submit it, useful for testing
-|use_default_paths | True       | Overwrites setting in application config file (below), builds app in default location |
-|overwrite         | False      | If existing installation  is found in build path, replace it                |
-|exit_on_missing   | True       | Exit if template is not fully populates (missing parameters found)            |
-|log_level         | 1          | WIP                                                                      |                
-|exception_log_file| error      | Label for exception log                                                         |                                 
-|build_log_file    | build      | Label for build log                                                              |
-|**[bencher] **        |            |                                                                                  |
-|run_log_file      | run        | Label for run log                                                              |
+| dry_run           | True       | Generates job script but does not submit it, useful for testing
+| use_default_paths | True       | Overwrites setting in application config file (below), builds app in default location |
+| overwrite         | False      | If existing installation  is found in build path, replace it                |
+| exit_on_missing   | True       | Exit if template is not fully populates (missing parameters found)            |
+| log_level         | 1          | WIP                                                                      |                
+| exception_log_file| error      | Label for exception log                                                         |                                 
+| build_log_file    | build      | Label for build log                                                              |
+| **[bencher] **        |            |                                                                                  |
+| run_log_file      | run        | Label for run log                                                              |
 
 ## Adding a new application profile
 
