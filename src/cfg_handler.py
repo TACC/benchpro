@@ -15,12 +15,21 @@ arch_cfg_file       = "architecture_defaults.cfg"
 
 # Check cfg file exists
 def check_file(cfg_type, cfg_name, exception_logger):
-    if not ".cfg" in cfg_name:
-        cfg_name += ".cfg"
-
+    # Format cfg filename
+    suffix = ''
     subdir = ''
-    if   cfg_type == 'code' : subdir = code_cfg_dir
-    elif cfg_type == 'sched': subdir = sched_cfg_dir
+    if   cfg_type == 'code' : 
+        subdir = code_cfg_dir
+        if not "_build" in cfg_name:
+            suffix += "_build"
+
+    elif cfg_type == 'sched': 
+        subdir = sched_cfg_dir
+
+    if not ".cfg" in cfg_name:
+        suffix += ".cfg"
+
+    cfg_name += suffix
 
     cfg_path = base_dir + sl
 
@@ -56,8 +65,18 @@ def get_label(compiler):
 
 # Check the contents of code input cfg file for issues
 def check_code_cfg_contents(cfg_dict, use_default_paths, build_logger, exception_logger):
+
+
+    cfg_dict['build']['ranks'] = "1"
+
+    # Get system from env if not defined
+    if not cfg_dict['general']['system']:
+        build_logger.debug("WARNING: system not defined in '"+cfg_dict['metadata']['cfg_file']+"', getting system label from $TACC_SYSTEM: "+str(os.getenv('TACC_SYSTEM')))
+        cfg_dict['general']['system'] = str(os.getenv('TACC_SYSTEM'))
+        print(cfg_dict['general']['system'])
+
     # Check for missing essential parameters in general section
-    if not cfg_dict['general']['code'] or not cfg_dict['general']['version'] or not cfg_dict['general']['system']:
+    if not cfg_dict['general']['code'] or not cfg_dict['general']['version']:
         exception.error_and_quit(exception_logger, "Missing parameter detected in "+ cfg_dict['metadata']['cfg_file'] + "\n Please ensure at least 'code', 'version' and 'system' are defined in the [general] section.")
 
     # Check for conflicting parameter combinations

@@ -8,8 +8,11 @@ import sys
 
 # Local Imports
 try:
-    import src.utils as utils
+    import src.builder as builder
     import src.input_handler as input_handler
+    import src.bencher as bencher
+    import src.splash as splash
+
 except ImportError as e:
     print("You had an import error, you might be using Python2. Please run 'source load.sh'")
     print(e)
@@ -20,12 +23,17 @@ def main():
     # Parse cmdline args
     cmd_parser = argparse.ArgumentParser(
         description='This is a builder tool for managing appliation benchmarks.')
+
     cmd_parser.add_argument("--install", default=False,
                             type=str, help="Name of the code cfg file to install")
     cmd_parser.add_argument("--sched", default="system",
                             type=str, help="Name of the scheduler cfg file.")
+
     cmd_parser.add_argument("--run", default=False,
                             type=str, help="Run an installed application, run '--show-installed' for valid options.")
+    cmd_parser.add_argument("--inputs", default=False,
+                            type=str, help="Config file containing run parameters.")
+
     cmd_parser.add_argument("--clean", default=False, action='store_true',
                             help="Cleanup temp and log files.")
     cmd_parser.add_argument("--installed", default=False, action='store_true',
@@ -37,7 +45,10 @@ def main():
 
 
     args = cmd_parser.parse_args()
-    print()
+
+    # Print splash
+    splash.print_splash()
+
 
     # Use system default scheduler profile 
     if args.sched == "system":
@@ -45,11 +56,15 @@ def main():
 
     # Start builder
     if args.install:
-        utils.build_code(args)
+        builder.build_code(args)
 
     # Start runner
     elif args.run:
-        utils.build_code(args)
+        if not args.inputs:
+            print("--inputs required for running benchmark")
+            sys.exit(1)
+
+        bencher.run_bench(args)
 
     # Cleanup and exit
     elif args.clean:

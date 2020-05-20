@@ -1,0 +1,23 @@
+
+export    run_path=<<<run_path>>>
+export          exe=<<<exe>>>
+export           x=<<<x>>>
+export           y=<<<y>>>
+export           z=<<<z>>>
+export           t=<<<t>>>
+export base_module=<<<base_mod>>>
+export  app_module=<<<app_mod>>>
+
+cd $run_path
+
+export OMP_NUM_THREADS=<<<threads>>>
+
+ml use $base_module
+ml $app_module
+ml
+
+wget https://lammps.sandia.gov/bench/in.lj.txt
+
+ibrun $exe -sf intel -V x $x -V y $y -V z $z -v t $t < in.lj.txt
+
+
