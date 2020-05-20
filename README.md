@@ -1,10 +1,18 @@
 # bench-framework
 Framework to automate benchmarking of largescale HPC systems
 
+Currently there are 5 application profiles available for testing:
+   - OpenFoam
+   - LAMMPS
+   - WRF
+   - Quantum Espresso
+   - SWIFTsim
+
 ## Gettiing Started
 
+The following steps should produce a working installation of LAMMPS. Tested on Stampede2 and Frontera.
 ```
-git clone
+git clone https://gitlab.tacc.utexas.edu/mcawood/bench-framework
 cd bench-framework
 source load_env.sh
 ```
@@ -22,8 +30,27 @@ benchtool --installed
 ```
 Remove intalled application
 ```
-benchtool --remove stampede2/intel18/impi18/lammps/skylake/stable
+benchtool --remove [output from above]
 ```
+
+By default `dry_run=True` in `settings.cfg` so the build script was created but not submitted to the scheduler.
+Change `dry_run=False` and rerun 
+```
+benchtool --install lammps
+```
+You should see the job has been submitted. After the job is complete rerun 
+```
+source load_env.sh
+``` 
+to update your MODULEPATH, confirm LAMMPS is an available module
+```
+ml avail
+```
+load the module and confirm that the LAMMPS binary is in your PATH
+```
+which lmp_intel_cpu_intelmpi
+```
+
 
 ## Global settings
 
