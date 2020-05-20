@@ -60,8 +60,6 @@ def populate_mod_template(module, mod_dict, build_logger, exception_logger):
 
     mod_dict['install_dir'] = top_dir + sl + "build" + sl + mod_dict['system'] + sl + get_label(mod_dict['compiler']) + sl + get_label(mod_dict['mpi']) + sl + mod_dict['code'] + sl + mod_dict['opt_label'] + sl + mod_dict['version'] + sl + "install"
 
-    if mod_dict['bin_dir']: mod_dict['install_dir'] += sl + mod_dict['bin_dir']
-
     for key in mod_dict:
         build_logger.debug("replace " + "<<<" + key + ">>> with " + mod_dict[key])
         module = module.replace("<<<" + key + ">>>", mod_dict[key])
