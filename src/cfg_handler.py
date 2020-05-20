@@ -59,8 +59,10 @@ def read_cfg_file(cfg_file, exception_logger):
 
 # Convert module name to directory name
 def get_label(compiler):
-    comp_ver = compiler.split("/")
-    label = comp_ver[0]+comp_ver[1].split(".")[0]
+    label = compiler
+    if compiler.count(sl) > 0:
+        comp_ver = compiler.split(sl)
+        label = comp_ver[0]+comp_ver[1].split(".")[0]
     return label
 
 # Check the contents of code input cfg file for issues

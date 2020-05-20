@@ -25,12 +25,6 @@ def check_inputs(mod_dict, mod_path, overwrite, build_logger, exception_logger):
         exception_logger.debug("Exitting")
         sys.exit(1)
 
-    if not ("/" in mod_dict['compiler']):
-        exception.error_and_quit(exception_logger, "Please provide full compiler module name. Eg: 'intel/18.0.2'")
-
-    if not ("/" in mod_dict['mpi']):
-        exception.error_and_quit(exception_logger, "Please provide full MPI module name. Eg: 'impi/18.0.2'")
-
     # Check if module already exists
     if os.path.isdir(mod_path):
 
@@ -44,8 +38,10 @@ def check_inputs(mod_dict, mod_path, overwrite, build_logger, exception_logger):
 
 # Convert compiler/MPI string to directory label
 def get_label(compiler):
-    comp_ver = compiler.split("/")
-    label = comp_ver[0]+comp_ver[1].split(".")[0]
+    label = compiler
+    if compiler.count(sl) > 0:
+        comp_ver = compiler.split(sl)
+        label = comp_ver[0]+comp_ver[1].split(".")[0]
     return label
 
 # Copy template to target dir
@@ -64,7 +60,7 @@ def populate_mod_template(module, mod_dict, build_logger, exception_logger):
 
     mod_dict['install_dir'] = top_dir + sl + "build" + sl + mod_dict['system'] + sl + get_label(mod_dict['compiler']) + sl + get_label(mod_dict['mpi']) + sl + mod_dict['code'] + sl + mod_dict['opt_label'] + sl + mod_dict['version'] + sl + "install"
 
-    if mod_dict['bin_dir']: mod_dict += sl + mod_dict['bin_dir']
+    if mod_dict['bin_dir']: mod_dict['install_dir'] += sl + mod_dict['bin_dir']
 
     for key in mod_dict:
         build_logger.debug("replace " + "<<<" + key + ">>> with " + mod_dict[key])
