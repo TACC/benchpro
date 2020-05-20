@@ -33,6 +33,8 @@ benchtool --install lammps
 benchtool --installed
 ```
 By default `dry_run=True` in `settings.cfg` so the build script was created but not submitted to the scheduler. You could submit the job manually, or
+
+
 5 remove the dry_run build:
 ```
 benchtool --remove [output from above]
