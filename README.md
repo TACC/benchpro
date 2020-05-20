@@ -11,20 +11,23 @@ Currently there are 5 application profiles available for testing:
 ## Gettiing Started
 
 The following steps should produce a working installation of LAMMPS. Tested on Stampede2 and Frontera.
+
+
+Download and setup env: 
 ```
 git clone https://gitlab.tacc.utexas.edu/mcawood/bench-framework
 cd bench-framework
 source load_env.sh
 ```
-Show list of applications available to install
+Show list of applications available to install:
 ```
 benchtool --avail
 ```
-Install a new application
+Install a new application:
 ```
 benchtool --install lammps
 ```
-Show list of applications currently installed
+Show list of applications currently installed:
 ```
 benchtool --installed
 ```
@@ -33,19 +36,19 @@ By default `dry_run=True` in `settings.cfg` so the build script was created but 
 ```
 benchtool --remove [output from above]
 ```
-change `dry_run=False` and rerun 
+change `dry_run=False` and rerun: 
 ```
 benchtool --install lammps
 ```
-You should see the job has been submitted. After the job is complete, update your MODULEPATH 
+You should see the job has been submitted. After the job is complete, update your MODULEPATH:
 ```
 source load_env.sh
 ``` 
-and confirm LAMMPS is an available module
+and confirm the LAMMPS module is available:
 ```
 ml avail
 ```
-load the LAMMPS module and confirm that the LAMMPS binary is in your PATH
+load the LAMMPS module and confirm that the LAMMPS binary is in your PATH:
 ```
 ml [lammps_module]
 which lmp_intel_cpu_intelmpi
