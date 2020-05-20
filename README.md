@@ -39,7 +39,7 @@ Global settings are defined in the file `settings.cfg`
 |log_level         | 1          | WIP                                                                      |                
 |exception_log_file| error      | Label for exception log                                                         |                                 
 |build_log_file    | build      | Label for build log                                                              |
-|[bencher]         |            |                                                                                  |
+|**[bencher] **        |            |                                                                                  |
 |run_log_file      | run        | Label for run log                                                              |
 
 ## Adding a new application profile
