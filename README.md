@@ -43,29 +43,30 @@ Global settings are defined in the file `settings.cfg`
 | run_log_file      | run        | Label for run log                                                              |
 
 ## Adding a new application profile
+The builder requires two input files to build an application: a config file containing contextualization parameters, and a build template file which will be populated with this parameters. 
 
-### 1. Code config file
-Contains parameters which populate the template file
+### 1. Contextualization Config file
+This file contains parameters which populate the template file, the file is broken in sections corresponding to general settings, system modules required, build and run parameters.
 
 | Label            | Required?  | Description                                                                      |
 |------------------|------------|----------------------------------------------------------------------------------|
-| **[general]**        |            | -                                                                            |
+| **[general]**        |            |                                                                           |
 | code             | Y          | Label for application                                                            |
 | version          | Y          | Version, in the form x.x, x-x, or string like 'stable'                           |
 | system           | N          | TACC system identifier, if left blank will use $TACC_SYSTEM                      |
 | build_prefix     | N          | Custom build (outside of default tree)                                           |
 | test_install     | N          | Read sanity check once compile is complete (WIP)                                 |
-| **[modules]**        |            | -                                                                            |
-| compiler         | Y          | Full module name of compile, eg: intel/18.0.2                                    |
-| mpi              | Y          | Full module name of MPI, eg: impi/18.0.2                                         |
-| **[build]**         |            | -                                                                             |
-| arch             | N          | Provides arch specific optimization flag. If left blank with use system default  | 
-| opt_flags        | N          | Can be used in conjunction with 'arch' above.                                    |
-| opt_label        | N          | Custom build label, required if opt_flags is set and arch is not                 |
-| bin_dir          | N          | Set bin dir suffix to add exectuable to PATH                                     | 
-| **[run]**            |            | -                                                                            |
+| **[modules]**        |            |                                                                         |
+| compiler         | Y          | Module name of compile, eg: 'intel/18.0.2' or just 'intel' for system default.   |
+| mpi              | Y          | Module name of MPI, eg: 'impi/18.0.2' or just 'impi' for system default.          |
+| **[build]**         |            |                                                                           |
+| arch             | N          | Generates archicture specific optimization flags. If left blank will use system default, set to 'system' to combine with 'opt_flags' below  | 
+| opt_flags        | N          | Used to add additional optimization flags, eg: '-g -ipo'  etc.  If arch is not set, this will be only optimzation flags used.        |
+| opt_label        | N          | Custom build label, replaces arch default eg: skylake-xeon. Required if 'opt_flags' is set and 'arch' is not                 |
+| bin_dir          | N          | Set bin dir suffix to add exectuable to PATH, eg: bin, run etc.                                     | 
+| **[run]**            |            |                                                                          |
 | exe              | Y          | Name of application executable                                                   |
-| collect_hw_stats | N          | Runs the hardware state collection tool                                          |
+| collect_hw_stats | N          | Runs the hardware state collection tool before benchmark                                         |
 
 You can define as many additional labels as needed for your application. Eg: additional modules, build options etc.
 This file must be located in `configs/codes`, with the naming scheme `[code]_build.cfg`
