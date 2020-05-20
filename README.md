@@ -28,6 +28,7 @@ benchtool --remove stampede2/intel18/impi18/lammps/skylake/stable
 ## Global settings
 
 Global settings are defined in the file `settings.cfg`
+
 | Label            | Default  | Description                                                                      |
 |------------------|------------|----------------------------------------------------------------------------------|
 | **[builder]**    |            | -                                                                            |
