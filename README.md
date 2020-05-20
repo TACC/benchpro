@@ -28,26 +28,27 @@ Show list of applications currently installed
 ```
 benchtool --installed
 ```
+By default `dry_run=True` in `settings.cfg` so the build script was created but not submitted to the scheduler. You could submit the job manually, or remove the dry_run build: 
+
 Remove intalled application
 ```
 benchtool --remove [output from above]
 ```
-
-By default `dry_run=True` in `settings.cfg` so the build script was created but not submitted to the scheduler.
-Change `dry_run=False` and rerun 
+change `dry_run=False` and rerun 
 ```
 benchtool --install lammps
 ```
-You should see the job has been submitted. After the job is complete rerun 
+You should see the job has been submitted. After the job is complete, update your MODULEPATH 
 ```
 source load_env.sh
 ``` 
-to update your MODULEPATH, confirm LAMMPS is an available module
+and confirm LAMMPS is an available module
 ```
 ml avail
 ```
-load the module and confirm that the LAMMPS binary is in your PATH
+load the LAMMPS module and confirm that the LAMMPS binary is in your PATH
 ```
+ml [lammps_module]
 which lmp_intel_cpu_intelmpi
 ```
 
