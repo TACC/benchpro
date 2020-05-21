@@ -1,9 +1,10 @@
 
 import glob
 import os
-import time
 import shutil as su
 import sys
+import time
+
 
 class init(object):
    def __init__(self, gs):

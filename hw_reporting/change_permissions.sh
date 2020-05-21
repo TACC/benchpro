@@ -20,4 +20,3 @@ do
   chown root.root $PREFIX/$i
   chmod 4755 $PREFIX/$i
 done
- 

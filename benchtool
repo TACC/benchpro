@@ -19,6 +19,7 @@ except ImportError as e:
     print(e)
     sys.exit(1)
 
+
 def main():
     # Parse cmdline args
     cmd_parser = argparse.ArgumentParser(
@@ -50,12 +51,11 @@ def main():
     # Print splash
     splash.print_splash(gs)
 
-    # Use system default scheduler profile 
+    # Use system default scheduler profile
     if args.sched == "system":
-        args.sched = "slurm-"+os.getenv('TACC_SYSTEM')+".cfg"
+        args.sched = "slurm-" + os.getenv('TACC_SYSTEM') + ".cfg"
 
     handler = input_handler.init(gs)
-
 
     # Start builder
     if args.install:
@@ -87,6 +87,7 @@ def main():
 
     print()
     return 0
+
 
 if __name__ == "__main__":
     sys.exit(main())
