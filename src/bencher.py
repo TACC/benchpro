@@ -10,12 +10,11 @@ import time
 import src.builder as builder
 import src.exception as exception
 import src.cfg_handler as cfg_handler
+import src.global_settings as gs
 import src.splash as splash
 import src.template_handler as template_handler
 
-sl = '/'
-base_dir            = sl.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1])
-time_str            = datetime.now().strftime("%Y-%m-%d_%Hh%M")
+logger              = ''
 
 # Check input
 def get_subdirs(base):
@@ -25,20 +24,19 @@ def get_subdirs(base):
 def recurse_down(installed_list, app_dir, start_depth, current_depth, max_depth):
     for d in get_subdirs(app_dir):
         if d != 'modulefiles':
-            new_dir = app_dir + sl + d
+            new_dir = app_dir + gs.sl + d
             if current_depth == max_depth:
-                installed_list.append(sl.join(new_dir.split(sl)[start_depth+1:]))
+                installed_list.append(gs.sl.join(new_dir.split(gs.sl)[start_depth+1:]))
             else:
                 recurse_down(installed_list, new_dir, start_depth, current_depth+1, max_depth)
 
 # Print currently installed apps, used together with 'remove'
 def get_installed():
-    app_dir = base_dir+sl+"build"
-    start = app_dir.count(sl)
+    app_dir = gs.base_dir + gs.sl + "build"
+    start = app_dir.count(gs.sl)
     installed_list = []
     recurse_down(installed_list, app_dir, start, start, start+5)
     return installed_list
-
 
 def check_if_installed(requested_code):
     installed_list = get_installed()
@@ -54,8 +52,7 @@ def check_if_installed(requested_code):
         sys.exit(1)
 
     elif len(matched_codes) == 1:
-        print("Using application installed in:")
-        print("    "+matched_codes[0])
+        print("Using application installed in: "+matched_codes[0])
         return matched_codes[0]
 
     else:
@@ -66,7 +63,8 @@ def check_if_installed(requested_code):
 
 def run_bench(args):
 
-    run_log = builder.start_logging("RUN", file=base_dir+sl+builder.run_log_file+"_"+time_str+".log")
+    global logger
+    logger = builder.start_logging("RUN", file=gs.base_dir + gs.sl + gs.run_log_file + "_"+ gs.time_str + ".log")
 
     # Get path to application
     code_path = check_if_installed(args.run)
@@ -75,42 +73,45 @@ def run_bench(args):
     code      = code_dict[3]
     version   = code_dict[5]
 
-    param_cfg = cfg_handler.get_cfg('param',    args.inputs, builder.use_default_paths, run_log, run_log)
-    sched_cfg = cfg_handler.get_cfg('sched',    args.sched,  builder.use_default_paths, run_log, run_log)
 
-    session = code+"-"+time_str
+    if not args.params:
+        args.params = code
+        print("WARNING: No input parameters (--params) given, using defaults for debugging." )        
+        
 
-    param_cfg['bench']['run_path']     = base_dir + sl + 'build' + sl + code_path + sl + session
-    param_cfg['bench']['base_mod']     = base_dir + sl + 'build' + sl + 'modulefiles' 
+    param_cfg = cfg_handler.get_cfg('run',   args.params, logger)
+    sched_cfg = cfg_handler.get_cfg('sched', args.sched,  logger)
+
+    session = code+"-"+gs.time_str
+
+    # Path to benchmark session directory
+    param_cfg['bench']['working_path']     = gs.base_dir + gs.sl + 'build' + gs.sl + code_path + gs.sl + session
+    # Path to application's data directory
+    param_cfg['bench']['dataset_path']     = gs.base_dir + gs.sl + 'datasets' + gs.sl + code 
+    # Directory to add to MODULEPATH
+    param_cfg['bench']['base_mod']     = gs.base_dir + gs.sl + 'build' + gs.sl + 'modulefiles' 
+    # Directory to application installation
     param_cfg['bench']['app_mod']      = code_path
-    param_cfg['bench']['project_path'] = param_cfg['bench']['run_path']
-
+    # Get total ranks from nodes * ranks_per_node
     param_cfg['sched']['ranks'] = int(param_cfg['sched']['nodes']) * int(param_cfg['sched']['ranks_per_node'])
 
     # Template files
-    sched_template    = base_dir + sl + builder.template_dir + sl + "sched" + sl + sched_cfg['scheduler']['type'] + ".template"
-    run_template      = base_dir + sl + builder.template_dir + sl + "codes" + sl + code + "-" + version + ".run"
+    sched_template    = gs.sched_tmpl_dir + gs.sl + sched_cfg['scheduler']['type'] + ".template"
+    run_template      = gs.run_tmpl_dir + gs.sl + code + "-" + version + ".run"
  
     script_file         = "tmp." + code + "-run." + sched_cfg['scheduler']['type']
 
-    # Copy template files
-    template_handler.construct_template([sched_template, run_template], script_file)
-    script = open(script_file).read()
+    # Generate template
+    template_handler.generate_template([param_cfg['sched'], param_cfg['bench'], sched_cfg['scheduler']], 
+                                       [sched_template, run_template],
+                                       script_file, logger)
+    
+    print("Benchmark working directory = "+param_cfg['bench']['working_path'])
 
-    # Populate template
-    script = template_handler.populate_template(param_cfg['sched'], script, run_log)
-    script = template_handler.populate_template(param_cfg['bench'], script, run_log)
-    script = template_handler.populate_template(sched_cfg['scheduler'], script, run_log)
+    builder.create_install_dir(param_cfg['bench']['working_path'], logger)
 
-    template_handler.test_template(script, builder.exit_on_missing, run_log, run_log)
-    template_handler.write_template(script_file, script)
-
-    print("Benchmark working directory = "+param_cfg['bench']['run_path'])
-
-    builder.create_install_dir(param_cfg['bench']['run_path'], run_log)
-
-    builder.install(param_cfg['bench']['run_path'], script_file, run_log)   
+    builder.install(param_cfg['bench']['working_path'], script_file, logger)   
 
     exception.remove_tmp_files()
 
-    builder.submit_job(param_cfg['bench']['run_path']+sl+script_file[4:], run_log, run_log)
+    builder.submit_job(param_cfg['bench']['working_path'] + gs.sl + script_file[4:], logger)

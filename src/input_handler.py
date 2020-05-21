@@ -5,15 +5,13 @@ import time
 import shutil as su
 import sys
 
-sl                  = "/"
-base_dir            = sl.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1])
-timeout 	    = 5
+import src.global_settings as gs
 
 # Get list of files matching search 
 def find_matching_files(search_dict):
     file_list=[]
     for search in search_dict:
-        file_list += glob.glob(base_dir+sl+search)
+        file_list += glob.glob(gs.base_dir + gs.sl + search)
     return file_list   
 
 # Delete matching files
@@ -43,8 +41,8 @@ def clean_temp_files():
         for f in file_list:
             print(f)
 
-        print("Proceeding in", timeout, "seconds...")
-        time.sleep(timeout)
+        print("Proceeding in", gs.timeout, "seconds...")
+        time.sleep(gs.timeout)
         print("No going back now...")
         deleted = clean_matching_files(file_list)
         print("Done, ", str(deleted), " files successfuly cleaned.")
@@ -62,17 +60,17 @@ def remove_app(code_str):
 
     code_dict = code_str.split('/')
 
-    top_dir = base_dir
+    top_dir = gs.base_dir
     if not code_dict[0] == "build":
-       top_dir += sl + "build"
+       top_dir += gs.sl + "build"
 
     # Get module dir from app dir, by adding 'modulefiles' prefix and stripping [version] suffix
-    mod_dir = top_dir + sl + "modulefiles" + sl + sl.join(code_dict[:-1])
-    app_dir = top_dir + sl + code_str
+    mod_dir = top_dir + gs.sl + "modulefiles" + gs.sl + gs.sl.join(code_dict[:-1])
+    app_dir = top_dir + gs.sl + code_str
 
     print("Removing application installed in "+app_dir)
-    print("Proceeding in", timeout, "seconds...")
-    time.sleep(timeout)
+    print("Proceeding in", gs.timeout, "seconds...")
+    time.sleep(gs.timeout)
     print("No going back now...")
 
     # Delete application dir
@@ -102,9 +100,9 @@ def get_subdirs(base):
 def recurse_down(app_dir, start_depth, current_depth, max_depth):
     for d in get_subdirs(app_dir):
         if d != 'modulefiles':
-            new_dir = app_dir + sl + d
+            new_dir = app_dir + gs.sl + d
             if current_depth == max_depth:
-                print("    "+sl.join(new_dir.split(sl)[start_depth+1:]))
+                print("    "+gs.sl.join(new_dir.split(gs.sl)[start_depth+1:]))
             else:
                 recurse_down(new_dir, start_depth, current_depth+1, max_depth)
 
@@ -112,17 +110,20 @@ def recurse_down(app_dir, start_depth, current_depth, max_depth):
 def show_installed():
     print("Currently installed applications:")
     print("---------------------------------")
-    app_dir = base_dir+sl+"build" 
-    start = app_dir.count(sl)
+    app_dir = gs.base_dir + gs.sl + "build" 
+    start = app_dir.count(gs.sl)
     recurse_down(app_dir, start, start, start+5)
 
 # Print applications that can be installed from available cfg files 
 def show_available():
     print("Available application profiles:")
     print("---------------------------------")
-    app_dir = base_dir+sl+"config"+sl+"codes"+sl
+    app_dir = gs.base_dir + gs.sl + "config" + gs.sl + "build" + gs.sl
     temp_files = glob.glob(app_dir+"*.cfg")    
     for f in temp_files:
         code = f.split('/')[-1]
-        if not code == "default.cfg":
+        if "_build" in code:
+            print("    "+code[:-10])
+        else:
             print("    "+code[:-4])
+

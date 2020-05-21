@@ -31,7 +31,7 @@ def main():
 
     cmd_parser.add_argument("--run", default=False,
                             type=str, help="Run an installed application, run '--show-installed' for valid options.")
-    cmd_parser.add_argument("--inputs", default=False,
+    cmd_parser.add_argument("--params", default=False,
                             type=str, help="Config file containing run parameters.")
 
     cmd_parser.add_argument("--clean", default=False, action='store_true',
@@ -60,10 +60,6 @@ def main():
 
     # Start runner
     elif args.run:
-        if not args.inputs:
-            print("--inputs required for running benchmark")
-            sys.exit(1)
-
         bencher.run_bench(args)
 
     # Cleanup and exit

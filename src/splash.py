@@ -2,7 +2,7 @@ from datetime import datetime
 import os
 import socket
 
-sl           = '/'
+import src.global_settings as gs
 
 # Print welcome splash
 def print_splash():
@@ -13,8 +13,8 @@ def print_splash():
     print("    /_____/_____/_/ |_/\____/_/ /_/    /_/  \____/\____/_____/")
 
     print("------------------------------------------------------------------")
-    print("User         :", str(os.getlogin()))
-    print("System       :", str(socket.gethostname()))
-    print("Working dir  :", sl.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
-    print("Date         :", datetime.now())
+    print("User         :", gs.user)
+    print("System       :", gs.hostname)
+    print("Working dir  :", gs.base_dir)
+    print("Date         :", gs.time_str)
     print("")
