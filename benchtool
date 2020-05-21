@@ -8,9 +8,10 @@ import sys
 
 # Local Imports
 try:
-    import src.builder as builder
-    import src.input_handler as input_handler
     import src.bencher as bencher
+    import src.builder as builder
+    import src.global_settings as global_settings
+    import src.input_handler as input_handler
     import src.splash as splash
 
 except ImportError as e:
@@ -19,7 +20,6 @@ except ImportError as e:
     sys.exit(1)
 
 def main():
-
     # Parse cmdline args
     cmd_parser = argparse.ArgumentParser(
         description='This is a builder tool for managing appliation benchmarks.')
@@ -42,17 +42,20 @@ def main():
                             help="Show all available application profiles.")
     cmd_parser.add_argument("--remove", default=False,
                             help="Remove an installed application, run '--show-installed' for valid options.")
-
-
     args = cmd_parser.parse_args()
 
-    # Print splash
-    splash.print_splash()
+    # Get global settings
+    gs = global_settings.init()
 
+    # Print splash
+    splash.print_splash(gs)
 
     # Use system default scheduler profile 
     if args.sched == "system":
         args.sched = "slurm-"+os.getenv('TACC_SYSTEM')+".cfg"
+
+    handler = input_handler.init(gs)
+
 
     # Start builder
     if args.install:
@@ -64,19 +67,19 @@ def main():
 
     # Cleanup and exit
     elif args.clean:
-        input_handler.clean_temp_files()
+        handler.clean_temp_files()
 
     # Show isntalled and exit
     elif args.installed:
-        input_handler.show_installed()
+        handler.show_installed()
 
     # Show available and exit
     elif args.avail:
-        input_handler.show_available()
+        handler.show_available()
 
     # Remove installation and exit
     elif args.remove:
-        input_handler.remove_app(args.remove)
+        handler.remove_app(args.remove)
 
     # No seletion provided
     else:

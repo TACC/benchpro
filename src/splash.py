@@ -2,10 +2,8 @@ from datetime import datetime
 import os
 import socket
 
-import src.global_settings as gs
-
 # Print welcome splash
-def print_splash():
+def print_splash(gs):
     print("        ____  _______   __________  __   __________  ____  __ ")
     print("       / __ )/ ____/ | / / ____/ / / /  /_  __/ __ \/ __ \/ / ")
     print("      / __  / __/ /  |/ / /   / /_/ /    / / / / / / / / / /  ")

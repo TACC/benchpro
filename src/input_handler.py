@@ -5,8 +5,6 @@ import time
 import shutil as su
 import sys
 
-import src.global_settings as gs
-
 # Get list of files matching search 
 def find_matching_files(search_dict):
     file_list=[]
@@ -126,4 +124,9 @@ def show_available():
             print("    "+code[:-10])
         else:
             print("    "+code[:-4])
+
+
+class init(object):
+   def __init__(self, gs):
+      self.gs = gs
 
