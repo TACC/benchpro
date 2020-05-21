@@ -59,11 +59,11 @@ def main():
 
     # Start builder
     if args.install:
-        builder.build_code(args)
+        builder.build_code(args, gs)
 
     # Start runner
     elif args.run:
-        bencher.run_bench(args)
+        bencher.run_bench(args, gs)
 
     # Cleanup and exit
     elif args.clean:

@@ -4,14 +4,13 @@ import os
 import sys
 
 import src.exception as exception
-import src.global_settings as gs
 
-logger = ''
+logger, gs = ''
 
 # Check cfg file exists
 
 
-def check_file(cfg_type, cfg_name, logger):
+def check_file(cfg_type, cfg_name):
     # Format cfg filename
     suffix = ''
     subdir = ''
@@ -49,14 +48,14 @@ def check_file(cfg_type, cfg_name, logger):
 
     if not os.path.isfile(cfg_path + cfg_name):
         exception.error_and_quit(
-            logger, "Input file \"" + cfg_name + "\" not found.")
+            logger, "Input file '" + cfg_name + "' not found.")
 
     return cfg_path + cfg_name
 
 # Read cfg file into dict
 
 
-def read_cfg_file(cfg_file, logger):
+def read_cfg_file(cfg_file):
     cfg_parser = cp.RawConfigParser()
     cfg_parser.read(cfg_file)
 
@@ -81,7 +80,7 @@ def get_label(compiler):
 # Parse the contents of build cfg file, add metadata and check for issues
 
 
-def process_build_cfg(cfg_dict, logger):
+def process_build_cfg(cfg_dict):
 
     # Insert 1 node for build
     cfg_dict['build']['ranks'] = "1"
@@ -184,18 +183,17 @@ def process_build_cfg(cfg_dict, logger):
         cfg_dict['general']['build_prefix'] = gs.base_dir + gs.sl + "build" + gs.sl + cfg_dict['general']['system'] + gs.sl + get_label(cfg_dict['modules']['compiler']) + gs.sl + get_label(
             cfg_dict['modules']['mpi']) + gs.sl + cfg_dict['general']['code'] + gs.sl + cfg_dict['build']['opt_label'] + gs.sl + cfg_dict['general']['version']
 
-    return cfg_dict
 
 # Parse the contents of run cfg file, add metadata and check for issues
 
 
-def process_run_cfg(cfg_dict, logger):
+def process_run_cfg(cfg_dict):
     print()
 
 # Parse the contents of sched cfg file, add metadata and check for issues
 
 
-def process_sched_cfg(cfg_dict, logger):
+def process_sched_cfg(cfg_dict):
 
     # Check for missing essential parameters in general section
     if not cfg_dict['scheduler']['type'] or not cfg_dict['scheduler']['queue'] or not cfg_dict['scheduler']['account']:
@@ -210,23 +208,21 @@ def process_sched_cfg(cfg_dict, logger):
     if not cfg_dict['scheduler']['job_label']:
         cfg_dict['scheduler']['threads'] = 4
 
-    return cfg_dict
+def get_cfg(cfg_type, cfg_name, settings,  log_to_use):
 
-
-def get_cfg(cfg_type, cfg_name,  log_to_use):
-
-    global logger
+    global logger, gs 
     logger = log_to_use
+    gs = settings
 
-    cfg_file = check_file(cfg_type, cfg_name, logger)
-    cfg_dict = read_cfg_file(cfg_file, logger)
+    cfg_file = check_file(cfg_type, cfg_name)
+    cfg_dict = read_cfg_file(cfg_file)
 
     # Start the appropriate processing function for cfg type
     if cfg_type == 'build':
-        process_build_cfg(cfg_dict, logger)
+        process_build_cfg(cfg_dict)
     elif cfg_type == 'run':
-        process_run_cfg(cfg_dict, logger)
+        process_run_cfg(cfg_dict)
     elif cfg_type == 'sched':
-        process_sched_cfg(cfg_dict, logger)
+        process_sched_cfg(cfg_dict)
 
     return cfg_dict

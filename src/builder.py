@@ -15,14 +15,12 @@ from datetime import datetime
 # Local Imports
 import src.cfg_handler as cfg_handler
 import src.exception as exception
-import src.global_settings as gs
 import src.module_handler as module_handler
 import src.template_handler as template_handler
 
-logger = ''
+gs     = ''
 
-
-def start_logging(name, file,):
+def start_logging(name, file):
 
     print("Log file for this session:   " + str(file))
 
@@ -177,17 +175,19 @@ def submit_job(script_file, logger):
 # Main methond for generating and submitting build script
 
 
-def build_code(args):
+def build_code(args, settings):
+
+    global gs
+	gs = settings
 
     # Init loggers
-    global logger
     logger = start_logging("BUILD", file=gs.base_dir +
                            gs.sl + gs.build_log_file + "_" + gs.time_str + ".log")
 
     # Parse config input files
-    code_cfg = cfg_handler.get_cfg('build',     args.install,        logger)
-    sched_cfg = cfg_handler.get_cfg('sched',    args.sched,          logger)
-    compiler_cfg = cfg_handler.get_cfg('compiler', 'compile-flags.cfg', logger)
+    code_cfg =     cfg_handler.get_cfg('build',    args.install,        gs, logger)
+    sched_cfg =    cfg_handler.get_cfg('sched',    args.sched,          gs, logger)
+    compiler_cfg = cfg_handler.get_cfg('compiler', 'compile-flags.cfg', gs, logger)
 
     print('{:25}'.format('Using application config'),
           ":", code_cfg['metadata']['cfg_file'])
@@ -242,11 +242,11 @@ def build_code(args):
     template_handler.generate_template([code_cfg['general'], code_cfg['modules'], code_cfg['build'], code_cfg['run'], sched_cfg['scheduler'], compiler_cfg['common']],
                                        [sched_template, compiler_template,
                                            build_template],
-                                       script_file, logger)
+                                       script_file, gs, logger)
 
     # Generate module in temp location
     mod_path, mod_file = module_handler.make_mod(
-        module_template, code_cfg['general'], code_cfg['build'], code_cfg['modules'], logger)
+        module_template, code_cfg['general'], code_cfg['build'], code_cfg['modules'], gs, logger)
 
     # Make build dir and move tmp file
     create_install_dir(code_cfg['general']['build_prefix'], logger)

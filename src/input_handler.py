@@ -123,10 +123,10 @@ class init(object):
         recurse_down(app_dir, start, start, start + 5)
 
     # Print applications that can be installed from available cfg files
-    def show_available():
+    def show_available(self):
         print("Available application profiles:")
         print("---------------------------------")
-        app_dir = gs.base_dir + gs.sl + "config" + gs.sl + "build" + gs.sl
+        app_dir = self.gs.base_dir + self.gs.sl + "config" + self.gs.sl + "build" + self.gs.sl
         temp_files = glob.glob(app_dir + "*.cfg")
         for f in temp_files:
             code = f.split('/')[-1]

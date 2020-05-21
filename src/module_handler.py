@@ -6,12 +6,13 @@ import shutil as su
 import sys
 
 import src.exception as exception
-import src.global_settings as gs
+
+logger, gs = ''
 
 # Check inputs for module creation
 
 
-def check_inputs(mod_dict, mod_path, logger):
+def check_inputs(mod_dict, mod_path):
 
     if (not mod_dict['system']) or (not mod_dict['compiler']) or (not mod_dict['mpi']) or (not mod_dict["code"]) or (not mod_dict['version']):
         logger.debug("Missing full application definition:")
@@ -50,7 +51,7 @@ def get_label(compiler):
 # Copy template to target dir
 
 
-def copy_mod_template(template_file, mod_file, logger):
+def copy_mod_template(template_file, mod_file):
     try:
         with open(mod_file, 'wb') as out:
             with open(template_file, 'rb') as inp:
@@ -62,7 +63,7 @@ def copy_mod_template(template_file, mod_file, logger):
 # Replace <<<>>> vars in copied template
 
 
-def populate_mod_template(module, mod_dict, logger):
+def populate_mod_template(module, mod_dict):
     mod_dict['mods'] = ', '.join('"{0}"'.format(w) for w in mod_dict['mods'])
     mod_dict['caps_code'] = mod_dict['code'].upper()
 
@@ -97,7 +98,11 @@ def write_mod_file(module, mod_file):
 # Make module for compiled appliation
 
 
-def make_mod(template_file, general_opts, build_opts, mod_opts, logger):
+def make_mod(template_file, general_opts, build_opts, mod_opts, settings, log_to_use):
+
+    global logger, gs
+	logger = log_to_use
+    gs = settings
 
     mod_dict = {'mods': []}
     mod_dict['compiler'] = mod_opts['compiler']

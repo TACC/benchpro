@@ -10,11 +10,11 @@ from datetime import datetime
 import src.builder as builder
 import src.cfg_handler as cfg_handler
 import src.exception as exception
-import src.global_settings as gs
 import src.splash as splash
 import src.template_handler as template_handler
 
 logger = ''
+gs     = ''
 
 # Check input
 
@@ -74,9 +74,11 @@ def check_if_installed(requested_code):
         sys.exit(1)
 
 
-def run_bench(args):
+def run_bench(args, settings):
 
-    global logger
+	global logger, gs
+	gs = settings
+
     logger = builder.start_logging(
         "RUN", file=gs.base_dir + gs.sl + gs.run_log_file + "_" + gs.time_str + ".log")
 
@@ -92,8 +94,8 @@ def run_bench(args):
         print(
             "WARNING: No input parameters (--params) given, using defaults for debugging.")
 
-    param_cfg = cfg_handler.get_cfg('run',   args.params, logger)
-    sched_cfg = cfg_handler.get_cfg('sched', args.sched,  logger)
+    param_cfg = cfg_handler.get_cfg('run',   args.params, gs, logger)
+    sched_cfg = cfg_handler.get_cfg('sched', args.sched,  gs, logger)
 
     session = code + "-" + gs.time_str
 
@@ -122,7 +124,7 @@ def run_bench(args):
     # Generate template
     template_handler.generate_template([param_cfg['sched'], param_cfg['bench'], sched_cfg['scheduler']],
                                        [sched_template, run_template],
-                                       script_file, logger)
+                                       script_file, gs, logger)
 
     print("Benchmark working directory = " +
           param_cfg['bench']['working_path'])

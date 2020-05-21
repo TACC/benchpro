@@ -4,9 +4,8 @@ import shutil as su
 import sys
 
 import src.exception as exception
-import src.global_settings as gs
 
-logger = ''
+logger, gs = ''
 
 # Copy template files for population
 
@@ -53,9 +52,10 @@ def test_template(script):
 # Write template to file
 
 
-def generate_template(input_cfgs, input_templates, script_file, log_to_use):
-    global logger
+def generate_template(input_cfgs, input_templates, script_file, settings, log_to_use):
+    global logger, gs
     logger = log_to_use
+    gs = settings
 
     # Take multiple input template files and combine them to generate unpopulated script
     construct_template(input_templates, script_file)
