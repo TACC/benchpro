@@ -178,9 +178,16 @@ def process_build_cfg(cfg_dict):
 
 	# Generate default build path if on is not defined
 	if not cfg_dict['general']['build_prefix']:
-		cfg_dict['general']['build_prefix'] = gs.base_dir + gs.sl + gs.build_dir + gs.sl + cfg_dict['general']['system'] + gs.sl + get_label(cfg_dict['modules']['compiler']) + gs.sl + get_label(
+		cfg_dict['general']['working_path'] = gs.base_dir + gs.sl + gs.build_dir + gs.sl + cfg_dict['general']['system'] + gs.sl + get_label(cfg_dict['modules']['compiler']) + gs.sl + get_label(
 			cfg_dict['modules']['mpi']) + gs.sl + cfg_dict['general']['code'] + gs.sl + cfg_dict['build']['opt_label'] + gs.sl + cfg_dict['general']['version']
 
+    # Translate 'build_prefix' to 'working_path' for better readability
+	else:
+		cfg_dict['general']['working_path'] = cfg_dict['general']['build_prefix']
+	
+	# Get build and install subdirs
+	cfg_dict['general']['build_path']   = cfg_dict['general']['working_path'] + gs.sl + "build"
+	cfg_dict['general']['install_path'] = cfg_dict['general']['working_path'] + gs.sl + "install"
 
 # Parse the contents of run cfg file, add metadata and check for issues
 

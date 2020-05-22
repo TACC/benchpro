@@ -8,14 +8,22 @@ benchtool --remove lammps  > /dev/null
 echo "EXIT CODES:"
 
 benchtool --avail          > /dev/null
-echo "--avail     $?"
+echo     "--avail     $?"
+
 benchtool --install lammps > /dev/null
-echo "--install   $?"
+echo     "--install   $?"
+
 benchtool --installed      > /dev/null
-echo "--installed $?"
+echo     "--installed $?"
+
+benchtool --query lammps   > /dev/null
+echo     "--query     $?"
+
 benchtool --run lammps     > /dev/null
-echo "--run       $?"
+echo     "--run       $?"
+
 benchtool --remove lammps  > /dev/null
-echo "--remove    $?"
+echo     "--remove    $?"
+
 benchtool --clean          > /dev/null
-echo "--clean     $?"
+echo     "--clean     $?"

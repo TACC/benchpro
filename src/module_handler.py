@@ -116,7 +116,7 @@ def make_mod(general_opts, build_opts, mod_opts, settings, log_to_use):
 	mod_dict.update(general_opts)
 	mod_dict.update(build_opts)
 
-	mod_path = gs.base_dir + gs.sl + "build" + gs.sl + "modulefiles" + gs.sl + mod_dict['system'] + gs.sl + get_label(
+	mod_path = gs.default_module_path + gs.sl + mod_dict['system'] + gs.sl + get_label(
 		mod_dict['compiler']) + gs.sl + get_label(mod_dict['mpi']) + gs.sl + mod_dict['code'] + gs.sl + mod_dict['opt_label']
 
 	check_inputs(mod_dict, mod_path)

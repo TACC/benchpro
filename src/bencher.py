@@ -82,12 +82,16 @@ def run_bench(args, settings):
 
 	logger = common.start_logging("RUN", file=gs.base_dir + gs.sl + gs.run_log_file + "_" + gs.time_str + ".log")
 
-	# Get path to application
+
+	# Get application info
 	code_path = check_if_installed(args.run)
-	code_dict = code_path.split('/')
-	system = code_dict[0]
-	code = code_dict[3]
-	version = code_dict[5]
+	report_parser	 = cp.RawConfigParser()
+
+	report_parser.read(gs.default_build_path + gs.sl + code_path + gs.sl + gs.build_report_file)
+
+	system 	= report_parser.get('report', 'system')
+	code 	= report_parser.get('report', 'code')
+	version = report_parser.get('report', 'version')
 
 	if not args.params:
 		args.params = code
@@ -100,11 +104,11 @@ def run_bench(args, settings):
 	session = code + "-" + gs.time_str
 
 	# Path to benchmark session directory
-	param_cfg['bench']['working_path'] = gs.base_dir + gs.sl + 'build' + gs.sl + code_path + gs.sl + session
+	param_cfg['bench']['working_path'] = gs.default_build_path + gs.sl + code_path + gs.sl + session
 	# Path to application's data directory
 	param_cfg['bench']['dataset_path'] = gs.dataset_dir + gs.sl + code
 	# Directory to add to MODULEPATH
-	param_cfg['bench']['base_mod'] = gs.base_dir + gs.sl + 'build' + gs.sl + 'modulefiles'
+	param_cfg['bench']['base_mod'] = gs.default_module_path
 	# Directory to application installation
 	param_cfg['bench']['app_mod'] = code_path
 	# Get total ranks from nodes * ranks_per_node
@@ -129,4 +133,4 @@ def run_bench(args, settings):
 
 	exception.remove_tmp_files()
 
-	common.submit_job(param_cfg['bench']['working_path'] + gs.sl + script_file[4:], logger)
+	job_id = common.submit_job(param_cfg['bench']['working_path'] + gs.sl + script_file[4:], logger)

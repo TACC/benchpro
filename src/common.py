@@ -1,7 +1,11 @@
 import logging as lg
 import os
 import shutil as su
+import subprocess
 import sys
+import time
+
+import src.exception as exception
 
 class init(object):
 	def __init__(self, gs):
@@ -44,7 +48,6 @@ class init(object):
 					self.recurse_down(installed_list, new_dir, start_depth,current_depth + 1, max_depth)
 
 	# Print currently installed apps, used together with 'remove'
-
 	def get_installed(self):
 		app_dir = self.gs.base_dir + self.gs.sl + self.gs.build_dir
 		start = app_dir.count(self.gs.sl)
@@ -89,7 +92,6 @@ class init(object):
 
 	# Move files to install directory
 	def install(self, path, obj, logger):
-	
 		# Get file name
 		new_obj_name = obj
 		if self.gs.sl in obj:
@@ -111,6 +113,9 @@ class init(object):
 		if self.gs.dry_run:
 			print("This was a dryrun, job script created at " + script_file)
 			logger.debug("This was a dryrun, job script created at " + script_file)
+
+			# Return 'jobid'
+			return ["dryrun", "dryrun"]
 		else:
 			print("Submitting " + script_file + " to scheduler...")
 			logger.debug("Submitting build script to scheduler...")
@@ -129,15 +134,19 @@ class init(object):
 				for line in cmd.stdout.splitlines():
 					if jobid_line in line:
 						job_id = line.split(" ")[-1]
-	
-				time.sleep(2)
+
+				time.sleep(10)
 				cmd = subprocess.run("squeue -a --job " + job_id, shell=True,
 									 check=True, capture_output=True, universal_newlines=True)
 	
+				host = cmd.stdout.split("\n")[1][cmd.stdout.split("\n")[0].find("NODELIST"):]
+
 				print(cmd.stdout)
 				logger.debug(cmd.stdout)
 				logger.debug(cmd.stderr)
-	
+
+				return [job_id, host]
+
 			except subprocess.CalledProcessError as e:
 				exception.error_and_quit(logger, "Failed to submit job to scheduler")
 	
