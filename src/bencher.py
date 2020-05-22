@@ -102,7 +102,7 @@ def run_bench(args, settings):
 	# Path to benchmark session directory
 	param_cfg['bench']['working_path'] = gs.base_dir + gs.sl + 'build' + gs.sl + code_path + gs.sl + session
 	# Path to application's data directory
-	param_cfg['bench']['dataset_path'] = gs.base_dir + gs.sl + 'datasets' + gs.sl + code
+	param_cfg['bench']['dataset_path'] = gs.dataset_dir + gs.sl + code
 	# Directory to add to MODULEPATH
 	param_cfg['bench']['base_mod'] = gs.base_dir + gs.sl + 'build' + gs.sl + 'modulefiles'
 	# Directory to application installation

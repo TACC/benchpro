@@ -1,8 +1,4 @@
 
-date
-echo "Slurm Job ID: ${SLURM_JOB_ID}"
-
-
 export     build_path=<<<build_path>>>
 export   install_path=<<<install_path>>>
 export    wrf_version=<<<version>>>
@@ -13,6 +9,11 @@ export           hdf5=<<<hdf5>>>
 export     config_opt=<<<config_opt>>>
 export       nest_opt=<<<nest_opt>>>
 export    config_file=<<<config_file>>>
+
+date
+echo "Slurm Job ID: ${SLURM_JOB_ID}"
+echo "Host: ${HOSTNAME}"
+echo "User: ${USER}"
 
 #test configure inputs
 if [[ $config_file == "none" && ( -z "$config_opt" || -z "$nest_opt" ) ]]; then

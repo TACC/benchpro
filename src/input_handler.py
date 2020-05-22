@@ -53,6 +53,19 @@ class init(object):
 		else:
 			print("No temp files found.")
 
+	# Prune dir tree until not unique
+	def prune_tree(self, path):
+		path_elems  = path.split(self.gs.sl)
+		parent_path = self.gs.sl.join(path.split(self.gs.sl)[:-1])
+		parent_dir  = path_elems[-2]
+
+		# If parent dir is root ('build' or 'modulefile') or if it contains more than this subdir, delete this subdir
+		if (parent_dir == self.gs.build_dir) or  (parent_dir == "modulefiles") or (len(glob.glob(parent_path+self.gs.sl+"*")) > 1):
+			su.rmtree(path)
+		# Else resurse with parent
+		else:
+			self.prune_tree(parent_path)
+
 	# Detele application and module matching path provided
 	def remove_app(self, code_str):
 
@@ -75,7 +88,7 @@ class init(object):
 
 		# Delete application dir
 		try:
-			su.rmtree(app_dir)
+			self.prune_tree(app_dir)
 			print("")
 			print("Application removed.")
 		except:
@@ -85,7 +98,7 @@ class init(object):
 		print()
 		# Detele module dir
 		try:
-			su.rmtree(mod_dir)
+			self.prune_tree(mod_dir)
 			print("Module removed.")
 		except:
 			print("Warning: no associated module located in " + mod_dir)
@@ -99,7 +112,7 @@ class init(object):
 	# Recurse down tree 5 levels to get full applciation installation path
 	def recurse_down(self, app_dir, start_depth, current_depth, max_depth):
 		for d in self.get_subdirs(app_dir):
-			if d != 'modulefiles':
+			if d != "modulefiles":
 				new_dir = app_dir + self.gs.sl + d
 				if current_depth == max_depth:
 					print(

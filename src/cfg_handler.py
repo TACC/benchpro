@@ -178,7 +178,7 @@ def process_build_cfg(cfg_dict):
 
 	# Generate default build path if on is not defined
 	if not cfg_dict['general']['build_prefix']:
-		cfg_dict['general']['build_prefix'] = gs.base_dir + gs.sl + "build" + gs.sl + cfg_dict['general']['system'] + gs.sl + get_label(cfg_dict['modules']['compiler']) + gs.sl + get_label(
+		cfg_dict['general']['build_prefix'] = gs.base_dir + gs.sl + gs.build_dir + gs.sl + cfg_dict['general']['system'] + gs.sl + get_label(cfg_dict['modules']['compiler']) + gs.sl + get_label(
 			cfg_dict['modules']['mpi']) + gs.sl + cfg_dict['general']['code'] + gs.sl + cfg_dict['build']['opt_label'] + gs.sl + cfg_dict['general']['version']
 
 

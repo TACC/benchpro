@@ -67,7 +67,6 @@ class init(object):
 			sys.exit(1)
 
 		elif len(matched_codes) == 1:
-			print("Using application installed in: " + matched_codes[0])
 			return matched_codes[0]
 
 		else:

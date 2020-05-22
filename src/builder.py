@@ -188,7 +188,7 @@ def build_code(args, settings):
 	# Parse config input files
 	code_cfg =	 cfg_handler.get_cfg('build',	args.install,		gs, logger)
 	sched_cfg =	cfg_handler.get_cfg('sched',	args.sched,		  gs, logger)
-	compiler_cfg = cfg_handler.get_cfg('compiler', 'compile-flags.cfg', gs, logger)
+	compiler_cfg = cfg_handler.get_cfg('compiler', gs.compile_cfg_file, gs, logger)
 
 	print('{:25}'.format('Using application config'), ":", code_cfg['metadata']['cfg_file'])
 	print('{:25}'.format('Using scheduler config'), ":",   sched_cfg['metadata']['cfg_file'])
@@ -217,7 +217,7 @@ def build_code(args, settings):
 	# Template files
 	sched_template    = gs.base_dir + gs.sl + gs.template_dir + gs.sl + gs.sched_tmpl_dir + gs.sl + sched_cfg['scheduler']['type'] + ".template"
 	build_template    = gs.base_dir + gs.sl + gs.template_dir + gs.sl + gs.build_tmpl_dir + gs.sl + code_cfg['general']['code'] + "-" + code_cfg['general']['version'] + ".build"
-	compiler_template = gs.base_dir + gs.sl + gs.template_dir + gs.sl + "compile_flags.template"
+	compiler_template = gs.base_dir + gs.sl + gs.template_dir + gs.sl + gs.compile_tmpl_file
 
 	# Generate build script
 	template_handler.generate_template([code_cfg['general'], code_cfg['modules'], code_cfg['build'], code_cfg['run'], sched_cfg['scheduler'], compiler_cfg['common']],
