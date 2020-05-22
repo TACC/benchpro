@@ -1,5 +1,6 @@
 
-export    run_path=<<<run_path>>>
+export working_path=<<<working_path>>>
+export dataset_path=<<<dataset_path>>>
 export          exe=<<<exe>>>
 export           x=<<<x>>>
 export           y=<<<y>>>
@@ -8,7 +9,7 @@ export           t=<<<t>>>
 export base_module=<<<base_mod>>>
 export  app_module=<<<app_mod>>>
 
-cd $run_path
+mkdir -p $working_path && cd $working_path
 
 export OMP_NUM_THREADS=<<<threads>>>
 
@@ -16,8 +17,7 @@ ml use $base_module
 ml $app_module
 ml
 
-wget https://lammps.sandia.gov/bench/in.lj.txt
+cp ${dataset_path}/in.lj . 
 
-ibrun $exe -sf intel -V x $x -V y $y -V z $z -v t $t < in.lj.txt
-
+ibrun $exe -var x $x -var y $y -var z $z -var t $t < in.lj |& tee output.log
 

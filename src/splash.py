@@ -1,20 +1,20 @@
-from datetime import datetime
 import os
 import socket
-
-sl           = '/'
+from datetime import datetime
 
 # Print welcome splash
-def print_splash():
-    print("        ____  _______   __________  __   __________  ____  __ ")
-    print("       / __ )/ ____/ | / / ____/ / / /  /_  __/ __ \/ __ \/ / ")
-    print("      / __  / __/ /  |/ / /   / /_/ /    / / / / / / / / / /  ")
-    print("     / /_/ / /___/ /|  / /___/ __  /    / / / /_/ / /_/ / /___")
-    print("    /_____/_____/_/ |_/\____/_/ /_/    /_/  \____/\____/_____/")
 
-    print("------------------------------------------------------------------")
-    print("User         :", str(os.getlogin()))
-    print("System       :", str(socket.gethostname()))
-    print("Working dir  :", sl.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]))
-    print("Date         :", datetime.now())
-    print("")
+
+def print_splash(gs):
+	print("        ____  _______   __________  __   __________  ____  __ ")
+	print("       / __ )/ ____/ | / / ____/ / / /  /_  __/ __ \/ __ \/ / ")
+	print("      / __  / __/ /  |/ / /   / /_/ /    / / / / / / / / / /  ")
+	print("     / /_/ / /___/ /|  / /___/ __  /    / / / /_/ / /_/ / /___")
+	print("    /_____/_____/_/ |_/\____/_/ /_/    /_/  \____/\____/_____/")
+
+	print("------------------------------------------------------------------")
+	print("User         :", gs.user)
+	print("System       :", gs.hostname)
+	print("Working dir  :", gs.base_dir)
+	print("Date         :", gs.time_str)
+	print("")
