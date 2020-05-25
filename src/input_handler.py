@@ -31,11 +31,11 @@ class init(object):
 	# Clean up temp files such as logs
 	def clean_temp_files(self):
 		print("Cleaning up temp files...")
+		# Search space for tmp files
 		search_dict = ['*.out*',
 					   '*.err*',
 					   '*.log',
-					   'tmp.*'
-					   ]
+					   'tmp.*']
 
 		file_list = self.find_matching_files(search_dict)
 
@@ -134,7 +134,7 @@ class init(object):
 	def show_installed(self):
 		print("Currently installed applications:")
 		print("---------------------------------")
-		app_dir = self.gs.base_dir + self.gs.sl + "build"
+		app_dir = self.gs.build_path
 		start = app_dir.count(self.gs.sl)
 		self.recurse_down(app_dir, start, start, start + 5)
 
@@ -142,7 +142,7 @@ class init(object):
 	def show_available(self):
 		print("Available application profiles:")
 		print("---------------------------------")
-		app_dir = self.gs.base_dir + self.gs.sl + "config" + self.gs.sl + "build" + self.gs.sl
+		app_dir = self.gs.config_path + self.gs.sl + self.gs.build_cfg_dir + self.gs.sl
 		temp_files = glob.glob(app_dir + "*.cfg")
 		for f in temp_files:
 			code = f.split('/')[-1]

@@ -16,121 +16,69 @@ import src.template_handler as template_handler
 logger = gs = ''
 
 # Check input
-
-
-def get_subdirs(base):
-	return [name for name in os.listdir(base)
-			if os.path.isdir(os.path.join(base, name))]
-
-
-def recurse_down(installed_list, app_dir, start_depth, current_depth, max_depth):
-	for d in get_subdirs(app_dir):
-		if d != 'modulefiles':
-			new_dir = app_dir + gs.sl + d
-			if current_depth == max_depth:
-				installed_list.append(gs.sl.join(
-					new_dir.split(gs.sl)[start_depth + 1:]))
-			else:
-				recurse_down(installed_list, new_dir, start_depth,
-							 current_depth + 1, max_depth)
-
-# Print currently installed apps, used together with 'remove'
-
-
-def get_installed():
-	app_dir = gs.base_dir + gs.sl + "build"
-	start = app_dir.count(gs.sl)
-	installed_list = []
-	recurse_down(installed_list, app_dir, start, start, start + 5)
-	return installed_list
-
-
-def check_if_installed(requested_code):
-	installed_list = get_installed()
-	matched_codes = []
-	for code_string in installed_list:
-		if requested_code in code_string:
-			matched_codes.append(code_string)
-
-	if len(matched_codes) == 0:
-		print("No installed applications match your selection '" +
-			  requested_code + "'")
-		print("Currently installed applications:")
-		for code in installed_list:
-			print("	" + code)
-		sys.exit(1)
-
-	elif len(matched_codes) == 1:
-		print("Using application installed in: " + matched_codes[0])
-		return matched_codes[0]
-
-	else:
-		print("Multiple installed applications match your selection '" +
-			  requested_code + "':")
-		for code in matched_codes:
-			print("	" + code)
-		print("Please be more specific.")
-		sys.exit(1)
-
-
 def run_bench(args, settings):
 
 	global logger, gs
 	gs = settings
-
 	common = common_funcs.init(gs)
 
+	# Start logger
 	logger = common.start_logging("RUN", file=gs.base_dir + gs.sl + gs.run_log_file + "_" + gs.time_str + ".log")
 
+	code_path = common.check_if_installed(args.run)
 
-	# Get application info
-	code_path = check_if_installed(args.run)
+	# Get app info from build report
 	report_parser	 = cp.RawConfigParser()
-
-	report_parser.read(gs.default_build_path + gs.sl + code_path + gs.sl + gs.build_report_file)
-
+	report_parser.read(gs.build_path + gs.sl + code_path + gs.sl + gs.build_report_file)
 	system 	= report_parser.get('report', 'system')
 	code 	= report_parser.get('report', 'code')
 	version = report_parser.get('report', 'version')
 
+	logger.debug("Application details:")
+	logger.debug("System  = "+system)
+	logger.debug("Code	  = "+code)
+	logger.debug("Version = "+version)
+
+	# Print warning when using default benchmark inputs
 	if not args.params:
 		args.params = code
-		print(
-			"WARNING: No input parameters (--params) given, using defaults for debugging.")
+		print("WARNING: No input parameters (--params) given, using defaults for debugging.")
+		logger.debug("WARNING: No input parameters (--params) given, using defaults for debugging.")
 
-	param_cfg = cfg_handler.get_cfg('run',   args.params, gs, logger)
-	sched_cfg = cfg_handler.get_cfg('sched', args.sched,  gs, logger)
+	run_cfg = cfg_handler.get_cfg('run',  		args.params, gs, logger)
+	sched_cfg = cfg_handler.get_cfg('sched', 	args.sched,  gs, logger)
 
 	session = code + "-" + gs.time_str
 
 	# Path to benchmark session directory
-	param_cfg['bench']['working_path'] = gs.default_build_path + gs.sl + code_path + gs.sl + session
+	run_cfg['bench']['working_path'] = gs.build_path + gs.sl + code_path + gs.sl + session
 	# Path to application's data directory
-	param_cfg['bench']['dataset_path'] = gs.dataset_dir + gs.sl + code
+	run_cfg['bench']['dataset_path'] = gs.dataset_dir + gs.sl + code
 	# Directory to add to MODULEPATH
-	param_cfg['bench']['base_mod'] = gs.default_module_path
+	run_cfg['bench']['base_mod'] = gs.module_path
 	# Directory to application installation
-	param_cfg['bench']['app_mod'] = code_path
+	run_cfg['bench']['app_mod'] = code_path
 	# Get total ranks from nodes * ranks_per_node
-	param_cfg['sched']['ranks'] = int(param_cfg['sched']['nodes']) * int(param_cfg['sched']['ranks_per_node'])
+	run_cfg['sched']['ranks'] = int(run_cfg['sched']['nodes']) * int(run_cfg['sched']['ranks_per_node'])
 
 	# Template files
-	sched_template = gs.base_dir + gs.sl + gs.template_dir + gs.sl + gs.sched_tmpl_dir + gs.sl + sched_cfg['scheduler']['type'] + ".template"
-	run_template =   gs.base_dir + gs.sl + gs.template_dir + gs.sl + gs.run_tmpl_dir + gs.sl + code + "-" + version + ".run"
+	sched_template = gs.template_path + gs.sl + gs.sched_tmpl_dir + gs.sl + sched_cfg['scheduler']['type'] + ".template"
+	run_template   = gs.template_path + gs.sl + gs.run_tmpl_dir + gs.sl + code + "-" + version + ".run"
 
 	script_file = "tmp." + code + "-run." + sched_cfg['scheduler']['type']
 
-	# Generate template
-	template_handler.generate_template([param_cfg['sched'], param_cfg['bench'], sched_cfg['scheduler']],
+	# Generate benchmark template
+	template_handler.generate_template([run_cfg['sched'], run_cfg['bench'], sched_cfg['scheduler']],
 									   [sched_template, run_template],
 									   script_file, gs, logger)
 
-	print("Benchmark working directory = " + param_cfg['bench']['working_path'])
+	print("Benchmark directory = " + run_cfg['bench']['working_path'])
 
-	common.create_install_dir(param_cfg['bench']['working_path'], logger)
-
-	common.install(param_cfg['bench']['working_path'], script_file, logger)
-
-	exception.remove_tmp_files()
-
-	job_id = common.submit_job(param_cfg['bench']['working_path'] + gs.sl + script_file[4:], logger)
+	# Create benchmark directory
+	common.create_install_dir(run_cfg['bench']['working_path'], logger)
+	# Copy temp job script
+	common.install(run_cfg['bench']['working_path'], script_file, logger)
+	# Delete tmp job script
+	exception.remove_tmp_files(logger)
+	# Submit job
+	job_id = common.submit_job(run_cfg['bench']['working_path'] + gs.sl + script_file[4:], logger)

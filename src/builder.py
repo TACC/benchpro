@@ -75,8 +75,6 @@ def generate_build_report(code_cfg, sched_output, logger):
 		out.write("Job ID       = "+ sched_output[0] + "\n")
 		out.write("Build host   = "+ sched_output[1])
 
-
-
 # Main methond for generating and submitting build script
 def build_code(args, settings):
 
@@ -117,9 +115,9 @@ def build_code(args, settings):
 	script_file = "tmp." + code_cfg['general']['code'] + "-build." + sched_cfg['scheduler']['type']
 
 	# Input template files
-	sched_template		= gs.base_dir + gs.sl + gs.template_dir + gs.sl + gs.sched_tmpl_dir + gs.sl + sched_cfg['scheduler']['type'] + ".template"
-	build_template		= gs.base_dir + gs.sl + gs.template_dir + gs.sl + gs.build_tmpl_dir + gs.sl + code_cfg['general']['code'] + "-" + code_cfg['general']['version'] + ".build"
-	compiler_template 	= gs.base_dir + gs.sl + gs.template_dir + gs.sl + gs.compile_tmpl_file
+	sched_template		= gs.template_path + gs.sl + gs.sched_tmpl_dir + gs.sl + sched_cfg['scheduler']['type'] + ".template"
+	build_template		= gs.template_path + gs.sl + gs.build_tmpl_dir + gs.sl + code_cfg['general']['code'] + "-" + code_cfg['general']['version'] + ".build"
+	compiler_template 	= gs.template_path + gs.sl + gs.compile_tmpl_file
 
 	# Generate build script
 	template_handler.generate_template([code_cfg['general'], code_cfg['modules'], code_cfg['build'], code_cfg['run'], sched_cfg['scheduler'], compiler_cfg['common']],
@@ -148,7 +146,7 @@ def build_code(args, settings):
 	common.install(provenance_path, build_template, logger)
 
 	# Clean up tmp files
-	exception.remove_tmp_files()
+	exception.remove_tmp_files(logger)
 
 	# Submit build script to scheduler
 	sched_output = common.submit_job(code_cfg['general']['working_path'] + gs.sl + script_file[4:], logger)
