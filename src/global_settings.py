@@ -61,7 +61,12 @@ class init:
 	section				= 'bencher'
 	dataset_dir			= settings_parser.get(section,   		'dataset_dir')
 	run_log_file		= settings_parser.get(section,		  	'run_log_file')
-    #---------------------------------------------------------------------------
+
+	# [hw_info]
+	section 			= 'hw_info'
+	utils_dir			= settings_parser.get(section,          'utils_dir') 
+
+	#---------------------------------------------------------------------------
 
 	# Derived variables
 	module_dir			= "modulefiles"
@@ -69,3 +74,4 @@ class init:
 	config_path			= base_dir + sl + config_dir
 	template_path 		= base_dir + sl + template_dir
 	module_path			= build_path + sl + module_dir
+	utils_path			= base_dir + sl + utils_dir

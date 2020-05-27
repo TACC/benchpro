@@ -8,6 +8,7 @@ from datetime import datetime
 
 # Local Imports
 import src.cfg_handler as cfg_handler
+import src. collect_hw_info as hw_info
 import src.common as common_funcs
 import src.exception as exception
 import src.splash as splash
@@ -82,3 +83,9 @@ def run_bench(args, settings):
 	exception.remove_tmp_files(logger)
 	# Submit job
 	job_id = common.submit_job(run_cfg['bench']['working_path'] + gs.sl + script_file[4:], logger)
+
+
+	if run_cfg['bench']['collect_hw']:
+		print("Collectiong hardware info")
+		hw_info.collect_info(run_cfg['bench']['working_path'] + gs.sl + "hw_info", gs, logger)
+
