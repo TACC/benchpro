@@ -1,15 +1,11 @@
 #!/bin/bash
-
-PREFIX="`pwd`/hw_utils"
-
 if [ $USER != "root" ]
 then
 	echo "Run as root."
 	exit 1
 fi
 
-declare -a exe=("cpuid"
-				"ibnetdiscover"
+declare -a exe=("ibnetdiscover"
 				"lshw"
 				"lspci"
 				"rdmsr_all"
@@ -18,8 +14,8 @@ declare -a exe=("cpuid"
 
 for i in "${exe[@]}"
 do
-  chown root.root $PREFIX/$i
-  chmod 4755 $PREFIX/$i
+  chown root.root $i
+  chmod 4755 $i
 done
 
 echo "Done."

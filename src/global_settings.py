@@ -1,13 +1,14 @@
 # System Imports
-import configparser as cp
+import configparser 
+from datetime import datetime
 import os
 import socket
-from datetime import datetime
+import sys
 
 # General constants
 class init:
 
-    # Context variables
+	# Context variables
 	user				= str(os.getlogin())
 	hostname			= str(socket.gethostname())
 	if ("." in hostname):
@@ -20,58 +21,76 @@ class init:
 
 	#----------------------------settings.cfg--------------------------------
 	settings_cfg 		= "settings.cfg"
-	settings_parser 	= cp.RawConfigParser()
+	settings_parser 	= configparser.RawConfigParser()
 	settings_parser.read(base_dir + "/" + settings_cfg)
 
-	# [common]
-	section	 			= 'common'
-	dry_run				= settings_parser.getboolean(section,	'dry_run')
-	exit_on_missing 	= settings_parser.getboolean(section,	'exit_on_missing')
-	timeout				= settings_parser.getint(section,		'timeout')
-	sl					= settings_parser.get(section,			'sl')
-	tree_depth			= settings_parser.getint(section,       'tree_depth')
+	def empty(key):
+		if type(key) is str and not key :
+			print("Missing key in settings.cfg, check the documentation.")
+			sys.exit(1)
+		else: return key
 
-	# [config]
-	section				= 'config'
-	config_dir			= settings_parser.get(section,			'config_dir')
-	build_cfg_dir		= settings_parser.get(section,			'build_cfg_dir')  
-	run_cfg_dir			= settings_parser.get(section,		  	'run_cfg_dir')
-	sched_cfg_dir		= settings_parser.get(section,		  	'sched_cfg_dir')
-	system_cfg_file		= settings_parser.get(section,		  	'system_cfg_file')
-	arch_cfg_file		= settings_parser.get(section,		  	'arch_cfg_file')
-	compile_cfg_file	= settings_parser.get(section,		  	'compile_cfg_file')
+	try:
+		# [common]
+		section	 			= 'common'
+		dry_run				= empty(settings_parser.getboolean(section,	'dry_run'))
+		exit_on_missing 	= empty(settings_parser.getboolean(section,	'exit_on_missing'))
+		timeout				= empty(settings_parser.getint(section,		'timeout'))
+		sl					= empty(settings_parser.get(section,		'sl'))
+		tree_depth			= empty(settings_parser.getint(section,	   	'tree_depth'))
 
-	# [template]
-	section 			= 'templates'
-	template_dir		= settings_parser.get(section,		  	'template_dir')
-	build_tmpl_dir		= settings_parser.get(section,		  	'build_tmpl_dir')
-	sched_tmpl_dir		= settings_parser.get(section,		  	'sched_tmpl_dir')
-	run_tmpl_dir		= settings_parser.get(section,		  	'run_tmpl_dir')
-	compile_tmpl_file	= settings_parser.get(section,		  	'compile_tmpl_file')
+		# [config]
+		section				= 'config'
+		config_dir			= empty(settings_parser.get(section,		'config_dir'))
+		build_cfg_dir		= empty(settings_parser.get(section,		'build_cfg_dir'))  
+		run_cfg_dir			= empty(settings_parser.get(section,	  	'run_cfg_dir'))
+		sched_cfg_dir		= empty(settings_parser.get(section,	  	'sched_cfg_dir'))
+		system_cfg_file		= empty(settings_parser.get(section,	  	'system_cfg_file'))
+		arch_cfg_file		= empty(settings_parser.get(section,	  	'arch_cfg_file'))
+		compile_cfg_file	= empty(settings_parser.get(section,	  	'compile_cfg_file'))
 
-	# [builder]
-	section 			= 'builder'
-	use_default_paths	= settings_parser.getboolean(section,   'use_default_paths')
-	overwrite			= settings_parser.getboolean(section,   'overwrite')
-	build_dir			= settings_parser.get(section,		  	'build_dir')
-	build_log_file		= settings_parser.get(section,   		'build_log_file')
-	build_report_file	= settings_parser.get(section,		  	'build_report_file')
+		# [template]
+		section 			= 'templates'
+		template_dir		= empty(settings_parser.get(section,	  	'template_dir'))
+		build_tmpl_dir		= empty(settings_parser.get(section,	  	'build_tmpl_dir'))
+		sched_tmpl_dir		= empty(settings_parser.get(section,	  	'sched_tmpl_dir'))
+		run_tmpl_dir		= empty(settings_parser.get(section,	  	'run_tmpl_dir'))
+		compile_tmpl_file	= empty(settings_parser.get(section,	  	'compile_tmpl_file'))
 
-	# [bencher]
-	section				= 'bencher'
-	dataset_dir			= settings_parser.get(section,   		'dataset_dir')
-	run_log_file		= settings_parser.get(section,		  	'run_log_file')
+		# [builder]
+		section 			= 'builder'
+		overwrite			= empty(settings_parser.getboolean(section, 'overwrite'))
+		build_dir			= empty(settings_parser.get(section,	  	'build_dir'))
+		build_log_file		= empty(settings_parser.get(section,   		'build_log_file'))
+		build_report_file	= empty(settings_parser.get(section,	  	'build_report_file'))
 
-	# [hw_info]
-	section 			= 'hw_info'
-	utils_dir			= settings_parser.get(section,          'utils_dir') 
+		# [bencher]
+		section				= 'bencher'
+		benchmark_repo		= empty(settings_parser.get(section,   		'benchmark_repo'))
+		run_log_file		= empty(settings_parser.get(section,	  	'run_log_file'))
 
+		# [hw_info]
+		section 			= 'hw_info'
+		utils_dir			= empty(settings_parser.get(section,	  	'utils_dir'))
+
+	except configparser.NoSectionError as e:
+		print("Missing [section] in settings.cfg, check the documentation.")
+		print(e)
+		sys.exit(1)
+
+	except Exception as e:# configparser.Error as e:
+		print("Error parsing settings.cfg, check the documentation.")
+		print(e)
+		sys.exit(1)
 	#---------------------------------------------------------------------------
 
 	# Derived variables
-	module_dir			= "modulefiles"
-	build_path			= base_dir + sl + build_dir
-	config_path			= base_dir + sl + config_dir
-	template_path 		= base_dir + sl + template_dir
-	module_path			= build_path + sl + module_dir
-	utils_path			= base_dir + sl + utils_dir
+	module_dir		= "modulefiles"
+	build_path		= base_dir + sl + build_dir
+	config_path		= base_dir + sl + config_dir
+	template_path	= base_dir + sl + template_dir
+	module_path		= build_path + sl + module_dir
+	src_path		= base_dir + sl + "src"
+	utils_path		= base_dir + sl + utils_dir
+
+

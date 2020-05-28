@@ -17,6 +17,7 @@ def remove_tmp_files(logger):
 # Print message to log and stdout then continue
 def print_warning(logger, message):
 	logger.debug("WARNING: " + message)
+	print()
 	print("WARNING: " + message)
 
 # Print message to log and stdout then quit

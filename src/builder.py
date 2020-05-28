@@ -70,10 +70,10 @@ def generate_build_report(code_cfg, sched_output, logger):
 		out.write("System       = "+ code_cfg['general']['system'] + "\n")
 		out.write("Modules      = "+ ", ".join(code_cfg['modules'].values()) + "\n")
 		out.write("Optimization = "+ code_cfg['build']['opt_flags'] + "\n")	
-		out.write("Build prefix = "+ code_cfg['general']['working_path'] + "\n")
-		out.write("Build date   = "+ gs.time_str + "\n")
-		out.write("Job ID       = "+ sched_output[0] + "\n")
-		out.write("Build host   = "+ sched_output[1])
+		out.write("Build_prefix = "+ code_cfg['general']['working_path'] + "\n")
+		out.write("Build_date   = "+ gs.time_str + "\n")
+		out.write("Job_ID       = "+ sched_output[0] + "\n")
+		out.write("Build_host   = "+ sched_output[1])
 
 # Main methond for generating and submitting build script
 def build_code(args, settings):
@@ -86,7 +86,7 @@ def build_code(args, settings):
 	common = common_funcs.init(gs)
 
 	# Init loggers
-	logger = common.start_logging("BUILD", file=gs.base_dir + gs.sl + gs.build_log_file + "_" + gs.time_str + ".log")
+	logger = common.start_logging("BUILD", gs.base_dir + gs.sl + gs.build_log_file + "_" + gs.time_str + ".log")
 
 	# Parse config input files
 	code_cfg =	 cfg_handler.get_cfg('build',	args.install,		gs, logger)
@@ -119,10 +119,14 @@ def build_code(args, settings):
 	build_template		= gs.template_path + gs.sl + gs.build_tmpl_dir + gs.sl + code_cfg['general']['code'] + "-" + code_cfg['general']['version'] + ".build"
 	compiler_template 	= gs.template_path + gs.sl + gs.compile_tmpl_file
 
+	# Get ranks from threads (?)
+	sched_cfg['scheduler']['ranks'] = sched_cfg['scheduler']['threads']  
+
 	# Generate build script
 	template_handler.generate_template([code_cfg['general'], code_cfg['modules'], code_cfg['build'], code_cfg['run'], sched_cfg['scheduler'], compiler_cfg['common']],
  									   [sched_template, compiler_template, build_template],
 									   script_file, gs, logger)
+
 
 	# Generate module in temp location
 	mod_path, mod_file = module_handler.make_mod(code_cfg['general'], code_cfg['build'], code_cfg['modules'], gs, logger)

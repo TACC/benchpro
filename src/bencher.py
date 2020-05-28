@@ -8,7 +8,6 @@ from datetime import datetime
 
 # Local Imports
 import src.cfg_handler as cfg_handler
-import src. collect_hw_info as hw_info
 import src.common as common_funcs
 import src.exception as exception
 import src.splash as splash
@@ -24,7 +23,7 @@ def run_bench(args, settings):
 	common = common_funcs.init(gs)
 
 	# Start logger
-	logger = common.start_logging("RUN", file=gs.base_dir + gs.sl + gs.run_log_file + "_" + gs.time_str + ".log")
+	logger = common.start_logging("RUN", gs.base_dir + gs.sl + gs.run_log_file + "_" + gs.time_str + ".log")
 
 	code_path = common.check_if_installed(args.run)
 
@@ -52,15 +51,14 @@ def run_bench(args, settings):
 	session = code + "-" + gs.time_str
 
 	# Path to benchmark session directory
-	run_cfg['bench']['working_path'] = gs.build_path + gs.sl + code_path + gs.sl + session
+	run_cfg['bench']['base_path'] = gs.build_path + gs.sl + code_path + gs.sl + session
 	# Path to application's data directory
-	run_cfg['bench']['dataset_path'] = gs.dataset_dir + gs.sl + code
+	run_cfg['bench']['benchmark_repo'] = gs.benchmark_repo + gs.sl + code
 	# Directory to add to MODULEPATH
 	run_cfg['bench']['base_mod'] = gs.module_path
 	# Directory to application installation
 	run_cfg['bench']['app_mod'] = code_path
-	# Get total ranks from nodes * ranks_per_node
-	run_cfg['sched']['ranks'] = int(run_cfg['sched']['nodes']) * int(run_cfg['sched']['ranks_per_node'])
+
 
 	# Template files
 	sched_template = gs.template_path + gs.sl + gs.sched_tmpl_dir + gs.sl + sched_cfg['scheduler']['type'] + ".template"
@@ -68,24 +66,43 @@ def run_bench(args, settings):
 
 	script_file = "tmp." + code + "-run." + sched_cfg['scheduler']['type']
 
-	# Generate benchmark template
-	template_handler.generate_template([run_cfg['sched'], run_cfg['bench'], sched_cfg['scheduler']],
+	tmp = run_cfg['sched']['nodes']
+	loop = 1
+
+	# for each nodes in list
+	for node in tmp:
+		logger.debug("Building script for " + node + " nodes")
+
+		print()
+		print("Building script " + str(loop)  + " of " + str(len(tmp)) + ": " + str(node) + " nodes.")
+
+		# Update node var
+		run_cfg['sched']['nodes'] = node
+
+		# Get working_path
+		subdir = "nodes_" + node.zfill(3)
+		run_cfg['bench']['working_path'] = run_cfg['bench']['base_path'] + gs.sl + subdir
+
+		# Get total ranks from nodes * ranks_per_node
+		run_cfg['sched']['ranks'] = int(node) * int(run_cfg['sched']['ranks_per_node'])
+
+		# Generate benchmark template
+		template_handler.generate_template([run_cfg['sched'], run_cfg['bench'], sched_cfg['scheduler']],
 									   [sched_template, run_template],
 									   script_file, gs, logger)
 
-	print("Benchmark directory = " + run_cfg['bench']['working_path'])
+		if run_cfg['bench']['collect_hw']:
+			with open(script_file, 'a') as f:	
+				f.write(gs.src_path + gs.sl + "collect_hw_info.sh " + gs.utils_path + " " + run_cfg['bench']['working_path'] + gs.sl + "hw_report")
 
-	# Create benchmark directory
-	common.create_install_dir(run_cfg['bench']['working_path'], logger)
-	# Copy temp job script
-	common.install(run_cfg['bench']['working_path'], script_file, logger)
-	# Delete tmp job script
-	exception.remove_tmp_files(logger)
-	# Submit job
-	job_id = common.submit_job(run_cfg['bench']['working_path'] + gs.sl + script_file[4:], logger)
+		# Create benchmark directory
+		common.create_install_dir(run_cfg['bench']['working_path'], logger)
+		# Copy temp job script
+		common.install(run_cfg['bench']['working_path'], script_file, logger)
+		# Delete tmp job script
+		exception.remove_tmp_files(logger)
+		# Submit job
+		job_id = common.submit_job(run_cfg['bench']['working_path'] + gs.sl + script_file[4:], logger)
 
-
-	if run_cfg['bench']['collect_hw']:
-		print("Collectiong hardware info")
-		hw_info.collect_info(run_cfg['bench']['working_path'] + gs.sl + "hw_info", gs, logger)
+		loop += 1
 

@@ -1,0 +1,32 @@
+export   working_path=<<<working_path>>>
+export benchmark_repo=<<<benchmark_repo>>>
+export            exe=<<<exe>>>
+export    base_module=<<<base_mod>>>
+export     app_module=<<<app_mod>>>
+
+export            endTime=<<<endTime>>>
+export      writeInterval=<<<writeInterval>>>
+export numberOfSubdomains=<<<numberOfSubdomains>>>
+
+export OMP_NUM_THREADS=<<<threads>>>
+
+ml use $base_module
+ml $app_module
+ml
+
+source $OPENFOAM_DIR/etc/bashrc
+
+mkdir -p ${working_path} && cd ${working_path}
+
+cp ${benchmark_repo}/SimpleBenchMarkLarge.tar.gz .
+
+tar -xf /SimpleBenchMarkLarge.tar.gz && cd SimpleBenchMarkLarge
+
+sed -i '/endTime/c\endTime         ${endTime}' system/controlDict
+sed -i '/writeInterval/c\writeInterval          ${writeInterval}' system/controlDict
+sed -i '/numberOfSubdomains/c\numberOfSubdomains ${numberOfSubdomains}' system/decomposeDict
+
+decomposePar -force > decompose.out
+
+ibrun ${exe} -parallel | tee output.log
+

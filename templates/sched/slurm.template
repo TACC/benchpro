@@ -4,6 +4,6 @@
 #SBATCH -e <<<working_path>>>/<<<job_label>>>.e%j
 #SBATCH -p <<<queue>>>
 #SBATCH -t <<<runtime>>>
-#SBATCH -N <<<ranks>>>
-#SBATCH -n <<<threads>>>
+#SBATCH -N <<<nodes>>>
+#SBATCH -n <<<ranks>>>
 #SBATCH -A <<<account>>>

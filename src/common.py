@@ -17,25 +17,24 @@ class init(object):
 			self.gs = gs
 
 	# Start logger and return obj 
-	def start_logging(self, name, file):
-	
-		print("Log file:   " + str(file))
+	def start_logging(self, name, log_file):
+		print("Log file:   " + str(log_file))
 
-		formatter = lg.Formatter("{0}: ".format(name) + self.gs.user + "@" + self.gs.hostname + ": " +
+		formatter = lg.Formatter("{0}: ".format(name) + self.gs.user + "@" + self.gs.hostname + ": " + \
 							 "%(asctime)s: %(filename)s;%(funcName)s();%(lineno)d: %(message)s")
 
 		logger = lg.getLogger(name)
+		logger.setLevel(1)
 
-		file_handler = lg.FileHandler(file, mode="w", encoding="utf8")
+		file_handler = lg.FileHandler(log_file, mode="w", encoding="utf8")
 		file_handler.setFormatter(formatter)
 
 		# Print log to stdout
 		#stream_handler = lg.StreamHandler(stream=sys.stderr)
-		# stream_handler.setFormatter(formatter)
+		#stream_handler.setFormatter(formatter)
 
 		logger.addHandler(file_handler)
-		# logger.addHandler(stream_handler)
-
+		#logger.addHandler(stream_handler)
 		logger.debug(name+" log started")
 
 		return logger
@@ -46,7 +45,6 @@ class init(object):
 		if module.count(self.gs.sl) > 0:
 			comp_ver = module.split(self.gs.sl)
 			label = comp_ver[0] + comp_ver[1].split(".")[0]
-			logger.debug("Converted " + module + " to " + label)
 		return label
 
 	# Get a list of sub-directories, called by 'search_tree'
@@ -136,6 +134,7 @@ class init(object):
 	
 		try:
 			su.copyfile(obj, path + self.gs.sl + new_obj_name)
+			logger.debug("Copied tmp file " + obj + " into " + path)
 		except IOError as e:
 			print(e)
 			exception.error_and_quit(
@@ -143,7 +142,6 @@ class init(object):
 
 	# Submit script to scheduler
 	def submit_job(self, script_file, logger):
-		print()
 		# If dry_run, quit
 		if self.gs.dry_run:
 			print("This was a dryrun, job script created at " + script_file)

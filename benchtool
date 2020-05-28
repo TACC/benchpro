@@ -19,7 +19,6 @@ except ImportError as e:
 	print(e)
 	sys.exit(1)
 
-
 def main():
 	# Parse cmdline args
 	cmd_parser = argparse.ArgumentParser(
@@ -45,7 +44,6 @@ def main():
 								help="Query build report of an installed application.")
 	cmd_parser.add_argument("--remove", default=False,
 							help="Remove an installed application.")
-
 
 	args = cmd_parser.parse_args()
 
@@ -89,14 +87,12 @@ def main():
 	elif args.query:
 		handler.query_app(args.query)
 
-
 	# No seletion provided
 	else:
 		print("Try 'build.py --help' for more information.")
 
 	print()
 	return 0
-
 
 if __name__ == "__main__":
 	sys.exit(main())

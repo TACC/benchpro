@@ -2,27 +2,29 @@
 
 source ld_env.sh
 
+APP=swift
+
 # Remove existing installation
-benchtool --remove lammps  > /dev/null
+benchtool --remove $APP  > /dev/null
 
 echo "EXIT CODES:"
 
 benchtool --avail          > /dev/null
 echo     "--avail     $?"
 
-benchtool --install lammps > /dev/null
+benchtool --install $APP > /dev/null
 echo     "--install   $?"
 
 benchtool --installed      > /dev/null
 echo     "--installed $?"
 
-benchtool --query lammps   > /dev/null
+benchtool --query $APP   > /dev/null
 echo     "--query     $?"
 
-benchtool --run lammps     > /dev/null
+benchtool --run $APP     > /dev/null
 echo     "--run       $?"
 
-benchtool --remove lammps  > /dev/null
+benchtool --remove $APP  > /dev/null
 echo     "--remove    $?"
 
 benchtool --clean          > /dev/null

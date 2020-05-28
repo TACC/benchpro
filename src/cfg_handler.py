@@ -86,10 +86,10 @@ def process_build_cfg(cfg_dict):
 		print("Code".ljust(10),	  ":", cfg_dict['general']['code'])
 		print("Version".ljust(10),   ":", cfg_dict['general']['version'])
 		print("----------------------------")
-		exception.error_and_quit("Cannot continue due to missing inputs.")
+		exception.error_and_quit(logger, "Cannot continue due to missing inputs.")
 
 	# Insert 1 node for build job
-	cfg_dict['build']['ranks'] = "1"
+	cfg_dict['build']['nodes'] = "1"
 
 	# Get system from env if not defined
 	if not cfg_dict['general']['system']:
@@ -97,14 +97,9 @@ def process_build_cfg(cfg_dict):
 								"', getting system label from $TACC_SYSTEM: " + str(os.getenv('TACC_SYSTEM')))
 		cfg_dict['general']['system'] = str(os.getenv('TACC_SYSTEM'))
 
-	# Check for conflicting parameter combinations
-	if not gs.use_default_paths and not cfg_dict['general']['build_prefix']:
-		exception.error_and_quit(
-			logger, "use_default_paths=False in settings.cfg but build_prefix not set in " + cfg_dict['metadata']['cfg_file'])
-
-	if gs.use_default_paths and cfg_dict['general']['build_prefix']:
-		exception.error_and_quit(
-			logger, "use_default_paths=True in settings.cfg but build_prefix is set in" + cfg_dict['metadata']['cfg_file'])
+	# Check for compiler and MPI
+	if not cfg_dict['modules']['compiler'] or not cfg_dict['modules']['mpi']:
+		exception.error_and_quit(logger, "compiler and/or MPI module not provided.")
 
 	# Parse system info config file 
 	system_file = check_file('system', gs.config_dir + gs.sl + gs.system_cfg_file)
@@ -130,31 +125,30 @@ def process_build_cfg(cfg_dict):
 		cfg_dict['build']['arch'] = system_dict[cfg_dict['general']['system']]['default_arch']
 		logger.debug("Requested build arch='system'. Using system default for " + cfg_dict['general']['system'] + " = " + cfg_dict['build']['arch'])
 
-
 	# If using custom opt flags
 	if cfg_dict['build']['opt_flags']:
 		# If arch is defined
 		if cfg_dict['build']['arch']:
 			# If label is not provided
-			if not cfg_dict['build']['opt_label']:
-				cfg_dict['build']['opt_label'] = cfg_dict['build']['arch'] + "-modified"
+			if not cfg_dict['build']['build_label']:
+				cfg_dict['build']['build_label'] = cfg_dict['build']['arch'] + "-modified"
 
 			# Add custom opts to arch opts
 			try:
 				cfg_dict['build']['opt_flags'] = "'" + cfg_dict['build']['opt_flags'].replace('"', '').replace( \
 					'\'', '') + " " + arch_dict[cfg_dict['build']['arch']][cfg_dict['build']['compiler_type']].replace('\'', '') + "'"
 			except:
-				exception.error_and_quit(logger, "No default optimization flags for " +
-										 cfg_dict['build']['arch'] + " found in " + arch_cfg_file)
+				exception.error_and_quit(logger, "No default optimization flags for " + \
+										 cfg_dict['build']['arch'] + " found in " + gs.arch_cfg_file)
 
 			exception.print_warning(logger, "an archicture '" + cfg_dict['build']['arch'] + "' and custom optimization flags '" + \
 									cfg_dict['build']['opt_flags'] + "' have both been defined.")
 			exception.print_warning(logger, "setting compile flags to: " + cfg_dict['build']['opt_flags'])
 		# If arch not defined
 		else:
-			if not cfg_dict['build']['opt_label']:
+			if not cfg_dict['build']['build_label']:
 				exception.error_and_quit(logger, "When using custom optimization flags 'opt_flags' in " + \
-										 cfg_dict['metadata']['cfg_file'] + ", you need to provide a build label 'opt_label'.")
+										 cfg_dict['metadata']['cfg_file'] + ", you need to provide a build label 'build_label'.")
 	# If not using custom opt flags
 	else:
 		# If arch not defined, use system default arch
@@ -164,18 +158,21 @@ def process_build_cfg(cfg_dict):
 			exception.print_warning(logger, "using default system arch for " + cfg_dict['general']['system'] + ": " + cfg_dict['build']['arch'])
 
 		# Use arch as build label
-		cfg_dict['build']['opt_label'] = cfg_dict['build']['arch']
+		cfg_dict['build']['build_label'] = cfg_dict['build']['arch']
+
+		print(cfg_dict['build']['arch'])
+		print(cfg_dict['build']['compiler_type'])
 
 		# Get optimization flags for arch
 		try:
 			cfg_dict['build']['opt_flags'] = arch_dict[cfg_dict['build']['arch']][cfg_dict['build']['compiler_type']]
 		except:
-			exception.error_and_quit(logger, "No default optimization flags for " + cfg_dict['build']['arch'] + " found in " + arch_cfg_file)
+			exception.error_and_quit(logger, "No default optimization flags for " + cfg_dict['build']['arch'] + " found in " + gs.arch_cfg_file)
 
 	# Generate default build path if on is not defined
 	if not cfg_dict['general']['build_prefix']:
 		cfg_dict['general']['working_path'] = gs.build_path + gs.sl + cfg_dict['general']['system'] + gs.sl + get_label(cfg_dict['modules']['compiler']) + gs.sl + get_label( \
-						cfg_dict['modules']['mpi']) + gs.sl + cfg_dict['general']['code'] + gs.sl + cfg_dict['build']['opt_label'] + gs.sl + cfg_dict['general']['version']
+						cfg_dict['modules']['mpi']) + gs.sl + cfg_dict['general']['code'] + gs.sl + cfg_dict['build']['build_label'] + gs.sl + cfg_dict['general']['version']
 	# Translate 'build_prefix' to 'working_path' for better readability
 	else:
 		cfg_dict['general']['working_path'] = cfg_dict['general']['build_prefix']
@@ -187,6 +184,7 @@ def process_build_cfg(cfg_dict):
 # Check run config file and add required fields
 def process_run_cfg(cfg_dict):
 
+    # Check for missing essential parameters in general section
 	if not cfg_dict['sched']['nodes'] or not cfg_dict['sched']['ranks_per_node'] or not cfg_dict['sched']['threads'] or not cfg_dict['bench']['exe']:
 		print("Missing required parameters in "+cfg_dict['metadata']['cfg_file'])
 		print("----------------------------")
@@ -195,7 +193,10 @@ def process_run_cfg(cfg_dict):
 		print("Threads".ljust(16),   		":", cfg_dict['sched']['threads'])
 		print("Exe".ljust(16),   			":", cfg_dict['bench']['exe'])
 		print("----------------------------")
-		exception.error_and_quit("Cannot continue due to missing inputs.")
+		exception.error_and_quit(logger, "Cannot continue due to missing inputs.")
+
+	# Handle comma-delimited lists
+	cfg_dict['sched']['nodes'] = cfg_dict['sched']['nodes'].split(",")
 
 # Check sched config file and add required fields
 def process_sched_cfg(cfg_dict):
@@ -209,7 +210,7 @@ def process_sched_cfg(cfg_dict):
 		print("Queue".ljust(16),   	":", cfg_dict['schededuler']['queue'])
 		print("Account".ljust(16),	":", cfg_dict['schededuler']['account'])
 		print("----------------------------")
-		exception.error_and_quit("Cannot continue due to missing inputs.")
+		exception.error_and_quit(logger, "Cannot continue due to missing inputs.")
 
 	# Fill missing parameters
 	if not cfg_dict['scheduler']['job_label']:
