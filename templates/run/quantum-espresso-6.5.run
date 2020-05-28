@@ -5,10 +5,7 @@ export            exe=<<<exe>>>
 export    base_module=<<<base_mod>>>
 export     app_module=<<<app_mod>>>
 
-export x=<<<x>>>
-export y=<<<y>>>
-export z=<<<z>>>
-export t=<<<t>>>
+export electron_maxstep=<<<x>>>
 
 export OMP_NUM_THREADS=<<<threads>>>
 
@@ -18,7 +15,10 @@ ml
 
 mkdir -p ${working_path} && cd ${working_path}
 
-cp ${benchmark_repo}/in.lj . 
+cp ${benchmark_repo}/AUSURF112.tar.gz . 
+tar -xf AUSURF112.tar.gz && cd AUSURF112
 
-ibrun $exe -var x ${x} -var y ${y} -var z ${z} -var t ${t} < in.lj | tee output.log
+sed -i '/electron_maxstep/c\    electron_maxstep = ${electron_maxstep}' ausurf.in
+
+ibrun $exe -i ausurf.in | tee output.log
 

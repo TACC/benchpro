@@ -31,11 +31,11 @@ class init(object):
 	# Clean up temp files such as logs
 	def clean_temp_files(self):
 		print("Cleaning up temp files...")
+		# Search space for tmp files
 		search_dict = ['*.out*',
 					   '*.err*',
 					   '*.log',
-					   'tmp.*'
-					   ]
+					   'tmp.*']
 
 		file_list = self.find_matching_files(search_dict)
 
@@ -44,14 +44,27 @@ class init(object):
 			for f in file_list:
 				print(f)
 
-			print("Proceeding in", self.gs.timeout, "seconds...")
+			print('\033[1m' + "Deleting in", self.gs.timeout, "seconds...")
 			time.sleep(self.gs.timeout)
-			print("No going back now...")
+			print('\033[0m' + "No going back now...")
 			deleted = self.clean_matching_files(file_list)
-			print("Done, ", str(deleted), " files successfuly cleaned.")
+			print("Done, " + str(deleted) + " files successfuly cleaned.")
 
 		else:
 			print("No temp files found.")
+
+	# Prune dir tree until not unique
+	def prune_tree(self, path):
+		path_elems  = path.split(self.gs.sl)
+		parent_path = self.gs.sl.join(path.split(self.gs.sl)[:-1])
+		parent_dir  = path_elems[-2]
+
+		# If parent dir is root ('build' or 'modulefile') or if it contains more than this subdir, delete this subdir
+		if (parent_dir == self.gs.build_dir) or  (parent_dir == self.gs.module_dir) or (len(glob.glob(parent_path+self.gs.sl+"*")) > 1):
+			su.rmtree(path)
+		# Else resurse with parent
+		else:
+			self.prune_tree(parent_path)
 
 	# Detele application and module matching path provided
 	def remove_app(self, code_str):
@@ -60,22 +73,20 @@ class init(object):
 
 		install_path = common.check_if_installed(code_str)
 
-		print(install_path)
-
 		top_dir = self.gs.base_dir + self.gs.sl + self.gs.build_dir + self.gs.sl
 
 		# Get module dir from app dir, by adding 'modulefiles' prefix and stripping [version] suffix
-		mod_dir = top_dir + "modulefiles" + self.gs.sl + self.gs.sl.join(install_path.split(self.gs.sl)[:-1])
+		mod_dir = top_dir + self.gs.module_dir + self.gs.sl + self.gs.sl.join(install_path.split(self.gs.sl)[:-1])
 		app_dir = top_dir + install_path
 
-		print("Removing application installed in " + app_dir)
-		print("Proceeding in", self.gs.timeout, "seconds...")
+		print("Found application installed in " + app_dir)
+		print('\033[1m' + "Deleting in", self.gs.timeout, "seconds...")
 		time.sleep(self.gs.timeout)
-		print("No going back now...")
+		print('\033[0m' + "No going back now...")
 
 		# Delete application dir
 		try:
-			su.rmtree(app_dir)
+			self.prune_tree(app_dir)
 			print("")
 			print("Application removed.")
 		except:
@@ -85,11 +96,22 @@ class init(object):
 		print()
 		# Detele module dir
 		try:
-			su.rmtree(mod_dir)
+			self.prune_tree(mod_dir)
 			print("Module removed.")
 		except:
 			print("Warning: no associated module located in " + mod_dir)
 			print("Skipping")
+
+	# Print build report of installed application
+	def query_app(self, code_str):
+		common = common_funcs.init(self.gs)
+		install_path = common.check_if_installed(code_str)
+		build_report = self.gs.base_dir + self.gs.sl + self.gs.build_dir + self.gs.sl + install_path + self.gs.sl + self.gs.build_report_file
+
+		print("Build report for application '"+code_str+"'")
+		print("-------------------------------------------")
+		with open(build_report, 'r') as report:
+			print(report.read())
 
 	# Get all sub directories
 	def get_subdirs(self, base):
@@ -99,7 +121,7 @@ class init(object):
 	# Recurse down tree 5 levels to get full applciation installation path
 	def recurse_down(self, app_dir, start_depth, current_depth, max_depth):
 		for d in self.get_subdirs(app_dir):
-			if d != 'modulefiles':
+			if d != self.gs.module_dir:
 				new_dir = app_dir + self.gs.sl + d
 				if current_depth == max_depth:
 					print(
@@ -112,7 +134,7 @@ class init(object):
 	def show_installed(self):
 		print("Currently installed applications:")
 		print("---------------------------------")
-		app_dir = self.gs.base_dir + self.gs.sl + "build"
+		app_dir = self.gs.build_path
 		start = app_dir.count(self.gs.sl)
 		self.recurse_down(app_dir, start, start, start + 5)
 
@@ -120,7 +142,7 @@ class init(object):
 	def show_available(self):
 		print("Available application profiles:")
 		print("---------------------------------")
-		app_dir = self.gs.base_dir + self.gs.sl + "config" + self.gs.sl + "build" + self.gs.sl
+		app_dir = self.gs.config_path + self.gs.sl + self.gs.build_cfg_dir + self.gs.sl
 		temp_files = glob.glob(app_dir + "*.cfg")
 		for f in temp_files:
 			code = f.split('/')[-1]

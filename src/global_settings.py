@@ -1,58 +1,96 @@
-import configparser as cp
+# System Imports
+import configparser 
+from datetime import datetime
 import os
 import socket
-from datetime import datetime
+import sys
 
-# General session constants
-
-
+# General constants
 class init:
-	sl = "/"
 
-	user = str(os.getlogin())
-	hostname = str(socket.gethostname())
+	# Context variables
+	user				= str(os.getlogin())
+	hostname			= str(socket.gethostname())
 	if ("." in hostname):
-		hostname = '.'.join(map(str, hostname.split('.')[0:2]))
+		hostname		= '.'.join(map(str, hostname.split('.')[0:2]))
 
-	time_str = datetime.now().strftime("%Y-%m-%d_%Hh%M")
-	base_dir = sl.join(os.path.dirname(
-		os.path.abspath(__file__)).split('/')[:-1])
-	cwd = os.getcwd()
+	# Chicken & egg situation with 'sl' here - hardcoded 
+	time_str			= datetime.now().strftime("%Y-%m-%d_%Hh%M")
+	base_dir			= "/".join(os.path.dirname(os.path.abspath(__file__)).split("/")[:-1])
+	cwd				 	= os.getcwd()
 
-	timeout = 5
+	#----------------------------settings.cfg--------------------------------
+	settings_cfg 		= "settings.cfg"
+	settings_parser 	= configparser.RawConfigParser()
+	settings_parser.read(base_dir + "/" + settings_cfg)
 
-	# settings.cfg handler
-	settings_cfg = "settings.cfg"
-	settings_parser = cp.RawConfigParser()
-	settings_parser.read(base_dir + sl + settings_cfg)
+	def empty(key):
+		if type(key) is str and not key :
+			print("Missing key in settings.cfg, check the documentation.")
+			sys.exit(1)
+		else: return key
 
-	common_section = "common"
-	dry_run = settings_parser.getboolean(common_section,   "dry_run")
-	exit_on_missing = settings_parser.getboolean(
-		common_section,   "exit_on_missing")
-	log_level = settings_parser.getint(common_section,   "log_level")
+	try:
+		# [common]
+		section	 			= 'common'
+		dry_run				= empty(settings_parser.getboolean(section,	'dry_run'))
+		exit_on_missing 	= empty(settings_parser.getboolean(section,	'exit_on_missing'))
+		timeout				= empty(settings_parser.getint(section,		'timeout'))
+		sl					= empty(settings_parser.get(section,		'sl'))
+		tree_depth			= empty(settings_parser.getint(section,	   	'tree_depth'))
 
-	builder_section = "builder"
-	use_default_paths = settings_parser.getboolean(
-		builder_section,   "use_default_paths")
-	overwrite = settings_parser.getboolean(builder_section,   "overwrite")
-	build_log_file = settings_parser.get(builder_section,   "build_log_file")
+		# [config]
+		section				= 'config'
+		config_dir			= empty(settings_parser.get(section,		'config_dir'))
+		build_cfg_dir		= empty(settings_parser.get(section,		'build_cfg_dir'))  
+		run_cfg_dir			= empty(settings_parser.get(section,	  	'run_cfg_dir'))
+		sched_cfg_dir		= empty(settings_parser.get(section,	  	'sched_cfg_dir'))
+		system_cfg_file		= empty(settings_parser.get(section,	  	'system_cfg_file'))
+		arch_cfg_file		= empty(settings_parser.get(section,	  	'arch_cfg_file'))
+		compile_cfg_file	= empty(settings_parser.get(section,	  	'compile_cfg_file'))
 
-	bencher_section = "bencher"
-	run_log_file = settings_parser.get(bencher_section,   "run_log_file")
+		# [template]
+		section 			= 'templates'
+		template_dir		= empty(settings_parser.get(section,	  	'template_dir'))
+		build_tmpl_dir		= empty(settings_parser.get(section,	  	'build_tmpl_dir'))
+		sched_tmpl_dir		= empty(settings_parser.get(section,	  	'sched_tmpl_dir'))
+		run_tmpl_dir		= empty(settings_parser.get(section,	  	'run_tmpl_dir'))
+		compile_tmpl_file	= empty(settings_parser.get(section,	  	'compile_tmpl_file'))
 
-	build_dir = "build"
+		# [builder]
+		section 			= 'builder'
+		overwrite			= empty(settings_parser.getboolean(section, 'overwrite'))
+		build_dir			= empty(settings_parser.get(section,	  	'build_dir'))
+		build_log_file		= empty(settings_parser.get(section,   		'build_log_file'))
+		build_report_file	= empty(settings_parser.get(section,	  	'build_report_file'))
 
-	# Config file handling constants
-	configs_dir = "config"
-	build_cfg_dir = "build"
-	run_cfg_dir = "run"
-	sched_cfg_dir = "sched"
-	system_cfg_file = "system.cfg"
-	arch_cfg_file = "architecture_defaults.cfg"
+		# [bencher]
+		section				= 'bencher'
+		benchmark_repo		= empty(settings_parser.get(section,   		'benchmark_repo'))
+		run_log_file		= empty(settings_parser.get(section,	  	'run_log_file'))
 
-	# Template file handing constants
-	template_dir = "templates"
-	build_tmpl_dir = "build"
-	sched_tmpl_dir = "sched"
-	run_tmpl_dir = "run"
+		# [hw_info]
+		section 			= 'hw_info'
+		utils_dir			= empty(settings_parser.get(section,	  	'utils_dir'))
+
+	except configparser.NoSectionError as e:
+		print("Missing [section] in settings.cfg, check the documentation.")
+		print(e)
+		sys.exit(1)
+
+	except Exception as e:# configparser.Error as e:
+		print("Error parsing settings.cfg, check the documentation.")
+		print(e)
+		sys.exit(1)
+	#---------------------------------------------------------------------------
+
+	# Derived variables
+	module_dir		= "modulefiles"
+	build_path		= base_dir + sl + build_dir
+	config_path		= base_dir + sl + config_dir
+	template_path	= base_dir + sl + template_dir
+	module_path		= build_path + sl + module_dir
+	src_path		= base_dir + sl + "src"
+	utils_path		= base_dir + sl + utils_dir
+
+

@@ -1,7 +1,4 @@
 
-date
-echo "Slurm Job ID: ${SLURM_JOB_ID}"
-
 export     build_path=<<<build_path>>>
 export   install_path=<<<install_path>>>
 export       compiler=<<<compiler>>>
@@ -12,6 +9,12 @@ export            gsl=<<<gsl>>>
 export          phdf5=<<<phdf5>>>
 export          metis=<<<metis>>>
 export       parmetis=<<<parmetis>>>
+export      opt_flags=<<<opt_flags>>>
+
+date
+echo "Slurm Job ID: ${SLURM_JOB_ID}"
+echo "Host: ${HOSTNAME}"
+echo "User: ${USER}"
 
 #load modules
 ml reset
@@ -38,7 +41,7 @@ git clone https://github.com/SWIFTSIM/swiftsim.git && cd swiftsim
 ./autogen.sh
 ./configure --prefix=${install_path} --with-subgrid=EAGLE --disable-hand-vec --enable-mpi --enable-optimization=no --enable-parallel-hdf5 \
             --with-gsl --with-fftw --with-hdf5=$TACC_HDF5_BIN/h5pcc --with-metis --with-parmetis \
-            --with-tbbmalloc --with-numa --with-subgrid=EAGLE 
+            --with-tbbmalloc --with-numa --with-subgrid=EAGLE CFLAGS=${opt_flags} 
 make -j<<<threads>>>
 make install
 

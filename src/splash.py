@@ -1,10 +1,9 @@
+# System Imports
 import os
 import socket
 from datetime import datetime
 
 # Print welcome splash
-
-
 def print_splash(gs):
 	print("        ____  _______   __________  __   __________  ____  __ ")
 	print("       / __ )/ ____/ | / / ____/ / / /  /_  __/ __ \/ __ \/ / ")
@@ -12,9 +11,9 @@ def print_splash(gs):
 	print("     / /_/ / /___/ /|  / /___/ __  /    / / / /_/ / /_/ / /___")
 	print("    /_____/_____/_/ |_/\____/_/ /_/    /_/  \____/\____/_____/")
 
+	print("  ->User         :", gs.user)
+	print("  ->System       :", gs.hostname)
+	print("  ->Working dir  :", gs.base_dir)
+	print("  ->Date         :", gs.time_str)
 	print("------------------------------------------------------------------")
-	print("User         :", gs.user)
-	print("System       :", gs.hostname)
-	print("Working dir  :", gs.base_dir)
-	print("Date         :", gs.time_str)
-	print("")
+
