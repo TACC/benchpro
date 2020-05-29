@@ -49,7 +49,7 @@ def populate_mod_template(module, mod_dict):
 	# Get comma delimited list of build modules
 	mod_dict['mods'] = ', '.join('"{0}"'.format(w) for w in mod_dict['mods'])
 	# Get capitalized code name for env var
-	mod_dict['caps_code'] = mod_dict['code'].upper()
+	mod_dict['caps_code'] = mod_dict['code'].upper().replace("-", "_")
 
 	for key in mod_dict:
 		logger.debug("replace " + "<<<" + key + ">>> with " + mod_dict[key])

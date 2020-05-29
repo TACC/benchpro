@@ -4,5 +4,5 @@ setenv("<<<caps_code>>>_DIR", install_path)
 prepend_path("PATH",     pathJoin(install_path, "<<<bin_dir>>>"))
 
 always_load(<<<mods>>>)
-family("<<<code>>>")
+family("<<<caps_code>>>")
 
