@@ -20,26 +20,30 @@ git clone https://gitlab.tacc.utexas.edu/mcawood/bench-framework
 cd bench-framework
 source load_env.sh
 ```
-2 List applications available to install:
+2 List input options:
+```
+benchtool --help
+```
+3 List applications available to install:
 ```
 benchtool --avail
 ```
-3 Install a new application:
+4 Install a new application:
 ```
 benchtool --install lammps
 ```
-4 List applications currently installed:
+5 List applications currently installed:
 ```
 benchtool --installed
 ```
 By default `dry_run=True` in `settings.cfg` so the build script was created but not submitted to the scheduler. You could submit the job manually, or
 
 
-5 remove the dry_run build:
+6 remove the dry_run build:
 ```
 benchtool --remove [output from above]
 ```
-6 change `dry_run=False` in `settings.cfg` and rerun: 
+7 change `dry_run=False` in `settings.cfg` and rerun: 
 ```
 benchtool --install lammps
 ```
@@ -55,6 +59,19 @@ load the LAMMPS module and confirm that the LAMMPS binary is in your PATH:
 ```
 ml [lammps_module]
 which lmp_intel_cpu_intelmpi
+```
+In this example, parameters in `config/build/lammps_build.cfg` were used to populate the template `templates/build/lammps-stable.build`
+
+## Running a benchmark
+
+Assuming the above process was successful, you can now run a benchmark using your installed application.
+The benchmark process is similar to building; a config file is used to populate a template.
+A benchmark .cfg file can be provided with the `--parmam`, if not input is provided, the default cfg file will be used, located in `config/run/`  
+
+
+Run the LAMMPS benchmark with: 
+```
+benchtool --run lammps
 ```
 
 
