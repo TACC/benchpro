@@ -112,10 +112,10 @@ Global settings are defined in the file `settings.cfg`
 | **[hw_info]**     |                               | -                                                                                 |
 | utils_dir         | hw_utils                      | Subdirectory in each hardware info collection tools are located.                  |
 
-## Adding a new application profile
+## Building a new application
 The builder requires two input files to build an application: a config file containing contextualization parameters, and a build template file which will be populated with this parameters. 
 
-### 1. Contextualization Config file
+### 1. Build config file
 This file contains parameters which populate the template file, the file is broken in sections corresponding to general settings, system modules required, build and run parameters.
 
 | Label            | Required?  | Description                                                                      |
@@ -153,6 +153,13 @@ This file must be located in `templates/codes`, with the naming scheme `[code]-[
 
 You can define you own Lua module template, otherwise a generic one will be created for you.
 This file must be located in `templates/codes`, with the naming scheme `[code]-[version].module` 
+
+## Running a new application benchmark
+
+### 1. Run config file
+
+
+### 2. Run template file  
 
 ## Directory structure
 
