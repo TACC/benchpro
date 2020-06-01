@@ -66,7 +66,7 @@ In this example, parameters in `config/build/lammps_build.cfg` were used to popu
 
 Assuming the above process was successful, you can now run a benchmark using your installed application.
 The benchmark process is similar to building; a config file is used to populate a template.
-A benchmark .cfg file can be provided with the `--parmam`, if not input is provided, the default cfg file will be used, located in `config/run/`  
+A benchmark .cfg file can be provided with the `--parmam`, if no input is provided, the default cfg file will be used, located in `config/run/`  
 
 
 Run the LAMMPS benchmark with: 
