@@ -79,18 +79,38 @@ benchtool --run lammps
 
 Global settings are defined in the file `settings.cfg`
 
-| Label            | Default  | Description                                                                      |
-|------------------|------------|----------------------------------------------------------------------------------|
-| **[builder]**    |            | -                                                                            |
-| dry_run           | True       | Generates job script but does not submit it, useful for testing
-| use_default_paths | True       | Overwrites setting in application config file (below), builds app in default location |
-| overwrite         | False      | If existing installation  is found in build path, replace it                |
-| exit_on_missing   | True       | Exit if template is not fully populates (missing parameters found)            |
-| log_level         | 1          | WIP                                                                      |                
-| exception_log_file| error      | Label for exception log                                                         |                                 
-| build_log_file    | build      | Label for build log                                                              |
-| **[bencher]**    |            |                                                                                  |
-| run_log_file      | run        | Label for run log                                                              |
+| Label             | Default                       | Description                                                                       |
+|-------------------|-------------------------------|-----------------------------------------------------------------------------------|
+| **[common]**      |                               | -                                                                                 |
+| dry_run           | True                          | Generates job script but does not submit it, useful for testing                   |
+| exit_on_missing   | True                          | Exit if template is not fully populates (missing parameters found)                |
+| timeout           | 5                             | Delay in seconds after warning and before file deletion event                     |
+| sl                | /                             | Filesystem seperator.                                                             |
+| tree_depth        | 5                             | Determines depth of app installation tree.                                        |
+| **[config]**      |                               | -                                                                                 |
+| config_dir        | config                        | Config file directory.                                                            |
+| build_cfg_dir     | build                         | Build config file subdirectory.                                                   |
+| run_cfg_dir       | run                           | Benchmark config file subdirectory.                                               |
+| sched_cfg_dir     | sched                         | Scheduler config file subdirectory.                                               |
+| system_cfg_file   | system.cfg                    | File containing system default archicture and core count.                         |
+| arch_cfg_file     | architecture_defaults.cfg     | File containing default compile optimization flags.                               |
+| compile_cfg_file  | compiler.cfg                  | File containing compiler environment variables.                                   |
+| **[templates]**   |                               | -                                                                                 |
+| template_dir      | templates                     | Template file directory.                                                          |
+| build_tmpl_dir    | build                         | Build template file subdirectory.                                                 |
+| sched_tmpl_dir    | sched                         | Scheduler template file subdirectory.                                             |
+| run_tmpl_dir      | run                           | Benchmark template file subdirectory.                                             |
+| compile_tmpl_file | compiler.template             | Template for setting environment variables.                                       |
+| **[builder]**     |                               | -                                                                                 |
+| overwrite         | False                         | If existing installation  is found in build path, replace it                      |
+| build_dir         | build                         | Top directory for application installation tree.                                  |
+| build_log_file    | build                         | Label for build log                                                               |
+| build_report_file | build_report.txt              | Application build report file name.                                               |
+| **[bencher]**     |                               |                                                                                   |
+| benchmark_repo    | /work/06280/mcawood/datasets  | Directory containing benchmark datasets.                                          |
+| run_log_file      | run                           | Label for run log                                                                 |
+| **[hw_info]**     |                               | -                                                                                 |
+| utils_dir         | hw_utils                      | Subdirectory in each hardware info collection tools are located.                  |
 
 ## Adding a new application profile
 The builder requires two input files to build an application: a config file containing contextualization parameters, and a build template file which will be populated with this parameters. 
