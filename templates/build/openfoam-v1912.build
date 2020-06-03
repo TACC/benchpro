@@ -28,9 +28,9 @@ tar -xf ThirdParty-${opf_version}.tgz && mv ThirdParty-${opf_version} ${install_
 
 cd ${install_path}/OpenFOAM-${opf_version}
 
-sed -i -e "s/\$HOME/OpenFOAM/${install_path}/g" etc/bashrc
-sed -i -e "s/WM_MPLIB=SYSTEMOPENMPI/WM_MPLIB=INTELMPI/g" etc/bashrc
-sed -i -e "s/WM_COMPILER=Gcc/WM_COMPILER=Icc/g" etc/bashrc
+sed -i "/projectDir=/c\projectDir=${install_path}\/OpenFOAM-${opf_version}" etc/bashrc
+sed -i "/export WM_MPLIB=SYSTEMOPENMPI/c\export WM_MPLIB=INTELMPI" etc/bashrc
+sed -i "/export WM_COMPILER=Gcc/c\export WM_COMPILER=Icc" etc/bashrc
 
 export WM_NCOMPPROCS=<<<threads>>>
 

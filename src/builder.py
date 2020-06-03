@@ -65,14 +65,14 @@ def generate_build_report(code_cfg, sched_output, logger):
 
 	with open(report_file, 'a') as out:
 		out.write("[report]\n")
-		out.write("Code         = "+ code_cfg['general']['code'] + "\n")
-		out.write("Version      = "+ code_cfg['general']['version'] + "\n")
-		out.write("System       = "+ code_cfg['general']['system'] + "\n")
-		out.write("Modules      = "+ ", ".join(code_cfg['modules'].values()) + "\n")
-		out.write("Optimization = "+ code_cfg['build']['opt_flags'] + "\n")	
-		out.write("Build_prefix = "+ code_cfg['general']['working_path'] + "\n")
-		out.write("Build_date   = "+ gs.time_str + "\n")
-		out.write("Job_ID       = "+ sched_output[0] + "\n")
+		out.write("code         = "+ code_cfg['general']['code'] + "\n")
+		out.write("version      = "+ code_cfg['general']['version'] + "\n")
+		out.write("system       = "+ code_cfg['general']['system'] + "\n")
+		out.write("modules      = "+ ", ".join(code_cfg['modules'].values()) + "\n")
+		out.write("optimization = "+ code_cfg['build']['opt_flags'] + "\n")	
+		out.write("build_prefix = "+ code_cfg['general']['working_path'] + "\n")
+		out.write("build_date   = "+ gs.time_str + "\n")
+		out.write("job_id       = "+ sched_output[0] + "\n")
 		out.write("Build_host   = "+ sched_output[1])
 
 # Main methond for generating and submitting build script

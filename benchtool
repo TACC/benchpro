@@ -29,7 +29,7 @@ def main():
 	cmd_parser.add_argument("--sched", default="system",
 							type=str, help="Name of the scheduler cfg file.")
 
-	cmd_parser.add_argument("--run", default=False,
+	cmd_parser.add_argument("--bench", default=False,
 							type=str, help="Run an installed application, run '--show-installed' for valid options.")
 	cmd_parser.add_argument("--params", default=False,
 							type=str, help="Config file containing run parameters.")
@@ -64,7 +64,7 @@ def main():
 		builder.build_code(args, gs)
 
 	# Start runner
-	elif args.run:
+	elif args.bench:
 		bencher.run_bench(args, gs)
 
 	# Cleanup and exit

@@ -125,7 +125,7 @@ class init(object):
 				new_dir = app_dir + self.gs.sl + d
 				if current_depth == max_depth:
 					print(
-						"	" + self.gs.sl.join(new_dir.split(self.gs.sl)[start_depth + 1:]))
+						"	" + self.gs.build_dir + self.gs.sl + self.gs.sl.join(new_dir.split(self.gs.sl)[start_depth + 1:]))
 				else:
 					self.recurse_down(new_dir, start_depth,
 								 current_depth + 1, max_depth)
