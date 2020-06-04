@@ -28,20 +28,16 @@ ml $metis
 ml $parmetis
 ml
 
-export lib_dir=${build_path}/libs
-export PATH=${install_path}/bin:$PATH
+mkdir -p ${build_path} && cd ${build_path}
 
-$CC --version
-mpirun --version
-
-mkdir -p ${build_path}
-cd ${build_path}
 git clone https://github.com/SWIFTSIM/swiftsim.git && cd swiftsim
 
+TACC_PARMETIS_DIR="$(dirname "$TACC_PARMETIS_LIB")"
+
 ./autogen.sh
-./configure --prefix=${install_path} --with-subgrid=EAGLE --disable-hand-vec --enable-mpi --enable-optimization=no --enable-parallel-hdf5 \
-            --with-gsl --with-fftw --with-hdf5=$TACC_HDF5_BIN/h5pcc --with-metis --with-parmetis \
-            --with-tbbmalloc --with-numa --with-subgrid=EAGLE CFLAGS=${opt_flags} 
+./configure --prefix=${install_path} --with-subgrid=EAGLE --disable-hand-vec --enable-mpi --enable-optimization=yes --enable-parallel-hdf5 \
+            --with-gsl=$TACC_GSL_DIR --with-fftw=$TACC_FFTW3_DIR --with-hdf5=$TACC_HDF5_BIN/h5pcc --with-metis=$TACC_METIS_DIR \
+			--with-parmetis=$TACC_PARMETIS_DIR --with-tbbmalloc --with-numa --with-subgrid=EAGLE 
 make -j<<<threads>>>
 make install
 

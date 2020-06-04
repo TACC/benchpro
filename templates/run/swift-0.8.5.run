@@ -6,7 +6,8 @@ export    base_module=<<<base_mod>>>
 export     app_module=<<<app_mod>>>
 
 export        steps=<<<steps>>>
-export          yml=<<<base_mod>>>
+export          tar=<<<tar>>>
+export          yml=<<<yml>>>
 export      threads=<<<threads>>>
 
 export OMP_NUM_THREADS=${threads}
@@ -17,8 +18,8 @@ ml
 
 mkdir -p ${working_path} && cd ${working_path}
 
-cp ${benchmark_repo}/EAGLE_12.tgz .
-tar -xf EAGLE_12.tgz && cd EAGLE_12
+cp ${benchmark_repo}/${tar}.tgz .
+tar -xf ${tar}.tgz && cd ${tar}
 
 ibrun ${exe} -n ${steps} --cosmology --eagle --threads=${threads} --pin ${yml} | tee output.log
 

@@ -18,18 +18,19 @@ ml $mpi
 ml
 
 mkdir -p ${build_path} && cd ${build_path}
+mkdir -p ${install_path} && ${install_path}
 
 wget https://sourceforge.net/projects/openfoam/files/${opf_version}/OpenFOAM-${opf_version}.tgz
 wget https://sourceforge.net/projects/openfoam/files/${opf_version}/ThirdParty-${opf_version}.tgz
 
-tar -xf OpenFOAM-${opf_version}.tgz && mv OpenFOAM-${opf_version} ${install_path}
-tar -xf ThirdParty-${opf_version}.tgz && mv ThirdParty-${opf_version} ${install_path}
+tar -xf OpenFOAM-${opf_version}.tgz && mv OpenFOAM-${opf_version} ${install_path}/
+tar -xf ThirdParty-${opf_version}.tgz && mv ThirdParty-${opf_version} ${install_path}/
 
 cd ${install_path}/OpenFOAM-${opf_version}
 
-sed -i -e "s/\$HOME/OpenFOAM/${install_path}/g" etc/bashrc
-sed -i -e "s/WM_MPLIB=SYSTEMOPENMPI/WM_MPLIB=INTELMPI/g" etc/bashrc
-sed -i -e "s/WM_COMPILER=Gcc/WM_COMPILER=Icc/g" etc/bashrc
+sed -i "/projectDir=/c\projectDir=${install_path}\/OpenFOAM-${opf_version}" etc/bashrc
+sed -i "/export WM_MPLIB=SYSTEMOPENMPI/c\export WM_MPLIB=INTELMPI" etc/bashrc
+sed -i "/export WM_COMPILER=Gcc/c\export WM_COMPILER=Icc" etc/bashrc
 
 export WM_NCOMPPROCS=<<<threads>>>
 

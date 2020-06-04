@@ -25,14 +25,19 @@ def run_bench(args, settings):
 	# Start logger
 	logger = common.start_logging("RUN", gs.base_dir + gs.sl + gs.run_log_file + "_" + gs.time_str + ".log")
 
-	code_path = common.check_if_installed(args.run)
+	code_path = common.check_if_installed(args.bench)
 
 	# Get app info from build report
-	report_parser	 = cp.RawConfigParser()
+	report_parser	 = cp.ConfigParser()
+	report_parser.optionxform=str
 	report_parser.read(gs.build_path + gs.sl + code_path + gs.sl + gs.build_report_file)
-	system 	= report_parser.get('report', 'system')
-	code 	= report_parser.get('report', 'code')
-	version = report_parser.get('report', 'version')
+
+	try:
+		system 	= report_parser.get('report', 'system')
+		code 	= report_parser.get('report', 'code')
+		version = report_parser.get('report', 'version')
+	except:
+		exception.error_and_quit(logger, "Unable to read build_report.txt file in "+code_path)
 
 	logger.debug("Application details:")
 	logger.debug("System  = "+system)
@@ -48,7 +53,13 @@ def run_bench(args, settings):
 	run_cfg = cfg_handler.get_cfg('run',  		args.params, gs, logger)
 	sched_cfg = cfg_handler.get_cfg('sched', 	args.sched,  gs, logger)
 
-	session = code + "-" + gs.time_str
+	session =  "bench-" + gs.time_str
+
+
+	# Add variables from build report to run cfg dict
+	run_cfg['bench']['version'] = version
+	run_cfg['bench']['code'] = code
+	run_cfg['bench']['system'] = system
 
 	# Path to benchmark session directory
 	run_cfg['bench']['base_path'] = gs.build_path + gs.sl + code_path + gs.sl + session
@@ -82,6 +93,7 @@ def run_bench(args, settings):
 		# Get working_path
 		subdir = "nodes_" + node.zfill(3)
 		run_cfg['bench']['working_path'] = run_cfg['bench']['base_path'] + gs.sl + subdir
+		print("Working path: " + run_cfg['bench']['working_path'])
 
 		# Get total ranks from nodes * ranks_per_node
 		run_cfg['sched']['ranks'] = int(node) * int(run_cfg['sched']['ranks_per_node'])

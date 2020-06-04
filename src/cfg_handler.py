@@ -56,7 +56,8 @@ def check_file(cfg_type, cfg_name):
 
 # Parse cfg file into dict
 def read_cfg_file(cfg_file):
-	cfg_parser = cp.RawConfigParser()
+	cfg_parser = cp.ConfigParser()
+	cfg_parser.optionxform=str
 	cfg_parser.read(cfg_file)
 	# Add file name to dict
 	cfg_dict = {'metadata': {'cfg_file': cfg_file}}

@@ -21,8 +21,8 @@ echo     "--installed $?"
 benchtool --query $APP   > /dev/null
 echo     "--query     $?"
 
-benchtool --run $APP     > /dev/null
-echo     "--run       $?"
+benchtool --bench $APP     > /dev/null
+echo     "--bench     $?"
 
 benchtool --remove $APP  > /dev/null
 echo     "--remove    $?"
