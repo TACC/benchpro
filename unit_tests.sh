@@ -2,7 +2,7 @@
 
 source ld_env.sh
 
-APP=swift
+APP=lammps
 
 # Remove existing installation
 benchtool --remove $APP  > /dev/null

@@ -40,14 +40,13 @@ def check_for_previous_install(path, logger):
 									 ". The install directory already exists and 'overwrite=False' in settings.cfg")
 
 # Check if module is available on the system
-def check_module_exists(module):
+def check_module_exists(module, logger):
 	try:
 		cmd = subprocess.run("module spider " + module, shell=True,
 							 check=True, capture_output=True, universal_newlines=True)
 
 	except subprocess.CalledProcessError as e:
-		exception.error_and_quit(
-			logger, "module " + module + " not available on this system")
+		exception.error_and_quit(logger, "module '" + module + "' not available on this system")
 
 # Log cfg contents
 def send_inputs_to_log(cfg, logger):
@@ -106,7 +105,7 @@ def build_code(args, settings):
 
 	# Input Checks
 	for mod in code_cfg['modules']: 
-		check_module_exists(code_cfg['modules'][mod])
+		check_module_exists(code_cfg['modules'][mod], logger)
 
 	# Check if build dir already exists
 	check_for_previous_install(code_cfg['general']['working_path'], logger)

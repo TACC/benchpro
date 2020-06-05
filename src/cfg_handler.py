@@ -49,6 +49,9 @@ def check_file(cfg_type, cfg_name):
 	logger.debug("Looking for " + cfg_name + " in " + cfg_path + "...")
 
 	if not os.path.isfile(cfg_path + cfg_name):
+		print("Available applications:")
+		for cfg in os.listdir(cfg_path):
+			print("  "+cfg)
 		exception.error_and_quit(logger, "Input file '" + cfg_name + "' not found.")
 
 	logger.debug("Found")
@@ -91,6 +94,8 @@ def process_build_cfg(cfg_dict):
 
 	# Insert 1 node for build job
 	cfg_dict['build']['nodes'] = "1"
+        # Path to application's data directory
+	cfg_dict['build']['benchmark_repo'] = gs.benchmark_repo
 
 	# Get system from env if not defined
 	if not cfg_dict['general']['system']:
@@ -160,9 +165,6 @@ def process_build_cfg(cfg_dict):
 
 		# Use arch as build label
 		cfg_dict['build']['build_label'] = cfg_dict['build']['arch']
-
-		print(cfg_dict['build']['arch'])
-		print(cfg_dict['build']['compiler_type'])
 
 		# Get optimization flags for arch
 		try:

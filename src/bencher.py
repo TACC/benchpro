@@ -64,7 +64,7 @@ def run_bench(args, settings):
 	# Path to benchmark session directory
 	run_cfg['bench']['base_path'] = gs.build_path + gs.sl + code_path + gs.sl + session
 	# Path to application's data directory
-	run_cfg['bench']['benchmark_repo'] = gs.benchmark_repo + gs.sl + code
+	run_cfg['bench']['benchmark_repo'] = gs.benchmark_repo
 	# Directory to add to MODULEPATH
 	run_cfg['bench']['base_mod'] = gs.module_path
 	# Directory to application installation
