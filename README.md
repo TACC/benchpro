@@ -18,7 +18,7 @@ The following steps should produce a working installation of LAMMPS. Tested on S
 ```
 git clone https://gitlab.tacc.utexas.edu/mcawood/bench-framework
 cd bench-framework
-source load_env.sh
+source ld_env.sh
 ```
 2 List input options:
 ```
