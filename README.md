@@ -7,7 +7,7 @@ Currently there are 5 application profiles available for debugging and testing:
    - Quantum Espresso
    - SWIFTsim
    - WRF
-   - 
+
 ## Getting Started
 
 The following steps should produce a working installation of LAMMPS. Tested on Stampede2 and Frontera.
