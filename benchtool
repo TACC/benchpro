@@ -30,7 +30,7 @@ def main():
 							type=str, help="Name of the scheduler cfg file.")
 
 	cmd_parser.add_argument("--bench", default=False,
-							type=str, help="Run an installed application, run '--show-installed' for valid options.")
+							type=str, help="Run an installed application, run '--installed' for valid options.")
 	cmd_parser.add_argument("--params", default=False,
 							type=str, help="Config file containing run parameters.")
 
