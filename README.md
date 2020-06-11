@@ -75,7 +75,7 @@ A benchmark .cfg file can be provided with the `--param`, if no input is provide
 
 Run the LAMMPS benchmark with: 
 ```
-benchtool --run lammps
+benchtool --bench lammps
 ```
 
 
