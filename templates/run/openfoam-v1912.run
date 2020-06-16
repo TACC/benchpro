@@ -1,0 +1,35 @@
+export   working_path=<<<working_path>>>
+export benchmark_repo=<<<benchmark_repo>>>
+export            exe=<<<exe>>>
+export    base_module=<<<base_mod>>>
+export     app_module=<<<app_mod>>>
+
+export            version=<<<version>>>
+export            endTime=<<<endTime>>>
+export      writeInterval=<<<writeInterval>>>
+export numberOfSubdomains=<<<numberOfSubdomains>>>
+export		      dataset=<<<dataset>>>
+
+
+export OMP_NUM_THREADS=<<<threads>>>
+
+ml use $base_module
+ml $app_module
+ml
+
+source $OPENFOAM_DIR/OpenFOAM-${version}/etc/bashrc
+
+mkdir -p ${working_path} && cd ${working_path}
+
+cp ${benchmark_repo}/${dataset}.tgz .
+
+tar -xf ${dataset}.tgz && cd ${dataset}
+
+sed -i "/endTime/c\endTime         ${endTime};" system/controlDict
+sed -i "/writeInterval/c\writeInterval   ${writeInterval};" system/controlDict
+sed -i "/numberOfSubdomains/c\numberOfSubdomains ${numberOfSubdomains};" system/decomposeParDict
+
+decomposePar -force > decompose.out
+
+ibrun ${exe} -parallel | tee output.log
+

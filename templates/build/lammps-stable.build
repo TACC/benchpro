@@ -1,5 +1,3 @@
-date
-echo "Slurm Job ID: ${SLURM_JOB_ID}"
 
 export     build_path=<<<build_path>>>
 export   install_path=<<<install_path>>>
@@ -8,6 +6,11 @@ export            mpi=<<<mpi>>>
 export    lmp_version=<<<version>>>
 export      opt_flags=<<<opt_flags>>>
 export            exe=<<<exe>>>
+
+date
+echo "Slurm Job ID: ${SLURM_JOB_ID}"
+echo "Host: ${HOSTNAME}"
+echo "User: ${USER}"
 
 ml reset
 ml ${compiler}
@@ -31,3 +34,5 @@ make package-status
 make intel_cpu_intelmpi -j <<<threads>>>
 
 mkdir -p ${install_path} && cp ${exe} ${install_path}
+
+date

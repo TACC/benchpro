@@ -8,86 +8,91 @@ import sys
 
 # Local Imports
 try:
-    import src.builder as builder
-    import src.input_handler as input_handler
-    import src.bencher as bencher
-    import src.splash as splash
+	import src.bencher as bencher
+	import src.builder as builder
+	import src.global_settings as global_settings
+	import src.input_handler as input_handler
+	import src.splash as splash
 
 except ImportError as e:
-    print("You had an import error, you might be using Python2. Please run 'source load.sh'")
-    print(e)
-    sys.exit(1)
+	print("You had an import error, you might be using Python2. Please run 'source load.sh'")
+	print(e)
+	sys.exit(1)
 
 def main():
+	# Parse cmdline args
+	cmd_parser = argparse.ArgumentParser(
+		description='This is a builder tool for managing appliation benchmarks.')
 
-    # Parse cmdline args
-    cmd_parser = argparse.ArgumentParser(
-        description='This is a builder tool for managing appliation benchmarks.')
+	cmd_parser.add_argument("--install", default=False,
+							type=str, help="Name of the code cfg file to install")
+	cmd_parser.add_argument("--sched", default="system",
+							type=str, help="Name of the scheduler cfg file.")
 
-    cmd_parser.add_argument("--install", default=False,
-                            type=str, help="Name of the code cfg file to install")
-    cmd_parser.add_argument("--sched", default="system",
-                            type=str, help="Name of the scheduler cfg file.")
+	cmd_parser.add_argument("--bench", default=False,
+							type=str, help="Run an installed application, run '--installed' for valid options.")
+	cmd_parser.add_argument("--params", default=False,
+							type=str, help="Config file containing run parameters.")
 
-    cmd_parser.add_argument("--run", default=False,
-                            type=str, help="Run an installed application, run '--show-installed' for valid options.")
-    cmd_parser.add_argument("--inputs", default=False,
-                            type=str, help="Config file containing run parameters.")
+	cmd_parser.add_argument("--clean", default=False, action='store_true',
+							help="Cleanup temp and log files.")
+	cmd_parser.add_argument("--installed", default=False, action='store_true',
+							help="Show all installed applications.")
+	cmd_parser.add_argument("--avail", default=False, action='store_true',
+							help="Show all available application profiles.")
+	cmd_parser.add_argument("--query", default=False,
+								help="Query build report of an installed application.")
+	cmd_parser.add_argument("--remove", default=False,
+							help="Remove an installed application.")
 
-    cmd_parser.add_argument("--clean", default=False, action='store_true',
-                            help="Cleanup temp and log files.")
-    cmd_parser.add_argument("--installed", default=False, action='store_true',
-                            help="Show all installed applications.")
-    cmd_parser.add_argument("--avail", default=False, action='store_true',
-                            help="Show all available application profiles.")
-    cmd_parser.add_argument("--remove", default=False,
-                            help="Remove an installed application, run '--show-installed' for valid options.")
+	args = cmd_parser.parse_args()
 
+	# Get global settings
+	gs = global_settings.init()
 
-    args = cmd_parser.parse_args()
+	# Print splash
+	splash.print_splash(gs)
 
-    # Print splash
-    splash.print_splash()
+	# Use system default scheduler profile
+	if args.sched == "system":
+		args.sched = "slurm-" + os.getenv('TACC_SYSTEM') + ".cfg"
 
+	handler = input_handler.init(gs)
 
-    # Use system default scheduler profile 
-    if args.sched == "system":
-        args.sched = "slurm-"+os.getenv('TACC_SYSTEM')+".cfg"
+	# Start builder
+	if args.install:
+		builder.build_code(args, gs)
 
-    # Start builder
-    if args.install:
-        builder.build_code(args)
+	# Start runner
+	elif args.bench:
+		bencher.run_bench(args, gs)
 
-    # Start runner
-    elif args.run:
-        if not args.inputs:
-            print("--inputs required for running benchmark")
-            sys.exit(1)
+	# Cleanup and exit
+	elif args.clean:
+		handler.clean_temp_files()
 
-        bencher.run_bench(args)
+	# Show isntalled and exit
+	elif args.installed:
+		handler.show_installed()
 
-    # Cleanup and exit
-    elif args.clean:
-        input_handler.clean_temp_files()
+	# Show available and exit
+	elif args.avail:
+		handler.show_available()
 
-    # Show isntalled and exit
-    elif args.installed:
-        input_handler.show_installed()
+	# Remove installation and exit
+	elif args.remove:
+		handler.remove_app(args.remove)
 
-    # Show available and exit
-    elif args.avail:
-        input_handler.show_available()
+	# Query installation and exit
+	elif args.query:
+		handler.query_app(args.query)
 
-    # Remove installation and exit
-    elif args.remove:
-        input_handler.remove_app(args.remove)
+	# No seletion provided
+	else:
+		print("Try 'build.py --help' for more information.")
 
-    # No seletion provided
-    else:
-        print("Try 'build.py --help' for more information.")
-
-    print()
-    return 0
+	print()
+	return 0
 
 if __name__ == "__main__":
-    sys.exit(main())
+	sys.exit(main())

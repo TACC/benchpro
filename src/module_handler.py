@@ -1,113 +1,113 @@
-
 # System Imports
 import os
-import re
 import shutil as su
 import sys
 
+# Local Imports
+import src.common as common_funcs
 import src.exception as exception
 
-sl = "/"
-top_dir = sl.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1])
+logger = gs = ''
 
 # Check inputs for module creation
-def check_inputs(mod_dict, mod_path, overwrite, build_logger, exception_logger):
+def check_inputs(mod_dict, mod_path):
 
-    if (not mod_dict['system']) or (not mod_dict['compiler']) or (not mod_dict['mpi']) or (not mod_dict["code"]) or (not mod_dict['version']):
-        exception_logger.debug("Missing full application definition:")
-        exception_logger.debug("----------------------------")
-        exception_logger.debug("System".ljust(10),   ":", mod_dict['system'])
-        exception_logger.debug("Compiler".ljust(10), ":", mod_dict['compiler'])
-        exception_logger.debug("MPI".ljust(10),      ":", mod_dict['mpi'])
-        exception_logger.debug("Code".ljust(10),     ":", mod_dict["code"])
-        exception_logger.debug("Version".ljust(10),  ":", mod_dict['version'])
-        exception_logger.debug("----------------------------")
-        exception_logger.debug("Exitting")
-        sys.exit(1)
+	if not mod_dict['system'] or not mod_dict['compiler'] or not mod_dict['mpi'] or not mod_dict["code"] or not mod_dict['version']:
+		logger.debug("Missing full application definition:")
+		logger.debug("----------------------------")
+		logger.debug("System".ljust(10),   ":", mod_dict['system'])
+		logger.debug("Compiler".ljust(10), ":", mod_dict['compiler'])
+		logger.debug("MPI".ljust(10),	  ":", mod_dict['mpi'])
+		logger.debug("Code".ljust(10),	 ":", mod_dict["code"])
+		logger.debug("Version".ljust(10),  ":", mod_dict['version'])
+		logger.debug("----------------------------")
+		logger.debug("Exitting")
+		sys.exit(1)
 
-    # Check if module already exists
-    if os.path.isdir(mod_path):
+	# Check if module already exists
+	if os.path.isdir(mod_path):
 
-        if overwrite:
-            build_logger.debug("WARNING: Deleting old module in "+mod_path+" because 'overwrite=True' in settings.cfg")
-            su.rmtree(mod_path)
-            os.makedirs(mod_path)
+		if gs.overwrite:
+			exception.print_warning(logger, "deleting old module in " + mod_path + " because 'overwrite=True' in settings.cfg")
+			su.rmtree(mod_path)
+			os.makedirs(mod_path)
 
-        else:
-            exception.error_and_quit(exception_logger, "Module path already exists.")
-
-# Convert compiler/MPI string to directory label
-def get_label(compiler):
-    label = compiler
-    if compiler.count(sl) > 0:
-        comp_ver = compiler.split(sl)
-        label = comp_ver[0]+comp_ver[1].split(".")[0]
-    return label
+		else:
+			exception.error_and_quit(logger, "Module path already exists.")
 
 # Copy template to target dir
-def copy_mod_template(template_file, mod_file, exception_logger):
-    try:
-        with open(mod_file,'wb') as out:
-            with open(template_file,'rb') as inp:
-                su.copyfileobj(inp, out)
-    except:
-        exception.error_and_quit(exception_logger, "Failed to "+template_file + " to " + mod_file)
+def copy_mod_template(module_template, mod_file):
+	try:
+		with open(mod_file, 'wb') as out:
+			with open(module_template, 'rb') as inp:
+				su.copyfileobj(inp, out)
+	except:
+		exception.error_and_quit(logger, "Failed to copy " + module_template + " to " + mod_file)
 
 # Replace <<<>>> vars in copied template
-def populate_mod_template(module, mod_dict, build_logger, exception_logger):
-    mod_dict['mods'] = ', '.join('"{0}"'.format(w) for w in mod_dict['mods'])
-    mod_dict['caps_code'] = mod_dict['code'].upper()
+def populate_mod_template(module, mod_dict):
+	# Get comma delimited list of build modules
+	mod_dict['mods'] = ', '.join('"{0}"'.format(w) for w in mod_dict['mods'])
+	# Get capitalized code name for env var
+	mod_dict['caps_code'] = mod_dict['code'].upper().replace("-", "_")
 
-    mod_dict['install_dir'] = top_dir + sl + "build" + sl + mod_dict['system'] + sl + get_label(mod_dict['compiler']) + sl + get_label(mod_dict['mpi']) + sl + mod_dict['code'] + sl + mod_dict['opt_label'] + sl + mod_dict['version'] + sl + "install"
+	for key in mod_dict:
+		logger.debug("replace " + "<<<" + key + ">>> with " + mod_dict[key])
+		module = module.replace("<<<" + key + ">>>", mod_dict[key])
+	return module
 
-    for key in mod_dict:
-        build_logger.debug("replace " + "<<<" + key + ">>> with " + mod_dict[key])
-        module = module.replace("<<<" + key + ">>>", mod_dict[key])
-    return module
-
-def test_mod_file(module, exit_on_missing, build_logger, exception_logger):
-    key = "<<<.*>>>"
-    nomatch = re.findall(key,module)
-    if len(nomatch) > 0:
-        exception_log.debug("Missing module parameters were found in module file!")
-        exception_log.debug(nomatch)
-        if exit_on_missing:
-            exception.error_and_quit(exception_logger, "Missing module parameters were found in module file and exit_on_missing=True in settings.cfg")
-
-    else:
-        build_logger.debug("All module parameters were filled, continuing")
-
+# Write module to file
 def write_mod_file(module, mod_file):
-    with open(mod_file, "w") as f:
-        f.write(module)
+	with open(mod_file, "w") as f:
+		f.write(module)
 
 # Make module for compiled appliation
-def make_mod(template_file, general_opts, build_opts, mod_opts, exit_on_missing, overwrite, build_logger, exception_logger):
+def make_mod(general_opts, build_opts, mod_opts, settings, log_to_use):
 
-    mod_dict = {'mods' : []}
-    mod_dict['compiler'] = mod_opts['compiler']
-    mod_dict['mpi']      = mod_opts['mpi']
+	# Get global settings & logger obj
+	global logger, gs
+	logger = log_to_use
+	gs = settings
 
-    build_logger.debug("Creating module file for "+general_opts['code'])
+	# Instantiate common_funcs
+	common = common_funcs.init(gs)
 
-    for mod in mod_opts:
-       mod_dict['mods'] += [mod_opts[mod]]
+	# Create combined module dict 
+	mod_dict = {'mods': []}
+	mod_dict['compiler'] = mod_opts['compiler']
+	mod_dict['mpi'] = mod_opts['mpi']
 
-    mod_dict.update(general_opts)
-    mod_dict.update(build_opts)
+	logger.debug("Creating module file for " + general_opts['code'])
 
-    mod_path = top_dir + sl + "build" + sl + "modulefiles" + sl + mod_dict['system'] + sl + get_label(mod_dict['compiler']) + sl + get_label(mod_dict['mpi']) + sl + mod_dict['code'] + sl + mod_dict['opt_label']
+	for mod in mod_opts:
+		mod_dict['mods'] += [mod_opts[mod]]
 
-    check_inputs(mod_dict, mod_path, overwrite, build_logger, exception_logger)
+	mod_dict.update(general_opts)
+	mod_dict.update(build_opts)
 
-    mod_file = "tmp." + mod_dict['version'] + ".lua"
+	# Get module file path
+	mod_path = gs.module_path + gs.sl + mod_dict['system'] + gs.sl + common.get_label(mod_dict['compiler']) + gs.sl + common.get_label(mod_dict['mpi']) + gs.sl + mod_dict['code'] + gs.sl + mod_dict['build_label']
 
-    copy_mod_template(template_file, mod_file, exception_logger)
+	check_inputs(mod_dict, mod_path)
+	# tmp module file name
+	mod_file = "tmp." + mod_dict['version'] + ".lua"
 
-    module = open(mod_file).read()
-    module = populate_mod_template(module, mod_dict, build_logger, exception_logger)
-    test_mod_file(module, exit_on_missing, build_logger, exception_logger)
-    write_mod_file(module, mod_file)
+	module_template = gs.template_path + gs.sl + gs.build_tmpl_dir + gs.sl + mod_dict['code'] + "-" + mod_dict['version'] + ".module"
 
-    return mod_path, mod_file
+	# Use generic module template if not found for this application
+	if not os.path.exists(module_template):
+		exception.print_warning(logger, "" + mod_dict['code'] + " module template file not available at " + module_template)
+		exception.print_warning(logger, "using a generic module template")
+		module_template = "/".join(module_template.split("/")[:-1]) + gs.sl + "generic.module"
 
+	# Copy base module template
+	copy_mod_template(module_template, mod_file)
+	module = open(mod_file).read()
+	# Populuate template with config params
+	module = populate_mod_template(module, mod_dict)
+	# Test module template
+	common.test_template(module_template, module, logger)
+	# Write module template to file
+	write_mod_file(module, mod_file)
+
+	return mod_path, mod_file

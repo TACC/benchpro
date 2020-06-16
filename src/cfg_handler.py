@@ -5,177 +5,248 @@ import sys
 
 import src.exception as exception
 
-sl                  = "/"
-base_dir            = sl.join(os.path.dirname(os.path.abspath(__file__)).split('/')[:-1])
-configs_dir         = "config"
-code_cfg_dir        = "codes"
-sched_cfg_dir       = "sched"
-system_cfg_file     = "system.cfg"
-arch_cfg_file       = "architecture_defaults.cfg"
+logger = gs = ''
 
 # Check cfg file exists
-def check_file(cfg_type, cfg_name, exception_logger):
-    # Format cfg filename
-    suffix = ''
-    subdir = ''
-    if   cfg_type == 'code' : 
-        subdir = code_cfg_dir
-        if not "_build" in cfg_name:
-            suffix += "_build"
+def check_file(cfg_type, cfg_name):
+	suffix = ''
+	subdir = ''
 
-    elif cfg_type == 'sched': 
-        subdir = sched_cfg_dir
+	# First: check for file in user's CWD
+	cfg_path = gs.cwd + gs.sl
+	logger.debug("Looking for " + cfg_name + " in " + cfg_path + "...")
+	if os.path.isfile(cfg_path + cfg_name):
+		logger.debug("Found")
+		return cfg_path + cfg_name
 
-    if not ".cfg" in cfg_name:
-        suffix += ".cfg"
+	# Second: check in project base_dir
+	cfg_path = gs.base_dir + gs.sl
+	logger.debug("Looking for " + cfg_name + " in " + cfg_path + "...")
+	if os.path.isfile(cfg_path + cfg_name):
+		logger.debug("Found")
+		return cfg_path + cfg_name
 
-    cfg_name += suffix
+	# Third: reformat naming and look in ./config dir
+	if cfg_type == 'build':
+		subdir = gs.build_cfg_dir
+		if not "_build" in cfg_name:
+			suffix += "_build"
 
-    cfg_path = base_dir + sl
+	elif cfg_type == 'run':
+		subdir = gs.run_cfg_dir
+		if not "_run" in cfg_name:
+			suffix += "_run"
 
-    if not os.path.isfile(cfg_path+cfg_name):
-        cfg_path += configs_dir + sl
+	elif cfg_type == 'sched':
+		subdir = gs.sched_cfg_dir
 
-    if not os.path.isfile(cfg_path+cfg_name):
-        cfg_path += subdir + sl
+	if not ".cfg" in cfg_name:
+		suffix += ".cfg"
 
-    if not os.path.isfile(cfg_path+cfg_name):
-        exception.error_and_quit(exception_logger, "Input file \""+cfg_name+"\" not found.")
+	cfg_name += suffix
+	cfg_path = gs.config_path + gs.sl + subdir + gs.sl
 
-    return cfg_path+cfg_name
+	logger.debug("Looking for " + cfg_name + " in " + cfg_path + "...")
 
-# Read cfg file into dict
-def read_cfg_file(cfg_file, exception_logger):
-    cfg_parser = cp.RawConfigParser()
-    cfg_parser.read(cfg_file)
+	if not os.path.isfile(cfg_path + cfg_name):
+		print("Available applications:")
+		for cfg in os.listdir(cfg_path):
+			print("  "+cfg)
+		exception.error_and_quit(logger, "Input file '" + cfg_name + "' not found.")
 
-    cfg_dict = {'metadata': {'cfg_file' : cfg_file}}
-    for section in cfg_parser.sections():
-        cfg_dict[section] = {}
-        for value in cfg_parser.options(section):
-            cfg_dict[section][value] = cfg_parser.get(section, value)
+	logger.debug("Found")
+	return cfg_path + cfg_name
 
-    return cfg_dict
+# Parse cfg file into dict
+def read_cfg_file(cfg_file):
+	cfg_parser = cp.ConfigParser()
+	cfg_parser.optionxform=str
+	cfg_parser.read(cfg_file)
+	# Add file name to dict
+	cfg_dict = {'metadata': {'cfg_file': cfg_file}}
+	for section in cfg_parser.sections():
+		cfg_dict[section] = {}
+		for value in cfg_parser.options(section):
+			cfg_dict[section][value] = cfg_parser.get(section, value)
 
-# Convert module name to directory name
-def get_label(compiler):
-    label = compiler
-    if compiler.count(sl) > 0:
-        comp_ver = compiler.split(sl)
-        label = comp_ver[0]+comp_ver[1].split(".")[0]
-    return label
+	return cfg_dict
 
-# Check the contents of code input cfg file for issues
-def check_code_cfg_contents(cfg_dict, use_default_paths, build_logger, exception_logger):
+# Convert module name to usable directory name, Eg: intel/18.0.2 -> intel18
+def get_label(module):
+	label = module
+	if module.count(gs.sl) > 0:
+		comp_ver = module.split(gs.sl)
+		label = comp_ver[0] + comp_ver[1].split(".")[0]
+		logger.debug("Converted " + module + " to " + label)
+	return label
 
+# Check build config file and add required fields
+def process_build_cfg(cfg_dict):
 
-    cfg_dict['build']['ranks'] = "1"
+	# Check for missing essential parameters in general section
+	if not cfg_dict['general']['code'] or not cfg_dict['general']['version']:
+		print("Missing required parameters in "+cfg_dict['metadata']['cfg_file'])
+		print("----------------------------")
+		print("Code".ljust(10),	  ":", cfg_dict['general']['code'])
+		print("Version".ljust(10),   ":", cfg_dict['general']['version'])
+		print("----------------------------")
+		exception.error_and_quit(logger, "Cannot continue due to missing inputs.")
 
-    # Get system from env if not defined
-    if not cfg_dict['general']['system']:
-        build_logger.debug("WARNING: system not defined in '"+cfg_dict['metadata']['cfg_file']+"', getting system label from $TACC_SYSTEM: "+str(os.getenv('TACC_SYSTEM')))
-        cfg_dict['general']['system'] = str(os.getenv('TACC_SYSTEM'))
-        print(cfg_dict['general']['system'])
+	# Insert 1 node for build job
+	cfg_dict['build']['nodes'] = "1"
+        # Path to application's data directory
+	cfg_dict['build']['benchmark_repo'] = gs.benchmark_repo
+
+	# Get system from env if not defined
+	if not cfg_dict['general']['system']:
+		exception.print_warning(logger, "system not defined in '" + cfg_dict['metadata']['cfg_file'] + \
+								"', getting system label from $TACC_SYSTEM: " + str(os.getenv('TACC_SYSTEM')))
+		cfg_dict['general']['system'] = str(os.getenv('TACC_SYSTEM'))
+
+	# Check for compiler and MPI
+	if not cfg_dict['modules']['compiler'] or not cfg_dict['modules']['mpi']:
+		exception.error_and_quit(logger, "compiler and/or MPI module not provided.")
+
+	# Parse system info config file 
+	system_file = check_file('system', gs.config_dir + gs.sl + gs.system_cfg_file)
+	system_dict = read_cfg_file(system_file)
+
+	# Parse architecture defaults config file 
+	arch_file = check_file('arch', gs.config_dir + gs.sl + gs.arch_cfg_file)
+	arch_dict = read_cfg_file(arch_file)
+
+	# Extract compiler type
+	cfg_dict['build']['compiler_type'] = cfg_dict['modules']['compiler'].split('/')[0]
+
+	# Get core count for system
+	try:
+		cfg_dict['build']['cores'] = system_dict[cfg_dict['general']['system']]['cores']
+		logger.debug("Core count for " + cfg_dict['general']['system'] + " = " + cfg_dict['build']['cores'])
+
+	except:
+		exception.error_and_quit(logger, "System profile '" + cfg_dict['general']['system'] + "' missing in " + config_dir + gs.sl + gs.system_cfg_file)
+
+	# If arch requested = 'system', get default arch for this system
+	if cfg_dict['build']['arch'] == 'system':
+		cfg_dict['build']['arch'] = system_dict[cfg_dict['general']['system']]['default_arch']
+		logger.debug("Requested build arch='system'. Using system default for " + cfg_dict['general']['system'] + " = " + cfg_dict['build']['arch'])
+
+	# If using custom opt flags
+	if cfg_dict['build']['opt_flags']:
+		# If arch is defined
+		if cfg_dict['build']['arch']:
+			# If label is not provided
+			if not cfg_dict['build']['build_label']:
+				cfg_dict['build']['build_label'] = cfg_dict['build']['arch'] + "-modified"
+
+			# Add custom opts to arch opts
+			try:
+				cfg_dict['build']['opt_flags'] = "'" + cfg_dict['build']['opt_flags'].replace('"', '').replace( \
+					'\'', '') + " " + arch_dict[cfg_dict['build']['arch']][cfg_dict['build']['compiler_type']].replace('\'', '') + "'"
+			except:
+				exception.error_and_quit(logger, "No default optimization flags for " + \
+										 cfg_dict['build']['arch'] + " found in " + gs.arch_cfg_file)
+
+			exception.print_warning(logger, "an archicture '" + cfg_dict['build']['arch'] + "' and custom optimization flags '" + \
+									cfg_dict['build']['opt_flags'] + "' have both been defined.")
+			exception.print_warning(logger, "setting compile flags to: " + cfg_dict['build']['opt_flags'])
+		# If arch not defined
+		else:
+			if not cfg_dict['build']['build_label']:
+				exception.error_and_quit(logger, "When using custom optimization flags 'opt_flags' in " + \
+										 cfg_dict['metadata']['cfg_file'] + ", you need to provide a build label 'build_label'.")
+	# If not using custom opt flags
+	else:
+		# If arch not defined, use system default arch
+		if not cfg_dict['build']['arch']:
+			cfg_dict['build']['arch'] = system_dict[cfg_dict['general']['system']]['default_arch']
+			exception.print_warning(logger, "no architecture defined in " + cfg_dict['metadata']['cfg_file'])
+			exception.print_warning(logger, "using default system arch for " + cfg_dict['general']['system'] + ": " + cfg_dict['build']['arch'])
+
+		# Use arch as build label
+		cfg_dict['build']['build_label'] = cfg_dict['build']['arch']
+
+		# Get optimization flags for arch
+		try:
+			cfg_dict['build']['opt_flags'] = arch_dict[cfg_dict['build']['arch']][cfg_dict['build']['compiler_type']]
+		except:
+			exception.error_and_quit(logger, "No default optimization flags for " + cfg_dict['build']['arch'] + " found in " + gs.arch_cfg_file)
+
+	# Generate default build path if on is not defined
+	if not cfg_dict['general']['build_prefix']:
+		cfg_dict['general']['working_path'] = gs.build_path + gs.sl + cfg_dict['general']['system'] + gs.sl + get_label(cfg_dict['modules']['compiler']) + gs.sl + get_label( \
+						cfg_dict['modules']['mpi']) + gs.sl + cfg_dict['general']['code'] + gs.sl + cfg_dict['build']['build_label'] + gs.sl + cfg_dict['general']['version']
+	# Translate 'build_prefix' to 'working_path' for better readability
+	else:
+		cfg_dict['general']['working_path'] = cfg_dict['general']['build_prefix']
+	
+	# Get build and install subdirs
+	cfg_dict['general']['build_path']   = cfg_dict['general']['working_path'] + gs.sl + "build"
+	cfg_dict['general']['install_path'] = cfg_dict['general']['working_path'] + gs.sl + "install"
+
+# Check run config file and add required fields
+def process_run_cfg(cfg_dict):
 
     # Check for missing essential parameters in general section
-    if not cfg_dict['general']['code'] or not cfg_dict['general']['version']:
-        exception.error_and_quit(exception_logger, "Missing parameter detected in "+ cfg_dict['metadata']['cfg_file'] + "\n Please ensure at least 'code', 'version' and 'system' are defined in the [general] section.")
+	if not cfg_dict['sched']['nodes'] or not cfg_dict['sched']['ranks_per_node'] or not cfg_dict['sched']['threads'] or not cfg_dict['bench']['exe']:
+		print("Missing required parameters in "+cfg_dict['metadata']['cfg_file'])
+		print("----------------------------")
+		print("Nodes".ljust(16),   			":", cfg_dict['sched']['nodes'])
+		print("Ranks_per_node".ljust(16),	":", cfg_dict['sched']['ranks_per_node'])
+		print("Threads".ljust(16),   		":", cfg_dict['sched']['threads'])
+		print("Exe".ljust(16),   			":", cfg_dict['bench']['exe'])
+		print("----------------------------")
+		exception.error_and_quit(logger, "Cannot continue due to missing inputs.")
 
-    # Check for conflicting parameter combinations
-    if not use_default_paths and not cfg_dict['general']['build_prefix']:
-        exception.error_and_quit(exception_logger, "use_default_paths=False in settings.cfg but build_prefix not set in "+ cfg_dict['metadata']['cfg_file'])
+	# Handle comma-delimited lists
+	cfg_dict['sched']['nodes'] = cfg_dict['sched']['nodes'].split(",")
 
-    if use_default_paths and cfg_dict['general']['build_prefix']:
-        exception.error_and_quit(exception_logger, "use_default_paths=True in settings.cfg but build_prefix is set in"+ cfg_dict['metadata']['cfg_file'])
+# Check sched config file and add required fields
+def process_sched_cfg(cfg_dict):
 
-    system_file = check_file('system', configs_dir+sl+system_cfg_file, exception_logger)
-    system_dict = read_cfg_file(system_file, exception_logger)
+	# Check for missing essential parameters in general section
+	if not cfg_dict['scheduler']['type'] or not cfg_dict['scheduler']['queue'] or not cfg_dict['scheduler']['account']:
 
-    arch_file = check_file('arch', configs_dir+sl+arch_cfg_file, exception_logger)
-    arch_dict = read_cfg_file(arch_file, exception_logger)
+		print("Missing required parameters in "+cfg_dict['metadata']['cfg_file'])
+		print("----------------------------")
+		print("Type".ljust(16),		":", cfg_dict['schededuler']['type'])
+		print("Queue".ljust(16),   	":", cfg_dict['schededuler']['queue'])
+		print("Account".ljust(16),	":", cfg_dict['schededuler']['account'])
+		print("----------------------------")
+		exception.error_and_quit(logger, "Cannot continue due to missing inputs.")
 
+	# Fill missing parameters
+	if not cfg_dict['scheduler']['job_label']:
+		cfg_dict['scheduler']['job_label'] = 'builder'
+		logger.debug("Set job_label = " + cfg_dict['scheduler']['job_label'])
+	if not cfg_dict['scheduler']['runtime']:
+		cfg_dict['scheduler']['runtime'] = '02:00:00'
+		logger.debug("Set runtime = " + cfg_dict['scheduler']['runtime'])
+	if not cfg_dict['scheduler']['job_label']:
+		cfg_dict['scheduler']['threads'] = 4
+		logger.debug("Set threads = " + cfg_dict['scheduler']['threads'])
 
-    # Extract compiler type
-    cfg_dict['build']['compiler_type']   = cfg_dict['modules']['compiler'].split('/')[0]
+# Read input param config and test 
+def get_cfg(cfg_type, cfg_name, settings,  log_to_use):
 
-    # Get core count for given system
-    try:
-        cfg_dict['build']['cores'] = system_dict[cfg_dict['general']['system']]['cores']
-    except:
-        exception.error_and_quit(exception_logger, "System profile '"+cfg_dict['general']['system']+"' missing in "+configs_dir+sl+system_cfg_file)
+	global logger, gs 
+	logger = log_to_use
+	gs = settings
 
-    # If system default arch provided, get system default
-    if cfg_dict['build']['arch'] == 'system':
-        cfg_dict['build']['arch'] = system_dict[cfg_dict['general']['system']]['default_arch']
+	# Check input file exists
+	cfg_file = check_file(cfg_type, cfg_name)
+	# Parse input fo;e
+	cfg_dict = read_cfg_file(cfg_file)
 
+	# Start processing function for cfg type
+	if cfg_type == 'build':
+		logger.debug("Starting build cfg processing.")
+		process_build_cfg(cfg_dict)
+	elif cfg_type == 'run':
+		logger.debug("Starting run cfg processing.")
+		process_run_cfg(cfg_dict)
+	elif cfg_type == 'sched':
+		logger.debug("Starting sched cfg processing.")
+		process_sched_cfg(cfg_dict)
 
-    # If using custom opt flags
-    if cfg_dict['build']['opt_flags']:
-        # If arch is defined
-        if cfg_dict['build']['arch']:
-            # If label is not provided
-            if not cfg_dict['build']['opt_label']:
-                cfg_dict['build']['opt_label'] = cfg_dict['build']['arch'] + "-modified"             
-
-            # Add custom opts to arch opts
-            try:
-                cfg_dict['build']['opt_flags'] = "'" + cfg_dict['build']['opt_flags'].replace('"', '').replace('\'', '') + " " + arch_dict[cfg_dict['build']['arch']][cfg_dict['build']['compiler_type']].replace('\'', '') + "'"
-            except:
-                exception.error_and_quit(exception_logger, "No default optimization flags for "+cfg_dict['build']['arch']+" found in "+arch_cfg_file)
-
-            build_logger.debug("WARNING: An archicture '"+cfg_dict['build']['arch']+"' and custom optimization flags '"+cfg_dict['build']['opt_flags']+"' have both been defined.")
-            build_logger.debug("WARNING: Setting compile flags to: "+cfg_dict['build']['opt_flags'])
-        # If arch not defined
-        else:
-            if not cfg_dict['build']['opt_label']:
-                exception.error_and_quit(exception_logger, "When using custom optimization flags 'opt_flags' in "+cfg_dict['metadata']['cfg_file']+", you need to provide a build label 'opt_label'.")
-    # If not using custom opt flags
-    else:
-        # If arch not defined, use system default arch
-        if not cfg_dict['build']['arch']:
-            cfg_dict['build']['arch'] = system_dict[cfg_dict['general']['system']]['default_arch']
-            build_logger.debug("WARNING: no architecture defined in "+cfg_dict['metadata']['cfg_file'])
-            build_logger.debug("WARNING: using default system arch for "+cfg_dict['general']['system']+": "+cfg_dict['build']['arch'])
-
-        # Use arch as build label
-        cfg_dict['build']['opt_label'] = cfg_dict['build']['arch']
-
-        # Get optimization flags for arch
-        try:
-            cfg_dict['build']['opt_flags'] = arch_dict[cfg_dict['build']['arch']][cfg_dict['build']['compiler_type']]
-        except:
-            exception.error_and_quit(exception_logger, "No default optimization flags for "+cfg_dict['build']['arch']+" found in "+arch_cfg_file)
-
-    
-    # Generate default build path if on is not defined
-    if not cfg_dict['general']['build_prefix']:
-        cfg_dict['general']['build_prefix'] = base_dir + sl + "build" + sl + cfg_dict['general']['system'] + sl + get_label(cfg_dict['modules']['compiler']) + sl + get_label(cfg_dict['modules']['mpi']) + sl  + cfg_dict['general']['code'] + sl + cfg_dict['build']['opt_label'] + sl + cfg_dict['general']['version']
-
-    return cfg_dict
-
-# Check the contents of schede input cfg file for issues
-def check_sched_cfg_contents(cfg_dict, use_default_paths, build_logger, exception_logger):
-    # Check for missing essential parameters in general section
-    if not cfg_dict['scheduler']['type'] or not cfg_dict['scheduler']['queue'] or not cfg_dict['scheduler']['account']:
-        exception.error_and_quit(exception_logger, "Missing parameter detected in "+ cfg_dict['metadata']['cfg_file']+ "\n Please ensure at least 'type', 'queue' and 'account' are defined in the [scheduler] section.")
-
-    # Fill missing parameters
-    if not cfg_dict['scheduler']['job_label']:
-        cfg_dict['scheduler']['job_label'] = 'builder'
-    if not cfg_dict['scheduler']['runtime']:
-        cfg_dict['scheduler']['runtime'] = '02:00:00'
-    if not cfg_dict['scheduler']['job_label']:
-        cfg_dict['scheduler']['threads'] = 4
-
-    return cfg_dict
-
-def get_cfg(cfg_type, cfg_name, use_default_paths, build_logger, exception_logger):
-    cfg_file = check_file(cfg_type, cfg_name, exception_logger)
-    cfg_dict = read_cfg_file(cfg_file, exception_logger)
-
-    if cfg_type == 'code':    
-        check_code_cfg_contents (cfg_dict, use_default_paths, build_logger, exception_logger)
-    elif cfg_type == 'sched': 
-        check_sched_cfg_contents(cfg_dict, use_default_paths, build_logger, exception_logger)
-
-    return cfg_dict
+	return cfg_dict

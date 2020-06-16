@@ -1,38 +1,50 @@
 # System Imports
-import re
 import shutil as su
 import sys
 
+# Local Imports
+import src.common as common_funcs
 import src.exception as exception
 
-# Copy template files for population
-def construct_template(list_of_templates, job_script):
-    with open(job_script,'wb') as out:
-        for f in list_of_templates:
-            with open(f,'rb') as fd:
-                su.copyfileobj(fd, out)
+logger = gs = ''
 
-# Contextualize build template with input.cfg vars
-def populate_template(template_opts, script, build_logger):
-    for key in template_opts:
-        build_logger.debug("replace " + "<<<" + str(key) + ">>> with " + str(template_opts[key]))
-        script = script.replace("<<<" + str(key) + ">>>", str(template_opts[key]))
-    return script
+# Combines list of input templates to single script file
+def construct_template(input_templates, script_file):
+	with open(script_file, 'wb') as out:
+		for f in input_templates:
+			logger.debug("Ingesting template file " + f)
+			with open(f, 'rb') as fd:
+				su.copyfileobj(fd, out)
 
-# Check for unpopulated vars in template file
-def test_template(script, exit_on_missing, build_logger, exception_logger):
-    key = "<<<.*>>>"
-    nomatch = re.findall(key,script)
-    if len(nomatch) > 0:
-        build_logger.debug("Missing build parameters were found in build template!")
-        build_logger.debug(nomatch)
-        if exit_on_missing:
-            exception.error_and_quit(exception_logger, "Missing parameters were found in build template and exit_on_missing=True in settings.cfg:"+' '.join(nomatch))
-    else:
-        build_logger.debug("All build parameters were filled, continuing")
+# Contextualizes template script with variables from a list of config dicts
+def populate_template(input_cfgs, script_file):
+	logger.debug("Populating template file " + script_file)
+	script = open(script_file).read()
+	# For each config dict
+	for cfg in input_cfgs:
+		# For each key, find and replace <<<key>>> in template file
+		for key in cfg:
+			logger.debug("replacing " + "<<<" + str(key) + ">>> with " + str(cfg[key]))
+			script = script.replace("<<<" + str(key) + ">>>", str(cfg[key]))
+	return script
 
-# Write template to file
-def write_template(script_file, script):
-    with open(script_file, "w") as f:
-        f.write(script)
+# Combine template files and populate
+def generate_template(input_cfgs, input_templates, script_file, settings, log_to_use):
 
+	# Get global settings & logger obj
+	global logger, gs
+	logger = log_to_use
+	gs = settings
+
+	# Instantiate common_funcs
+	common = common_funcs.init(gs)
+
+	# Take multiple input template files and combine them to generate unpopulated script
+	construct_template(input_templates, script_file)
+	# Take multiple config dicts and populate script template
+	script = populate_template(input_cfgs, script_file)
+	# Test for missing parameters
+	common.test_template(script_file, script, logger)
+	# Read populated script to file
+	with open(script_file, "w") as f:
+		f.write(script)
