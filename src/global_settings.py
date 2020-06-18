@@ -38,12 +38,13 @@ class init:
 		timeout				= empty(settings_parser.getint(section,		'timeout'))
 		sl					= empty(settings_parser.get(section,		'sl'))
 		tree_depth			= empty(settings_parser.getint(section,	   	'tree_depth'))
+		topdir_env_var		= empty(settings_parser.get(section,        'topdir_env_var'))
 
 		# [config]
 		section				= 'config'
 		config_dir			= empty(settings_parser.get(section,		'config_dir'))
 		build_cfg_dir		= empty(settings_parser.get(section,		'build_cfg_dir'))  
-		run_cfg_dir			= empty(settings_parser.get(section,	  	'run_cfg_dir'))
+		bench_cfg_dir		= empty(settings_parser.get(section,	  	'bench_cfg_dir'))
 		sched_cfg_dir		= empty(settings_parser.get(section,	  	'sched_cfg_dir'))
 		system_cfg_file		= empty(settings_parser.get(section,	  	'system_cfg_file'))
 		arch_cfg_file		= empty(settings_parser.get(section,	  	'arch_cfg_file'))
@@ -54,7 +55,7 @@ class init:
 		template_dir		= empty(settings_parser.get(section,	  	'template_dir'))
 		build_tmpl_dir		= empty(settings_parser.get(section,	  	'build_tmpl_dir'))
 		sched_tmpl_dir		= empty(settings_parser.get(section,	  	'sched_tmpl_dir'))
-		run_tmpl_dir		= empty(settings_parser.get(section,	  	'run_tmpl_dir'))
+		bench_tmpl_dir		= empty(settings_parser.get(section,	  	'bench_tmpl_dir'))
 		compile_tmpl_file	= empty(settings_parser.get(section,	  	'compile_tmpl_file'))
 
 		# [builder]
@@ -67,7 +68,9 @@ class init:
 		# [bencher]
 		section				= 'bencher'
 		benchmark_repo		= empty(settings_parser.get(section,   		'benchmark_repo'))
-		run_log_file		= empty(settings_parser.get(section,	  	'run_log_file'))
+		bench_dir			= empty(settings_parser.get(section,        'bench_dir'))
+		bench_log_file		= empty(settings_parser.get(section,	  	'bench_log_file'))
+		output_file			= empty(settings_parser.get(section,        'output_file'))
 
 		# [hw_info]
 		section 			= 'hw_info'
@@ -85,12 +88,13 @@ class init:
 	#---------------------------------------------------------------------------
 
 	# Derived variables
+	top_env         = topdir_env_var + sl
 	module_dir		= "modulefiles"
 	build_path		= base_dir + sl + build_dir
+	bench_path		= base_dir + sl + bench_dir
 	config_path		= base_dir + sl + config_dir
 	template_path	= base_dir + sl + template_dir
 	module_path		= build_path + sl + module_dir
 	src_path		= base_dir + sl + "src"
 	utils_path		= base_dir + sl + utils_dir
-
 

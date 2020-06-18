@@ -1,0 +1,11 @@
+
+Currently Loaded Modules:
+  1) git/2.24.1      7) python3/3.7.0
+  2) autotools/1.1   8) builder
+  3) cmake/3.16.1    9) intel/18.0.2
+  4) xalt/2.8       10) libfabric/1.7.0
+  5) TACC           11) impi/18.0.2
+  6) htop/2.2.0     12) stampede2/intel/impi/lammps/skylake-xeon/stable
+
+ 
+

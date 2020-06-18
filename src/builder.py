@@ -1,15 +1,9 @@
 # System Imports
-import configparser as cp
-import glob
 import os
-import pprint as pp
-import re
 import shutil as su
-import socket
 import subprocess
 import sys
 import time
-from datetime import datetime
 
 # Local Imports
 import src.cfg_handler as cfg_handler
@@ -18,7 +12,7 @@ import src.exception as exception
 import src.module_handler as module_handler
 import src.template_handler as template_handler
 
-gs	 = ''
+gs = common = ''
 
 # Check if an existing installation exists
 def check_for_previous_install(path, logger):
@@ -57,28 +51,30 @@ def send_inputs_to_log(cfg, logger):
 			logger.debug("  " + str(line) + "=" + str(cfg[seg][line]))
 
 # Generate build report after job is submitted
-def generate_build_report(code_cfg, sched_output, logger):
-	report_file = code_cfg['general']['working_path'] + gs.sl + gs.build_report_file
+def generate_build_report(build_cfg, sched_output, logger):
+	report_file = build_cfg['general']['working_path'] + gs.sl + gs.build_report_file
 
-	print("Writing build report to " + report_file)
+	print("Build report:")
 
 	with open(report_file, 'a') as out:
 		out.write("[report]\n")
-		out.write("code         = "+ code_cfg['general']['code'] + "\n")
-		out.write("version      = "+ code_cfg['general']['version'] + "\n")
-		out.write("system       = "+ code_cfg['general']['system'] + "\n")
-		out.write("modules      = "+ ", ".join(code_cfg['modules'].values()) + "\n")
-		out.write("optimization = "+ code_cfg['build']['opt_flags'] + "\n")	
-		out.write("build_prefix = "+ code_cfg['general']['working_path'] + "\n")
+		out.write("code         = "+ build_cfg['general']['code'] + "\n")
+		out.write("version      = "+ build_cfg['general']['version'] + "\n")
+		out.write("system       = "+ build_cfg['general']['system'] + "\n")
+		out.write("modules      = "+ ", ".join(build_cfg['modules'].values()) + "\n")
+		out.write("optimization = "+ build_cfg['build']['opt_flags'] + "\n")	
+		out.write("build_prefix = "+ build_cfg['general']['working_path'] + "\n")
 		out.write("build_date   = "+ gs.time_str + "\n")
 		out.write("job_id       = "+ sched_output[0] + "\n")
 		out.write("Build_host   = "+ sched_output[1])
+
+	print(">  " + common.rel_path(report_file))
 
 # Main methond for generating and submitting build script
 def build_code(args, settings):
 
 	# Get global settings obj
-	global gs
+	global gs, common
 	gs = settings
 
 	# Instantiate common_funcs
@@ -88,71 +84,84 @@ def build_code(args, settings):
 	logger = common.start_logging("BUILD", gs.base_dir + gs.sl + gs.build_log_file + "_" + gs.time_str + ".log")
 
 	# Parse config input files
-	code_cfg =	 cfg_handler.get_cfg('build',	args.install,		gs, logger)
+	build_cfg =	 cfg_handler.get_cfg('build',	args.install,		gs, logger)
 	sched_cfg =	cfg_handler.get_cfg('sched',	args.sched,		  gs, logger)
 	compiler_cfg = cfg_handler.get_cfg('compiler', gs.compile_cfg_file, gs, logger)
 
-	print('{:25}'.format('Using application config'), ":", code_cfg['metadata']['cfg_file'])
-	print('{:25}'.format('Using scheduler config'), ":",   sched_cfg['metadata']['cfg_file'])
+	print()
+	print("Using application config file:") 
+	print(">  " + common.rel_path(build_cfg['metadata']['cfg_file']))
+	print()
+	print("Using scheduler config file:")
+	print(">  " + common.rel_path(sched_cfg['metadata']['cfg_file']))
+	print()
 
 	# Print inputs to log
-	send_inputs_to_log(code_cfg, logger)
+	send_inputs_to_log(build_cfg, logger)
 	send_inputs_to_log(sched_cfg, logger)
 	send_inputs_to_log(compiler_cfg, logger)
 
 	# Get compiler cmds for gcc/intel
-	compiler_cfg['common'].update(compiler_cfg[code_cfg['build']['compiler_type']])
+	compiler_cfg['common'].update(compiler_cfg[build_cfg['build']['compiler_type']])
 
 	# Input Checks
-	for mod in code_cfg['modules']: 
-		check_module_exists(code_cfg['modules'][mod], logger)
+	for mod in build_cfg['modules']: 
+		check_module_exists(build_cfg['modules'][mod], logger)
 
 	# Check if build dir already exists
-	check_for_previous_install(code_cfg['general']['working_path'], logger)
+	check_for_previous_install(build_cfg['general']['working_path'], logger)
 
 	# Name of tmp build script
-	script_file = "tmp." + code_cfg['general']['code'] + "-build." + sched_cfg['scheduler']['type']
+	script_file = "tmp." + build_cfg['general']['code'] + "-build." + sched_cfg['scheduler']['type']
 
 	# Input template files
 	sched_template		= gs.template_path + gs.sl + gs.sched_tmpl_dir + gs.sl + sched_cfg['scheduler']['type'] + ".template"
-	build_template		= gs.template_path + gs.sl + gs.build_tmpl_dir + gs.sl + code_cfg['general']['code'] + "-" + code_cfg['general']['version'] + ".build"
+	build_template		= gs.template_path + gs.sl + gs.build_tmpl_dir + gs.sl + build_cfg['general']['code'] + "-" + build_cfg['general']['version'] + ".build"
 	compiler_template 	= gs.template_path + gs.sl + gs.compile_tmpl_file
 
 	# Get ranks from threads (?)
 	sched_cfg['scheduler']['ranks'] = sched_cfg['scheduler']['threads']  
 
 	# Generate build script
-	template_handler.generate_template([code_cfg['general'], code_cfg['modules'], code_cfg['build'], code_cfg['run'], sched_cfg['scheduler'], compiler_cfg['common']],
+	template_handler.generate_template([build_cfg['general'], build_cfg['modules'], build_cfg['build'], build_cfg['run'], sched_cfg['scheduler'], compiler_cfg['common']],
  									   [sched_template, compiler_template, build_template],
 									   script_file, gs, logger)
 
 
 	# Generate module in temp location
-	mod_path, mod_file = module_handler.make_mod(code_cfg['general'], code_cfg['build'], code_cfg['modules'], gs, logger)
+	mod_path, mod_file = module_handler.make_mod(build_cfg['general'], build_cfg['build'], build_cfg['modules'], gs, logger)
 
-	# Make build path and move tmp file
-	common.create_install_dir(code_cfg['general']['working_path'], logger)
-	common.install(code_cfg['general']['working_path'], script_file, logger)
-	print('{:25}'.format('Build script location'), ":", code_cfg['general']['working_path'])
+	# Make build path and move tmp build script file
+	common.create_dir(build_cfg['general']['working_path'], logger)
+	common.install(build_cfg['general']['working_path'], script_file, "", logger)
+	print()
+	print("Build script location:")
+	print(">  " + common.rel_path(build_cfg['general']['working_path']))
+	print()
 
-	# Make module path and move tmp file
-	common.create_install_dir(mod_path, logger)
-	common.install(mod_path, mod_file, logger)
-	print('{:25}'.format('Module file location'), ":", mod_path)
+	# Make module path and move tmp module file
+	common.create_dir(mod_path, logger)
+	common.install(mod_path, mod_file, "", logger)
+
+	print("Module file location:")
+	print(">  " + common.rel_path(mod_path))
+	print()
 
 	# Copy code and sched cfg & template files to build dir
-	provenance_path = code_cfg['general']['working_path'] + gs.sl + "build_files"
-	common.create_install_dir(provenance_path, logger)
-	common.install(provenance_path, code_cfg['metadata']['cfg_file'], logger)
-	common.install(provenance_path, sched_cfg['metadata']['cfg_file'], logger)
-	common.install(provenance_path, sched_template, logger)
-	common.install(provenance_path, build_template, logger)
+	provenance_path = build_cfg['general']['working_path'] + gs.sl + "build_files"
+	common.create_dir(provenance_path, logger)
+
+	common.install(provenance_path, build_cfg['metadata']['cfg_file'], "build.cfg", logger)
+	common.install(provenance_path, build_template, "build.template", logger)
+
+	common.install(provenance_path, sched_cfg['metadata']['cfg_file'], "", logger)
+	common.install(provenance_path, sched_template, "", logger)
 
 	# Clean up tmp files
 	exception.remove_tmp_files(logger)
 
 	# Submit build script to scheduler
-	sched_output = common.submit_job(code_cfg['general']['working_path'] + gs.sl + script_file[4:], logger)
+	sched_output = common.submit_job(build_cfg['general']['working_path'] + gs.sl + script_file[4:], logger)
 
 	# Generate build report
-	generate_build_report(code_cfg, sched_output, logger)
+	generate_build_report(build_cfg, sched_output, logger)

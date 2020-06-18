@@ -16,9 +16,20 @@ class init(object):
 	def __init__(self, gs):
 			self.gs = gs
 
+	# Get relative paths for full paths before printing to stdout
+	def rel_path(self, path):
+
+		# if absolute
+		if path[0] == self.gs.sl:
+			return self.gs.topdir_env_var + path.replace(self.gs.base_dir, '')
+		# if not
+		else:
+			return path
+
 	# Start logger and return obj 
 	def start_logging(self, name, log_file):
-		print("Log file:   " + str(log_file))
+		print("Log file:   " + self.rel_path(log_file))
+		print()
 
 		formatter = lg.Formatter("{0}: ".format(name) + self.gs.user + "@" + self.gs.hostname + ": " + \
 							 "%(asctime)s: %(filename)s;%(funcName)s();%(lineno)d: %(message)s")
@@ -114,7 +125,7 @@ class init(object):
 			logger.debug("All build parameters were filled, continuing")
 
 	# Create directories if needed
-	def create_install_dir(self, path, logger):
+	def create_dir(self, path, logger):
 		if not os.path.exists(path):
 			try:
 				os.makedirs(path)
@@ -123,14 +134,15 @@ class init(object):
 					logger, "Failed to create directory " + path)
 
 	# Copy tmp files to directory
-	def install(self, path, obj, logger):
+	def install(self, path, obj, new_obj_name, logger):
 		# Get file name
-		new_obj_name = obj
-		if self.gs.sl in obj:
-			new_obj_name = obj.split(self.gs.sl)[-1]
-		# Strip tmp prefix from file for new filename
-		if 'tmp.' in obj:
-			new_obj_name = obj[4:]
+		if not new_obj_name:
+			new_obj_name = obj
+			if self.gs.sl in obj:
+				new_obj_name = obj.split(self.gs.sl)[-1]
+			# Strip tmp prefix from file for new filename
+			if 'tmp.' in obj:
+				new_obj_name = obj[4:]
 	
 		try:
 			su.copyfile(obj, path + self.gs.sl + new_obj_name)
@@ -144,14 +156,16 @@ class init(object):
 	def submit_job(self, script_file, logger):
 		# If dry_run, quit
 		if self.gs.dry_run:
-			print("This was a dryrun, job script created at " + script_file)
+			print("This was a dryrun, job script created at " + self.rel_path(script_file))
 			logger.debug("This was a dryrun, job script created at " + script_file)
 			# Return jobid and host placeholder 
 			return ["dryrun", "dryrun"]
 
 		else:
-			print("Submitting " + script_file + " to scheduler...")
-			logger.debug("Submitting script to scheduler...")
+			print("Job script:")
+			print(">  " + self.rel_path(script_file))
+			print("Submitting to scheduler...")
+			logger.debug("Submitting " + script_file + " to scheduler...")
 			try:
 				cmd = subprocess.run("sbatch " + script_file, shell=True,
 									 check=True, capture_output=True, universal_newlines=True)
@@ -168,7 +182,7 @@ class init(object):
 					if jobid_line in line:
 						job_id = line.split(" ")[-1]
 
-				time.sleep(10)
+				time.sleep(self.gs.timeout)
 				cmd = subprocess.run("squeue -a --job " + job_id, shell=True,
 									 check=True, capture_output=True, universal_newlines=True)
 	

@@ -1,9 +1,11 @@
+# System Imports
 import glob
 import os
 import shutil as su
 import sys
 import time
 
+# Local Imports
 import src.common as common_funcs
 
 class init(object):
@@ -68,18 +70,16 @@ class init(object):
 
 	# Detele application and module matching path provided
 	def remove_app(self, code_str):
-
 		common = common_funcs.init(self.gs)
-
 		install_path = common.check_if_installed(code_str)
 
-		top_dir = self.gs.base_dir + self.gs.sl + self.gs.build_dir + self.gs.sl
-
 		# Get module dir from app dir, by adding 'modulefiles' prefix and stripping [version] suffix
-		mod_dir = top_dir + self.gs.module_dir + self.gs.sl + self.gs.sl.join(install_path.split(self.gs.sl)[:-1])
-		app_dir = top_dir + install_path
+		mod_dir = self.gs.module_path + self.gs.sl + self.gs.sl.join(install_path.split(self.gs.sl)[:-1])
+		app_dir = self.gs.build_path + self.gs.sl +  install_path
 
-		print("Found application installed in " + app_dir)
+		print("Found application '" + code_str + "' installed in:")
+		print(">  " + common.rel_path(app_dir))
+		print()
 		print('\033[1m' + "Deleting in", self.gs.timeout, "seconds...")
 		time.sleep(self.gs.timeout)
 		print('\033[0m' + "No going back now...")
@@ -90,7 +90,8 @@ class init(object):
 			print("")
 			print("Application removed.")
 		except:
-			print("Warning: Failed to remove application directory " + app_dir)
+			print("Warning: Failed to remove application directory:")
+			print(">  "  + common.rel_path(app_dir))
 			print("Skipping")
 
 		print()
@@ -99,44 +100,28 @@ class init(object):
 			self.prune_tree(mod_dir)
 			print("Module removed.")
 		except:
-			print("Warning: no associated module located in " + mod_dir)
+			print("Warning: no associated module located in:")
+			print(">  " + common.rel_path(mod_dir))
 			print("Skipping")
 
 	# Print build report of installed application
 	def query_app(self, code_str):
 		common = common_funcs.init(self.gs)
 		install_path = common.check_if_installed(code_str)
-		build_report = self.gs.base_dir + self.gs.sl + self.gs.build_dir + self.gs.sl + install_path + self.gs.sl + self.gs.build_report_file
+		build_report = self.gs.build_path + self.gs.sl + install_path + self.gs.sl + self.gs.build_report_file
 
 		print("Build report for application '"+code_str+"'")
 		print("-------------------------------------------")
 		with open(build_report, 'r') as report:
 			print(report.read())
 
-	# Get all sub directories
-	def get_subdirs(self, base):
-		return [name for name in os.listdir(base)
-				if os.path.isdir(os.path.join(base, name))]
-
-	# Recurse down tree 5 levels to get full applciation installation path
-	def recurse_down(self, app_dir, start_depth, current_depth, max_depth):
-		for d in self.get_subdirs(app_dir):
-			if d != self.gs.module_dir:
-				new_dir = app_dir + self.gs.sl + d
-				if current_depth == max_depth:
-					print(
-						"	" + self.gs.build_dir + self.gs.sl + self.gs.sl.join(new_dir.split(self.gs.sl)[start_depth + 1:]))
-				else:
-					self.recurse_down(new_dir, start_depth,
-								 current_depth + 1, max_depth)
-
 	# Print currently installed apps, used together with 'remove'
 	def show_installed(self):
+		common = common_funcs.init(self.gs)
 		print("Currently installed applications:")
 		print("---------------------------------")
-		app_dir = self.gs.build_path
-		start = app_dir.count(self.gs.sl)
-		self.recurse_down(app_dir, start, start, start + 5)
+		for app in common.get_installed():
+			print("   "  + app)
 
 	# Print applications that can be installed from available cfg files
 	def show_available(self):

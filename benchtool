@@ -12,6 +12,7 @@ try:
 	import src.builder as builder
 	import src.global_settings as global_settings
 	import src.input_handler as input_handler
+	import src.result_handler as result_handler
 	import src.splash as splash
 
 except ImportError as e:
@@ -34,13 +35,16 @@ def main():
 	cmd_parser.add_argument("--params", default=False,
 							type=str, help="Config file containing run parameters.")
 
+	cmd_parser.add_argument("--capture", default=False, action='store_true',
+							help="Send result to database, WIP.")
+
 	cmd_parser.add_argument("--clean", default=False, action='store_true',
 							help="Cleanup temp and log files.")
 	cmd_parser.add_argument("--installed", default=False, action='store_true',
 							help="Show all installed applications.")
 	cmd_parser.add_argument("--avail", default=False, action='store_true',
 							help="Show all available application profiles.")
-	cmd_parser.add_argument("--query", default=False,
+	cmd_parser.add_argument("--queryApp", default=False,
 								help="Query build report of an installed application.")
 	cmd_parser.add_argument("--remove", default=False,
 							help="Remove an installed application.")
@@ -63,9 +67,13 @@ def main():
 	if args.install:
 		builder.build_code(args, gs)
 
-	# Start runner
+	# Start bencher
 	elif args.bench:
 		bencher.run_bench(args, gs)
+
+	# Start capture
+	elif args.capture:
+		result_handler.capture_result(args, gs)
 
 	# Cleanup and exit
 	elif args.clean:
@@ -84,8 +92,8 @@ def main():
 		handler.remove_app(args.remove)
 
 	# Query installation and exit
-	elif args.query:
-		handler.query_app(args.query)
+	elif args.queryApp:
+		handler.query_app(args.queryApp)
 
 	# No seletion provided
 	else:

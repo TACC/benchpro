@@ -13,7 +13,7 @@ def print_splash(gs):
 
 	print("  ->User         :", gs.user)
 	print("  ->System       :", gs.hostname)
-	print("  ->Working dir  :", gs.base_dir)
+	print("  ->$TOPDIR      :", gs.base_dir)
 	print("  ->Date         :", gs.time_str)
 	print("------------------------------------------------------------------")
 

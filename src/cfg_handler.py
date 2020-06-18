@@ -3,39 +3,46 @@ import configparser as cp
 import os
 import sys
 
+# Local Imports
+import src.common as common_funcs
 import src.exception as exception
 
-logger = gs = ''
+logger = gs = common = ''
 
 # Check cfg file exists
 def check_file(cfg_type, cfg_name):
 	suffix = ''
 	subdir = ''
 
-	# First: check for file in user's CWD
-	cfg_path = gs.cwd + gs.sl
-	logger.debug("Looking for " + cfg_name + " in " + cfg_path + "...")
-	if os.path.isfile(cfg_path + cfg_name):
+	# 1: check if provided cfg_name is a file
+	if os.path.isfile(cfg_name):
 		logger.debug("Found")
-		return cfg_path + cfg_name
+		return cfg_name
 
-	# Second: check in project base_dir
-	cfg_path = gs.base_dir + gs.sl
-	logger.debug("Looking for " + cfg_name + " in " + cfg_path + "...")
-	if os.path.isfile(cfg_path + cfg_name):
+	# 2: check for file in user's CWD
+	search_path = gs.cwd + gs.sl
+	logger.debug("Looking for " + cfg_name + " in " + search_path + "...")
+	if os.path.isfile(search_path + cfg_name):
 		logger.debug("Found")
-		return cfg_path + cfg_name
+		return search_path + cfg_name
 
-	# Third: reformat naming and look in ./config dir
+	# 3: check in project base_dir
+	search_path = gs.base_dir + gs.sl
+	logger.debug("Looking for " + cfg_name + " in " + search_path + "...")
+	if os.path.isfile(search_path + cfg_name):
+		logger.debug("Found")
+		return search_path + cfg_name
+
+	# 4: reformat naming and look in ./config dir
 	if cfg_type == 'build':
 		subdir = gs.build_cfg_dir
 		if not "_build" in cfg_name:
 			suffix += "_build"
 
-	elif cfg_type == 'run':
-		subdir = gs.run_cfg_dir
-		if not "_run" in cfg_name:
-			suffix += "_run"
+	elif cfg_type == 'bench':
+		subdir = gs.bench_cfg_dir
+		if not "_bench" in cfg_name:
+			suffix += "_bench"
 
 	elif cfg_type == 'sched':
 		subdir = gs.sched_cfg_dir
@@ -44,18 +51,18 @@ def check_file(cfg_type, cfg_name):
 		suffix += ".cfg"
 
 	cfg_name += suffix
-	cfg_path = gs.config_path + gs.sl + subdir + gs.sl
+	search_path = gs.config_path + gs.sl + subdir + gs.sl
 
-	logger.debug("Looking for " + cfg_name + " in " + cfg_path + "...")
+	logger.debug("Looking for " + cfg_name + " in " + search_path + "...")
 
-	if not os.path.isfile(cfg_path + cfg_name):
+	if not os.path.isfile(search_path + cfg_name):
 		print("Available applications:")
-		for cfg in os.listdir(cfg_path):
+		for cfg in os.listdir(search_path):
 			print("  "+cfg)
 		exception.error_and_quit(logger, "Input file '" + cfg_name + "' not found.")
 
 	logger.debug("Found")
-	return cfg_path + cfg_name
+	return search_path + cfg_name
 
 # Parse cfg file into dict
 def read_cfg_file(cfg_file):
@@ -64,6 +71,7 @@ def read_cfg_file(cfg_file):
 	cfg_parser.read(cfg_file)
 	# Add file name to dict
 	cfg_dict = {'metadata': {'cfg_file': cfg_file}}
+
 	for section in cfg_parser.sections():
 		cfg_dict[section] = {}
 		for value in cfg_parser.options(section):
@@ -85,7 +93,7 @@ def process_build_cfg(cfg_dict):
 
 	# Check for missing essential parameters in general section
 	if not cfg_dict['general']['code'] or not cfg_dict['general']['version']:
-		print("Missing required parameters in "+cfg_dict['metadata']['cfg_file'])
+		print("Missing required parameters in " + common.rel_path(cfg_dict['metadata']['cfg_file']))
 		print("----------------------------")
 		print("Code".ljust(10),	  ":", cfg_dict['general']['code'])
 		print("Version".ljust(10),   ":", cfg_dict['general']['version'])
@@ -94,13 +102,13 @@ def process_build_cfg(cfg_dict):
 
 	# Insert 1 node for build job
 	cfg_dict['build']['nodes'] = "1"
-        # Path to application's data directory
+	# Path to application's data directory
 	cfg_dict['build']['benchmark_repo'] = gs.benchmark_repo
 
 	# Get system from env if not defined
 	if not cfg_dict['general']['system']:
-		exception.print_warning(logger, "system not defined in '" + cfg_dict['metadata']['cfg_file'] + \
-								"', getting system label from $TACC_SYSTEM: " + str(os.getenv('TACC_SYSTEM')))
+		exception.print_warning(logger, "'system' not defined in " + common.rel_path(cfg_dict['metadata']['cfg_file']))
+		exception.print_warning(logger, "getting system label from $TACC_SYSTEM: " + str(os.getenv('TACC_SYSTEM')))
 		cfg_dict['general']['system'] = str(os.getenv('TACC_SYSTEM'))
 
 	# Check for compiler and MPI
@@ -108,11 +116,11 @@ def process_build_cfg(cfg_dict):
 		exception.error_and_quit(logger, "compiler and/or MPI module not provided.")
 
 	# Parse system info config file 
-	system_file = check_file('system', gs.config_dir + gs.sl + gs.system_cfg_file)
+	system_file = check_file('system', gs.config_path + gs.sl + gs.system_cfg_file)
 	system_dict = read_cfg_file(system_file)
 
 	# Parse architecture defaults config file 
-	arch_file = check_file('arch', gs.config_dir + gs.sl + gs.arch_cfg_file)
+	arch_file = check_file('arch', gs.config_path + gs.sl + gs.arch_cfg_file)
 	arch_dict = read_cfg_file(arch_file)
 
 	# Extract compiler type
@@ -124,7 +132,7 @@ def process_build_cfg(cfg_dict):
 		logger.debug("Core count for " + cfg_dict['general']['system'] + " = " + cfg_dict['build']['cores'])
 
 	except:
-		exception.error_and_quit(logger, "System profile '" + cfg_dict['general']['system'] + "' missing in " + config_dir + gs.sl + gs.system_cfg_file)
+		exception.error_and_quit(logger, "System profile '" + cfg_dict['general']['system'] + "' missing in " + common.rel_path(system_file))
 
 	# If arch requested = 'system', get default arch for this system
 	if cfg_dict['build']['arch'] == 'system':
@@ -154,13 +162,13 @@ def process_build_cfg(cfg_dict):
 		else:
 			if not cfg_dict['build']['build_label']:
 				exception.error_and_quit(logger, "When using custom optimization flags 'opt_flags' in " + \
-										 cfg_dict['metadata']['cfg_file'] + ", you need to provide a build label 'build_label'.")
+										 common.rel_path(cfg_dict['metadata']['cfg_file']) + ", you need to provide a build label 'build_label'.")
 	# If not using custom opt flags
 	else:
 		# If arch not defined, use system default arch
 		if not cfg_dict['build']['arch']:
 			cfg_dict['build']['arch'] = system_dict[cfg_dict['general']['system']]['default_arch']
-			exception.print_warning(logger, "no architecture defined in " + cfg_dict['metadata']['cfg_file'])
+			exception.print_warning(logger, "'arch' not defined in " + common.rel_path(cfg_dict['metadata']['cfg_file']))
 			exception.print_warning(logger, "using default system arch for " + cfg_dict['general']['system'] + ": " + cfg_dict['build']['arch'])
 
 		# Use arch as build label
@@ -184,12 +192,12 @@ def process_build_cfg(cfg_dict):
 	cfg_dict['general']['build_path']   = cfg_dict['general']['working_path'] + gs.sl + "build"
 	cfg_dict['general']['install_path'] = cfg_dict['general']['working_path'] + gs.sl + "install"
 
-# Check run config file and add required fields
-def process_run_cfg(cfg_dict):
+# Check bench config file and add required fields
+def process_bench_cfg(cfg_dict):
 
-    # Check for missing essential parameters in general section
+	# Check for missing essential parameters 
 	if not cfg_dict['sched']['nodes'] or not cfg_dict['sched']['ranks_per_node'] or not cfg_dict['sched']['threads'] or not cfg_dict['bench']['exe']:
-		print("Missing required parameters in "+cfg_dict['metadata']['cfg_file'])
+		print("Missing required parameters in " + common.rel_path(cfg_dict['metadata']['cfg_file']))
 		print("----------------------------")
 		print("Nodes".ljust(16),   			":", cfg_dict['sched']['nodes'])
 		print("Ranks_per_node".ljust(16),	":", cfg_dict['sched']['ranks_per_node'])
@@ -198,8 +206,21 @@ def process_run_cfg(cfg_dict):
 		print("----------------------------")
 		exception.error_and_quit(logger, "Cannot continue due to missing inputs.")
 
+	# Check for missing validation parameters
+	if not cfg_dict['validation']['method'] or not cfg_dict['validation']['expression'] or not cfg_dict['validation']['unit']:
+		print("Missing validation parameters in " + common.rel_path(cfg_dict['metadata']['cfg_file']))
+		print("----------------------------")
+		print("Method".ljust(16),		 ":", cfg_dict['validation']['method'])
+		print("Expression".ljust(16),    ":", cfg_dict['validation']['expression'])
+		print("Units".ljust(16),		 ":", cfg_dict['validation']['unit'])
+		print("----------------------------")
+		exception.error_and_quit(logger, "Cannot continue due to missing inputs.")
+
 	# Handle comma-delimited lists
 	cfg_dict['sched']['nodes'] = cfg_dict['sched']['nodes'].split(",")
+
+	# Add output filename from settings.cfg
+	cfg_dict['bench']['output_file'] = gs.output_file
 
 # Check sched config file and add required fields
 def process_sched_cfg(cfg_dict):
@@ -207,7 +228,7 @@ def process_sched_cfg(cfg_dict):
 	# Check for missing essential parameters in general section
 	if not cfg_dict['scheduler']['type'] or not cfg_dict['scheduler']['queue'] or not cfg_dict['scheduler']['account']:
 
-		print("Missing required parameters in "+cfg_dict['metadata']['cfg_file'])
+		print("Missing required parameters in " + common.rel_path(cfg_dict['metadata']['cfg_file']))
 		print("----------------------------")
 		print("Type".ljust(16),		":", cfg_dict['schededuler']['type'])
 		print("Queue".ljust(16),   	":", cfg_dict['schededuler']['queue'])
@@ -229,9 +250,10 @@ def process_sched_cfg(cfg_dict):
 # Read input param config and test 
 def get_cfg(cfg_type, cfg_name, settings,  log_to_use):
 
-	global logger, gs 
+	global logger, gs, common 
 	logger = log_to_use
 	gs = settings
+	common = common_funcs.init(gs)
 
 	# Check input file exists
 	cfg_file = check_file(cfg_type, cfg_name)
@@ -242,9 +264,9 @@ def get_cfg(cfg_type, cfg_name, settings,  log_to_use):
 	if cfg_type == 'build':
 		logger.debug("Starting build cfg processing.")
 		process_build_cfg(cfg_dict)
-	elif cfg_type == 'run':
-		logger.debug("Starting run cfg processing.")
-		process_run_cfg(cfg_dict)
+	elif cfg_type == 'bench':
+		logger.debug("Starting bench cfg processing.")
+		process_bench_cfg(cfg_dict)
 	elif cfg_type == 'sched':
 		logger.debug("Starting sched cfg processing.")
 		process_sched_cfg(cfg_dict)

@@ -96,7 +96,7 @@ def make_mod(general_opts, build_opts, mod_opts, settings, log_to_use):
 
 	# Use generic module template if not found for this application
 	if not os.path.exists(module_template):
-		exception.print_warning(logger, "" + mod_dict['code'] + " module template file not available at " + module_template)
+		exception.print_warning(logger, "module template not found at " + common.rel_path(module_template))
 		exception.print_warning(logger, "using a generic module template")
 		module_template = "/".join(module_template.split("/")[:-1]) + gs.sl + "generic.module"
 

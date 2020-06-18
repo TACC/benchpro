@@ -1,0 +1,10 @@
+Running cpuid.all.raw
+Running cpuid.core0
+Running lshw
+Running TACC_HWP_set
+Running lspci
+Running rdmsr_all
+Running rpm
+Running ml
+Running lscpu
+Done.
