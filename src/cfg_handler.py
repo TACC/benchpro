@@ -1,6 +1,7 @@
 # System Imports
 import configparser as cp
 import os
+import subprocess
 import sys
 
 # Local Imports
@@ -79,6 +80,26 @@ def read_cfg_file(cfg_file):
 
 	return cfg_dict
 
+# Gets full module name of default module, eg: 'intel' -> 'intel/18.0.2'
+def get_full_module_name(module):
+
+	cmd = subprocess.run("ml -t -d av  2>&1 | grep '^" + module +"'", shell=True,
+							check=True, capture_output=True, universal_newlines=True)
+
+	return cmd.stdout.strip()
+
+# Check if module is available on the system
+def check_module_exists(module):
+	try:
+		cmd = subprocess.run("module spider " + module, shell=True,
+								check=True, capture_output=True, universal_newlines=True)
+
+	except subprocess.CalledProcessError as e:
+		exception.error_and_quit(logger, "module '" + module + "' not available on this system")
+
+	return get_full_module_name(module)
+
+
 # Convert module name to usable directory name, Eg: intel/18.0.2 -> intel18
 def get_label(module):
 	label = module
@@ -87,8 +108,6 @@ def get_label(module):
 		label = comp_ver[0] + comp_ver[1].split(".")[0]
 		logger.debug("Converted " + module + " to " + label)
 	return label
-
-#def full_mod_name():
 
 # Check build config file and add required fields
 def process_build_cfg(cfg_dict):
@@ -116,6 +135,10 @@ def process_build_cfg(cfg_dict):
 	# Check for compiler and MPI
 	if not cfg_dict['modules']['compiler'] or not cfg_dict['modules']['mpi']:
 		exception.error_and_quit(logger, "compiler and/or MPI module not provided.")
+
+	# Check requested modules exist, and if so, result full module names
+	for mod in cfg_dict['modules']:
+		cfg_dict['modules'][mod] = check_module_exists(cfg_dict['modules'][mod])
 
 	# Parse system info config file 
 	system_file = check_file('system', gs.config_path + gs.sl + gs.system_cfg_file)

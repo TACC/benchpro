@@ -1,4 +1,5 @@
 # System Imports
+import datetime
 import os
 import shutil as su
 import subprocess
@@ -32,15 +33,6 @@ def check_for_previous_install(path):
 		else:
 			exception.error_and_quit(logger, "It seems this app is already installed in " + path +
 									 ". The install directory already exists and 'overwrite=False' in settings.cfg")
-
-# Check if module is available on the system
-def check_module_exists(module):
-	try:
-		cmd = subprocess.run("module spider " + module, shell=True,
-							 check=True, capture_output=True, universal_newlines=True)
-
-	except subprocess.CalledProcessError as e:
-		exception.error_and_quit(logger, "module '" + module + "' not available on this system")
 
 # Log cfg contents
 def send_inputs_to_log(cfg):
@@ -108,10 +100,6 @@ def build_code(args, settings):
 
 	# Get compiler cmds for gcc/intel
 	compiler_cfg['common'].update(compiler_cfg[build_cfg['build']['compiler_type']])
-
-	# Input Checks
-	for mod in build_cfg['modules']: 
-		check_module_exists(build_cfg['modules'][mod])
 
 	# Check if build dir already exists
 	check_for_previous_install(build_cfg['general']['working_path'])
