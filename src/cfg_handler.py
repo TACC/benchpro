@@ -88,7 +88,7 @@ def get_label(module):
 		logger.debug("Converted " + module + " to " + label)
 	return label
 
-def full_mod_name():
+#def full_mod_name():
 
 # Check build config file and add required fields
 def process_build_cfg(cfg_dict):

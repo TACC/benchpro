@@ -13,7 +13,6 @@ build/modulefiles/stampede2
 build/modulefiles/frontera
 build/stampede2
 build/frontera
-results/
 develop-eggs/
 dist/
 downloads/
