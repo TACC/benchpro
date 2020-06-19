@@ -9,7 +9,7 @@ import src.common as common_funcs
 import src.exception as exception
 import src.template_handler as template_handler
 
-logger = gs = common = ''
+logger = gs = common = None
 
 # Generate bench report after job is submitted
 def generate_bench_report(build_report, bench_cfg, sched_output):
@@ -26,9 +26,9 @@ def generate_bench_report(build_report, bench_cfg, sched_output):
 		out.write("ranks       = "+ bench_cfg['sched']['ranks_per_node'] + "\n")
 		out.write("threads     = "+ bench_cfg['sched']['threads']        + "\n")
 		out.write("dataset     = "+ bench_cfg['bench']['dataset']        + "\n")
-		out.write("submit_date = "+ str(datetime.datetime.now())         + "\n")
+		out.write("bench_date = "+ str(datetime.datetime.now())         + "\n")
 		out.write("job_id      = "+ sched_output[0]                      + "\n")
-		out.write("node_list   = "+ sched_output[1]                      + "\n")
+		out.write("nodelist    = "+ sched_output[1]                      + "\n")
 
 	print(">  " + common.rel_path(bench_report))
 
@@ -82,7 +82,7 @@ def run_bench(args, settings):
 	logger.debug("Version = " + bench_cfg['bench']['version'])
 
 	# Get job label
-	sched_cfg['scheduler']['job_label'] = bench_cfg['bench']['code'] + "-bench"
+	sched_cfg['scheduler']['job_label'] = "bench"
 
 	# Path to benchmark session directory
 	bench_cfg['bench']['base_path'] = gs.bench_path + gs.sl + bench_cfg['bench']['system'] + "_" + bench_cfg['bench']['code'] + "_" + gs.time_str

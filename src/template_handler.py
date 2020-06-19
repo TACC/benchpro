@@ -6,7 +6,7 @@ import sys
 import src.common as common_funcs
 import src.exception as exception
 
-logger = gs = ''
+logger = gs = None
 
 # Combines list of input templates to single script file
 def construct_template(input_templates, script_file):

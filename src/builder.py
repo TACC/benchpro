@@ -13,7 +13,7 @@ import src.exception as exception
 import src.module_handler as module_handler
 import src.template_handler as template_handler
 
-gs = common = logger = ''
+gs = common = logger = None
 
 # Check if an existing installation exists
 def check_for_previous_install(path):
@@ -115,7 +115,7 @@ def build_code(args, settings):
 	# Get ranks from threads (?)
 	sched_cfg['scheduler']['ranks'] = sched_cfg['scheduler']['threads']  
 	# Get job label
-	sched_cfg['scheduler']['job_label'] = build_cfg['general']['code']+ "-build"
+	sched_cfg['scheduler']['job_label'] = "build"
 
 	# Generate build script
 	template_handler.generate_template([build_cfg['general'], build_cfg['modules'], build_cfg['build'], build_cfg['run'], sched_cfg['scheduler'], compiler_cfg['common']],

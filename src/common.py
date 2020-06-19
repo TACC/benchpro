@@ -119,7 +119,7 @@ class init(object):
 		new_results = []
 		for result_dir in results:
 			result_path = self.gs.bench_path + self.gs.sl + result_dir + self.gs.sl
-			if not os.path.exists(result_path + ".capture-complete") or not os.path.exists(result_path + ".capture-failed") :
+			if not os.path.exists(result_path + ".capture-complete") and not os.path.exists(result_path + ".capture-failed") :
 				new_results.append(result_dir)
 		return new_results
 

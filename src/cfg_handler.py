@@ -8,7 +8,7 @@ import sys
 import src.common as common_funcs
 import src.exception as exception
 
-logger = gs = common = ''
+logger = gs = common = None
 
 # Check cfg file exists
 def check_file(cfg_type, cfg_name):
@@ -232,12 +232,12 @@ def process_bench_cfg(cfg_dict):
 		exception.error_and_quit(logger, "Cannot continue due to missing inputs.")
 
 	# Check for missing validation parameters
-	if not cfg_dict['validation']['method'] or not cfg_dict['validation']['expression'] or not cfg_dict['validation']['unit']:
+	if not cfg_dict['result']['method'] or not cfg_dict['result']['expression'] or not cfg_dict['result']['unit']:
 		print("Missing validation parameters in " + common.rel_path(cfg_dict['metadata']['cfg_file']))
 		print("----------------------------")
-		print("Method".ljust(16),		 ":", cfg_dict['validation']['method'])
-		print("Expression".ljust(16),    ":", cfg_dict['validation']['expression'])
-		print("Units".ljust(16),		 ":", cfg_dict['validation']['unit'])
+		print("Method".ljust(16),		 ":", cfg_dict['result']['method'])
+		print("Expression".ljust(16),    ":", cfg_dict['result']['expression'])
+		print("Units".ljust(16),		 ":", cfg_dict['result']['unit'])
 		print("----------------------------")
 		exception.error_and_quit(logger, "Cannot continue due to missing inputs.")
 

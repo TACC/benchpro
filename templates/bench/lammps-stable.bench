@@ -21,5 +21,7 @@ mkdir -p ${working_path} && cd ${working_path}
 
 cp ${benchmark_repo}/in.lj . 
 
-ibrun $exe -var x ${x} -var y ${y} -var z ${z} -var t ${t} < in.lj > ${output_file}
+sleep 2
+
+ibrun $exe -var x ${x} -var y ${y} -var z ${z} -var t ${t} < in.lj
 

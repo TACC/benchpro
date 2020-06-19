@@ -7,7 +7,7 @@ import sys
 import src.common as common_funcs
 import src.exception as exception
 
-logger = gs = ''
+logger = gs = None
 
 # Check inputs for module creation
 def check_inputs(mod_dict, mod_path):
