@@ -70,7 +70,19 @@ class init:
 		benchmark_repo		= empty(settings_parser.get(section,   		'benchmark_repo'))
 		bench_dir			= empty(settings_parser.get(section,        'bench_dir'))
 		bench_log_file		= empty(settings_parser.get(section,	  	'bench_log_file'))
+		bench_report_file   = empty(settings_parser.get(section,        'bench_report_file'))
 		output_file			= empty(settings_parser.get(section,        'output_file'))
+
+		# [results]
+		section             = 'results'
+		results_log_file	= empty(settings_parser.get(section,        'results_log_file'))
+
+		# [database]
+		section             = 'database'
+		db_host				= empty(settings_parser.get(section,        'db_host'))
+		db_name             = empty(settings_parser.get(section,        'db_name'))
+		db_user             = empty(settings_parser.get(section,        'db_user'))
+		db_passwd           = empty(settings_parser.get(section,        'db_passwd'))
 
 		# [hw_info]
 		section 			= 'hw_info'

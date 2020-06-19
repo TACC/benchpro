@@ -1,5 +1,7 @@
 # System Imports
 import configparser as cp
+import datetime
+import shutil as su
 
 # Local Imports
 import src.cfg_handler as cfg_handler
@@ -7,36 +9,54 @@ import src.common as common_funcs
 import src.exception as exception
 import src.template_handler as template_handler
 
-logger = gs = ''
+logger = gs = common = ''
+
+# Generate bench report after job is submitted
+def generate_bench_report(build_report, bench_cfg, sched_output):
+	bench_report = bench_cfg['bench']['working_path'] + gs.sl + gs.bench_report_file
+	logger.debug("Benchmark report file:" + bench_report)
+		
+	# Copy 'build_report' to 'bench_report'
+	su.copyfile(build_report, bench_report)
+
+	print("Bench report:")
+	with open(bench_report, 'a') as out:
+		out.write("[bench]\n")
+		out.write("nodes       = "+ bench_cfg['sched']['nodes']          + "\n")
+		out.write("ranks       = "+ bench_cfg['sched']['ranks_per_node'] + "\n")
+		out.write("threads     = "+ bench_cfg['sched']['threads']        + "\n")
+		out.write("dataset     = "+ bench_cfg['bench']['dataset']        + "\n")
+		out.write("submit_date = "+ str(datetime.datetime.now())         + "\n")
+		out.write("job_id      = "+ sched_output[0]                      + "\n")
+		out.write("node_list   = "+ sched_output[1]                      + "\n")
+
+	print(">  " + common.rel_path(bench_report))
 
 # Check input
 def run_bench(args, settings):
 
-	global logger, gs
+	global logger, gs, common
 	gs = settings
 	common = common_funcs.init(gs)
 
 	# Start logger
 	logger = common.start_logging("RUN", gs.base_dir + gs.sl + gs.bench_log_file + "_" + gs.time_str + ".log")
 
-	code_path = common.check_if_installed(args.bench)
+	# Check for new results
+	common.print_results()
 
 	# Get app info from build report
+	code_path = common.check_if_installed(args.bench)
+	build_report = gs.build_path + gs.sl + code_path + gs.sl + gs.build_report_file
 	report_parser	 = cp.ConfigParser()
 	report_parser.optionxform=str
-	report_parser.read(gs.build_path + gs.sl + code_path + gs.sl + gs.build_report_file)
+	report_parser.read(build_report)
 
+	# Get code lable from build_report, for finding default params (if needed)
 	try:
-		system 	= report_parser.get('report', 'system')
-		code 	= report_parser.get('report', 'code')
-		version = report_parser.get('report', 'version')
+		code 	= report_parser.get('build', 'code')
 	except:
-		exception.error_and_quit(logger, "Unable to read build_report.txt file in "+code_path)
-
-	logger.debug("Application details:")
-	logger.debug("System  = "+system)
-	logger.debug("Code	  = "+code)
-	logger.debug("Version = "+version)
+		exception.error_and_quit(logger, "Unable to read build_report.txt file in " + common.gs(code_path))
 
 	# Print warning when using default benchmark inputs
 	if not args.params:
@@ -49,14 +69,23 @@ def run_bench(args, settings):
 
 	session =  "bench-" + gs.time_str
 
-
 	# Add variables from build report to bench cfg dict
-	bench_cfg['bench']['version'] = version
+
 	bench_cfg['bench']['code'] = code
-	bench_cfg['bench']['system'] = system
+	bench_cfg['bench']['version'] = report_parser.get('build', 'version')
+	bench_cfg['bench']['system'] = report_parser.get('build', 'system')
+
+	# Print to log
+	logger.debug("Application details:")
+	logger.debug("System  = " + bench_cfg['bench']['system'])
+	logger.debug("Code    = " + bench_cfg['bench']['code'])
+	logger.debug("Version = " + bench_cfg['bench']['version'])
+
+	# Get job label
+	sched_cfg['scheduler']['job_label'] = bench_cfg['bench']['code'] + "-bench"
 
 	# Path to benchmark session directory
-	bench_cfg['bench']['base_path'] = gs.bench_path + gs.sl + system + "_" + code + "_" + gs.time_str
+	bench_cfg['bench']['base_path'] = gs.bench_path + gs.sl + bench_cfg['bench']['system'] + "_" + bench_cfg['bench']['code'] + "_" + gs.time_str
 	# Path to application's data directory
 	bench_cfg['bench']['benchmark_repo'] = gs.benchmark_repo
 	# Directory to add to MODULEPATH
@@ -67,9 +96,9 @@ def run_bench(args, settings):
 
 	# Template files
 	sched_template = gs.template_path + gs.sl + gs.sched_tmpl_dir + gs.sl + sched_cfg['scheduler']['type'] + ".template"
-	bench_template   = gs.template_path + gs.sl + gs.bench_tmpl_dir + gs.sl + code + "-" + version + ".bench"
+	bench_template   = gs.template_path + gs.sl + gs.bench_tmpl_dir + gs.sl + bench_cfg['bench']['code'] + "-" + bench_cfg['bench']['version'] + ".bench"
 
-	script_file = "tmp." + code + "-bench." + sched_cfg['scheduler']['type']
+	script_file = "tmp." + bench_cfg['bench']['code'] + "-bench." + sched_cfg['scheduler']['type']
 
 	tmp = bench_cfg['sched']['nodes']
 	loop = 1
@@ -121,7 +150,10 @@ def run_bench(args, settings):
 		# Delete tmp job script
 		exception.remove_tmp_files(logger)
 		# Submit job
-		job_id = common.submit_job(bench_cfg['bench']['working_path'] + gs.sl + script_file[4:], logger)
+		sched_output = common.submit_job(bench_cfg['bench']['working_path'] + gs.sl + script_file[4:], logger)
+
+		# Generate bench report
+		generate_bench_report(build_report, bench_cfg, sched_output)
 
 		loop += 1
 

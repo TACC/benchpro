@@ -12,10 +12,10 @@ import src.exception as exception
 import src.module_handler as module_handler
 import src.template_handler as template_handler
 
-gs = common = ''
+gs = common = logger = ''
 
 # Check if an existing installation exists
-def check_for_previous_install(path, logger):
+def check_for_previous_install(path):
 	if os.path.exists(path):
 		if gs.overwrite:
 			logger.debug("WARNING: It seems this app is already installed. Deleting old build in " +
@@ -34,7 +34,7 @@ def check_for_previous_install(path, logger):
 									 ". The install directory already exists and 'overwrite=False' in settings.cfg")
 
 # Check if module is available on the system
-def check_module_exists(module, logger):
+def check_module_exists(module):
 	try:
 		cmd = subprocess.run("module spider " + module, shell=True,
 							 check=True, capture_output=True, universal_newlines=True)
@@ -43,7 +43,7 @@ def check_module_exists(module, logger):
 		exception.error_and_quit(logger, "module '" + module + "' not available on this system")
 
 # Log cfg contents
-def send_inputs_to_log(cfg, logger):
+def send_inputs_to_log(cfg):
 	logger.debug("Builder started with the following inputs:")
 	for seg in cfg:
 		logger.debug("[" + seg + "]")
@@ -51,22 +51,24 @@ def send_inputs_to_log(cfg, logger):
 			logger.debug("  " + str(line) + "=" + str(cfg[seg][line]))
 
 # Generate build report after job is submitted
-def generate_build_report(build_cfg, sched_output, logger):
+def generate_build_report(build_cfg, sched_output):
 	report_file = build_cfg['general']['working_path'] + gs.sl + gs.build_report_file
 
 	print("Build report:")
 
 	with open(report_file, 'a') as out:
-		out.write("[report]\n")
-		out.write("code         = "+ build_cfg['general']['code'] + "\n")
-		out.write("version      = "+ build_cfg['general']['version'] + "\n")
-		out.write("system       = "+ build_cfg['general']['system'] + "\n")
+		out.write("[build]\n")
+		out.write("code         = "+ build_cfg['general']['code']             + "\n")
+		out.write("version      = "+ build_cfg['general']['version']          + "\n")
+		out.write("system       = "+ build_cfg['general']['system']           + "\n")
+		out.write("compiler     = "+ build_cfg['modules']['compiler']         + "\n")
+		out.write("mpi          = "+ build_cfg['modules']['mpi']              + "\n")
 		out.write("modules      = "+ ", ".join(build_cfg['modules'].values()) + "\n")
-		out.write("optimization = "+ build_cfg['build']['opt_flags'] + "\n")	
-		out.write("build_prefix = "+ build_cfg['general']['working_path'] + "\n")
-		out.write("build_date   = "+ gs.time_str + "\n")
-		out.write("job_id       = "+ sched_output[0] + "\n")
-		out.write("Build_host   = "+ sched_output[1])
+		out.write("optimization = "+ build_cfg['build']['opt_flags']          + "\n")	
+		out.write("build_prefix = "+ build_cfg['general']['working_path']     + "\n")
+		out.write("build_date   = "+ str(datetime.datetime.now())             + "\n")
+		out.write("job_id       = "+ sched_output[0]                          + "\n")
+		out.write("nodelist     = "+ sched_output[1]                          + "\n")
 
 	print(">  " + common.rel_path(report_file))
 
@@ -74,7 +76,7 @@ def generate_build_report(build_cfg, sched_output, logger):
 def build_code(args, settings):
 
 	# Get global settings obj
-	global gs, common
+	global gs, common, logger
 	gs = settings
 
 	# Instantiate common_funcs
@@ -82,6 +84,9 @@ def build_code(args, settings):
 
 	# Init loggers
 	logger = common.start_logging("BUILD", gs.base_dir + gs.sl + gs.build_log_file + "_" + gs.time_str + ".log")
+
+	# Check for new results
+	common.print_results()
 
 	# Parse config input files
 	build_cfg =	 cfg_handler.get_cfg('build',	args.install,		gs, logger)
@@ -97,19 +102,19 @@ def build_code(args, settings):
 	print()
 
 	# Print inputs to log
-	send_inputs_to_log(build_cfg, logger)
-	send_inputs_to_log(sched_cfg, logger)
-	send_inputs_to_log(compiler_cfg, logger)
+	send_inputs_to_log(build_cfg)
+	send_inputs_to_log(sched_cfg)
+	send_inputs_to_log(compiler_cfg)
 
 	# Get compiler cmds for gcc/intel
 	compiler_cfg['common'].update(compiler_cfg[build_cfg['build']['compiler_type']])
 
 	# Input Checks
 	for mod in build_cfg['modules']: 
-		check_module_exists(build_cfg['modules'][mod], logger)
+		check_module_exists(build_cfg['modules'][mod])
 
 	# Check if build dir already exists
-	check_for_previous_install(build_cfg['general']['working_path'], logger)
+	check_for_previous_install(build_cfg['general']['working_path'])
 
 	# Name of tmp build script
 	script_file = "tmp." + build_cfg['general']['code'] + "-build." + sched_cfg['scheduler']['type']
@@ -121,6 +126,8 @@ def build_code(args, settings):
 
 	# Get ranks from threads (?)
 	sched_cfg['scheduler']['ranks'] = sched_cfg['scheduler']['threads']  
+	# Get job label
+	sched_cfg['scheduler']['job_label'] = build_cfg['general']['code']+ "-build"
 
 	# Generate build script
 	template_handler.generate_template([build_cfg['general'], build_cfg['modules'], build_cfg['build'], build_cfg['run'], sched_cfg['scheduler'], compiler_cfg['common']],
@@ -164,4 +171,4 @@ def build_code(args, settings):
 	sched_output = common.submit_job(build_cfg['general']['working_path'] + gs.sl + script_file[4:], logger)
 
 	# Generate build report
-	generate_build_report(build_cfg, sched_output, logger)
+	generate_build_report(build_cfg, sched_output)

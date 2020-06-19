@@ -1,0 +1,26 @@
+
+export   working_path=<<<working_path>>>
+export    output_file=<<<output_file>>>
+export benchmark_repo=<<<benchmark_repo>>>
+export            exe=<<<exe>>>
+export    base_module=<<<base_mod>>>
+export     app_module=<<<app_mod>>>
+
+export        steps=<<<steps>>>
+export          tar=<<<tar>>>
+export          yml=<<<yml>>>
+export      threads=<<<threads>>>
+
+export OMP_NUM_THREADS=${threads}
+
+ml use ${base_module}
+ml ${app_module}
+ml
+
+mkdir -p ${working_path} && cd ${working_path}
+
+cp ${benchmark_repo}/${tar}.tgz .
+tar -xf ${tar}.tgz && cd ${tar}
+
+ibrun ${exe} -n ${steps} --cosmology --eagle --threads=${threads} --pin ${yml} > ${output_file}
+

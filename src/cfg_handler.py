@@ -59,7 +59,7 @@ def check_file(cfg_type, cfg_name):
 		print("Available applications:")
 		for cfg in os.listdir(search_path):
 			print("  "+cfg)
-		exception.error_and_quit(logger, "Input file '" + cfg_name + "' not found.")
+		exception.error_and_quit(logger, "Input file '" + common.rel_path(cfg_name) + "' not found.")
 
 	logger.debug("Found")
 	return search_path + cfg_name
@@ -87,6 +87,8 @@ def get_label(module):
 		label = comp_ver[0] + comp_ver[1].split(".")[0]
 		logger.debug("Converted " + module + " to " + label)
 	return label
+
+def full_mod_name():
 
 # Check build config file and add required fields
 def process_build_cfg(cfg_dict):
@@ -180,7 +182,7 @@ def process_build_cfg(cfg_dict):
 		except:
 			exception.error_and_quit(logger, "No default optimization flags for " + cfg_dict['build']['arch'] + " found in " + gs.arch_cfg_file)
 
-	# Generate default build path if on is not defined
+	# Generate default build path if one is not defined
 	if not cfg_dict['general']['build_prefix']:
 		cfg_dict['general']['working_path'] = gs.build_path + gs.sl + cfg_dict['general']['system'] + gs.sl + get_label(cfg_dict['modules']['compiler']) + gs.sl + get_label( \
 						cfg_dict['modules']['mpi']) + gs.sl + cfg_dict['general']['code'] + gs.sl + cfg_dict['build']['build_label'] + gs.sl + cfg_dict['general']['version']
@@ -237,13 +239,10 @@ def process_sched_cfg(cfg_dict):
 		exception.error_and_quit(logger, "Cannot continue due to missing inputs.")
 
 	# Fill missing parameters
-	if not cfg_dict['scheduler']['job_label']:
-		cfg_dict['scheduler']['job_label'] = 'builder'
-		logger.debug("Set job_label = " + cfg_dict['scheduler']['job_label'])
 	if not cfg_dict['scheduler']['runtime']:
 		cfg_dict['scheduler']['runtime'] = '02:00:00'
 		logger.debug("Set runtime = " + cfg_dict['scheduler']['runtime'])
-	if not cfg_dict['scheduler']['job_label']:
+	if not cfg_dict['scheduler']['threads']:
 		cfg_dict['scheduler']['threads'] = 4
 		logger.debug("Set threads = " + cfg_dict['scheduler']['threads'])
 

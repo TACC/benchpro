@@ -1,4 +1,5 @@
 # System Imports
+import configparser as cp
 import logging as lg
 import os
 import re
@@ -94,6 +95,7 @@ class init(object):
 		# No matches
 		if len(matched_codes) == 0:
 			print("No installed applications match your selection '" + requested_code + "'")
+			print()
 			print("Currently installed applications:")
 			for code in installed_list:
 				print(" " + code)
@@ -108,6 +110,66 @@ class init(object):
 				print("  ->" + code)
 			print("Please be more specific.")
 			sys.exit(1)
+
+	# Find result dirs that don't have .captured file 
+	def get_new_results(self):
+		results = self.get_subdirs(self.gs.bench_path)
+
+		# look for .captured file in each result dir
+		new_results = []
+		for result_dir in results:
+			result_path = self.gs.bench_path + self.gs.sl + result_dir + self.gs.sl
+			if not os.path.exists(result_path + ".capture-complete") or not os.path.exists(result_path + ".capture-failed") :
+				new_results.append(result_dir)
+		return new_results
+
+	# Check that job ID is not running 
+	def check_job_complete(self, job_id):
+
+		# If job not available in squeue anymore
+		try:
+			cmd = subprocess.run("sacct -j " + job_id, shell=True, \
+							check=True, capture_output=True, universal_newlines=True)
+
+		# Assuming complete
+		except:
+			return True
+
+		# Job still running
+		if "RUNNING" in cmd.stdout.split("\n")[2]:
+			return False
+
+		# Job complete
+		return True
+
+	# Check if there are uncaptured results
+	def check_for_new_results(self):
+		new_results = self.get_new_results()
+
+		completed_results = []
+		# Check that job is complete
+		for result in new_results:
+			job_id = ''
+			# Get jobID from bench_report.txt
+			with open(self.gs.bench_path + self.gs.sl + result + self.gs.sl + self.gs.bench_report_file, 'r') as inFile:
+				for line in inFile:
+					if "job_id" in line:
+						job_id = line.split("=")[1].strip()
+									
+			# Check job is completed
+			if self.check_job_complete(job_id):
+				completed_results.append(result)
+
+		return completed_results
+
+	# Get list of uncaptured results and print note to user
+	def print_results(self):
+		# Uncaptured results + job complete
+		completed_results = self.check_for_new_results()
+		if completed_results:
+			print("NOTE: There are " + str(len(completed_results)) + " uncaptured results found in " + self.rel_path(self.gs.bench_path))
+			print("Run 'benchtool --capture' to send to database.")
+			print()
 
 	# Check for unpopulated <<<keys>>> in template file
 	def test_template(self, template_file, template, logger):
@@ -167,7 +229,7 @@ class init(object):
 			print("Submitting to scheduler...")
 			logger.debug("Submitting " + script_file + " to scheduler...")
 			try:
-				cmd = subprocess.run("sbatch " + script_file, shell=True,
+				cmd = subprocess.run("sbatch " + script_file, shell=True, \
 									 check=True, capture_output=True, universal_newlines=True)
 	
 				logger.debug(cmd.stdout)
@@ -183,7 +245,7 @@ class init(object):
 						job_id = line.split(" ")[-1]
 
 				time.sleep(self.gs.timeout)
-				cmd = subprocess.run("squeue -a --job " + job_id, shell=True,
+				cmd = subprocess.run("squeue -a --job " + job_id, shell=True, \
 									 check=True, capture_output=True, universal_newlines=True)
 	
 				# Get job host
