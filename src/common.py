@@ -11,7 +11,6 @@ import time
 # Local Imports
 import src.exception as exception
 
-
 # Contains several useful functions, mostly used by bencher and builder
 class init(object):
 	def __init__(self, gs):
@@ -19,13 +18,27 @@ class init(object):
 
 	# Get relative paths for full paths before printing to stdout
 	def rel_path(self, path):
-
+		# if empty str
+		if not path:
+			return ""
 		# if absolute
 		if path[0] == self.gs.sl:
 			return self.gs.topdir_env_var + path.replace(self.gs.base_dir, '')
 		# if not
 		else:
 			return path
+
+	# Get absolute path 
+	def abs_path(self, path):
+		# if empty str
+		if not path:
+			return ""
+		# if absolute
+		if path[0] == self.gs.sl:
+			return path
+		# if relative
+		else:
+			return self.gs.basedir + self.gs.sl + path
 
 	# Start logger and return obj 
 	def start_logging(self, name, log_file):
@@ -51,6 +64,21 @@ class init(object):
 
 		return logger
 
+	# Find file in directory
+	def find_file(self, name, path):
+
+		# Check file doesn't exist already
+		if os.path.isfile(name):
+			return name
+
+		# Search provided path for file
+		for root, dirs, files in os.walk(path):
+			match = next((s for s in files if name in s), None)
+			if match:
+				return os.path.join(root, match)
+		# File not found
+		return ""
+
 	# Convert module name to usable directory name, Eg: intel/18.0.2 -> intel18
 	def get_label(self, module):
 		label = module
@@ -67,7 +95,7 @@ class init(object):
 	# Recursive function to scan app directory, called by 'get_installed'
 	def search_tree(self, installed_list, app_dir, start_depth, current_depth, max_depth):
 		for d in self.get_subdirs(app_dir):
-			if d != self.gs.module_dir:
+			if d != self.gs.module_basedir:
 				new_dir = app_dir + self.gs.sl + d
 				# Once tree hits max search depth, append path to list
 				if current_depth == max_depth:
@@ -78,7 +106,7 @@ class init(object):
 
 	# Get list of installed apps
 	def get_installed(self):
-		app_dir = self.gs.base_dir + self.gs.sl + self.gs.build_dir
+		app_dir = self.gs.build_path
 		start = app_dir.count(self.gs.sl)
 		# Send empty list to search function 
 		installed_list = []
@@ -163,13 +191,24 @@ class init(object):
 		return completed_results
 
 	# Get list of uncaptured results and print note to user
-	def print_results(self):
+	def print_new_results(self):
 		# Uncaptured results + job complete
 		completed_results = self.check_for_new_results()
 		if completed_results:
 			print("NOTE: There are " + str(len(completed_results)) + " uncaptured results found in " + self.rel_path(self.gs.bench_path))
 			print("Run 'benchtool --capture' to send to database.")
 			print()
+
+	# Log cfg contents
+	def send_inputs_to_log(self, label, cfg_list, logger):
+		logger.debug(label + " started with the following inputs:")
+		logger.debug("======================================")
+		for cfg in cfg_list:
+			for seg in cfg:
+				logger.debug("[" + seg + "]")
+				for line in cfg[seg]:
+					logger.debug("  " + str(line) + "=" + str(cfg[seg][line]))
+		logger.debug("======================================")
 
 	# Check for unpopulated <<<keys>>> in template file
 	def test_template(self, template_file, template, logger):
@@ -208,7 +247,7 @@ class init(object):
 	
 		try:
 			su.copyfile(obj, path + self.gs.sl + new_obj_name)
-			logger.debug("Copied tmp file " + obj + " into " + path)
+			logger.debug("Copied file " + obj + " into " + path)
 		except IOError as e:
 			print(e)
 			exception.error_and_quit(

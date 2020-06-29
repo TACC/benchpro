@@ -26,7 +26,7 @@ def generate_bench_report(build_report, bench_cfg, sched_output):
 		out.write("ranks       = "+ bench_cfg['sched']['ranks_per_node'] + "\n")
 		out.write("threads     = "+ bench_cfg['sched']['threads']        + "\n")
 		out.write("dataset     = "+ bench_cfg['bench']['dataset']        + "\n")
-		out.write("bench_date = "+ str(datetime.datetime.now())         + "\n")
+		out.write("bench_date  = "+ str(datetime.datetime.now())         + "\n")
 		out.write("job_id      = "+ sched_output[0]                      + "\n")
 		out.write("nodelist    = "+ sched_output[1]                      + "\n")
 
@@ -43,7 +43,7 @@ def run_bench(args, settings):
 	logger = common.start_logging("RUN", gs.base_dir + gs.sl + gs.bench_log_file + "_" + gs.time_str + ".log")
 
 	# Check for new results
-	common.print_results()
+	common.print_new_results()
 
 	# Get app info from build report
 	code_path = common.check_if_installed(args.bench)
@@ -64,25 +64,17 @@ def run_bench(args, settings):
 		print("WARNING: No input parameters (--params) given, using defaults for debugging.")
 		logger.debug("WARNING: No input parameters (--params) given, using defaults for debugging.")
 
-	bench_cfg = cfg_handler.get_cfg('bench', args.params, gs, logger)
-	sched_cfg = cfg_handler.get_cfg('sched', args.sched,  gs, logger)
-
-	session =  "bench-" + gs.time_str
+	# Get bench config dicts
+	bench_cfg = cfg_handler.get_cfg(gs.bench_cfg_dir, args.params, gs, logger)
+	sched_cfg = cfg_handler.get_cfg(gs.sched_cfg_dir, args.sched,  gs, logger)
 
 	# Add variables from build report to bench cfg dict
-
 	bench_cfg['bench']['code'] = code
 	bench_cfg['bench']['version'] = report_parser.get('build', 'version')
 	bench_cfg['bench']['system'] = report_parser.get('build', 'system')
 
-	# Print to log
-	logger.debug("Application details:")
-	logger.debug("System  = " + bench_cfg['bench']['system'])
-	logger.debug("Code    = " + bench_cfg['bench']['code'])
-	logger.debug("Version = " + bench_cfg['bench']['version'])
-
 	# Get job label
-	sched_cfg['scheduler']['job_label'] = "bench"
+	sched_cfg['sched']['job_label'] = code+"_bench"
 
 	# Path to benchmark session directory
 	bench_cfg['bench']['base_path'] = gs.bench_path + gs.sl + bench_cfg['bench']['system'] + "_" + bench_cfg['bench']['code'] + "_" + gs.time_str
@@ -93,12 +85,19 @@ def run_bench(args, settings):
 	# Directory to application installation
 	bench_cfg['bench']['app_mod'] = code_path
 
+	# Print inputs to log
+	common.send_inputs_to_log('Bencher', [bench_cfg, sched_cfg], logger)
 
 	# Template files
-	sched_template = gs.template_path + gs.sl + gs.sched_tmpl_dir + gs.sl + sched_cfg['scheduler']['type'] + ".template"
-	bench_template   = gs.template_path + gs.sl + gs.bench_tmpl_dir + gs.sl + bench_cfg['bench']['code'] + "-" + bench_cfg['bench']['version'] + ".bench"
+	sched_template = gs.template_path + gs.sl + gs.sched_tmpl_dir + gs.sl + sched_cfg['sched']['type'] + ".template"
 
-	script_file = "tmp." + bench_cfg['bench']['code'] + "-bench." + sched_cfg['scheduler']['type']
+	# Set bbench template to default, if set in bench.cfg: overload
+	bench_template = bench_cfg['bench']['code'] + "-" + bench_cfg['bench']['version'] + ".bench"
+	if bench_cfg['bench']['template']:
+		bench_template = build_cfg['bench']['template']
+	bench_template = common.find_file(bench_template, gs.template_path + gs.sl + gs.bench_tmpl_dir)
+
+	script_file = "tmp." + bench_cfg['bench']['code'] + "-bench." + sched_cfg['sched']['type']
 
 	tmp = bench_cfg['sched']['nodes']
 	loop = 1
@@ -124,7 +123,7 @@ def run_bench(args, settings):
 		bench_cfg['sched']['ranks'] = int(node) * int(bench_cfg['sched']['ranks_per_node'])
 
 		# Generate benchmark template
-		template_handler.generate_template([bench_cfg['sched'], bench_cfg['bench'], sched_cfg['scheduler']],
+		template_handler.generate_template([bench_cfg['sched'], bench_cfg['bench'], sched_cfg['sched']],
 									   [sched_template, bench_template],
 									   script_file, gs, logger)
 

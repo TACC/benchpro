@@ -62,7 +62,7 @@ class init(object):
 		parent_dir  = path_elems[-2]
 
 		# If parent dir is root ('build' or 'modulefile') or if it contains more than this subdir, delete this subdir
-		if (parent_dir == self.gs.build_dir) or  (parent_dir == self.gs.module_dir) or (len(glob.glob(parent_path+self.gs.sl+"*")) > 1):
+		if (parent_dir == self.gs.build_basedir) or  (parent_dir == self.gs.module_basedir) or (len(glob.glob(parent_path+self.gs.sl+"*")) > 1):
 			su.rmtree(path)
 		# Else resurse with parent
 		else:
@@ -121,7 +121,7 @@ class init(object):
 		print("Currently installed applications:")
 		print("---------------------------------")
 		for app in common.get_installed():
-			print("   "  + app)
+			print("  " + common.rel_path(self.gs.build_path) + self.gs.sl  + app)
 
 	# Print applications that can be installed from available cfg files
 	def show_available(self):

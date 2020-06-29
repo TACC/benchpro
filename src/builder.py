@@ -34,14 +34,6 @@ def check_for_previous_install(path):
 			exception.error_and_quit(logger, "It seems this app is already installed in " + path +
 									 ". The install directory already exists and 'overwrite=False' in settings.cfg")
 
-# Log cfg contents
-def send_inputs_to_log(cfg):
-	logger.debug("Builder started with the following inputs:")
-	for seg in cfg:
-		logger.debug("[" + seg + "]")
-		for line in cfg[seg]:
-			logger.debug("  " + str(line) + "=" + str(cfg[seg][line]))
-
 # Generate build report after job is submitted
 def generate_build_report(build_cfg, sched_output):
 	report_file = build_cfg['general']['working_path'] + gs.sl + gs.build_report_file
@@ -78,12 +70,12 @@ def build_code(args, settings):
 	logger = common.start_logging("BUILD", gs.base_dir + gs.sl + gs.build_log_file + "_" + gs.time_str + ".log")
 
 	# Check for new results
-	common.print_results()
+	common.print_new_results()
 
 	# Parse config input files
-	build_cfg =	 cfg_handler.get_cfg('build',	args.install,		gs, logger)
-	sched_cfg =	cfg_handler.get_cfg('sched',	args.sched,		  gs, logger)
-	compiler_cfg = cfg_handler.get_cfg('compiler', gs.compile_cfg_file, gs, logger)
+	build_cfg 		= cfg_handler.get_cfg(gs.build_cfg_dir,		args.build, 			gs, logger)
+	sched_cfg 		= cfg_handler.get_cfg(gs.sched_cfg_dir,		args.sched,				gs, logger)
+	compiler_cfg 	= cfg_handler.get_cfg('compiler', 	gs.compile_cfg_file,	gs, logger)
 
 	print()
 	print("Using application config file:") 
@@ -94,9 +86,7 @@ def build_code(args, settings):
 	print()
 
 	# Print inputs to log
-	send_inputs_to_log(build_cfg)
-	send_inputs_to_log(sched_cfg)
-	send_inputs_to_log(compiler_cfg)
+	common.send_inputs_to_log('Builder', [build_cfg, sched_cfg, compiler_cfg], logger)
 
 	# Get compiler cmds for gcc/intel
 	compiler_cfg['common'].update(compiler_cfg[build_cfg['build']['compiler_type']])
@@ -105,20 +95,28 @@ def build_code(args, settings):
 	check_for_previous_install(build_cfg['general']['working_path'])
 
 	# Name of tmp build script
-	script_file = "tmp." + build_cfg['general']['code'] + "-build." + sched_cfg['scheduler']['type']
+	script_file = "tmp." + build_cfg['general']['code'] + "-build." + sched_cfg['sched']['type']
 
 	# Input template files
-	sched_template		= gs.template_path + gs.sl + gs.sched_tmpl_dir + gs.sl + sched_cfg['scheduler']['type'] + ".template"
-	build_template		= gs.template_path + gs.sl + gs.build_tmpl_dir + gs.sl + build_cfg['general']['code'] + "-" + build_cfg['general']['version'] + ".build"
-	compiler_template 	= gs.template_path + gs.sl + gs.compile_tmpl_file
+	sched_template = common.find_file(sched_cfg['sched']['type'] + ".template", gs.template_path)
+
+	# Set build template to default, if set in build.cfg: overload
+	build_template = build_cfg['general']['code'] + "-" + build_cfg['general']['version'] + ".build"
+	if build_cfg['general']['template']:
+		build_template = build_cfg['general']['template']
+	build_template = common.find_file(build_template, gs.template_path + gs.sl + gs.build_tmpl_dir)
+
+	print(build_template)
+
+	compiler_template 	= common.find_file(gs.compile_tmpl_file, gs.template_path)
 
 	# Get ranks from threads (?)
-	sched_cfg['scheduler']['ranks'] = sched_cfg['scheduler']['threads']  
+	sched_cfg['sched']['ranks'] = sched_cfg['sched']['threads']  
 	# Get job label
-	sched_cfg['scheduler']['job_label'] = "build"
+	sched_cfg['sched']['job_label'] = build_cfg['general']['code'] + "_build"
 
 	# Generate build script
-	template_handler.generate_template([build_cfg['general'], build_cfg['modules'], build_cfg['build'], build_cfg['run'], sched_cfg['scheduler'], compiler_cfg['common']],
+	template_handler.generate_template([build_cfg['general'], build_cfg['modules'], build_cfg['build'], build_cfg['run'], sched_cfg['sched'], compiler_cfg['common']],
  									   [sched_template, compiler_template, build_template],
 									   script_file, gs, logger)
 

@@ -1,8 +1,8 @@
 
 export   working_path=<<<working_path>>>
-export    output_file=<<<output_file>>>
 export benchmark_repo=<<<benchmark_repo>>>
 export            exe=<<<exe>>>
+export        dataset=<<<dataset>>>
 export    base_module=<<<base_mod>>>
 export     app_module=<<<app_mod>>>
 
@@ -15,10 +15,9 @@ ml use ${base_module}
 ml ${app_module}
 ml
 
-mkdir -p ${working_path} && cd ${working_path}
-
-cp ${benchmark_repo}/new_conus12km.tgz .
-tar -xf new_conus12km.tgz && cd new_conus12km
+mkdir -p ${working_path}
+tar -xf ${benchmark_repo}/${dataset}.tgz -C ${working_path}
+cd ${working_path}/${dataset}
 
 sed -i "/run_hours/c\ run_hours                           = ${run_hours}" namelist.input
 sed -i "/interval_seconds/c\ interval_seconds                    = ${interval_seconds}" namelist.input
@@ -27,4 +26,4 @@ ln -s ${WRF_DIR}/run/RRTMG_* .
 ln -s ${WRF_DIR}/run/ozone* .
 ln -s ${WRF_DIR}/run/*.TBL .
 
-ibrun ${exe} > ${output_file}
+ibrun ${exe} 

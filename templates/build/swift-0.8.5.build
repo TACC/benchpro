@@ -1,6 +1,8 @@
 
 export     build_path=<<<build_path>>>
 export   install_path=<<<install_path>>>
+export        version=<<<version>>>
+export benchmark_repo=<<<benchmark_repo>>>
 export       compiler=<<<compiler>>>
 export            mpi=<<<mpi>>>
 export          fftw3=<<<fftw3>>>
@@ -28,9 +30,9 @@ ml $metis
 ml $parmetis
 ml
 
-mkdir -p ${build_path} && cd ${build_path}
-
-git clone https://github.com/SWIFTSIM/swiftsim.git && cd swiftsim
+mkdir -p ${build_path}
+tar -xf ${benchmark_repo}/swiftsim-${version}.tgz -C ${build_path}
+cd ${build_path}/swiftsim-${version}
 
 TACC_PARMETIS_DIR="$(dirname "$TACC_PARMETIS_LIB")"
 

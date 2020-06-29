@@ -1,9 +1,10 @@
 
 export     build_path=<<<build_path>>>
 export   install_path=<<<install_path>>>
+export benchmark_repo=<<<benchmark_repo>>>
 export       compiler=<<<compiler>>>
 export            mpi=<<<mpi>>>
-export    lmp_version=<<<version>>>
+export        version=<<<version>>>
 export      opt_flags=<<<opt_flags>>>
 export            exe=<<<exe>>>
 
@@ -17,14 +18,11 @@ ml ${compiler}
 ml ${mpi}
 ml
 
-mkdir -p ${build_path} && cd ${build_path}
+mkdir -p ${build_path}
 
-wget https://lammps.sandia.gov/tars/lammps-stable.tar.gz
-tar -xf lammps-stable.tar.gz && rm lammps-stable.tar.gz
+tar -xf ${benchmark_repo}/lammps-${version}.tgz -C ${build_path}
 
-cd lammps-*
-
-cd src
+cd ${build_path}/lammps-${version}/src
 
 make yes-user-intel
 make yes-user-omp

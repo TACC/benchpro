@@ -1,4 +1,5 @@
 # System Imports
+import os
 import shutil as su
 import sys
 
@@ -6,13 +7,18 @@ import sys
 import src.common as common_funcs
 import src.exception as exception
 
-logger = gs = None
+logger = gs = common = None
 
 # Combines list of input templates to single script file
 def construct_template(input_templates, script_file):
 	with open(script_file, 'wb') as out:
 		for f in input_templates:
 			logger.debug("Ingesting template file " + f)
+			# Test if input template file exists
+			if not os.path.exists(f):
+				 	exception.error_and_quit(logger, "Failed to locate template file '" + f + "' in " + common.rel_path(gs.template_path)  + ".")
+
+			# Copy template file
 			with open(f, 'rb') as fd:
 				su.copyfileobj(fd, out)
 
@@ -32,7 +38,7 @@ def populate_template(input_cfgs, script_file):
 def generate_template(input_cfgs, input_templates, script_file, settings, log_to_use):
 
 	# Get global settings & logger obj
-	global logger, gs
+	global logger, gs, common
 	logger = log_to_use
 	gs = settings
 

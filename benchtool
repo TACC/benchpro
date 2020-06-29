@@ -25,8 +25,8 @@ def main():
 	cmd_parser = argparse.ArgumentParser(
 		description='This is a builder tool for managing appliation benchmarks.')
 
-	cmd_parser.add_argument("--install", default=False,
-							type=str, help="Name of the code cfg file to install")
+	cmd_parser.add_argument("--build", default=False,
+							type=str, help="Name of the code cfg file to build")
 	cmd_parser.add_argument("--sched", default="system",
 							type=str, help="Name of the scheduler cfg file.")
 
@@ -44,10 +44,17 @@ def main():
 							help="Show all installed applications.")
 	cmd_parser.add_argument("--avail", default=False, action='store_true',
 							help="Show all available application profiles.")
-	cmd_parser.add_argument("--queryApp", default=False,
-								help="Query build report of an installed application.")
 	cmd_parser.add_argument("--remove", default=False,
 							help="Remove an installed application.")
+
+	cmd_parser.add_argument("--queryApp", default=False,
+							help="Query build report of an installed application.")
+	cmd_parser.add_argument("--queryResult", default=False,
+							help="Query database for results matching search criteria. Accepts comma-delimited list of search criteria. Use 'all' to display all results in db.")
+
+	cmd_parser.add_argument("--setting", default=False,
+							help="Override a setting in settings.cfg. Accepts comma-delimited list of assignments.")
+
 
 	args = cmd_parser.parse_args()
 
@@ -57,6 +64,19 @@ def main():
 	# Print splash
 	splash.print_splash(gs)
 
+	# override settings.cfg
+	if args.setting:
+		settings_list = args.setting.split(',')
+		for setting in settings_list:
+			pair = setting.split('=')
+			if pair[0] == 'dry_run':
+				gs.dry_run = pair[1]
+				print("Set " + pair[0] + "=" + gs.dry_run )
+
+			else: 
+				print("WARNING: no matching setting for '" + pair[0] + "'")
+		print()
+
 	# Use system default scheduler profile
 	if args.sched == "system":
 		args.sched = "slurm-" + os.getenv('TACC_SYSTEM') + ".cfg"
@@ -64,7 +84,7 @@ def main():
 	handler = input_handler.init(gs)
 
 	# Start builder
-	if args.install:
+	if args.build:
 		builder.build_code(args, gs)
 
 	# Start bencher
@@ -94,6 +114,10 @@ def main():
 	# Query installation and exit
 	elif args.queryApp:
 		handler.query_app(args.queryApp)
+
+	# Query db for results
+	elif args.queryResult:
+		result_handler.query_results(args.queryResult, gs)
 
 	# No seletion provided
 	else:
