@@ -1,14 +1,22 @@
 #!/bin/bash 
 
+PROJECT_DIR=$(dirname "$(dirname $0)")
+
+echo $PROJECT_DIR
+if [ $(stat -c %U $PROJECT_DIR/hw_utils/lshw) != 'root' ]; then
+	echo "Script permissions not set. Exiting."
+	exit 1
+fi
+
 if [ -z $1 ]
 then
-	echo "1. Provide util dir"
+	echo "1. Provide util dir. Exiting"
 	exit 1
 fi
 
 if [ -z $2 ]
 then
-	echo "2. Provide dest dir"
+	echo "2. Provide output dir. Exiting"
 	exit 1
 fi
 
@@ -17,15 +25,15 @@ output_dir=$2
 
 mkdir -p ${output_dir}
 
-label=(	cpuid.all.raw 
-		cpuid.core0 
-		lshw 
-		TACC_HWP_set 
-		lspci 
-		rdmsr_all 
-		rpm 
-		ml 
-		lscpu
+label=(	"cpuid.all.raw" 
+		"cpuid.core0" 
+		"lshw" 
+		"TACC_HWP_set" 
+		"lspci" 
+		"rdmsr_all"
+		"rpm" 
+		"ml"
+		"lscpu"
 		) 
 
 cmd=(	"${utils_dir}/cpuid -r"
@@ -44,3 +52,4 @@ for ((i=0;i<${#label[@]};++i)); do
 	${cmd[i]} &> ${output_dir}/${label[i]}
 done
 echo "Done."
+exit 0

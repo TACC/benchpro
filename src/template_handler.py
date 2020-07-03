@@ -13,14 +13,16 @@ logger = gs = common = None
 def construct_template(input_templates, script_file):
 	with open(script_file, 'wb') as out:
 		for f in input_templates:
-			logger.debug("Ingesting template file " + f)
-			# Test if input template file exists
-			if not os.path.exists(f):
-				 	exception.error_and_quit(logger, "Failed to locate template file '" + f + "' in " + common.rel_path(gs.template_path)  + ".")
+			# Check template file is defined - handles None type (in case of unknown compiler type = None compiler template)
+			if f:
+				logger.debug("Ingesting template file " + f)
+				# Test if input template file exists
+				if not os.path.exists(f):
+				 	exception.error_and_quit(logger, "failed to locate template file '" + f + "' in " + common.rel_path(gs.template_path)  + ".")
 
-			# Copy template file
-			with open(f, 'rb') as fd:
-				su.copyfileobj(fd, out)
+				# Copy template file
+				with open(f, 'rb') as fd:
+					su.copyfileobj(fd, out)
 
 # Contextualizes template script with variables from a list of config dicts
 def populate_template(input_cfgs, script_file):

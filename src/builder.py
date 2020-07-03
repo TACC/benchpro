@@ -45,8 +45,10 @@ def generate_build_report(build_cfg, sched_output):
 		out.write("code         = "+ build_cfg['general']['code']             + "\n")
 		out.write("version      = "+ build_cfg['general']['version']          + "\n")
 		out.write("system       = "+ build_cfg['general']['system']           + "\n")
-		out.write("compiler     = "+ build_cfg['modules']['compiler']         + "\n")
+		out.write("compiler     = "+ build_cfg['modules']['compiler']		  + "\n")
 		out.write("mpi          = "+ build_cfg['modules']['mpi']              + "\n")
+		if build_cfg['general']['module_use']:
+			out.write("module_use   = "+ build_cfg['general']['module_use']       + "\n")
 		out.write("modules      = "+ ", ".join(build_cfg['modules'].values()) + "\n")
 		out.write("optimization = "+ build_cfg['build']['opt_flags']          + "\n")	
 		out.write("build_prefix = "+ build_cfg['general']['working_path']     + "\n")
@@ -73,6 +75,7 @@ def build_code(args, settings):
 	common.print_new_results()
 
 	# Parse config input files
+
 	build_cfg 		= cfg_handler.get_cfg(gs.build_cfg_dir,		args.build, 			gs, logger)
 	sched_cfg 		= cfg_handler.get_cfg(gs.sched_cfg_dir,		args.sched,				gs, logger)
 	compiler_cfg 	= cfg_handler.get_cfg('compiler', 	gs.compile_cfg_file,	gs, logger)
@@ -88,8 +91,12 @@ def build_code(args, settings):
 	# Print inputs to log
 	common.send_inputs_to_log('Builder', [build_cfg, sched_cfg, compiler_cfg], logger)
 
-	# Get compiler cmds for gcc/intel
-	compiler_cfg['common'].update(compiler_cfg[build_cfg['build']['compiler_type']])
+	# Get compiler cmds for gcc/intel, otherwise compiler type is unknown
+	known_compiler_type = True
+	try:
+		compiler_cfg['common'].update(compiler_cfg[build_cfg['build']['compiler_type']])
+	except:
+		known_compiler_type = False
 
 	# Check if build dir already exists
 	check_for_previous_install(build_cfg['general']['working_path'])
@@ -98,17 +105,18 @@ def build_code(args, settings):
 	script_file = "tmp." + build_cfg['general']['code'] + "-build." + sched_cfg['sched']['type']
 
 	# Input template files
-	sched_template = common.find_file(sched_cfg['sched']['type'] + ".template", gs.template_path)
+	sched_template = common.find_exact(sched_cfg['sched']['type'] + ".template", gs.template_path)
 
 	# Set build template to default, if set in build.cfg: overload
 	build_template = build_cfg['general']['code'] + "-" + build_cfg['general']['version'] + ".build"
-	if build_cfg['general']['template']:
-		build_template = build_cfg['general']['template']
-	build_template = common.find_file(build_template, gs.template_path + gs.sl + gs.build_tmpl_dir)
+	if build_cfg['general']['build_template']:
+		build_template = build_cfg['general']['build_template']
+	build_template = common.find_partial(build_template, gs.template_path + gs.sl + gs.build_tmpl_dir)
 
-	print(build_template)
-
-	compiler_template 	= common.find_file(gs.compile_tmpl_file, gs.template_path)
+	# Get compiler template if compiler type is known (therefore can fill compiler cmds)
+	compiler_template = None
+	if known_compiler_type:
+		compiler_template 	= common.find_exact(gs.compile_tmpl_file, gs.template_path)
 
 	# Get ranks from threads (?)
 	sched_cfg['sched']['ranks'] = sched_cfg['sched']['threads']  
@@ -154,7 +162,7 @@ def build_code(args, settings):
 	exception.remove_tmp_files(logger)
 
 	# Submit build script to scheduler
-	sched_output = common.submit_job(build_cfg['general']['working_path'] + gs.sl + script_file[4:], logger)
+	sched_output = common.submit_job(build_cfg['general']['working_path'], script_file[4:], logger)
 
 	# Generate build report
 	generate_build_report(build_cfg, sched_output)

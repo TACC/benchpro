@@ -36,13 +36,17 @@ def check_inputs(mod_dict, mod_path):
 			exception.error_and_quit(logger, "Module path already exists.")
 
 # Copy template to target dir
-def copy_mod_template(module_template, mod_file):
-	try:
-		with open(mod_file, 'wb') as out:
-			with open(module_template, 'rb') as inp:
-				su.copyfileobj(inp, out)
-	except:
-		exception.error_and_quit(logger, "Failed to copy " + module_template + " to " + mod_file)
+def copy_mod_template(module_template, mod_file, module_use):
+	#try:
+	with open(mod_file, 'w') as out:
+		with open(module_template, 'r') as inp:
+				# Add custom module path if set in cfg
+			if module_use:
+				out.write("prepend_path( \"MODULEPATH\" , \"" + module_use + "\") \n")
+
+			su.copyfileobj(inp, out)
+	#except:
+	#	exception.error_and_quit(logger, "Failed to copy " + module_template + " to " + mod_file)
 
 # Replace <<<>>> vars in copied template
 def populate_mod_template(module, mod_dict):
@@ -101,8 +105,9 @@ def make_mod(general_opts, build_opts, mod_opts, settings, log_to_use):
 		module_template = "/".join(module_template.split("/")[:-1]) + gs.sl + "generic.module"
 
 	# Copy base module template
-	copy_mod_template(module_template, mod_file)
+	copy_mod_template(module_template, mod_file, general_opts['module_use'])
 	module = open(mod_file).read()
+
 	# Populuate template with config params
 	module = populate_mod_template(module, mod_dict)
 	# Test module template

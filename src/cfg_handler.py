@@ -1,6 +1,7 @@
 # System Imports
 import configparser as cp
 import os
+import re
 import subprocess
 import sys
 
@@ -62,7 +63,7 @@ def check_file(cfg_type, cfg_name):
 	
 	# 5: Search keyword in ./config/build
 	logger.debug("Searching for *" + cfg_name + "* in " + search_path + "...")
-	search_result = common.find_file(cfg_name, search_path)
+	search_result = common.find_partial(cfg_name, search_path)
 	if os.path.isfile(search_result):
 		logger.debug("Found")
 		return  search_result
@@ -88,21 +89,26 @@ def read_cfg_file(cfg_file):
 	return cfg_dict
 
 # Gets full module name of default module, eg: 'intel' -> 'intel/18.0.2'
-def get_full_module_name(module):
-	cmd = subprocess.run("ml -t -d av  2>&1 | grep '^" + module +"'", shell=True,
+def get_full_module_name(module, cmd_prefix):
+	cmd = subprocess.run(cmd_prefix + "ml -t -d av  2>&1 | grep '^" + module +"'", shell=True,
 							check=True, capture_output=True, universal_newlines=True)
 	return cmd.stdout.strip()
 
 # Check if module is available on the system
-def check_module_exists(module):
+def check_module_exists(module, module_use):
+
+	cmd_prefix = ""
+	if module_use:
+		cmd_prefix = "ml use " + module_use + "; "
+
 	try:
-		cmd = subprocess.run("module spider " + module, shell=True,
+		cmd = subprocess.run(cmd_prefix + "module spider " + module, shell=True,
 								check=True, capture_output=True, universal_newlines=True)
 
 	except subprocess.CalledProcessError as e:
 		exception.error_and_quit(logger, "module '" + module + "' not available on this system")
 
-	return get_full_module_name(module)
+	return get_full_module_name(module, cmd_prefix)
 
 
 # Error if section heading missing in cfg file
@@ -112,8 +118,12 @@ def check_dict_section(cfg_file, cfg_dict, section):
 
 # Error if value missing in cfg file
 def check_dict_key(cfg_file, cfg_dict, section, key):
+	# If key not found 
 	if not key in cfg_dict[section]:
-		exception.error_and_quit(logger, "'" + key + "' value required in section [" + section + "] in " + common.rel_path(cfg_file) + ". Consult the documentation.")
+		exception.error_and_quit(logger, "'" + key + "' value must be present in section [" + section + "] in " + common.rel_path(cfg_file) + ". Consult the documentation.")
+	# If key not set
+	if not cfg_dict[section][key]:
+		exception.error_and_quit(logger, "'" + key + "' value must be non-null in section [" + section + "] in " + common.rel_path(cfg_file) + ". Consult the documentation.")
 
 # Check build config file and add required fields
 def process_build_cfg(cfg_dict):
@@ -123,15 +133,25 @@ def process_build_cfg(cfg_dict):
 	check_dict_key(    cfg_dict['metadata']['cfg_file'], cfg_dict, 'general', 'code')
 	check_dict_key(    cfg_dict['metadata']['cfg_file'], cfg_dict, 'general', 'version')
 
+	check_dict_key(    cfg_dict['metadata']['cfg_file'], cfg_dict, 'modules', 'compiler')
+	check_dict_key(    cfg_dict['metadata']['cfg_file'], cfg_dict, 'modules', 'mpi')
+
 	# Instantiate missing optional parameters
-	if not 'system' in cfg_dict['general'].keys(): 			cfg_dict['general']['system'] 			= "" 
-	if not 'build_prefix' in cfg_dict['general'].keys(): 	cfg_dict['general']['build_prefix'] 	= ""
-	if not 'template' in cfg_dict['general'].keys(): 		cfg_dict['general']['template'] 		= ""
-	if not 'arch' in cfg_dict['build'].keys(): 				cfg_dict['build']['arch'] 				= ""
-	if not 'opt_flags' in cfg_dict['build'].keys(): 		cfg_dict['build']['opt_flags'] 			= ""	
-	if not 'build_label' in cfg_dict['build'].keys(): 		cfg_dict['build']['build_label'] 		= ""
-	if not 'bin_dir' in cfg_dict['build'].keys(): 			cfg_dict['build']['bin_dir'] 			= ""
-	if not 'collect_hw_stats' in cfg_dict['run'].keys(): 	cfg_dict['run']['collect_hw_stats'] 	= False
+	if not 'system' in 				cfg_dict['general'].keys():	cfg_dict['general']['system']			= "" 
+	if not 'build_prefix' in 		cfg_dict['general'].keys():	cfg_dict['general']['build_prefix']		= ""
+	if not 'build_template' in		cfg_dict['general'].keys():	cfg_dict['general']['build_template']	= ""
+	if not 'module_template' in		cfg_dict['general'].keys(): cfg_dict['general']['module_template']	= ""
+	if not 'module_use' in			cfg_dict['general'].keys(): cfg_dict['general']['module_use']		= ""
+
+	if not 'arch' in 				cfg_dict['build'].keys():	cfg_dict['build']['arch'] 				= ""
+	if not 'opt_flags' in 			cfg_dict['build'].keys():	cfg_dict['build']['opt_flags'] 			= ""	
+	if not 'build_label' in 		cfg_dict['build'].keys():	cfg_dict['build']['build_label'] 		= ""
+	if not 'bin_dir' in 			cfg_dict['build'].keys():	cfg_dict['build']['bin_dir'] 			= ""
+
+	if not 'collect_hw_stats' in 	cfg_dict['run'].keys():		cfg_dict['run']['collect_hw_stats']		= False
+
+	# Extract compiler type from label by splitting by / and removing ints
+	cfg_dict['build']['compiler_type'] = re.sub("\d", "", cfg_dict['modules']['compiler'].split('/')[0])
 
 	# Insert 1 node for build job
 	cfg_dict['build']['nodes'] = "1"
@@ -147,13 +167,9 @@ def process_build_cfg(cfg_dict):
 		if not cfg_dict['general']['system']:
 			exception.error_and_quit(logger, "$TACC_SYSTEM not set, unable to continue. Please define 'system' in " + common.rel_path(cfg_dict['metadata']['cfg_file']))
 
-	# Check for compiler and MPI
-	if not cfg_dict['modules']['compiler'] or not cfg_dict['modules']['mpi']:
-		exception.error_and_quit(logger, "compiler and/or MPI module not provided.")
-
 	# Check requested modules exist, and if so, result full module names
 	for mod in cfg_dict['modules']:
-		cfg_dict['modules'][mod] = check_module_exists(cfg_dict['modules'][mod])
+		cfg_dict['modules'][mod] = check_module_exists(cfg_dict['modules'][mod], cfg_dict['general']['module_use'])
 
 	# Parse system info config file 
 	system_file = check_file('system', gs.config_path + gs.sl + gs.system_cfg_file)
@@ -162,9 +178,6 @@ def process_build_cfg(cfg_dict):
 	# Parse architecture defaults config file 
 	arch_file = check_file('arch', gs.config_path + gs.sl + gs.arch_cfg_file)
 	arch_dict = read_cfg_file(arch_file)
-
-	# Extract compiler type
-	cfg_dict['build']['compiler_type'] = cfg_dict['modules']['compiler'].split('/')[0]
 
 	# Get core count for system
 	try:
@@ -218,7 +231,8 @@ def process_build_cfg(cfg_dict):
 		try:
 			cfg_dict['build']['opt_flags'] = arch_dict[cfg_dict['build']['arch']][cfg_dict['build']['compiler_type']]
 		except:
-			exception.error_and_quit(logger, "No default optimization flags for " + cfg_dict['build']['arch'] + " found in " + gs.arch_cfg_file)
+			exception.print_warning(logger, "No default optimization flags for " + cfg_dict['build']['arch'] + " found in " + gs.arch_cfg_file + " for compiler type '" + cfg_dict['build']['compiler_type'] + "'")
+			cfg_dict['build']['opt_flags'] = ""
 
 	# Generate default build path if one is not defined
 	if not cfg_dict['general']['build_prefix']:
@@ -250,8 +264,8 @@ def process_bench_cfg(cfg_dict):
 	check_dict_key(    cfg_dict['metadata']['cfg_file'], cfg_dict, 'result', 'unit')
 
 	# Instantiate missing optional parameters
-	if not 'template' in cfg_dict['bench'].keys():		cfg_dict['bench']['template']	= ""
-	if not 'collect_hw' in cfg_dict['bench'].keys():	cfg_dict['bench']['collect_hw']	= ""
+	if not 'template' in 	cfg_dict['bench'].keys():	cfg_dict['bench']['template']	= ""
+	if not 'collect_hw' in 	cfg_dict['bench'].keys():	cfg_dict['bench']['collect_hw']	= ""
 
 	# Handle comma-delimited lists
 	cfg_dict['sched']['nodes'] = cfg_dict['sched']['nodes'].split(",")

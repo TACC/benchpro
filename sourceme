@@ -4,3 +4,7 @@ TOPDIR=$(dirname "$(realpath $BASH_SOURCE)")
 ml use "$TOPDIR/build/modulefiles"
 ml builder
 alias cdb='cd $TOPDIR'
+
+if [ $(stat -c %U $TOPDIR/hw_utils/lshw ) != 'root' ]; then
+	echo "WARNING: please modify hardware collection scripts privilege with 'sudo hw_utils/change_permissions.sh'"
+fi

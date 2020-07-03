@@ -2,6 +2,7 @@
 import configparser as cp
 import os
 import psycopg2
+import shutil as su
 import subprocess
 import sys
 
@@ -37,7 +38,7 @@ def validate_result(result_path):
 		if bench_cfg['result']['output_file']:
 			output_file = bench_cfg['result']['output_file']
 
-	output_path = common.find_file(output_file, result_path)
+	output_path = common.find_exact(output_file, result_path)
 	# Test for benchmark output file
 	if not output_path:
 		exception.print_warning(logger, "Result file " + output_file + " not found in " + common.rel_path(result_path) + ". It seems the benchmark failed to run. Was dry_run=True in settings.cfg?")
@@ -244,7 +245,7 @@ def capture_result(args, settings):
 	logger = common.start_logging("CAPTURE", gs.base_dir + gs.sl + gs.results_log_file + "_" + gs.time_str + ".log")
 
 	# Get list of completed benchmarks
-	results = common.check_for_new_results()
+	results = common.check_for_complete_results()
 
 	# No outstanding results
 	if not results:
@@ -375,7 +376,7 @@ def run_query(query_str):
 	return rows
 
 # Query db for results
-def query_results(args, settings):
+def query_db(args, settings):
 	global gs, common
 	gs = settings
 	common = common_funcs.init(gs)
@@ -402,5 +403,110 @@ def query_results(args, settings):
 
 	else:
 		print("No results found matching search criteria.")
-		
+	
+# List local results
+def list_results(args, settings):
+	global gs, common
+	gs = settings
+	common = common_funcs.init(gs)
+
+	# Running results
+	if args == 'running' or args == 'all':
+		result_list = common.check_for_running_results()
+		if result_list:
+			print("Found", len(result_list), "running benchmarks:")
+			for result in result_list:
+				print("  " + result)
+		else:
+			print("No running benchmarks found.")
+		print()
+
+	# Completed results
+	if args == 'complete' or args == 'all':
+		result_list = common.check_for_complete_results()
+		if result_list:
+			print("Found", len(result_list), "completed benchmark results:")
+			for result in result_list:
+				print("  " + result)
+		else:
+			print("No completed benchmark results found.")
+		print()
+
+	# Captured results
+	if args == 'captured' or args == 'all':
+		result_list = common.check_for_submitted_results()
+		if result_list:
+			print("Found", len(result_list), "captured benchmark results:")
+			for result in result_list:
+				print("  " + result)
+		else:
+			print("No captured benchmark results found.")
+		print()
+
+	# Failed results
+	if args == 'failed' or args == 'all':
+		result_list = common.check_for_failed_results()
+		if result_list:
+			print("Found", len(result_list), "failed benchmark results:")
+			for result in result_list:
+				print("  " + result)
+		else:
+			print("No failed benchmark results found.")
+		print()
+
+	if not args in ['running', 'complete', 'captured', 'failed', 'all']:
+		print("Invalid input, provide 'running', 'complete', 'captured', 'failed' or 'all'.")
+
+# Show info for local result
+def query_result(args, settings):
+	global gs, common
+	gs = settings
+	common = common_funcs.init(gs)
+
+	result_dir = gs.bench_path + gs.sl + args
+
+	if os.path.exists(result_dir):
+
+		bench_report = gs.bench_path + gs.sl + args + gs.sl + "bench_report.txt"
+		print("Benchmark report:")
+		print("----------------------------------------")	
+		with open(bench_report, 'r') as report:
+			print(report.read())
+		print("----------------------------------------")
+
+	else:
+		print("Could not find result '" + args + "' in " + common.rel_path(gs.bench_path))
+
+def print_dirs(dirs):
+	for d in dirs:
+		print("  " + d)
+
+# Remove local result
+def remove_result(args, settings):
+	global gs, common
+	gs = settings
+	common = common_funcs.init(gs)
+
+	if args == 'failed':
+		result_list = common.check_for_failed_results()
+		print("Found", len(result_list), "failed results:")
+		print_dirs(result_list)
+
+	elif args == 'captured':
+		result_list = common.check_for_submitted_results()
+		print("Found", len(result_list), "failed results:")
+		print_dirs(result_list)
+
+	elif args == 'all':
+		result_list = common.get_subdirs(gs.bench_path)	
+		print("Found", len(result_list), "failed results:")
+		print_dirs(result_list)
+
+	elif  os.path.exists(gs.bench_path + gs.sl + args):
+		print()	
+
+
+	else:
+		print("Unable to find result '" + args + "' in " + common.rel_path(gs.bench_path))
+
 
