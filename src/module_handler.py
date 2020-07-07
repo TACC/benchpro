@@ -90,7 +90,7 @@ def make_mod(general_opts, build_opts, mod_opts, settings, log_to_use):
 	mod_dict.update(build_opts)
 
 	# Get module file path
-	mod_path = gs.module_path + gs.sl + mod_dict['system'] + gs.sl + common.get_label(mod_dict['compiler']) + gs.sl + common.get_label(mod_dict['mpi']) + gs.sl + mod_dict['code'] + gs.sl + mod_dict['build_label']
+	mod_path = gs.module_path + gs.sl + mod_dict['system'] + gs.sl + common.get_module_label(mod_dict['compiler']) + gs.sl + common.get_module_label(mod_dict['mpi']) + gs.sl + mod_dict['code'] + gs.sl + mod_dict['build_label']
 
 	check_inputs(mod_dict, mod_path)
 	# tmp module file name

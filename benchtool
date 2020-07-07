@@ -63,13 +63,12 @@ def main():
 							help="Override a setting in settings.cfg. Accepts comma-delimited list of assignments.")
 
 
+	print()
+
 	args = cmd_parser.parse_args()
 
 	# Get global settings
 	gs = global_settings.init()
-
-	# Print splash
-	splash.print_splash(gs)
 
 	# override settings.cfg
 	if args.setting:
@@ -97,14 +96,17 @@ def main():
 
 	# Start builder
 	if args.build:
+		splash.print_splash(gs)
 		builder.build_code(args, gs)
 
 	# Start bencher
 	elif args.bench:
+		splash.print_splash(gs)
 		bencher.run_bench(args, gs)
 
 	# Start capture
 	elif args.capture:
+		splash.print_splash(gs)
 		result_handler.capture_result(args, gs)
 
 	# Cleanup and exit

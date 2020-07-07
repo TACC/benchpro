@@ -97,7 +97,7 @@ class init(object):
 		return pwd.getpwuid(os.stat(file_name).st_uid).pw_name
 
 	# Convert module name to usable directory name, Eg: intel/18.0.2 -> intel18
-	def get_label(self, module):
+	def get_module_label(self, module):
 		label = module
 		if module.count(self.gs.sl) > 0:
 			comp_ver = module.split(self.gs.sl)

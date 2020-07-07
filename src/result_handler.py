@@ -5,6 +5,7 @@ import psycopg2
 import shutil as su
 import subprocess
 import sys
+import time
 
 # Local Imports
 import src.cfg_handler as cfg_handler
@@ -457,29 +458,54 @@ def list_results(args, settings):
 	if not args in ['running', 'complete', 'captured', 'failed', 'all']:
 		print("Invalid input, provide 'running', 'complete', 'captured', 'failed' or 'all'.")
 
+
+# Get list of results matching search str
+def get_matching_results(result_str):
+
+	matching_results = []
+	for result in common.get_subdirs(gs.bench_path):
+		if result_str in result:
+			matching_results.append(result)
+
+	if not matching_results:
+		print("No results found matching selection '" + result_str + "'")
+		sys.exit(1)
+
+	elif len(matching_results) > 1:
+		print("Multiple results found matching '" + result_str + "'")
+		for result in sorted(matching_results):
+			print("  " + result)
+		sys.exit(1)
+
+	else:
+		return matching_results
+
 # Show info for local result
 def query_result(args, settings):
 	global gs, common
 	gs = settings
 	common = common_funcs.init(gs)
 
-	result_dir = gs.bench_path + gs.sl + args
+	bench_report = gs.bench_path + gs.sl + get_matching_results(args) + gs.sl + "bench_report.txt"
+	print("Benchmark report:")
+	print("----------------------------------------")	
+	with open(bench_report, 'r') as report:
+		print(report.read())
+	print("----------------------------------------")
 
-	if os.path.exists(result_dir):
 
-		bench_report = gs.bench_path + gs.sl + args + gs.sl + "bench_report.txt"
-		print("Benchmark report:")
-		print("----------------------------------------")	
-		with open(bench_report, 'r') as report:
-			print(report.read())
-		print("----------------------------------------")
+def print_results(result_list):
+	for result in result_list:
+		print("  " + result)
 
-	else:
-		print("Could not find result '" + args + "' in " + common.rel_path(gs.bench_path))
-
-def print_dirs(dirs):
-	for d in dirs:
-		print("  " + d)
+def delete_results(result_list):
+	print("")
+	print('\033[1m' + "Deleting in", gs.timeout, "seconds...")
+	time.sleep(gs.timeout)
+	print('\033[0m' + "No going back now...")
+	for result in result_list:
+		su.rmtree(gs.bench_path + gs.sl + result)
+	print("Done.")
 
 # Remove local result
 def remove_result(args, settings):
@@ -487,26 +513,41 @@ def remove_result(args, settings):
 	gs = settings
 	common = common_funcs.init(gs)
 
+	# Check all results for failed status and remove
 	if args == 'failed':
 		result_list = common.check_for_failed_results()
-		print("Found", len(result_list), "failed results:")
-		print_dirs(result_list)
+		if result_list:
+			print("Found", len(result_list), "failed results:")
+			print_results(result_list)
+			delete_results(result_list)
+		else:
+			print("No failed results found.")
 
+	# Check all results for captured status and remove
 	elif args == 'captured':
 		result_list = common.check_for_submitted_results()
-		print("Found", len(result_list), "failed results:")
-		print_dirs(result_list)
+		if result_list:
+			print("Found", len(result_list), "captured results:")
+			print_results(result_list)
+			delete_results(result_list)
+		else:
+			print("No captured results found.")
 
+	# Remove all results in ./results dir
 	elif args == 'all':
 		result_list = common.get_subdirs(gs.bench_path)	
-		print("Found", len(result_list), "failed results:")
-		print_dirs(result_list)
+		if result_list:
+			print("Found", len(result_list), " results:")
+			print_results(result_list)
+			delete_results(result_list)
+		else:
+			print("No results found.")
 
-	elif  os.path.exists(gs.bench_path + gs.sl + args):
-		print()	
-
-
+	# Remove unique result matching input str
 	else:
-		print("Unable to find result '" + args + "' in " + common.rel_path(gs.bench_path))
-
+		results = get_matching_results(args)
+		print("Found matching results: ")
+		for res in results:
+			print("  " + res)
+		delete_results(results)
 

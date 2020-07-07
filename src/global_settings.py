@@ -78,6 +78,7 @@ class init:
 
 		# [results]
 		section				= 'results'
+		result_scripts_dir  = empty(settings_parser.get(section,		'result_scripts_dir'))
 		results_log_file	= empty(settings_parser.get(section,		'results_log_file'))
 
 		# [database]
@@ -109,14 +110,16 @@ class init:
 	#---------------------------------------------------------------------------
 
 	# Derived variables
-	top_env			= topdir_env_var + sl
-	module_basedir	= "modulefiles"
-	build_path		= base_dir + sl + build_basedir
-	bench_path		= base_dir + sl + bench_basedir
-	config_path		= base_dir + sl + config_basedir
-	template_path	= base_dir + sl + template_basedir
-	script_path		= base_dir + sl + script_basedir
-	module_path		= build_path + sl + module_basedir
-	src_path		= base_dir + sl + "src"
-	utils_path		= base_dir + sl + system_utils_dir
+	top_env				= topdir_env_var + sl
+	module_basedir		= "modulefiles"
+	build_path			= base_dir + sl + build_basedir
+	bench_path			= base_dir + sl + bench_basedir
+	config_path			= base_dir + sl + config_basedir
+	template_path		= base_dir + sl + template_basedir
+	script_path			= base_dir + sl + script_basedir
+	result_script_path 	= script_path + sl + result_scripts_dir
+	system_scripts_path = script_path + sl + result_scripts_dir
+	module_path			= build_path + sl + module_basedir
+	src_path			= base_dir + sl + "src"
+	utils_path			= base_dir + sl + system_utils_dir
 

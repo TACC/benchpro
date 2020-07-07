@@ -158,7 +158,7 @@ def run_bench(args, settings):
 									   script_file, gs, logger)
 
 		# Add hardware collection script to job script
-		if bench_cfg['bench']['collect_hw']:
+		if bench_cfg['bench']['collect_hw_stats']:
 			if common.file_owner(gs.utils_path + gs.sl + "lshw") == "root":
 				with open(script_file, 'a') as f:	
 					f.write(gs.src_path + gs.sl + "collect_hw_info.sh " + gs.utils_path + " " + bench_cfg['bench']['working_path'] + gs.sl + "hw_report")

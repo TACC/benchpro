@@ -90,8 +90,13 @@ def read_cfg_file(cfg_file):
 
 # Gets full module name of default module, eg: 'intel' -> 'intel/18.0.2'
 def get_full_module_name(module, cmd_prefix):
-	cmd = subprocess.run(cmd_prefix + "ml -t -d av  2>&1 | grep '^" + module +"'", shell=True,
+
+	try:
+		cmd = subprocess.run(cmd_prefix + "ml -t -d av  2>&1 | grep '^" + module +"'", shell=True,
 							check=True, capture_output=True, universal_newlines=True)
+	except:
+		exception.error_and_quit(logger, "failed to process module '" + module + "'")
+
 	return cmd.stdout.strip()
 
 # Check if module is available on the system
@@ -139,6 +144,7 @@ def process_build_cfg(cfg_dict):
 	# Instantiate missing optional parameters
 	if not 'system' in 				cfg_dict['general'].keys():	cfg_dict['general']['system']			= "" 
 	if not 'build_prefix' in 		cfg_dict['general'].keys():	cfg_dict['general']['build_prefix']		= ""
+	if not 'check_exe' in			cfg_dict['general'].keys(): cfg_dict['general']['check_exe']		= ""
 	if not 'build_template' in		cfg_dict['general'].keys():	cfg_dict['general']['build_template']	= ""
 	if not 'module_template' in		cfg_dict['general'].keys(): cfg_dict['general']['module_template']	= ""
 	if not 'module_use' in			cfg_dict['general'].keys(): cfg_dict['general']['module_use']		= ""
@@ -147,8 +153,7 @@ def process_build_cfg(cfg_dict):
 	if not 'opt_flags' in 			cfg_dict['build'].keys():	cfg_dict['build']['opt_flags'] 			= ""	
 	if not 'build_label' in 		cfg_dict['build'].keys():	cfg_dict['build']['build_label'] 		= ""
 	if not 'bin_dir' in 			cfg_dict['build'].keys():	cfg_dict['build']['bin_dir'] 			= ""
-
-	if not 'collect_hw_stats' in 	cfg_dict['run'].keys():		cfg_dict['run']['collect_hw_stats']		= False
+	if not 'collect_hw_stats' in 	cfg_dict['build'].keys():	cfg_dict['build']['collect_hw_stats']	= False
 
 	# Extract compiler type from label by splitting by / and removing ints
 	cfg_dict['build']['compiler_type'] = re.sub("\d", "", cfg_dict['modules']['compiler'].split('/')[0])
@@ -236,8 +241,8 @@ def process_build_cfg(cfg_dict):
 
 	# Generate default build path if one is not defined
 	if not cfg_dict['general']['build_prefix']:
-		cfg_dict['general']['working_path'] = gs.build_path + gs.sl + cfg_dict['general']['system'] + gs.sl + common.get_label(cfg_dict['modules']['compiler']) + gs.sl + \
-			common.get_label(cfg_dict['modules']['mpi']) + gs.sl + cfg_dict['general']['code'] + gs.sl + cfg_dict['build']['build_label'] + gs.sl + cfg_dict['general']['version']
+		cfg_dict['general']['working_path'] = gs.build_path + gs.sl + cfg_dict['general']['system'] + gs.sl + common.get_module_label(cfg_dict['modules']['compiler']) + gs.sl + \
+			common.get_module_label(cfg_dict['modules']['mpi']) + gs.sl + cfg_dict['general']['code'] + gs.sl + cfg_dict['build']['build_label'] + gs.sl + cfg_dict['general']['version']
 	# Translate 'build_prefix' to 'working_path' for better readability
 	else:
 		cfg_dict['general']['working_path'] = cfg_dict['general']['build_prefix']
@@ -265,7 +270,7 @@ def process_bench_cfg(cfg_dict):
 
 	# Instantiate missing optional parameters
 	if not 'template' in 	cfg_dict['bench'].keys():	cfg_dict['bench']['template']	= ""
-	if not 'collect_hw' in 	cfg_dict['bench'].keys():	cfg_dict['bench']['collect_hw']	= ""
+	if not 'collect_hw_stats' in 	cfg_dict['bench'].keys():	cfg_dict['bench']['collect_hw_stats']	= False
 
 	# Handle comma-delimited lists
 	cfg_dict['sched']['nodes'] = cfg_dict['sched']['nodes'].split(",")
@@ -285,10 +290,6 @@ def process_bench_cfg(cfg_dict):
 		exception.error_and_quit(logger, "'method' key in [result] section of " + cfg_dict['metadata']['cfg_file'] + "must be either regex or script." )
 	# Add output filename from settings.cfg
 	cfg_dict['bench']['output_file'] = gs.output_file
-
-	# Default hardware collection to False if not set
-	if not 'collect_hw' in cfg_dict['bench']:
-		cfg_dict['bench']['collect_hw'] = False
 
 # Check sched config file and add required fields
 def process_sched_cfg(cfg_dict):

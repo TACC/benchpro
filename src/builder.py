@@ -124,9 +124,25 @@ def build_code(args, settings):
 	sched_cfg['sched']['job_label'] = build_cfg['general']['code'] + "_build"
 
 	# Generate build script
-	template_handler.generate_template([build_cfg['general'], build_cfg['modules'], build_cfg['build'], build_cfg['run'], sched_cfg['sched'], compiler_cfg['common']],
+	template_handler.generate_template([build_cfg['general'], build_cfg['modules'], build_cfg['build'], sched_cfg['sched'], compiler_cfg['common']],
  									   [sched_template, compiler_template, build_template],
 									   script_file, gs, logger)
+
+
+
+	# Add sanity check
+	if build_cfg['build']['check_exe']:
+		with open(script_file, 'a') as f:
+			f.write("ldd " + build_cfg['general']['install_path'] + gs.sl +  build_cfg['build']['bin_dir'] + gs.sl + build_cfg['build']['check_exe'] + "\n")
+
+	# Add hardware collection script to job script
+	if build_cfg['build']['collect_hw_stats']:
+		if common.file_owner(gs.utils_path + gs.sl + "lshw") == "root":
+			with open(script_file, 'a') as f:
+				f.write(gs.src_path + gs.sl + "collect_hw_info.sh " + gs.utils_path + " " + build_cfg['general']['working_path'] + gs.sl + "hw_report" + "\n")
+		else:
+			exception.print_warning(logger, "Requested hardware stats but persmissions not set, run 'sudo hw_utils/change_permissions.sh'")
+
 
 
 	# Generate module in temp location
