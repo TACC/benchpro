@@ -14,6 +14,7 @@ def construct_template(input_templates, script_file):
 	with open(script_file, 'wb') as out:
 		for f in input_templates:
 			# Check template file is defined - handles None type (in case of unknown compiler type = None compiler template)
+			print(f)
 			if f:
 				logger.debug("Ingesting template file " + f)
 				# Test if input template file exists

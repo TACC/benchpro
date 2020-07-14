@@ -1,5 +1,6 @@
 # System Imports
 import configparser as cp
+import glob
 import logging as lg
 import os
 import pwd
@@ -70,13 +71,11 @@ class init(object):
 		# Check file doesn't exist already
 		if os.path.isfile(file_name):
 			return file_name
-		# Search provided path for file
-		for root, dirs, files in os.walk(path):
-			match = next((s for s in files if file_name == s), None)
-			if match:
-				return os.path.join(root, match)
-		# File not found
-		return ""
+	
+		# Search recursively for file
+		files = glob.glob(path+'/**/'+file_name, recursive = True)
+
+		return files
 
 	# Find *file* in directory
 	def find_partial(self, file_name, path):
@@ -89,7 +88,7 @@ class init(object):
 			if match:
 				return os.path.join(root, match)
 		# File not found
-		print("file not found")
+		print("file not found: ", file_name )
 		return ""
 
 	# Get owner of file
@@ -150,11 +149,16 @@ class init(object):
 			return matched_codes[0]
 		# More than 1 match
 		else:
-			print("Multiple installed applications match your selection '" + requested_code + "':")
 			for code in matched_codes:
-				print("  ->" + code)
-			print("Please be more specific.")
-			sys.exit(1)
+				# Exact match to 1 of multiple results
+				if requested_code == code:
+					return code
+			
+		print("Multiple installed applications match your selection '" + requested_code + "':")
+		for code in matched_codes:
+			print("  ->" + code)
+		print("Please be more specific.")
+		sys.exit(1)
 
 	# Get all results in ./results
 	def get_all_results(self):
@@ -222,12 +226,15 @@ class init(object):
 		# Check that job is complete
 		for result in new_results:
 			job_id = ''
+			try:
 			# Get jobID from bench_report.txt
-			with open(self.gs.bench_path + self.gs.sl + result + self.gs.sl + self.gs.bench_report_file, 'r') as inFile:
-				for line in inFile:
-					if "job_id" in line:
-						job_id = line.split("=")[1].strip()
-									
+				with open(self.gs.bench_path + self.gs.sl + result + self.gs.sl + self.gs.bench_report_file, 'r') as inFile:
+					for line in inFile:
+						if "job_id" in line:
+							job_id = line.split("=")[1].strip()
+			except:
+				pass
+
 			# Check job is completed
 			if self.check_job_complete(job_id):
 				completed_results.append(result)
@@ -243,14 +250,19 @@ class init(object):
 		for result in new_results:
 			job_id = ''
 			# Get jobID from bench_report.txt
-			with open(self.gs.bench_path + self.gs.sl + result + self.gs.sl + self.gs.bench_report_file, 'r') as inFile:
-				for line in inFile:
-					if "job_id" in line:
-						job_id = line.split("=")[1].strip()
 
-			# Check job is completed
-			if not self.check_job_complete(job_id):
-				running_results.append(result)
+			try:
+				with open(self.gs.bench_path + self.gs.sl + result + self.gs.sl + self.gs.bench_report_file, 'r') as inFile:
+					for line in inFile:
+						if "job_id" in line:
+							job_id = line.split("=")[1].strip()
+
+				# Check job is completed
+				if not self.check_job_complete(job_id):
+					running_results.append(result)
+
+			except:
+				pass
 
 		return running_results
 
@@ -317,6 +329,37 @@ class init(object):
 			exception.error_and_quit(
 				logger, "Failed to move " + obj + " to " + path + self.gs.sl + new_obj_name)
 
+	# Get Job IDs of running jobs
+	def get_running_job_ids(self):
+		# Get list of jobs from sacct
+		running_jobs_list = []
+		job_list = ""
+		try:
+			cmd = subprocess.run("sacct -u mcawood", shell=True, \
+								check=True, capture_output=True, universal_newlines=True)
+			job_list = cmd.stdout.split("\n")
+
+		except:
+			pass
+
+		# Add RUNNING job IDs to list
+		for job in job_list:
+			if "RUNNING" in job:
+				running_jobs_list.append(int(job.split(" ")[0]))
+
+		return running_jobs_list
+
+	# Set job dependency if max_running_jobs is reached
+	def get_job_dependency(self):
+		running_jobs_list = self.get_running_job_ids()
+		dep_prefix = ""
+		# Job limit reached
+		if len(running_jobs_list) >= self.gs.max_running_jobs:
+			running_jobs_list.sort()
+			dep_prefix = "--dependency=afterany:" + str(running_jobs_list[-1]) + " "
+
+		return dep_prefix
+
 	# Submit script to scheduler
 	def submit_job(self, job_path, script_file, logger):
 		script_path= job_path + self.gs.sl + script_file
@@ -333,8 +376,12 @@ class init(object):
 			print()
 			print("Submitting to scheduler...")
 			logger.debug("Submitting " + script_path + " to scheduler...")
+
+			# Get dependency prefix
+			dep = self.get_job_dependency()
+
 			try:
-				cmd = subprocess.run("sbatch " + script_path, shell=True, \
+				cmd = subprocess.run("sbatch " + dep + script_path, shell=True, \
 									 check=True, capture_output=True, universal_newlines=True)
 	
 				logger.debug(cmd.stdout)
@@ -371,4 +418,5 @@ class init(object):
 
 			except subprocess.CalledProcessError as e:
 				exception.error_and_quit(logger, "Failed to submit job to scheduler")
-	
+
+

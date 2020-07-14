@@ -30,6 +30,7 @@ def capture_failed(path):
 def validate_result(result_path):
 	# Get validation requirement from bench cfg file
 	cfg_file = result_path + gs.sl + "bench_files" + gs.sl + "bench.cfg"
+
 	bench_cfg = cfg_handler.get_cfg('bench', cfg_file, gs, logger)
 	logger.debug("Got result validation requirements from file: "+cfg_file)
 
@@ -39,7 +40,7 @@ def validate_result(result_path):
 		if bench_cfg['result']['output_file']:
 			output_file = bench_cfg['result']['output_file']
 
-	output_path = common.find_exact(output_file, result_path)
+	output_path = common.find_exact(output_file, result_path)[0]
 	# Test for benchmark output file
 	if not output_path:
 		exception.print_warning(logger, "Result file " + output_file + " not found in " + common.rel_path(result_path) + ". It seems the benchmark failed to run. Was dry_run=True in settings.cfg?")
@@ -482,16 +483,23 @@ def get_matching_results(result_str):
 
 # Show info for local result
 def query_result(args, settings):
-	global gs, common
+	global gs, common, logger
 	gs = settings
 	common = common_funcs.init(gs)
 
-	bench_report = gs.bench_path + gs.sl + get_matching_results(args) + gs.sl + "bench_report.txt"
+	logger = common.start_logging("CAPTURE", gs.base_dir + gs.sl + gs.results_log_file + "_" + gs.time_str + ".log")
+
+	result_path = gs.bench_path + gs.sl + get_matching_results(args)[0]
+	bench_report = result_path + gs.sl + "bench_report.txt"
 	print("Benchmark report:")
 	print("----------------------------------------")	
 	with open(bench_report, 'r') as report:
 		print(report.read())
 	print("----------------------------------------")
+
+	result, unit = validate_result(result_path)
+	if result:
+		print("Result: " + str(result) + " " + unit)
 
 
 def print_results(result_list):

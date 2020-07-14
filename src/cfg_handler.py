@@ -91,13 +91,18 @@ def read_cfg_file(cfg_file):
 # Gets full module name of default module, eg: 'intel' -> 'intel/18.0.2'
 def get_full_module_name(module, cmd_prefix):
 
-	try:
-		cmd = subprocess.run(cmd_prefix + "ml -t -d av  2>&1 | grep '^" + module +"'", shell=True,
-							check=True, capture_output=True, universal_newlines=True)
-	except:
-		exception.error_and_quit(logger, "failed to process module '" + module + "'")
+	if not '/' in module:
 
-	return cmd.stdout.strip()
+		try:
+			cmd = subprocess.run(cmd_prefix + "ml -t -d av  2>&1 | grep '^" + module +"'", shell=True,
+							check=True, capture_output=True, universal_newlines=True)
+		except:
+			exception.error_and_quit(logger, "failed to process module '" + module + "'")
+
+		return cmd.stdout.strip()
+
+	else:
+		return module
 
 # Check if module is available on the system
 def check_module_exists(module, module_use):
@@ -155,6 +160,7 @@ def process_build_cfg(cfg_dict):
 	if not 'bin_dir' in 			cfg_dict['build'].keys():	cfg_dict['build']['bin_dir'] 			= ""
 	if not 'collect_hw_stats' in 	cfg_dict['build'].keys():	cfg_dict['build']['collect_hw_stats']	= False
 
+
 	# Extract compiler type from label by splitting by / and removing ints
 	cfg_dict['build']['compiler_type'] = re.sub("\d", "", cfg_dict['modules']['compiler'].split('/')[0])
 
@@ -167,7 +173,6 @@ def process_build_cfg(cfg_dict):
 	if not cfg_dict['general']['system']:
 		exception.print_warning(logger, "'system' not defined in " + common.rel_path(cfg_dict['metadata']['cfg_file']))
 		exception.print_warning(logger, "getting system label from $TACC_SYSTEM: " + str(os.getenv('TACC_SYSTEM')))
-		print()
 		cfg_dict['general']['system'] = str(os.getenv('TACC_SYSTEM'))
 		if not cfg_dict['general']['system']:
 			exception.error_and_quit(logger, "$TACC_SYSTEM not set, unable to continue. Please define 'system' in " + common.rel_path(cfg_dict['metadata']['cfg_file']))
@@ -230,7 +235,8 @@ def process_build_cfg(cfg_dict):
 			exception.print_warning(logger, "using default system arch for " + cfg_dict['general']['system'] + ": " + cfg_dict['build']['arch'])
 
 		# Use arch as build label
-		cfg_dict['build']['build_label'] = cfg_dict['build']['arch']
+		if not cfg_dict['build']['build_label']:
+			cfg_dict['build']['build_label'] = cfg_dict['build']['arch']
 
 		# Get optimization flags for arch
 		try:
@@ -299,6 +305,9 @@ def process_sched_cfg(cfg_dict):
 	check_dict_key(    cfg_dict['metadata']['cfg_file'], cfg_dict, 'sched', 'type')
 	check_dict_key(    cfg_dict['metadata']['cfg_file'], cfg_dict, 'sched', 'queue')
 	check_dict_key(    cfg_dict['metadata']['cfg_file'], cfg_dict, 'sched', 'account')
+
+	# Instantiate missing optional parameters
+	if not 'reservation' in    cfg_dict['sched'].keys():   cfg_dict['sched']['reservation']   = ""
 
 	# Fill missing parameters
 	if not cfg_dict['sched']['runtime']:

@@ -107,13 +107,24 @@ class init(object):
 	# Print build report of installed application
 	def query_app(self, code_str):
 		common = common_funcs.init(self.gs)
-		install_path = common.check_if_installed(code_str)
-		build_report = self.gs.build_path + self.gs.sl + install_path + self.gs.sl + self.gs.build_report_file
+		install_path = self.gs.build_path + self.gs.sl + common.check_if_installed(code_str)
+		build_report = install_path + self.gs.sl + self.gs.build_report_file
 
+		exe = ""
 		print("Build report for application '"+code_str+"'")
 		print("-------------------------------------------")
 		with open(build_report, 'r') as report:
-			print(report.read())
+			content = report.read()
+			print(content)
+			for line in content.split("\n"):
+				if line[0:3] == "exe":
+					exe = line.split('=')[1].strip()
+
+		exe_search = common.find_exact(exe, install_path)
+		if exe_search:
+			print("Executable found: " + common.rel_path(exe_search[0]))
+		else:
+			print("WARNING: executable '" + exe + "' not found in build directory.")
 
 	# Print currently installed apps, used together with 'remove'
 	def show_installed(self):

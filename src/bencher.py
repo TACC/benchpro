@@ -41,7 +41,7 @@ def generate_bench_report(build_report, bench_cfg, sched_output):
 
 # Confirm application exe is available
 def check_exe(exe, code_path):
-	exe_search = common.find_exact(exe, code_path)
+	exe_search = common.find_exact(exe, code_path)[0]
 	if exe_search:
 		print("Application executable found at:")
 		print(">  " + common.rel_path(exe_search))
@@ -117,14 +117,21 @@ def run_bench(args, settings):
 	common.send_inputs_to_log('Bencher', [bench_cfg, sched_cfg], logger)
 
 	# Template files
-	sched_template = common.find_exact(sched_cfg['sched']['type'] + ".template", gs.template_path + gs.sl + gs.sched_tmpl_dir)
+	sched_template = common.find_exact(sched_cfg['sched']['type'] + ".template", gs.template_path + gs.sl + gs.sched_tmpl_dir)[0]
 
-	# Set bbench template to default, if set in bench.cfg: overload
-	bench_template = bench_cfg['bench']['code'] + "-" + bench_cfg['bench']['version'] + ".bench"
-	
+	# Set bench template to default, if set in bench.cfg: overload
+	bench_template = ""
 	if bench_cfg['bench']['template']:
-		bench_template = build_cfg['bench']['template']
-	bench_template = common.find_partial(bench_template, gs.template_path + gs.sl + gs.bench_tmpl_dir)
+		bench_template = bench_cfg['bench']['template']
+	else:
+		bench_template = bench_cfg['bench']['code'] + "-" + bench_cfg['bench']['version'] + ".bench"
+	
+	bench_template_search = common.find_partial(bench_template, gs.template_path + gs.sl + gs.bench_tmpl_dir)
+	
+	if not bench_template_search:
+		exception.error_and_quit(logger, "failed to locate bench template '" + bench_template + "' in " + common.rel_path(gs.template_path + gs.sl + gs.bench_tmpl_dir))
+	else:
+		bench_template = bench_template_search
 
 	bench_cfg['bench']['job_script'] = bench_cfg['bench']['code'] + "-bench." + sched_cfg['sched']['type']
 	script_file = "tmp." + bench_cfg['bench']['job_script']

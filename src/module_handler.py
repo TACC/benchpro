@@ -25,7 +25,7 @@ def check_inputs(mod_dict, mod_path):
 		sys.exit(1)
 
 	# Check if module already exists
-	if os.path.isdir(mod_path):
+	if os.path.isfile(mod_path + gs.sl + mod_dict['version'] + ".lua"):
 
 		if gs.overwrite:
 			exception.print_warning(logger, "deleting old module in " + mod_path + " because 'overwrite=True' in settings.cfg")

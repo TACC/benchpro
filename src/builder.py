@@ -51,6 +51,7 @@ def generate_build_report(build_cfg, sched_output):
 			out.write("module_use   = "+ build_cfg['general']['module_use']       + "\n")
 		out.write("modules      = "+ ", ".join(build_cfg['modules'].values()) + "\n")
 		out.write("optimization = "+ build_cfg['build']['opt_flags']          + "\n")	
+		out.write("exe          = "+ build_cfg['build']['check_exe']          + "\n")
 		out.write("build_prefix = "+ build_cfg['general']['working_path']     + "\n")
 		out.write("build_date   = "+ str(datetime.datetime.now())             + "\n")
 		out.write("job_id       = "+ sched_output[0]                          + "\n")
@@ -105,18 +106,28 @@ def build_code(args, settings):
 	script_file = "tmp." + build_cfg['general']['code'] + "-build." + sched_cfg['sched']['type']
 
 	# Input template files
-	sched_template = common.find_exact(sched_cfg['sched']['type'] + ".template", gs.template_path)
+	sched_template = common.find_exact(sched_cfg['sched']['type'] + ".template", gs.template_path)[0]
 
 	# Set build template to default, if set in build.cfg: overload
-	build_template = build_cfg['general']['code'] + "-" + build_cfg['general']['version'] + ".build"
-	if build_cfg['general']['build_template']:
-		build_template = build_cfg['general']['build_template']
-	build_template = common.find_partial(build_template, gs.template_path + gs.sl + gs.build_tmpl_dir)
+	build_template = ""
+	if build_cfg['general']['template']:
+		print("overwrite template")
+		build_template = build_cfg['general']['template']
+
+	else:
+		build_template = build_cfg['general']['code'] + "-" + build_cfg['general']['version'] + ".build"
+
+	build_template_search = common.find_partial(build_template, gs.template_path + gs.sl + gs.build_tmpl_dir)
+
+	if not build_template_search:
+		exception.error_and_quit(logger, "failed to locate build template '" + build_template + "' in " + common.rel_path(gs.template_path + gs.sl + gs.build_tmpl_dir))	
+	else:
+		build_template = build_template_search
 
 	# Get compiler template if compiler type is known (therefore can fill compiler cmds)
 	compiler_template = None
 	if known_compiler_type:
-		compiler_template 	= common.find_exact(gs.compile_tmpl_file, gs.template_path)
+		compiler_template 	= common.find_exact(gs.compile_tmpl_file, gs.template_path)[0]
 
 	# Get ranks from threads (?)
 	sched_cfg['sched']['ranks'] = sched_cfg['sched']['threads']  
