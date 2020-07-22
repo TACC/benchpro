@@ -59,19 +59,21 @@ def template_epilog(template_obj):
             exception.print_warning(glob.log, "Requested hardware stats but persmissions not set, run 'sudo hw_utils/change_permissions.sh'")
 
 # Contextualizes template script with variables from a list of config dicts
-def populate_template(template_obj):
-    glob.log.debug("Populating template file " + glob.build_script)
+def populate_template(cfg_dicts, template_obj):
+    glob.log.debug("Populating template file " + glob.tmp_script)
     # For each config dict
-    for cfg in [glob.code['general'], glob.code['modules'], glob.code['build'], glob.sched['sched'], glob.compiler['common']]:
+    for cfg in cfg_dicts:
         # For each key, find and replace <<<key>>> in template file
         for key in cfg:
             template_obj = [line.replace("<<<" + str(key) + ">>>", str(cfg[key])) for line in template_obj]
             glob.log.debug("replacing " + "<<<" + str(key) + ">>> with " + str(cfg[key]))
 
+    return template_obj
+
 def get_build_templates():
 
     # Temp build script
-    glob.build_script = "tmp." + glob.code['general']['code'] + "-build." + glob.sched['sched']['type']
+    glob.tmp_script = "tmp." + glob.code['general']['code'] + "-build." + glob.sched['sched']['type']
 
     # === Scheduler template file ===
 
@@ -107,7 +109,7 @@ def get_build_templates():
         glob.compiler['template'] = None
 
 # Combine template files and populate
-def generate_build_template(glob_obj):
+def generate_build_script(glob_obj):
 
     # Get global settings obj
     global glob, common
@@ -139,17 +141,38 @@ def generate_build_template(glob_obj):
 
     template_epilog(template_obj)
 
-    # Take multiple config dicts and populate script template
-    populate_template(template_obj)
+    # Populate template list with cfg dicts
+    template_obj = populate_template([glob.code['general'], glob.code['modules'], glob.code['build'], glob.sched['sched'], glob.compiler['common']], template_obj)
     # Test for missing parameters
     common.test_template(template_obj)
 
     # Write populated script to file
-    with open(glob.build_script, "w") as f:
-        for line in template_obj:
-            f.write(line + "\n")
+    common.write_list_to_file(template_obj, glob.tmp_script)
 
-def generate_bench_template(input_cfgs, input_templates, script_file, glob_obj):
+def get_bench_templates():
+    # Template files
+
+    glob.tmp_script = "tmp." + glob.code['bench']['code']  + "-bench." + glob.sched['sched']['type'] 
+    
+    glob.sched['template'] = common.find_exact(glob.sched['sched']['type'] + ".template", glob.stg['template_path'] + glob.stg['sl'] + glob.stg['sched_tmpl_dir'])
+
+    # Set bench template to default, if set in bench.cfg: overload
+    if glob.code['bench']['template']:
+        glob.code['template'] = glob.code['bench']['template']
+    else:
+        glob.code['template'] = glob.code['bench']['code'] + "-" + glob.code['bench']['version'] + ".bench"
+
+    bench_template_search = common.find_partial(glob.code['template'], glob.stg['template_path'] + glob.stg['sl'] + glob.stg['bench_tmpl_dir'])
+
+    if not bench_template_search:
+        exception.error_and_quit(glob.log, "failed to locate bench template '" + bench_template + "' in " + common.rel_path(glob.stg['template_path'] + glob.stg['sl'] + glob.stg['bench_tmpl_dir']))
+    else:
+        glob.code['template'] = bench_template_search
+
+    glob.code['bench']['job_script'] = glob.code['bench']['code'] + "-bench." + glob.sched['sched']['type']
+
+
+def generate_bench_script(glob_obj):
 
     # Get global settings obj
     global glob, common
@@ -158,21 +181,30 @@ def generate_bench_template(input_cfgs, input_templates, script_file, glob_obj):
     # Instantiate common_funcs
     common = common_funcs.init(glob)
 
-    # Take multiple input template files and combine them to generate unpopulated script
-    construct_template(input_templates[0], script_file)
-    # Add reservation line to SLURM params if set
-    add_reservation(script_file)
+    template_obj = []
 
-    construct_template(input_templates[1], script_file)
+    get_bench_templates()
+
+    construct_template(template_obj, glob.sched['template'])
+
+    add_reservation(template_obj)
+
+    construct_template(template_obj, glob.code['template'])
+
+    # Add hardware collection script to job script
+    if glob.code['bench']['collect_hw_stats']:
+        if common.file_owner(glob.stg['utils_path'] + glob.stg['sl'] + "lshw") == "root":
+            template_obj.append(glob.stg['src_path'] + glob.stg['sl'] + "collect_hw_info.sh " + glob.stg['utils_path'] + " " + glob.code['bench']['working_path'] + glob.stg['sl'] + "hw_report \n")
+        else:
+            exception.print_warning(glob.log, "Requested hardware stats but persmissions not set, run 'sudo hw_utils/change_permissions.sh'")
 
     # Take multiple config dicts and populate script template
-    script = populate_template(input_cfgs, script_file)
+    template_obj = populate_template([glob.code['sched'], glob.code['bench'], glob.sched['sched']], template_obj)
+
     # Test for missing parameters
-    common.test_template(script_file, script)
+    common.test_template(template_obj)
 
     # Write populated script to file
-    with open(script_file, "w") as f:
-        f.write(script)
-
+    common.write_list_to_file(template_obj, glob.tmp_script)
 
 

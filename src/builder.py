@@ -106,7 +106,7 @@ def build_code(glob_obj):
 
 
     # Generate build script
-    template_handler.generate_build_template(glob)
+    template_handler.generate_build_script(glob)
 
     # Generate module in temp location
     mod_path, mod_file = module_handler.make_mod(glob)
@@ -117,7 +117,7 @@ def build_code(glob_obj):
 
     # Make build path and move tmp build script file
     common.create_dir(glob.code['general']['working_path'])
-    common.install(glob.code['general']['working_path'], glob.build_script, None)
+    common.install(glob.code['general']['working_path'], glob.tmp_script, None)
     print()
     print("Build script location:")
     print(">  " + common.rel_path(glob.code['general']['working_path']))
@@ -145,7 +145,7 @@ def build_code(glob_obj):
     exception.remove_tmp_files(glob.log)
 
     # Submit build script to scheduler
-    jobid = common.submit_job(glob.code['general']['working_path'], glob.build_script[4:])
+    jobid = common.submit_job(glob.code['general']['working_path'], glob.tmp_script[4:])
 
     # Generate build report
     generate_build_report(jobid)

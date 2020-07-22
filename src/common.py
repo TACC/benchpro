@@ -284,17 +284,17 @@ class init(object):
     def test_template(self, template_obj):
 
         key = "<<<.*>>>"
-        unfilled_keys = [i for  in template_obj if key in line]
-
-        nomatch = re.findall(key, template_obj)
-        if len(nomatch) > 0:
+        unfilled_keys = [re.search(key, line) for line in template_obj]
+        unfilled_keys = [match.group(0) for match in unfilled_keys if match]
+    
+        if len(unfilled_keys) > 0:
             # Conitue regardless
             if not self.glob.stg['exit_on_missing']:
-                exception.print_warning(self.glob.log, "WARNING: Missing parameters were found in template file:" + ", ".join(nomatch))
+                exception.print_warning(self.glob.log, "WARNING: Missing parameters were found in template file:" + ", ".join(unfilled_keys))
                 exception.print_warning(self.glob.log, "exit_on_missing=False in settings.cfg so continuing anyway...")
             # Error and exit
             else:
-                exception.error_and_quit(self.glob.log, "Missing parameters were found after populating the template file and exit_on_missing=True in settings.cfg: " + ' '.join(nomatch))
+                exception.error_and_quit(self.glob.log, "Missing parameters were found after populating the template file and exit_on_missing=True in settings.cfg: " + ' '.join(unfilled_keys))
         else:
             self.glob.log.debug("All build parameters were filled, continuing")
 
@@ -482,9 +482,20 @@ class init(object):
         # If found matching key
             if overload_key in param_dict:
                 old = param_dict[overload_key]
-                # Convert datatypes
-                conv = type(old)
-                param_dict[overload_key] = conv(self.glob.overload_dict[overload_key])
+                datatype = type(param_dict[overload_key])
+
+                try:
+                    # Convert datatypes
+                    if datatype is str: 
+                        param_dict[overload_key] = str(self.glob.overload_dict[overload_key])
+                    elif datatype is int:
+                        param_dict[overload_key] = int(self.glob.overload_dict[overload_key])
+                    elif datatype is bool:
+                        param_dict[overload_key] = self.glob.overload_dict[overload_key] == 'True'
+
+                except:
+                    exception.error_and_quit(self.glob.log, "datatype mismatch for '" + overload_key +"', expected=" + datatype + ", provided=" + type(overload_key))
+
                 print("Overloading " + overload_key + ": '" + str(old) + "' -> '" + str(param_dict[overload_key]) + "'" )
                 # Remove key from overload dict
                 self.glob.overload_dict.pop(overload_key)
@@ -506,3 +517,10 @@ class init(object):
             for key in self.glob.overload_dict:
                 print("  " + key + "=" + self.glob.overload_dict[key])
             exception.error_and_quit(self.glob.log, "Invalid input arguments.")
+
+    # Write module to file
+    def write_list_to_file(self, list_obj, output_file):
+        with open(output_file, "w") as f:
+            for line in list_obj:
+                f.write(line)
+

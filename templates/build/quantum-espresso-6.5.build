@@ -1,19 +1,12 @@
 
 export     build_path=<<<build_path>>>
 export   install_path=<<<install_path>>>
-export       compiler=<<<compiler>>>
-export            mpi=<<<mpi>>>
 export     qe_version=<<<version>>>
 
 date
 echo "Slurm Job ID: ${SLURM_JOB_ID}"
 echo "Host: ${HOSTNAME}"
 echo "User: ${USER}"
-
-ml reset
-ml ${compiler}
-ml ${mpi}
-ml
 
 mkdir -p ${build_path} && cd ${build_path}
 

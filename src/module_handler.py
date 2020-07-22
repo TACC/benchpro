@@ -24,20 +24,21 @@ def check_for_existing_module(mod_path, mod_file):
             exception.error_and_quit(glob.log, "Module path already exists.")
 
 # Copy template to target dir
-def copy_mod_template(module_template, tmp_mod_file):
-    #try:
-    with open(tmp_mod_file, 'w') as out:
-        with open(module_template, 'r') as inp:
-                # Add custom module path if set in cfg
-            if glob.code['general']['module_use']:
-                out.write("prepend_path( \"MODULEPATH\" , \"" + glob.code['general']['module_use'] + "\") \n")
+def copy_mod_template(module_template):
 
-            su.copyfileobj(inp, out)
-    #except:
-    #    exception.error_and_quit(glob.log, "Failed to copy " + module_template + " to " + mod_file)
+    mod_obj = []
+
+    # Add custom module path if set in cfg
+    if glob.code['general']['module_use']:
+        mod_obj.append("prepend_path( \"MODULEPATH\" , \"" + glob.code['general']['module_use'] + "\") \n")
+
+    with open(module_template, 'r') as inp:
+        mod_obj.extend(inp.readlines())
+
+    return mod_obj
 
 # Replace <<<>>> vars in copied template
-def populate_mod_template(module):
+def populate_mod_template(mod_obj):
     # Get comma delimited list of build modules
     mod = {}
     mod['mods'] = ', '.join('"{}"'.format(key) for key in glob.code['modules'].values())
@@ -48,13 +49,15 @@ def populate_mod_template(module):
 
     for key in pop_dict:
         glob.log.debug("replace " + "<<<" + key + ">>> with " + pop_dict[key])
-        module = module.replace("<<<" + key + ">>>", pop_dict[key])
-    return module
+        mod_obj = [line.replace("<<<" + str(key) + ">>>", str(pop_dict[key])) for line in mod_obj]
+        
+    return mod_obj
 
 # Write module to file
 def write_mod_file(module, tmp_mod_file):
     with open(tmp_mod_file, "w") as f:
-        f.write(module)
+        for line in mod_obj:
+            f.write(line)
 
 # Make module for compiled appliation
 def make_mod(glob_obj):
@@ -76,9 +79,6 @@ def make_mod(glob_obj):
 
     check_for_existing_module(mod_path, mod_file)
 
-    # tmp module file name
-    tmp_mod_file = "tmp." + mod_file
-
     module_template = glob.stg['template_path'] + glob.stg['sl'] + glob.stg['build_tmpl_dir'] + glob.stg['sl'] + glob.code['general']['code'] + "-" + glob.code['general']['version'] + ".module"
 
     # Use generic module template if not found for this application
@@ -89,15 +89,15 @@ def make_mod(glob_obj):
 
     glob.log.debug("Using module template file: " + module_template)
 
-    # Copy base module template
-    copy_mod_template(module_template, tmp_mod_file)
-    module = open(tmp_mod_file).read()
+    # Copy base module template to 
+    mod_obj = copy_mod_template(module_template)
 
     # Populuate template with config params
-    module = populate_mod_template(module)
+    mod_obj = populate_mod_template(mod_obj)
     # Test module template
-    common.test_template(module_template, module)
+    common.test_template(mod_obj)
     # Write module template to file
-    write_mod_file(module, tmp_mod_file)
+    tmp_mod_file = "tmp." + mod_file
+    common.write_list_to_file(mod_obj, tmp_mod_file)
 
     return mod_path, tmp_mod_file

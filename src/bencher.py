@@ -115,23 +115,6 @@ def run_bench(glob_obj):
     # Template files
     sched_template = common.find_exact(glob.sched['sched']['type'] + ".template", glob.stg['template_path'] + glob.stg['sl'] + glob.stg['sched_tmpl_dir'])
 
-    # Set bench template to default, if set in bench.cfg: overload
-    bench_template = None
-    if glob.code['bench']['template']:
-        bench_template = glob.code['bench']['template']
-    else:
-        bench_template = glob.code['bench']['code'] + "-" + glob.code['bench']['version'] + ".bench"
-    
-    bench_template_search = common.find_partial(bench_template, glob.stg['template_path'] + glob.stg['sl'] + glob.stg['bench_tmpl_dir'])
-    
-    if not bench_template_search:
-        exception.error_and_quit(glob.log, "failed to locate bench template '" + bench_template + "' in " + common.rel_path(glob.stg['template_path'] + glob.stg['sl'] + glob.stg['bench_tmpl_dir']))
-    else:
-        bench_template = bench_template_search
-
-    glob.code['bench']['job_script'] = glob.code['bench']['code'] + "-bench." + glob.sched['sched']['type']
-    script_file = "tmp." + glob.code['bench']['job_script']
-
     jobs = glob.code['sched']['nodes']
     counter = 1
 
@@ -156,29 +139,18 @@ def run_bench(glob_obj):
         glob.code['sched']['ranks'] = int(node) * int(glob.code['sched']['ranks_per_node'])
 
         # Generate benchmark template
-        template_handler.generate_bench_template([glob.code['sched'], glob.code['bench'], glob.sched['sched']],
-                                       [sched_template, bench_template],
-                                       script_file, glob)
-
-        # Add hardware collection script to job script
-        if glob.code['bench']['collect_hw_stats']:
-            if common.file_owner(glob.stg['utils_path'] + glob.stg['sl'] + "lshw") == "root":
-                with open(script_file, 'a') as f:    
-                    f.write(glob.stg['src_path'] + glob.stg['sl'] + "collect_hw_info.sh " + glob.stg['utils_path'] + " " + glob.code['bench']['working_path'] + glob.stg['sl'] + "hw_report \n")
-            else:
-                exception.print_warning(glob.log, "Requested hardware stats but persmissions not set, run 'sudo hw_utils/change_permissions.sh'")
-
+        template_handler.generate_bench_script(glob)
 
         # Make bench path and move tmp bench script file
         common.create_dir(glob.code['bench']['working_path'])
-        common.install(glob.code['bench']['working_path'], script_file, None)
+        common.install(glob.code['bench']['working_path'], glob.tmp_script, None)
 
         # Copy bench cfg & template files to bench dir
         provenance_path = glob.code['bench']['working_path'] + glob.stg['sl'] + "bench_files"
         common.create_dir(provenance_path)
 
         common.install(provenance_path, glob.code['metadata']['cfg_file'], "bench.cfg")
-        common.install(provenance_path, bench_template, "bench.template")
+        common.install(provenance_path, glob.code['template'], "bench.template")
 
         common.install(provenance_path, glob.sched['metadata']['cfg_file'], None)
         common.install(provenance_path, sched_template, None)
