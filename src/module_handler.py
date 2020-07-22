@@ -7,107 +7,97 @@ import sys
 import src.common as common_funcs
 import src.exception as exception
 
-logger = gs = ''
+glob = common = None
 
 # Check inputs for module creation
-def check_inputs(mod_dict, mod_path):
+def check_for_existing_module(mod_path, mod_file):
 
-	if not mod_dict['system'] or not mod_dict['compiler'] or not mod_dict['mpi'] or not mod_dict["code"] or not mod_dict['version']:
-		logger.debug("Missing full application definition:")
-		logger.debug("----------------------------")
-		logger.debug("System".ljust(10),   ":", mod_dict['system'])
-		logger.debug("Compiler".ljust(10), ":", mod_dict['compiler'])
-		logger.debug("MPI".ljust(10),	  ":", mod_dict['mpi'])
-		logger.debug("Code".ljust(10),	 ":", mod_dict["code"])
-		logger.debug("Version".ljust(10),  ":", mod_dict['version'])
-		logger.debug("----------------------------")
-		logger.debug("Exitting")
-		sys.exit(1)
+    # Check if module already exists
+    if os.path.isfile(mod_path + glob.stg['sl'] + mod_file):
 
-	# Check if module already exists
-	if os.path.isdir(mod_path):
+        if glob.stg['overwrite']:
+            exception.print_warning(glob.log, "deleting old module in " + common.rel_path(mod_path) + " because 'overwrite=True' in settings.cfg")
+            su.rmtree(mod_path)
+            os.makedirs(mod_path)
 
-		if gs.overwrite:
-			exception.print_warning(logger, "deleting old module in " + mod_path + " because 'overwrite=True' in settings.cfg")
-			su.rmtree(mod_path)
-			os.makedirs(mod_path)
-
-		else:
-			exception.error_and_quit(logger, "Module path already exists.")
+        else:
+            exception.error_and_quit(glob.log, "Module path already exists.")
 
 # Copy template to target dir
-def copy_mod_template(module_template, mod_file):
-	try:
-		with open(mod_file, 'wb') as out:
-			with open(module_template, 'rb') as inp:
-				su.copyfileobj(inp, out)
-	except:
-		exception.error_and_quit(logger, "Failed to copy " + module_template + " to " + mod_file)
+def copy_mod_template(module_template):
+
+    mod_obj = []
+
+    # Add custom module path if set in cfg
+    if glob.code['general']['module_use']:
+        mod_obj.append("prepend_path( \"MODULEPATH\" , \"" + glob.code['general']['module_use'] + "\") \n")
+
+    with open(module_template, 'r') as inp:
+        mod_obj.extend(inp.readlines())
+
+    return mod_obj
 
 # Replace <<<>>> vars in copied template
-def populate_mod_template(module, mod_dict):
-	# Get comma delimited list of build modules
-	mod_dict['mods'] = ', '.join('"{0}"'.format(w) for w in mod_dict['mods'])
-	# Get capitalized code name for env var
-	mod_dict['caps_code'] = mod_dict['code'].upper().replace("-", "_")
+def populate_mod_template(mod_obj):
+    # Get comma delimited list of build modules
+    mod = {}
+    mod['mods'] = ', '.join('"{}"'.format(key) for key in glob.code['modules'].values())
+    # Get capitalized code name for env var
+    mod['caps_code'] = glob.code['general']['code'].upper().replace("-", "_")
 
-	for key in mod_dict:
-		logger.debug("replace " + "<<<" + key + ">>> with " + mod_dict[key])
-		module = module.replace("<<<" + key + ">>>", mod_dict[key])
-	return module
+    pop_dict = {**mod, **glob.code['general'], **glob.code['build']}
+
+    for key in pop_dict:
+        glob.log.debug("replace " + "<<<" + key + ">>> with " + pop_dict[key])
+        mod_obj = [line.replace("<<<" + str(key) + ">>>", str(pop_dict[key])) for line in mod_obj]
+        
+    return mod_obj
 
 # Write module to file
-def write_mod_file(module, mod_file):
-	with open(mod_file, "w") as f:
-		f.write(module)
+def write_mod_file(module, tmp_mod_file):
+    with open(tmp_mod_file, "w") as f:
+        for line in mod_obj:
+            f.write(line)
 
 # Make module for compiled appliation
-def make_mod(general_opts, build_opts, mod_opts, settings, log_to_use):
+def make_mod(glob_obj):
 
-	# Get global settings & logger obj
-	global logger, gs
-	logger = log_to_use
-	gs = settings
+    # Get global settings & glob.log obj
+    global glob, common 
+    glob = glob_obj
 
-	# Instantiate common_funcs
-	common = common_funcs.init(gs)
+    # Instantiate common_funcs
+    common = common_funcs.init(glob)
 
-	# Create combined module dict 
-	mod_dict = {'mods': []}
-	mod_dict['compiler'] = mod_opts['compiler']
-	mod_dict['mpi'] = mod_opts['mpi']
+    glob.log.debug("Creating module file for " + glob.code['general']['code'])
 
-	logger.debug("Creating module file for " + general_opts['code'])
+    # Get module file path
+    mod_path = glob.stg['module_path'] + glob.stg['sl'] + glob.code['general']['system'] +  glob.stg['sl'] + glob.code['build']['arch'] + glob.stg['sl'] + common.get_module_label(glob.code['modules']['compiler']) + \
+               glob.stg['sl'] + common.get_module_label(glob.code['modules']['mpi']) + glob.stg['sl'] + glob.code['general']['code'] + glob.stg['sl'] + glob.code['general']['version']
 
-	for mod in mod_opts:
-		mod_dict['mods'] += [mod_opts[mod]]
+    mod_file = glob.code['build']['build_label'] + ".lua"
 
-	mod_dict.update(general_opts)
-	mod_dict.update(build_opts)
+    check_for_existing_module(mod_path, mod_file)
 
-	# Get module file path
-	mod_path = gs.module_path + gs.sl + mod_dict['system'] + gs.sl + common.get_label(mod_dict['compiler']) + gs.sl + common.get_label(mod_dict['mpi']) + gs.sl + mod_dict['code'] + gs.sl + mod_dict['build_label']
+    module_template = glob.stg['template_path'] + glob.stg['sl'] + glob.stg['build_tmpl_dir'] + glob.stg['sl'] + glob.code['general']['code'] + "-" + glob.code['general']['version'] + ".module"
 
-	check_inputs(mod_dict, mod_path)
-	# tmp module file name
-	mod_file = "tmp." + mod_dict['version'] + ".lua"
+    # Use generic module template if not found for this application
+    if not os.path.isfile(module_template):
+        exception.print_warning(glob.log, "module template not found at " + common.rel_path(module_template))
+        exception.print_warning(glob.log, "using a generic module template")
+        module_template = glob.stg['template_path'] + glob.stg['sl'] + glob.stg['build_tmpl_dir'] + glob.stg['sl'] + "generic.module"
 
-	module_template = gs.template_path + gs.sl + gs.build_tmpl_dir + gs.sl + mod_dict['code'] + "-" + mod_dict['version'] + ".module"
+    glob.log.debug("Using module template file: " + module_template)
 
-	# Use generic module template if not found for this application
-	if not os.path.exists(module_template):
-		exception.print_warning(logger, "" + mod_dict['code'] + " module template file not available at " + module_template)
-		exception.print_warning(logger, "using a generic module template")
-		module_template = "/".join(module_template.split("/")[:-1]) + gs.sl + "generic.module"
+    # Copy base module template to 
+    mod_obj = copy_mod_template(module_template)
 
-	# Copy base module template
-	copy_mod_template(module_template, mod_file)
-	module = open(mod_file).read()
-	# Populuate template with config params
-	module = populate_mod_template(module, mod_dict)
-	# Test module template
-	common.test_template(module_template, module, logger)
-	# Write module template to file
-	write_mod_file(module, mod_file)
+    # Populuate template with config params
+    mod_obj = populate_mod_template(mod_obj)
+    # Test module template
+    common.test_template(mod_obj)
+    # Write module template to file
+    tmp_mod_file = "tmp." + mod_file
+    common.write_list_to_file(mod_obj, tmp_mod_file)
 
-	return mod_path, mod_file
+    return mod_path, tmp_mod_file

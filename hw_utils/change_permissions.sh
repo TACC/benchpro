@@ -6,16 +6,18 @@ then
 fi
 
 declare -a exe=("ibnetdiscover"
-				"lshw"
-				"lspci"
-				"rdmsr_all"
-				"TACC_HWP_set"
+		"lshw"
+		"lspci"
+		"rdmsr_all"
+		"TACC_HWP_set"
 				)
+
+path=$(dirname $0)
 
 for i in "${exe[@]}"
 do
-  chown root.root $i
-  chmod 4755 $i
+  chown root.root $path/$i
+  chmod 4755 $path/$i
 done
 
 echo "Done."
