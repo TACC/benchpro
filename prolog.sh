@@ -1,7 +1,7 @@
 #!/bin/bash 
  
 function warn { 
-    echo Warn 
+    echo warn 
 } 
  
 # check-hugepages

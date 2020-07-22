@@ -7,4 +7,3 @@
 #SBATCH -N <<<nodes>>>
 #SBATCH -n <<<ranks>>>
 #SBATCH -A <<<account>>>
-#SBATCH --reservation testing_2020-07-08

@@ -27,13 +27,19 @@ ml $fftw3
 ml $gsl
 ml $phdf5
 ml $metis
+ml $parmetis
 ml
 
 mkdir -p ${build_path}
 tar -xf ${benchmark_repo}/swiftsim-${version}.tgz -C ${build_path}
 cd ${build_path}/swiftsim-${version}
 
-TACC_PARMETIS_DIR="$(dirname "$TACC_PETSC_LIB")"
+TACC_PARMETIS_DIR=""
+if [ $TACC_SYSTEM == "stampede2" ]; then
+    TACC_PARMETIS_DIR="$(dirname "$TACC_PARMETIS_LIB")"
+elif [ $TACC_SYSTEM == "frontera" ]; then
+    TACC_PARMETIS_DIR="$(dirname "$TACC_PETSC_LIB")"
+fi
 
 ./autogen.sh
 ./configure --prefix=${install_path} --enable-mpi --enable-optimization=yes --enable-parallel-hdf5 \

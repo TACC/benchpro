@@ -5,121 +5,91 @@ import os
 import socket
 import sys
 
-# General constants
-class init:
+# Global constants
+class settings(object):
 
-	# Context variables
-	user				= str(os.getlogin())
-	hostname			= str(socket.gethostname())
-	if ("." in hostname):
-		hostname		= '.'.join(map(str, hostname.split('.')[0:2]))
+    # Context variables
+    user                = str(os.getlogin())
+    hostname            = str(socket.gethostname())
+    if ("." in hostname):
+        hostname        = '.'.join(map(str, hostname.split('.')[0:2]))
 
-	# Chicken & egg situation with 'sl' here - hardcoded 
-	time_str			= datetime.now().strftime("%Y-%m-%d_%Hh%M")
-	base_dir			= "/".join(os.path.dirname(os.path.abspath(__file__)).split("/")[:-1])
-	cwd				 	= os.getcwd()
+    # Chicken & egg situation with 'sl' here - hardcoded 
+    basedir             = "/".join(os.path.dirname(os.path.abspath(__file__)).split("/")[:-1])
+    time_str            = datetime.now().strftime("%Y-%m-%d_%Hh%M")
+    cwd                 = os.getcwd()
 
-	#----------------------------settings.cfg--------------------------------
-	settings_cfg 		= "settings.cfg"
-	settings_parser 	= configparser.RawConfigParser(allow_no_value=True)
-	settings_parser.read(base_dir + "/" + settings_cfg)
+    #----------------------------settings.cfg--------------------------------
 
-	def empty(key):
-		if type(key) is str and not key :
-			print("Missing key in settings.cfg, check the documentation.")
-			sys.exit(1)
-		else: return key
+    # Check for empty params and datatypes in settings.cfg
+    def process(key, value):
+        optional = ['user',
+                    'key',
+                    'django_static_dir',
+                    'server_dir']
 
-	try:
-		# [common]
-		section	 			= 'common'
-		dry_run				= empty(settings_parser.getboolean(section,	'dry_run'))
-		exit_on_missing 	= empty(settings_parser.getboolean(section,	'exit_on_missing'))
-		timeout				= empty(settings_parser.getint(section,		'timeout'))
-		sl					= empty(settings_parser.get(section,		'sl'))
-		tree_depth			= empty(settings_parser.getint(section,	   	'tree_depth'))
-		topdir_env_var		= empty(settings_parser.get(section,		'topdir_env_var'))
-		script_basedir		= empty(settings_parser.get(section,		'script_basedir'))
+        if key not in optional and not value:
+            print("Missing value for key '" + key + "' in settings.cfg, check the documentation.")
+            sys.exit(2)
 
-		# [config]
-		section				= 'config'
-		config_basedir		= empty(settings_parser.get(section,		'config_basedir'))
-		build_cfg_dir		= empty(settings_parser.get(section,		'build_cfg_dir'))  
-		bench_cfg_dir		= empty(settings_parser.get(section,	  	'bench_cfg_dir'))
-		sched_cfg_dir		= empty(settings_parser.get(section,	  	'sched_cfg_dir'))
-		system_cfg_file		= empty(settings_parser.get(section,	  	'system_cfg_file'))
-		arch_cfg_file		= empty(settings_parser.get(section,	  	'arch_cfg_file'))
-		compile_cfg_file	= empty(settings_parser.get(section,	  	'compile_cfg_file'))
+        # Test if True
+        elif value == "True":
+            return True
 
-		# [template]
-		section 			= 'templates'
-		template_basedir	= empty(settings_parser.get(section,	  	'template_basedir'))
-		build_tmpl_dir		= empty(settings_parser.get(section,	  	'build_tmpl_dir'))
-		sched_tmpl_dir		= empty(settings_parser.get(section,	  	'sched_tmpl_dir'))
-		bench_tmpl_dir		= empty(settings_parser.get(section,	  	'bench_tmpl_dir'))
-		compile_tmpl_file	= empty(settings_parser.get(section,	  	'compile_tmpl_file'))
+        # Test if False
+        elif value == "False":
+            return False
 
-		# [builder]
-		section 			= 'builder'
-		overwrite			= empty(settings_parser.getboolean(section, 'overwrite'))
-		build_basedir		= empty(settings_parser.get(section,	  	'build_basedir'))
-		build_subdir		= empty(settings_parser.get(section,		'build_subdir'))
-		install_subdir		= empty(settings_parser.get(section,		'install_subdir'))
-		build_log_file		= empty(settings_parser.get(section,   		'build_log_file'))
-		build_report_file	= empty(settings_parser.get(section,	  	'build_report_file'))
+        # Test if int
+        elif value.isdigit():
+            return int(value)
+        
+        else: 
+            return value
 
-		# [bencher]
-		section				= 'bencher'
-		benchmark_repo		= empty(settings_parser.get(section,   		'benchmark_repo'))
-		bench_basedir		= empty(settings_parser.get(section,		'bench_basedir'))
-		bench_log_file		= empty(settings_parser.get(section,	  	'bench_log_file'))
-		bench_report_file   = empty(settings_parser.get(section,		'bench_report_file'))
-		output_file			= empty(settings_parser.get(section,		'output_file'))
+    # Global settings dict
+    stg = {}
 
-		# [results]
-		section				= 'results'
-		result_scripts_dir  = empty(settings_parser.get(section,		'result_scripts_dir'))
-		results_log_file	= empty(settings_parser.get(section,		'results_log_file'))
+    # Parse settings.cfg
+    settings_cfg    = "settings.cfg"
+    settings_parser = configparser.RawConfigParser(allow_no_value=True)
+    settings_parser.read(basedir + "/" + settings_cfg)
 
-		# [database]
-		section				= 'database'
-		db_host				= empty(settings_parser.get(section,		'db_host'))
-		db_name				= empty(settings_parser.get(section,		'db_name'))
-		db_user				= empty(settings_parser.get(section,		'db_user'))
-		db_passwd			= empty(settings_parser.get(section,		'db_passwd'))
-		file_copy_handler   = empty(settings_parser.get(section,		'file_copy_handler'))
-		user				= 		settings_parser.get(section,		'user')
-		key					= 		settings_parser.get(section,		'key')
-		django_static_dir	=		settings_parser.get(section,		'django_static_dir')
-		server_dir			= 		settings_parser.get(section,		'server_dir')
-		# [system]
-		section 			= 'system'
-		system_scripts_dir	= empty(settings_parser.get(section,		'system_scripts_dir'))
-		system_utils_dir	= empty(settings_parser.get(section,		'system_utils_dir'))
+    for section in settings_parser:
+        if not section == "DEFAULT":
+            for key in settings_parser[section]:
+                stg[key] = process(key, settings_parser[section][key])
 
+    # Derived variable
+    stg['top_env']             = stg['topdir_env_var'] + stg['sl']
+    stg['module_basedir']      = "modulefiles"
+    stg['log_path']            = basedir + stg['sl'] + stg['log_dir']
+    stg['build_path']          = basedir + stg['sl'] + stg['build_basedir']
+    stg['bench_path']          = basedir + stg['sl'] + stg['bench_basedir']
+    stg['config_path']         = basedir + stg['sl'] + stg['config_basedir']
+    stg['template_path']       = basedir + stg['sl'] + stg['template_basedir']
+    stg['script_path']         = basedir + stg['sl'] + stg['script_basedir']
+    stg['result_script_path']  = stg['script_path']  + stg['sl'] + stg['result_scripts_dir']
+    stg['system_scripts_path'] = stg['script_path']  + stg['sl'] + stg['result_scripts_dir']
+    stg['module_path']         = stg['build_path']   + stg['sl'] + stg['module_basedir']
+    stg['src_path']            = basedir + stg['sl'] + "src"
+    stg['utils_path']          = basedir + stg['sl'] + stg['system_utils_dir']
 
-	except configparser.NoSectionError as e:
-		print("Missing [section] in settings.cfg, check the documentation.")
-		print(e)
-		sys.exit(1)
+    # Get system label
+    system = str(os.getenv(stg['system_env'].strip('$')))
+    if not system:
+        print("ERROR: " + stg['system_env'] + " not set.")
+        exit(2)
 
-	except Exception as e:# configparser.Error as e:
-		print("Error parsing settings.cfg, check the documentation.")
-		print(e)
-		sys.exit(1)
-	#---------------------------------------------------------------------------
+    #----------------------------settings.cfg--------------------------------
 
-	# Derived variables
-	top_env				= topdir_env_var + sl
-	module_basedir		= "modulefiles"
-	build_path			= base_dir + sl + build_basedir
-	bench_path			= base_dir + sl + bench_basedir
-	config_path			= base_dir + sl + config_basedir
-	template_path		= base_dir + sl + template_basedir
-	script_path			= base_dir + sl + script_basedir
-	result_script_path 	= script_path + sl + result_scripts_dir
-	system_scripts_path = script_path + sl + result_scripts_dir
-	module_path			= build_path + sl + module_basedir
-	src_path			= base_dir + sl + "src"
-	utils_path			= base_dir + sl + system_utils_dir
+    def __init__(self):
+
+        # Create logging obj
+        log = None
+    
+        # Session variable dicts
+        code     = {}
+        sched    = {}
+        compiler = {}
 
