@@ -145,7 +145,7 @@ def build_code(glob_obj):
     exception.remove_tmp_files(glob.log)
 
     # Submit build script to scheduler
-    jobid = common.submit_job(glob.code['general']['working_path'], glob.tmp_script[4:])
+    jobid = common.submit_job("", glob.code['general']['working_path'], glob.tmp_script[4:])
 
     # Generate build report
     generate_build_report(jobid)

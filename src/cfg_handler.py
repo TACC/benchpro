@@ -136,10 +136,10 @@ def process_build_cfg(cfg_dict):
     # Instantiate missing optional parameters
     if not 'system'           in cfg_dict['general'].keys():  cfg_dict['general']['system']         = ""
     if not 'build_prefix'     in cfg_dict['general'].keys():  cfg_dict['general']['build_prefix']   = ""
-    if not 'exe'              in cfg_dict['general'].keys():  cfg_dict['general']['exe']            = ""
     if not 'template'         in cfg_dict['general'].keys():  cfg_dict['general']['template']       = ""
     if not 'module_use'       in cfg_dict['general'].keys():  cfg_dict['general']['module_use']     = ""
 
+    if not 'exe'              in cfg_dict['build'].keys():    cfg_dict['build']['exe']              = ""
     if not 'arch'             in cfg_dict['build'].keys():    cfg_dict['build']['arch']             = ""
     if not 'opt_flags'        in cfg_dict['build'].keys():    cfg_dict['build']['opt_flags']        = ""  
     if not 'build_label'      in cfg_dict['build'].keys():    cfg_dict['build']['build_label']      = ""

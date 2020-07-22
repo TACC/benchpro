@@ -115,6 +115,7 @@ class init(object):
         build_report = install_path + self.glob.stg['sl'] + self.glob.stg['build_report_file']
 
         exe = None
+        jobid = None
         print("Build report for application '"+code_str+"'")
         print("-------------------------------------------")
         with open(build_report, 'r') as report:
@@ -123,12 +124,19 @@ class init(object):
             for line in content.split("\n"):
                 if line[0:3] == "exe":
                     exe = line.split('=')[1].strip()
+                elif line[0:5] == "jobid":
+                    jobid = line.split('=')[1].strip()
 
-        exe_search = common.find_exact(exe, install_path)
-        if exe_search:
-            print("Executable found: " + common.rel_path(exe_search))
+        if common.check_job_complete(jobid):
+            print("Build job " + jobid + " for '" + code_str + "' is complete.")
+            exe_search = common.find_exact(exe, install_path)
+            if exe_search:
+                print("Executable found: " + common.rel_path(exe_search))
+            else:
+                print("WARNING: executable '" + exe + "' not found in application directory.")
+
         else:
-            print("WARNING: executable '" + exe + "' not found in application directory.")
+            print("Build job " + jobid + " for '" + code_str + "' is still running.")
 
     # Print currently installed apps, used together with 'remove'
     def show_installed(self):
@@ -139,6 +147,7 @@ class init(object):
             print("  " + common.rel_path(self.glob.stg['build_path']) + self.glob.stg['sl']  + app)
 
     def print_codes(self, code_list):
+        code_list.sort()
         for code in code_list:
             code = code.split('/')[-1]
             if "_build" in code:

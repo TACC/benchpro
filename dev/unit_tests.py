@@ -1,8 +1,8 @@
 import unittest
 
-import src.common as common_funcs
-import src.global_settings as global_settings
-import src.logger as logger
+import ..src.common as common_funcs
+import ..src.global_settings as global_settings
+import ..src.logger as logger
 
 
 glob = global_settings.settings()

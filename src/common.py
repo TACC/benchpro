@@ -150,6 +150,7 @@ class init(object):
         # Send empty list to search function 
         installed_list = []
         self.search_tree(installed_list, app_dir, start, start, start + self.glob.stg['tree_depth'])
+        installed_list.sort()
         return installed_list
 
     # Check if a string returns a unique installed application
@@ -193,8 +194,10 @@ class init(object):
         except:
             return True
 
+        state = cmd.stdout.split("\n")[2]
+
         # Job COMPLETE
-        if "COMPLETED" in cmd.stdout.split("\n")[2]:
+        if ("COMPLETED" in state) or ("CANCELLED" in state) or ("ERROR" in state):
             return True
 
         # Job RUNNING or PENDING
@@ -348,8 +351,15 @@ class init(object):
 
         return running_jobs_list
 
+    # If build job is running, add dependency str
+    def get_build_job_dependency(self, jobid):
+        if self.check_job_complete(jobid):
+            return ""
+        else:
+            return "--dependency=afterok:" + jobid + " "
+
     # Set job dependency if max_running_jobs is reached
-    def get_job_dependency(self):
+    def get_job_limit_dependency(self):
         running_jobs_list = self.get_active_jobids()
         dep_prefix = ""
 
@@ -367,7 +377,8 @@ class init(object):
         return dep_prefix
 
     # Submit script to scheduler
-    def submit_job(self, job_path, script_file):
+    def submit_job(self, dep, job_path, script_file):
+        depend = dep
         script_path= job_path + self.glob.stg['sl'] + script_file
         # If dry_run, quit
         if self.glob.stg['dry_run']:
@@ -384,7 +395,8 @@ class init(object):
             self.glob.log.debug("Submitting " + script_path + " to scheduler...")
 
             # Get dependency prefix
-            dep = self.get_job_dependency()
+            if not depend:
+                depend = self.get_job_limit_dependency()
 
             try:
                 cmd = subprocess.run("sbatch " + dep + script_path, shell=True, \
@@ -473,7 +485,7 @@ class init(object):
                                     check=True, capture_output=True, universal_newlines=True)
 
         except:
-            return None
+            return ""
 
         # Parse SLURM NODELIST into list
         return self.parse_nodelist(cmd.stdout.split("\n")[1])

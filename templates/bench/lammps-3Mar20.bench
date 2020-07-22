@@ -24,5 +24,5 @@ cp ${benchmark_repo}/in.${dataset} .
 
 sleep 2
 
-ibrun $exe -var x ${x} -var y ${y} -var z ${z} -var t ${t} < in.${dataset} > ${output_file}
+ibrun ${exe} -var x ${x} -var y ${y} -var z ${z} -var t ${t} < in.${dataset} > ${output_file}
 

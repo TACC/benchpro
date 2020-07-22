@@ -68,9 +68,9 @@ def run_bench(glob_obj):
     except:
         exception.error_and_quit(glob.log, "Unable to read build_report.txt file in " + common.rel_path(code_path))
 
-    # Check build job is complete
-    if not common.check_job_complete(jobid):
-        exception.error_and_quit(glob.log, "Job ID " + jobid + "is RUNNING. It appears '" + glob.args.bench + "' is still compiling.")
+#    # Check build job is complete
+#    if not common.check_job_complete(jobid):
+#        exception.error_and_quit(glob.log, "Job ID " + jobid + "is RUNNING. It appears '" + glob.args.bench + "' is still compiling.")
 
     # Get code label from build_report to find appropriate bench cfg file
     code = report_parser.get('build', 'code')
@@ -90,12 +90,23 @@ def run_bench(glob_obj):
     common.check_for_unused_overloads()
 
     # Check application exe
-    common.check_exe(glob.code['bench']['exe'], code_path)
+#    if not glob.stg['dry_run']:
+#        common.check_exe(glob.code['bench']['exe'], code_path)
+#    else:
+#        print("Dry run, skipping application exe check")
 
     # Add variables from build report to bench cfg dict
     glob.code['bench']['code']      = report_parser.get('build', 'code')
     glob.code['bench']['version']   = report_parser.get('build', 'version')
     glob.code['bench']['system']    = report_parser.get('build', 'system')
+    
+    build_jobid = report_parser.get('build', 'jobid')
+
+    # Get build job depenency
+    dep = common.get_build_job_dependency(build_jobid)
+
+    if dep:
+        print(glob.code['bench']['code'] + " build job is still running, creating dependency")
 
     # Get job label
     glob.sched['sched']['job_label'] = code+"_bench"
@@ -158,7 +169,7 @@ def run_bench(glob_obj):
         # Delete tmp job script
         exception.remove_tmp_files(glob.log)
         # Submit job
-        jobid = common.submit_job(glob.code['bench']['working_path'], glob.code['bench']['job_script'])
+        jobid = common.submit_job(dep, glob.code['bench']['working_path'], glob.code['bench']['job_script'])
 
         # Generate bench report
         generate_bench_report(build_report, jobid)

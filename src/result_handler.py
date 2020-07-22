@@ -126,7 +126,9 @@ def get_insert_dict(result_dir, result, unit):
         exception.print_warning(glob.log, "Failed to read a key in " + common.rel_path(bench_report) + ". Skipping.")
         return False
    
+    print("***", jobid)
     nodelist = common.get_nodelist(jobid)
+    print(nodelist)
 
     insert_dict = {}
 
@@ -148,6 +150,7 @@ def get_insert_dict(result_dir, result, unit):
         insert_dict['dataset']        = report_parser.get('bench', 'dataset')
         insert_dict['result']         = str(result)
         insert_dict['result_unit']    = unit
+        print("here")
         insert_dict['resource_path']  = glob.user + glob.stg['sl'] + insert_dict['system'] + glob.stg['sl'] + insert_dict['jobid']
     
     except Exception as e:
@@ -384,7 +387,7 @@ def run_query(query_str):
         exception.error_and_quit(glob.log, "Unable to connect to database")
 
     if query_str == "all":
-        query_str = None
+        query_str = ""
     else:
         query_str = "WHERE" + query_str
 

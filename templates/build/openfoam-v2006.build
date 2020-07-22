@@ -7,7 +7,7 @@ export            mpi=<<<mpi>>>
 export    opf_version=<<<version>>>
 export      opt_flags=<<<opt_flags>>>
 
-export       mpilable=<<<mpilabel>>>
+export       mpilabel=<<<mpilabel>>>
 export      complabel=<<<complabel>>>
 
 date

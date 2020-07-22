@@ -9,7 +9,6 @@ export     app_module=<<<app_mod>>>
 export            version=<<<version>>>
 export            endTime=<<<endTime>>>
 export      writeInterval=<<<writeInterval>>>
-export numberOfSubdomains=<<<numberOfSubdomains>>>
 
 export OMP_NUM_THREADS=<<<threads>>>
 
@@ -23,14 +22,14 @@ mkdir -p ${working_path}
 tar -xf ${benchmark_repo}/${dataset}.tgz -C ${working_path} 
 cd ${working_path}/${dataset}
 
-#sed -i "/endTime/c\endTime         ${endTime};" system/controlDict
-#sed -i "/writeInterval/c\writeInterval   ${writeInterval};" system/controlDict
-#sed -i "/numberOfSubdomains/c\numberOfSubdomains ${numberOfSubdomains};" system/decomposeParDict
 
+numberOfSubdomains=$SLURM_NTASKS
 
-cd /home1/06280/mcawood/scratch1/benchmarks/OpenFOAM-v1912/SimpleBenchMarkLarge
+sed -i "/endTime/c\endTime         ${endTime};" system/controlDict
+sed -i "/writeInterval/c\writeInterval   ${writeInterval};" system/controlDict
+sed -i "/numberOfSubdomains/c\numberOfSubdomains ${numberOfSubdomains};" system/decomposeParDict
 
-#decomposePar -force > decompose.out
+decomposePar -force > decompose.out
 
 ibrun ${exe} -parallel > ${output_file}
 
