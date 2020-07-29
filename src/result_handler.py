@@ -44,7 +44,7 @@ def validate_result(result_path):
     output_path = common.find_exact(output_file, result_path)
     # Test for benchmark output file
     if not output_path:
-        exception.print_warning(glob.log, "Result file " + output_file + " not found in " + common.rel_path(result_path) + ". It seems the benchmark failed to run. Was dry_run=True in glob_obj.cfg?")
+        exception.print_warning(glob.log, "Result file " + output_file + " not found in " + common.rel_path(result_path) + ". It seems the benchmark failed to run. Was dry_run=True?")
         return False, None
 
     glob.log.debug("Looking for valid result in "+output_path)
@@ -126,9 +126,7 @@ def get_insert_dict(result_dir, result, unit):
         exception.print_warning(glob.log, "Failed to read a key in " + common.rel_path(bench_report) + ". Skipping.")
         return False
    
-    print("***", jobid)
     nodelist = common.get_nodelist(jobid)
-    print(nodelist)
 
     insert_dict = {}
 
@@ -150,7 +148,6 @@ def get_insert_dict(result_dir, result, unit):
         insert_dict['dataset']        = report_parser.get('bench', 'dataset')
         insert_dict['result']         = str(result)
         insert_dict['result_unit']    = unit
-        print("here")
         insert_dict['resource_path']  = glob.user + glob.stg['sl'] + insert_dict['system'] + glob.stg['sl'] + insert_dict['jobid']
     
     except Exception as e:
@@ -354,17 +351,17 @@ def test_search_field(field):
         return True
 
     else:
-        print("WARNING: '" + field + "' is not a valid search field.")
+        print("ERROR: '" + field + "' is not a valid search field.")
         print("Available fields:")
         for f in model_fields:
             print("  "+f)
-        return False
+        sys.exit(2)
 
 # Parse comma-delmited list of search criteria, test keys and return SQL WHERE statement
 def parse_input_str(args):
     input_list= args.split(',')
 
-    select_str = None
+    select_str = ""
     for option in input_list:
         search = option.split('=')
         # Test search key is in db

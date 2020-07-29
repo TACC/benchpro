@@ -42,23 +42,23 @@ def generate_build_report(jobid):
 
     with open(report_file, 'a') as out:
         out.write("[build]\n")
-        out.write("code         = "+ glob.code['general']['code']             + "\n")
-        out.write("version      = "+ glob.code['general']['version']          + "\n")
-        out.write("system       = "+ glob.code['general']['system']           + "\n")
-        out.write("compiler     = "+ glob.code['modules']['compiler']         + "\n")
-        out.write("mpi          = "+ glob.code['modules']['mpi']              + "\n")
+        out.write("code           = "+ glob.code['general']['code']             + "\n")
+        out.write("version        = "+ glob.code['general']['version']          + "\n")
+        out.write("system         = "+ glob.code['general']['system']           + "\n")
+        out.write("compiler       = "+ glob.code['modules']['compiler']         + "\n")
+        out.write("mpi            = "+ glob.code['modules']['mpi']              + "\n")
         if glob.code['general']['module_use']:
-            out.write("module_use   = "+ glob.code['general']['module_use']   + "\n")
-        out.write("modules      = "+ ", ".join(glob.code['modules'].values()) + "\n")
-        out.write("optimization = "+ glob.code['build']['opt_flags']          + "\n")    
-        out.write("exe          = "+ glob.code['build']['exe']                + "\n")
-        out.write("build_prefix = "+ glob.code['general']['working_path']     + "\n")
-        out.write("build_date   = "+ str(datetime.datetime.now())             + "\n")
-        out.write("jobid        = "+ jobid                                    + "\n")
+            out.write("module_use     = "+ glob.code['general']['module_use']   + "\n")
+        out.write("modules        = "+ ", ".join(glob.code['modules'].values()) + "\n")
+        out.write("default_params = "+ glob.code['general']['default_params']   + "\n")
+        out.write("optimization   = "+ glob.code['build']['opt_flags']          + "\n")    
+        out.write("exe            = "+ glob.code['build']['exe']                + "\n")
+        out.write("build_prefix   = "+ glob.code['general']['working_path']     + "\n")
+        out.write("build_date     = "+ str(datetime.datetime.now())             + "\n")
+        out.write("jobid          = "+ jobid                                    + "\n")
 
 # Main methond for generating and submitting build script
 def build_code(glob_obj):
-
 
     #=========================   INIT AND STARTUP CHECKS   ============================================
     # Get global settings obj
@@ -104,16 +104,13 @@ def build_code(glob_obj):
 
     #============== GENERATE BUILD & MODULE TEMPLATE  ======================================
 
-
     # Generate build script
     template_handler.generate_build_script(glob)
 
     # Generate module in temp location
     mod_path, mod_file = module_handler.make_mod(glob)
 
-
     # ================== COPY INSTALLATION FILES ===================================
-
 
     # Make build path and move tmp build script file
     common.create_dir(glob.code['general']['working_path'])

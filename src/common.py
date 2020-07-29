@@ -353,32 +353,18 @@ class init(object):
 
     # If build job is running, add dependency str
     def get_build_job_dependency(self, jobid):
-        if self.check_job_complete(jobid):
-            return ""
-        else:
-            return "--dependency=afterok:" + jobid + " "
+        if not self.check_job_complete(jobid):
+            self.glob.dep_list.append(jobid)
 
     # Set job dependency if max_running_jobs is reached
-    def get_job_limit_dependency(self):
-        running_jobs_list = self.get_active_jobids()
-        dep_prefix = ""
-
-        # Get max_running_jobs from code dict, assume high if not found (for builder)
-        try:
-            limit = int(self.glob.code['sched']['max_running_jobs'])
-        except:
-            limit = 100
-
-        # Job limit reached
-        if len(running_jobs_list) >= limit:
-            running_jobs_list.sort()
-            dep_prefix = "--dependency=afterany:" + str(running_jobs_list[-1]) + " "
-
-        return dep_prefix
+    def get_dep_str(self):
+        if not self.glob.dep_list:
+            return ""
+        else:
+            return "--dependency=afterany:" + ":".join(self.glob.dep_list) + " "
 
     # Submit script to scheduler
     def submit_job(self, dep, job_path, script_file):
-        depend = dep
         script_path= job_path + self.glob.stg['sl'] + script_file
         # If dry_run, quit
         if self.glob.stg['dry_run']:
@@ -393,10 +379,6 @@ class init(object):
             print()
             print("Submitting to scheduler...")
             self.glob.log.debug("Submitting " + script_path + " to scheduler...")
-
-            # Get dependency prefix
-            if not depend:
-                depend = self.get_job_limit_dependency()
 
             try:
                 cmd = subprocess.run("sbatch " + dep + script_path, shell=True, \
@@ -525,7 +507,7 @@ class init(object):
     # Print warning if cmd line params dict not empty
     def check_for_unused_overloads(self):
         if len(self.glob.overload_dict):
-            print("The following --var params are invalid:")
+            print("The following --overload params are invalid:")
             for key in self.glob.overload_dict:
                 print("  " + key + "=" + self.glob.overload_dict[key])
             exception.error_and_quit(self.glob.log, "Invalid input arguments.")

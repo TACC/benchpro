@@ -92,7 +92,7 @@ def get_build_templates():
 
     # Error if not found
     if not build_template_search:
-        exception.error_and_quit(glob.log, "failed to locate build template '" + build_template + "' in " + \
+        exception.error_and_quit(glob.log, "failed to locate build template '" + glob.code['template'] + "' in " + \
                                 common.rel_path(glob.stg['template_path'] + glob.stg['sl'] + glob.stg['build_tmpl_dir']))
     
     glob.code['template'] = build_template_search
@@ -165,7 +165,7 @@ def get_bench_templates():
     bench_template_search = common.find_partial(glob.code['template'], glob.stg['template_path'] + glob.stg['sl'] + glob.stg['bench_tmpl_dir'])
 
     if not bench_template_search:
-        exception.error_and_quit(glob.log, "failed to locate bench template '" + bench_template + "' in " + common.rel_path(glob.stg['template_path'] + glob.stg['sl'] + glob.stg['bench_tmpl_dir']))
+        exception.error_and_quit(glob.log, "failed to locate bench template '" + glob.code['template'] + "' in " + common.rel_path(glob.stg['template_path'] + glob.stg['sl'] + glob.stg['bench_tmpl_dir']))
     else:
         glob.code['template'] = bench_template_search
 

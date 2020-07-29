@@ -111,8 +111,9 @@ class init(object):
 
         code_str = self.glob.args.queryApp
         common = common_funcs.init(self.glob)
-        install_path = self.glob.stg['build_path'] + self.glob.stg['sl'] + common.check_if_installed(code_str)
-        build_report = install_path + self.glob.stg['sl'] + self.glob.stg['build_report_file']
+        app_path = self.glob.stg['build_path'] + self.glob.stg['sl'] + common.check_if_installed(code_str)
+        build_report = app_path + self.glob.stg['sl'] + self.glob.stg['build_report_file']
+        install_path = app_path + self.glob.stg['sl'] + self.glob.stg['install_subdir']
 
         exe = None
         jobid = None

@@ -21,16 +21,26 @@ def search_cfg_str(cfg_name, search_path):
         glob.log.debug("Looking for " + cfg_name + " in " + common.rel_path(search_path) + "...")
         matches = gb.glob(search_path + glob.stg['sl'] + "*" + cfg_name + "*")
 
+        # Unique match
         if len(matches) == 1:
             glob.log.debug("Found")
             return matches[0]
 
+        # Muliple matches
         elif len(matches) > 1:
-            print("Multiple input config files matching '" + cfg_name + "' found in " + common.rel_path(search_path) + ":")
-            for match in matches:
-                print("  " + match.split('/')[-1])
             
-            exception.error_and_quit(glob.log, "please provide unique input config label.")
+            default = [i for i in matches if "default" in i]
+            # Check for default
+            if len(default) == 1:
+                return default[0]
+
+            # Error
+            else:
+                print("Multiple input config files matching '" + cfg_name + "' found in " + common.rel_path(search_path) + ":")
+                for match in matches:
+                    print("  " + match.split('/')[-1])
+            
+                exception.error_and_quit(glob.log, "please provide unique input config label.")
 
     return None
 
@@ -138,6 +148,7 @@ def process_build_cfg(cfg_dict):
     if not 'build_prefix'     in cfg_dict['general'].keys():  cfg_dict['general']['build_prefix']   = ""
     if not 'template'         in cfg_dict['general'].keys():  cfg_dict['general']['template']       = ""
     if not 'module_use'       in cfg_dict['general'].keys():  cfg_dict['general']['module_use']     = ""
+    if not 'default_params'   in cfg_dict['general'].keys():  cfg_dict['general']['default_params'] = ""
 
     if not 'exe'              in cfg_dict['build'].keys():    cfg_dict['build']['exe']              = ""
     if not 'arch'             in cfg_dict['build'].keys():    cfg_dict['build']['arch']             = ""

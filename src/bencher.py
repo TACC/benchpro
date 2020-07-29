@@ -62,24 +62,25 @@ def run_bench(glob_obj):
     report_parser.optionxform=str
     report_parser.read(build_report)
 
-    # Get code labee from build_report, for finding default params (if needed)
+    # Get build jobid from build_report, for checking build state
     try:
-        jobid     = report_parser.get('build', 'jobid')
+        build_jobid = report_parser.get('build', 'jobid')
     except:
         exception.error_and_quit(glob.log, "Unable to read build_report.txt file in " + common.rel_path(code_path))
-
-#    # Check build job is complete
-#    if not common.check_job_complete(jobid):
-#        exception.error_and_quit(glob.log, "Job ID " + jobid + "is RUNNING. It appears '" + glob.args.bench + "' is still compiling.")
 
     # Get code label from build_report to find appropriate bench cfg file
     code = report_parser.get('build', 'code')
 
+    default_params = report_parser.get('build', 'default_params')
+    
     # Print warning when using default benchmark inputs
     if not glob.args.params:
-        glob.args.params = code
-        print("WARNING: No input parameters (--params) given, using defaults for debugging.")
-        glob.log.debug("WARNING: No input parameters (--params) given, using defaults for debugging.")
+        if default_params:
+            glob.args.params = default_params
+        else:
+            glob.args.params = code
+
+        exception.print_warning(glob.log, "no benchmark parameters file (--params) given, will search for '" + glob.args.params + "'")
 
     # Get bench config dicts
     cfg_handler.ingest_cfg('bench', glob.args.params, glob)
@@ -89,24 +90,23 @@ def run_bench(glob_obj):
     # Check for empty overload params
     common.check_for_unused_overloads()
 
-    # Check application exe
-#    if not glob.stg['dry_run']:
-#        common.check_exe(glob.code['bench']['exe'], code_path)
-#    else:
-#        print("Dry run, skipping application exe check")
-
     # Add variables from build report to bench cfg dict
     glob.code['bench']['code']      = report_parser.get('build', 'code')
     glob.code['bench']['version']   = report_parser.get('build', 'version')
     glob.code['bench']['system']    = report_parser.get('build', 'system')
-    
-    build_jobid = report_parser.get('build', 'jobid')
 
     # Get build job depenency
-    dep = common.get_build_job_dependency(build_jobid)
-
-    if dep:
+    glob.dep_list = []
+    common.get_build_job_dependency(build_jobid)
+    # Build job running
+    if glob.dep_list:
         print(glob.code['bench']['code'] + " build job is still running, creating dependency")
+    # Build job complete
+    else:
+        if not glob.stg['dry_run']:
+            common.check_exe(glob.code['bench']['exe'], code_path)
+        else:
+            print("Dry run, skipping application exe check")
 
     # Get job label
     glob.sched['sched']['job_label'] = code+"_bench"
@@ -128,7 +128,7 @@ def run_bench(glob_obj):
 
     jobs = glob.code['sched']['nodes']
     counter = 1
-
+    prev_jobid = []
     # for each nodes in list
     for node in jobs:
         glob.log.debug("Write script for " + node + " nodes")
@@ -166,10 +166,21 @@ def run_bench(glob_obj):
         common.install(provenance_path, glob.sched['metadata']['cfg_file'], None)
         common.install(provenance_path, sched_template, None)
 
+        # Get previous bench dep
+        try:
+            job_limit = int(glob.code['sched']['max_running_jobs'])
+        except:
+            exception.error_and_quit(glob.log, "'max_running_jobs' value '" + glob.code['sched']['max_running_jobs'] + "' is not an integer")
+
+        if len(prev_jobid) >= job_limit:
+            print("Max running jobs reached, creating dependency")
+            glob.dep_list.append(prev_jobid[-1 * job_limit])
+
         # Delete tmp job script
         exception.remove_tmp_files(glob.log)
         # Submit job
-        jobid = common.submit_job(dep, glob.code['bench']['working_path'], glob.code['bench']['job_script'])
+        jobid = common.submit_job(common.get_dep_str(), glob.code['bench']['working_path'], glob.code['bench']['job_script'])
+        prev_jobid.append(jobid)
 
         # Generate bench report
         generate_bench_report(build_report, jobid)

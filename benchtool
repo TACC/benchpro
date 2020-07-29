@@ -24,7 +24,7 @@ except ImportError as e:
 def get_var_overload_dict(vars_str):
     overload_dict = {} 
     if vars_str:
-        settings_list = vars_str.split(',')
+        settings_list = vars_str.split(':')
         for setting in settings_list:
             pair = setting.split('=')
             overload_dict[pair[0]] = pair[1]
@@ -70,8 +70,8 @@ def main():
                             help="Query database for results matching search criteria. Accepts comma-delimited list of search criteria. Use 'all' to display all results in db.")
     
 
-    cmd_parser.add_argument("--var", default=False,
-                            help="Override a setting read from cfg files. Accepts comma-delimited list of assignments.")
+    cmd_parser.add_argument("--overload", default=False,
+                            help="Override any setting read from cfg files. Accepts colon-delimited list of assignments.")
 
 
     print()
@@ -83,7 +83,7 @@ def main():
     glob.args = args
 
     # Get overload dict
-    glob.overload_dict = get_var_overload_dict(args.var)
+    glob.overload_dict = get_var_overload_dict(args.overload)
 
     # Use system default scheduler profile
     if glob.args.sched == "system":
