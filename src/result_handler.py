@@ -2,6 +2,7 @@
 import configparser as cp
 import os
 import psycopg2
+from psycopg2 import sql
 import shutil as su
 import subprocess
 import sys
@@ -44,16 +45,16 @@ def validate_result(result_path):
     output_path = common.find_exact(output_file, result_path)
     # Test for benchmark output file
     if not output_path:
-        exception.print_warning(glob.log, "Result file " + output_file + " not found in " + common.rel_path(result_path) + ". It seems the benchmark failed to run. Was dry_run=True?")
+        exception.print_warning(glob.log, "Result file " + output_file + " not found in " + common.rel_path(result_path) + ". It seems the benchmark failed to run.\nWas dry_run=True?")
         return False, None
 
     glob.log.debug("Looking for valid result in "+output_path)
 
-    # Run regex collection
-    if glob.code['result']['method'] == 'regex':
+    # Run expr collection
+    if glob.code['result']['method'] == 'expr':
 
         # replace <file> filename placeholder with value in glob_obj.cfg
-        glob.code['result']['expr'] = glob.code['result']['expr'].replace("<file>", output_path)
+        glob.code['result']['expr'] = glob.code['result']['expr'].replace("{output_file}", output_path)
 
         # Run validation expression on output file
         try:
@@ -90,7 +91,7 @@ def validate_result(result_path):
     try:
         result = float(result_str)
     except:
-        exception.print_warning(glob.log, "result extracted from " + output_file + " is not a float.")
+        exception.print_warning(glob.log, "result extracted from " + output_file + " is not a float: '" + result_str + "'")
         return False, None
 
     # Check float non-zero
@@ -103,7 +104,60 @@ def validate_result(result_path):
     # Return valid result and unit
     return result, glob.code['result']['unit']
 
+# Get list of fields in results table
+def get_table_fields():
 
+    try:
+        conn = psycopg2.connect(
+            dbname =    glob.stg['db_name'],
+            user =      glob.stg['db_user'],
+            host =      glob.stg['db_host'],
+            password =  glob.stg['db_passwd']
+        )
+    except Exception as err:
+        print ("psycopg2 connect() ERROR:", err)
+        sys.exit(1)
+
+    cur = conn.cursor()
+    query = "SELECT column_name FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name='" + glob.stg['table_name'] + "';"
+
+    try:
+        sql_object = sql.SQL(query).format(sql.Identifier( glob.stg['table_name'] ))
+        cur.execute( sql_object )
+        col_names = ( cur.fetchall() )
+
+        # iterate list of tuples and grab first element
+        columns = []
+        for tup in col_names:
+            columns += [ tup[0] ]
+
+        cur.close()
+
+    except Exception as err:
+        print ("Failed to collect db information", err)
+
+    # remove id field
+    columns.remove('id')
+    return columns
+
+# Get required key from report, if not found try get it from the [bench] section, otherwise error
+def get_required_key(report_parser, section, key):
+    try:
+        return report_parser.get(section, key)
+    except:
+        pass
+    try:
+        return report_parser.get('bench', key)
+    except:    
+        exception.error_and_quit(glob.log, "missing required report field '"+key+"'")
+
+# Get optional key from report or return ""
+def get_optional_key(report_parser, section, key):
+    try:
+        return report_parser.get(section, key)
+    except:
+        return ""
+        
 # Generate dict for postgresql 
 def get_insert_dict(result_dir, result, unit):
     
@@ -117,13 +171,12 @@ def get_insert_dict(result_dir, result, unit):
     report_parser.optionxform=str
     report_parser.read(bench_report)
 
-
     # Get JOBID in order to get NODELIST from sacct
     try:
         jobid = report_parser.get('bench', 'jobid')
     except:
         print(e)
-        exception.print_warning(glob.log, "Failed to read a key in " + common.rel_path(bench_report) + ". Skipping.")
+        exception.print_warning(glob.log, "Failed to read key 'jobid' in " + common.rel_path(bench_report) + ". Skipping.")
         return False
    
     nodelist = common.get_nodelist(jobid)
@@ -131,29 +184,47 @@ def get_insert_dict(result_dir, result, unit):
     insert_dict = {}
 
     try:
-        insert_dict['username']       = glob.user
-        insert_dict['system']         = report_parser.get('build', 'system')
-        insert_dict['submit_time']    = report_parser.get('bench', 'bench_date')
-        insert_dict['description']    = report_parser.get('bench', 'description')
-        insert_dict['jobid']          = report_parser.get('bench', 'jobid')
-        insert_dict['nodelist']       = ", ".join(nodelist)
-        insert_dict['nodes']          = report_parser.get('bench', 'nodes')
-        insert_dict['ranks']          = report_parser.get('bench', 'ranks')
-        insert_dict['threads']        = report_parser.get('bench', 'threads')
-        insert_dict['code']           = report_parser.get('build', 'code')
-        insert_dict['version']        = report_parser.get('build', 'version')
-        insert_dict['compiler']       = report_parser.get('build', 'compiler')
-        insert_dict['mpi']            = report_parser.get('build', 'mpi')
-        insert_dict['modules']        = report_parser.get('build', 'modules')
-        insert_dict['dataset']        = report_parser.get('bench', 'dataset')
-        insert_dict['result']         = str(result)
-        insert_dict['result_unit']    = unit
-        insert_dict['resource_path']  = glob.user + glob.stg['sl'] + insert_dict['system'] + glob.stg['sl'] + insert_dict['jobid']
+        insert_dict['username']         = glob.user
+        insert_dict['system']           = get_required_key(report_parser, 'build', 'system')
+        insert_dict['submit_time']      = get_required_key(report_parser, 'bench', 'start_time')
+        insert_dict['elapsed_time']     = common.get_elapsed_time(jobid)
+        insert_dict['end_time']         = common.get_end_time(jobid)
+        insert_dict['description']      = get_optional_key(report_parser, 'bench', 'description')
+        insert_dict['jobid']            = jobid
+        insert_dict['nodelist']         = ", ".join(nodelist)
+        insert_dict['nodes']            = get_required_key(report_parser, 'bench', 'nodes')
+        insert_dict['ranks']            = get_required_key(report_parser, 'bench', 'ranks')
+        insert_dict['threads']          = get_required_key(report_parser, 'bench', 'threads')
+        insert_dict['code']             = get_required_key(report_parser, 'build', 'code')
+        insert_dict['version']          = get_optional_key(report_parser, 'build', 'version')
+        insert_dict['compiler']         = get_optional_key(report_parser, 'build', 'compiler')
+        insert_dict['mpi']              = get_optional_key(report_parser, 'build', 'mpi')
+        insert_dict['modules']          = get_optional_key(report_parser, 'build', 'modules')
+        insert_dict['dataset']          = get_required_key(report_parser, 'bench', 'dataset')
+        insert_dict['result']           = str(result)
+        insert_dict['result_unit']      = unit
+        insert_dict['resource_path']    = os.path.join(glob.user, insert_dict['system'], insert_dict['jobid'])
     
     except Exception as e:
         print(e)
         exception.print_warning(glob.log, "Failed to read a key in " + common.rel_path(bench_report) + ". Skipping.")
         return False
+
+    # Confirm model fields have all been filled
+    model_fields = get_table_fields()
+    insert_fields = insert_dict.keys()
+
+    for key in insert_fields:
+        # Remove key from model list
+        if key in model_fields:
+            model_fields.remove(key)
+        # Error if trying to insert field not in model
+        else:
+            exception.error_and_quit(glob.log, "Trying to insert into field '" + key + "' not present in results table '" + glob.stg['table_name'] + "'")
+
+    # If missing model fields in INSERT dict
+    if len(model_fields) > 0:
+        exception.error_and_quit(glob.log, "The benchmark result is missing fields present in the results table:" + str(model_fields))
 
     return insert_dict
 
@@ -162,7 +233,12 @@ def insert_db(insert_dict):
 
     # Connect to db
     try:
-        conn = psycopg2.connect(dbname=glob.stg['db_name'], user=glob.stg['db_user'], host=glob.stg['db_host'], password=glob.stg['db_passwd'])
+        conn = psycopg2.connect(
+            dbname =    glob.stg['db_name'],
+            user =      glob.stg['db_user'],
+            host =      glob.stg['db_host'],
+            password =  glob.stg['db_passwd']
+        )
         cur = conn.cursor()
     except psycopg2.Error as e:
         print(e)
@@ -173,7 +249,7 @@ def insert_db(insert_dict):
 
     # Perform INSERT
     try:
-        cur.execute("INSERT INTO results_result (" + keys + ") VALUES (" + vals + ");")
+        cur.execute("INSERT INTO " + glob.stg['table_name'] + " (" + keys + ") VALUES (" + vals + ");")
         conn.commit()
     except psycopg2.Error as e:
         print(e)
@@ -186,12 +262,11 @@ def insert_db(insert_dict):
 
 # Return valid SSH key path of error
 def get_ssh_key():
-
-    key_path = glob.basedir + glob.stg['sl'] + glob.stg['ssh_key_dir'] + glob.stg['sl'] + glob.stg['ssh_key']
+    key_path = os.path.join(glob.stg['ssh_key_dir'], glob.stg['ssh_key'])
     if os.path.isfile(key_path):
         return key_path
     else:
-           exception.error_and_quit(glob.log, "Could not locate SSH key '" + glob.stg['ssh_key'] + "'")
+        exception.error_and_quit(glob.log, "Could not locate SSH key '" + glob.stg['ssh_key'] + "' in " + glob.stg['ssh_key_dir'])
 
 # Create directory on remote server
 def make_remote_dir(dest_dir):
@@ -241,7 +316,7 @@ def send_files(result_dir, dest_dir):
         if not glob.user or not glob.stg['ssh_key']:
             exception.error_and_quit(glob.log, "Keys 'ssh_user' and 'ssh_key' required in glob_obj.cfg if using SCP file transmission.")
 
-        server_path = glob.stg['django_static_dir'] + glob.stg['sl'] + dest_dir
+        server_path = glob.stg['scp_path'] + glob.stg['sl'] + dest_dir
 
         # Create directory on remote server
         if make_remote_dir(server_path):
@@ -326,27 +401,9 @@ def capture_result(glob_obj):
 
         print("Done. ", captured, " results sucessfully captured")
 
-
 # Test if search field is valid in results/models.py
-def test_search_field(field):
-    model_fields = ['username',
-                    'system',
-                    'submit_time',
-                    'description',
-                    'jobid',
-                    'nodes',
-                    'ranks',
-                    'threads',
-                    'code',
-                    'version',
-                    'compiler',
-                    'mpi',
-                    'modules',
-                    'dataset',
-                    'result',
-                    'result_unit',
-                    'resource_path'
-                    ]
+def test_search_field(model_fields, field):
+
     if field in model_fields:
         return True
 
@@ -359,13 +416,16 @@ def test_search_field(field):
 
 # Parse comma-delmited list of search criteria, test keys and return SQL WHERE statement
 def parse_input_str(args):
-    input_list= args.split(',')
+    input_list= args.split(':')
+
+    # Get fields from DB
+    model_fields = get_table_fields()
 
     select_str = ""
     for option in input_list:
         search = option.split('=')
         # Test search key is in db
-        if test_search_field(search[0]):
+        if test_search_field(model_fields, search[0]):
             if select_str: select_str += " AND "
             else: select_str += " " 
             select_str = select_str + search[0] + "='" + search[1] + "'"
@@ -377,7 +437,12 @@ def run_query(query_str):
 
     # Connect to db
     try:
-        conn = psycopg2.connect(dbname=glob.stg['db_name'], user=glob.stg['db_user'], host=glob.stg['db_host'], password=glob.stg['db_passwd'])
+        conn = psycopg2.connect(
+            dbname =    glob.stg['db_name'],
+            user =      glob.stg['db_user'],
+            host =      glob.stg['db_host'],
+            password =  glob.stg['db_passwd']
+        )
         cur = conn.cursor()
     except psycopg2.Error as e:
         print(e)
@@ -390,7 +455,7 @@ def run_query(query_str):
 
     # Perform INSERT
     try:
-        cur.execute("SELECT * FROM results_result " + query_str + ";")
+        cur.execute("SELECT * FROM " + glob.stg['table_name'] + " " + query_str + ";")
         rows = cur.fetchall()
     except psycopg2.Error as e:
         print(e)
@@ -513,17 +578,28 @@ def query_result(glob_obj):
 
     glob.log = logger.start_logging("CAPTURE", glob.stg['results_log_file'] + "_" + glob.time_str + ".log", glob)
 
-    result_path = glob.stg['bench_path'] + glob.stg['sl'] + get_matching_results(glob.args.queryResult)[0]
-    bench_report = result_path + glob.stg['sl'] + "bench_report.txt"
+    result_path = os.path.join(glob.stg['bench_path'], get_matching_results(glob.args.queryResult)[0])
+    bench_report = os.path.join(result_path, "bench_report.txt")
+
+    jobid = ""
     print("Benchmark report:")
     print("----------------------------------------")    
     with open(bench_report, 'r') as report:
-        print(report.read())
+        content = report.read()
+        print(content)
+        for line in content.split("\n"):
+            if line[0:5] == "jobid":
+                jobid = line.split('=')[1].strip()
+
     print("----------------------------------------")
 
-    result, unit = validate_result(result_path)
-    if result:
-        print("Result: " + str(result) + " " + unit)
+    # If job complete extract result
+    if common.check_job_complete(jobid):
+        result, unit = validate_result(result_path)
+        if result:
+            print("Result: " + str(result) + " " + unit)
+    else: 
+        print("Job " + jobid + " still running.")
 
 
 def print_results(result_list):
@@ -532,9 +608,9 @@ def print_results(result_list):
 
 def delete_results(result_list):
     print()
-    print('\033[1m' + "Deleting in", glob.stg['timeout'], "seconds...")
+    print("\033[91;1mDeleting in", self.glob.stg['timeout'], "seconds...\033[0m")
     time.sleep(glob.stg['timeout'])
-    print('\033[0m' + "No going back now...")
+    print("No going back now...")
     for result in result_list:
         su.rmtree(glob.stg['bench_path'] + glob.stg['sl'] + result)
     print("Done.")

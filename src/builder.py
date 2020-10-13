@@ -18,23 +18,33 @@ glob = common = None
 
 # Check if an existing installation exists
 def check_for_previous_install():
-    path = glob.code['general']['working_path']
-    if os.path.exists(path):
+    install_path = glob.code['general']['working_path']
+    # If existing installation is found
+    if os.path.isdir(install_path):
+        # Delete if overwrite=True
         if glob.stg['overwrite']:
             glob.log.debug("WARNING: It seems this app is already installed. Deleting old build in " +
-                         path + " because 'overwrite=True' in settings.cfg")
+                         install_path + " because 'overwrite=True' in settings.ini")
 
             print()
-            print("WARNING: Application directory already exists and 'overwrite=True' in settings.cfg, continuing in 5 seconds...")
+            print("WARNING: Application directory already exists and 'overwrite=True' in settings.ini")
+            print("\033[91;1mDeleting in 5 seconds...\033[0m")
             print()
 
             time.sleep(glob.stg['timeout'])
             print("No going back now...")
 
-            su.rmtree(path)
+            su.rmtree(install_path)
+            # Installation not found (after delete)
+            return False
+        # Else warn and skip build
         else:
-            exception.error_and_quit(glob.log, "It seems this app is already installed in " + common.rel_path(path) +
-                                     ". The install directory already exists and 'overwrite=False' in settings.cfg")
+            exception.print_warning(glob.log, "It seems this app is already installed in " + common.rel_path(install_path) +
+                                     ".\n The install directory already exists and 'overwrite=False' in settings.ini. Skipping build.")
+            return True
+    # Installation not found
+    else:
+        return False
 
 # Generate build report after job is submitted
 def generate_build_report(jobid):
@@ -50,57 +60,53 @@ def generate_build_report(jobid):
         if glob.code['general']['module_use']:
             out.write("module_use     = "+ glob.code['general']['module_use']   + "\n")
         out.write("modules        = "+ ", ".join(glob.code['modules'].values()) + "\n")
-        out.write("default_params = "+ glob.code['general']['default_params']   + "\n")
-        out.write("optimization   = "+ glob.code['build']['opt_flags']          + "\n")    
-        out.write("exe            = "+ glob.code['build']['exe']                + "\n")
+        out.write("optimization   = "+ glob.code['config']['opt_flags']         + "\n")    
+        out.write("exe            = "+ glob.code['config']['exe']               + "\n")
         out.write("build_prefix   = "+ glob.code['general']['working_path']     + "\n")
         out.write("build_date     = "+ str(datetime.datetime.now())             + "\n")
         out.write("jobid          = "+ jobid                                    + "\n")
 
-# Main methond for generating and submitting build script
-def build_code(glob_obj):
+# Get build job dependency
+def get_build_dep(job_limit):
+    glob.dep_list = []
+    # Get queued/running build jobs
+    running_jobids = common.get_active_jobids('_build')
 
-    #=========================   INIT AND STARTUP CHECKS   ============================================
-    # Get global settings obj
-    global glob, common
-    glob = glob_obj
+    # Create dependency on apropriate running job 
+    if len(running_jobids) >= job_limit:
+        glob.dep_list.append(str(running_jobids[len(running_jobids)-job_limit]))
 
-    # Init loggers
-    glob.log = logger.start_logging("BUILD", glob.stg['build_log_file'] + "_" + glob.time_str + ".log", glob)
-
-    # Instantiate common_funcs
-    common = common_funcs.init(glob)
-    
-    # Overload settings.cfg with cmd line args
-    common.overload_params(glob.stg)
-
-    # Check for new results
-    common.print_new_results()
-
-    #=========================== INGEST PARAMS FROM CFGS   ========================================
+# Main method for generating and submitting build script
+def build_code(code_label):
 
     # Parse config input files
-    cfg_handler.ingest_cfg('build',    glob.args.build,              glob)
-    cfg_handler.ingest_cfg('sched',    glob.args.sched,              glob)
-    cfg_handler.ingest_cfg('compiler', glob.stg['compile_cfg_file'], glob)
+    cfg_handler.ingest_cfg('build',    code_label,                  glob)
+    cfg_handler.ingest_cfg('compiler', glob.stg['compile_cfg_file'],glob)
+
+    # If build dir already exists, skip this build
+    if check_for_previous_install():
+        return
+
+    print()
+    print("Using application config file:")
+    print(">  " + common.rel_path(glob.code['metadata']['cfg_file']))
+    print()
+
+    # Get sched config dict if exec_mode=sched, otherwise set threads 
+    if glob.stg['build_mode'] == "sched":
+        cfg_handler.ingest_cfg('sched',    glob.args.sched,             glob)
+        print("Using scheduler config file:")
+        print(">  " + common.rel_path(glob.sched['metadata']['cfg_file']))
+        print()
+    else:
+        glob.sched = {'sched': {'threads':8}}
 
     print()
     # Check for empty overload params
     common.check_for_unused_overloads()
 
-    print()
-    print("Using application config file:") 
-    print(">  " + common.rel_path(glob.code['metadata']['cfg_file']))
-    print()
-    print("Using scheduler config file:")
-    print(">  " + common.rel_path(glob.sched['metadata']['cfg_file']))
-    print()
-
     # Print inputs to log
-    common.send_inputs_to_log('Builder', [glob.code, glob.sched, glob.compiler])
-
-    # Check if build dir already exists
-    check_for_previous_install()
+    common.send_inputs_to_log('Builder')
 
     #============== GENERATE BUILD & MODULE TEMPLATE  ======================================
 
@@ -129,20 +135,84 @@ def build_code(glob_obj):
     print()
 
     # Copy code and sched cfg & template files to build dir
-    provenance_path = glob.code['general']['working_path'] + glob.stg['sl'] + "build_files"
+    provenance_path = os.path.join(glob.code['general']['working_path'], "build_files")
     common.create_dir(provenance_path)
 
     common.install(provenance_path, glob.code['metadata']['cfg_file'], "build.cfg")
     common.install(provenance_path, glob.code['template'], "build.template")
 
-    common.install(provenance_path, glob.sched['metadata']['cfg_file'], None)
-    common.install(provenance_path, glob.sched['template'], None)
+    # Copy sched config file if building via sched
+    if glob.stg['build_mode'] == "sched":
+        common.install(provenance_path, glob.sched['metadata']['cfg_file'], None)
+        common.install(provenance_path, glob.sched['template'], None)
 
     # Clean up tmp files
     exception.remove_tmp_files(glob.log)
 
-    # Submit build script to scheduler
-    jobid = common.submit_job("", glob.code['general']['working_path'], glob.tmp_script[4:])
+    # If dry_run
+    if glob.stg['dry_run']:
+        exception.print_warning(glob.log, "This was a dryrun, skipping build step. Script created at " + common.rel_path(os.path.join(glob.code['general']['working_path'], glob.tmp_script[4:])))
+        jobid = "dry_run"
+
+    else:
+        # Submit job to sched
+        if glob.stg['build_mode'] == "sched":
+            # Check max running build jobs
+            try:
+                job_limit = int(glob.stg['max_build_jobs'])
+            except:
+                exception.error_and_quit(glob.log, "'max_build_jobs in settings.ini is not an integer")
+
+            get_build_dep(job_limit)
+
+            # Submit build script to scheduler
+            jobid = common.submit_job(common.get_dep_str(), glob.code['general']['working_path'], glob.tmp_script[4:])
+
+        # Or start local shell
+        else:
+            common.start_local_shell(glob.code['general']['working_path'], glob.tmp_script[4:])
+            jobid = "local"
 
     # Generate build report
     generate_build_report(jobid)
+
+# Setup contants and get build label
+def init(glob_obj):
+
+    # Get global settings obj
+    global glob, common
+    glob = glob_obj
+
+    # Init loggers
+    glob.log = logger.start_logging("BUILD", glob.stg['build_log_file'] + "_" + glob.time_str + ".log", glob)
+
+    # Instantiate common_funcs
+    common = common_funcs.init(glob)
+    
+    # Overload settings.ini with cmd line args
+    common.overload_params(glob.stg)
+
+    # Check for new results
+    common.print_new_results()
+
+
+    #Check build_mode in set correctly
+    if glob.stg['build_mode'] not in  ['sched', 'local']:
+        exception.error_and_quit(glob.log, "Unsupported build execution mode found: '"+glob.stg['bench_mode']+"' in settings.ini, please specify 'sched' or 'local'.")
+
+    # Either build codes in suite or user label
+    if 'suite' in glob.args.build:
+        if glob.args.build in glob.suite.keys():
+            code_label_list = glob.stg[glob.args.build].split(',')
+            print("Building application set '" + glob.args.build + "': " + str(code_label_list))
+            for code_label in code_label_list:
+                build_code(code_label)
+        else:
+            exception.error_and_quit(glob.log, "No suite '" + glob.args.build + "' in settings.ini. Available suites: " + ', '.join(glob.suite.keys())) 
+
+    # User build input (can be ':' delimited)
+    else:
+        code_list = glob.args.build.split(":")
+        for code in code_list:
+            build_code(code)
+

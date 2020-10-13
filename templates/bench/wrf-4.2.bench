@@ -1,6 +1,7 @@
 
 export   working_path=<<<working_path>>>
 export benchmark_repo=<<<benchmark_repo>>>
+export       mpi_exec=<<<mpi_exec>>>
 export            exe=<<<exe>>>
 export        dataset=<<<dataset>>>
 export    base_module=<<<base_mod>>>
@@ -26,4 +27,4 @@ ln -s ${WRF_DIR}/run/RRTMG_* .
 ln -s ${WRF_DIR}/run/ozone* .
 ln -s ${WRF_DIR}/run/*.TBL .
 
-ibrun ${exe} 
+${mpi_exec} ${exe} 

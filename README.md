@@ -37,7 +37,7 @@ benchtool --build lammps
 ```
 benchtool --installed
 ```
-By default `dry_run=True` in `settings.cfg` so the build script was created but not submitted to the scheduler. You could submit the job manually, or
+By default `dry_run=True` in `settings.ini` so the build script was created but not submitted to the scheduler. You could submit the job manually, or
 
 
 6 Remove the dry_run build:
@@ -83,7 +83,7 @@ benchtool --capture
 
 ## Global settings
 
-Global settings are defined in the file `settings.cfg`
+Global settings are defined in the file `settings.ini`
 
 | Label             | Default                       | Description                                                                       |
 |-------------------|-------------------------------|-----------------------------------------------------------------------------------|
@@ -137,8 +137,8 @@ Global settings are defined in the file `settings.cfg`
 | file_copy_handler | scp                           | File transfer method, only scp working currently.                                 |
 | ssh_user          | mcawood                       | Username for SSH access to database host.                                         |
 | ssh_key           | id_rsa                        | SSH key filename (stored in ./auth)                                               |
-| django_static_dir | /home/mcawood/benchdb/static  | Directory for Django static directory (destination for file copies).              |
-| server_dir        |                               |                                                                                   |
+| scp_path          | /home/mcawood/benchdb/static  | Directory for Django static directory (destination for file copies).              |
+| blackhole_path    |                               |                                                                                   |
 | **[system]**      |                               | -                                                                                 |
 | system_scripts_dir| system                        | Subdirectory in which hardware info collection tools are located.                 |
 | system_utils_dir  | hw_utils                      |                                                                                   |
@@ -176,7 +176,7 @@ This file must be located in `configs/build`, with the naming scheme `[code]_bui
 This file is the template for the scheduler job script which will compile the application.
 Variables are defined with `<<<[label]>>>` and populated with the variables defined in the config file above.
 The label in the template must match the label used in the config file.  
-You are able to make use of the `benchmark_repo` variable defined in `settings.cfg` to copy local files. 
+You are able to make use of the `benchmark_repo` variable defined in `settings.ini` to copy local files. 
 This file must be located in `templates/build`, with the naming scheme `[code]-[version].build` 
 
 ### 3. Module template file (optional)
@@ -215,7 +215,7 @@ This file must be located in `configs/runs`, with the naming scheme `[code]_run.
 ### 2. Run template file  
 
 As with the build template. this file is populated with the parameters defined in the config file above. This file should include setup of the dataset, any required pre-processing or domain decomposition steps if required, and the appropriate `ibrun` command.
-You are able to make use of the `benchmark_repo` variable defined in `settings.cfg` to copy local files. 
+You are able to make use of the `benchmark_repo` variable defined in `settings.ini` to copy local files. 
 
 This file must be located in `templates/bench`, with the naming scheme `[code]-[version].run` 
 

@@ -2,6 +2,7 @@
 export   working_path=<<<working_path>>>
 export    output_file=<<<output_file>>>
 export benchmark_repo=<<<benchmark_repo>>>
+export       mpi_exec=<<<mpi_exec>>>
 export            exe=<<<exe>>>
 export        dataset=<<<dataset>>>
 export    base_module=<<<base_mod>>>
@@ -10,6 +11,7 @@ export     app_module=<<<app_mod>>>
 export        steps=<<<steps>>>
 export          yml=<<<yml>>>
 export      threads=<<<threads>>>
+export     run_args=<<<run_args>>>
 
 export OMP_NUM_THREADS=${threads}
 
@@ -21,5 +23,5 @@ mkdir -p ${working_path}
 tar -xf ${benchmark_repo}/${dataset}.tgz -C ${working_path}
 cd ${working_path}/${dataset}
 
-ibrun ${exe} -n ${steps} --cosmology --eagle --threads=${threads} --pin ${yml} > ${output_file}
+${mpi_exec} ${exe} -n ${steps} ${run_args} --threads=${threads} --pin ${yml} > ${output_file}
 

@@ -3,11 +3,15 @@ export   working_path=<<<working_path>>>
 export    output_file=<<<output_file>>>
 export benchmark_repo=<<<benchmark_repo>>>
 export            exe=<<<exe>>>
+export       mpi_exec=<<<mpi_exec>>>
 export        dataset=<<<dataset>>>
 export    base_module=<<<base_mod>>>
 export     app_module=<<<app_mod>>>
 
-export electron_maxstep=<<<electron_maxstep>>>
+export x=<<<x>>>
+export y=<<<y>>>
+export z=<<<z>>>
+export t=<<<t>>>
 
 export OMP_NUM_THREADS=<<<threads>>>
 
@@ -15,11 +19,11 @@ ml use ${base_module}
 ml ${app_module}
 ml
 
-mkdir -p ${working_path}
-tar -xf ${benchmark_repo}/${dataset}.tar.gz -C ${working_path}
-cd ${working_path}/${dataset}
+mkdir -p ${working_path} && cd ${working_path}
 
-sed -i "/electron_maxstep/c\    electron_maxstep = ${electron_maxstep}" ausurf.in
+cp ${benchmark_repo}/in.${dataset} . 
 
-ibrun ${exe} -i ausurf.in > ${output_file}
+sleep 2
+
+${mpi_exec} ${exe} -var x ${x} -var y ${y} -var z ${z} -var t ${t} < in.${dataset} > ${output_file}
 

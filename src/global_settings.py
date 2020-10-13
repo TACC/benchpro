@@ -8,6 +8,15 @@ import sys
 # Global constants
 class settings(object):
 
+    # Create logging obj
+    log = None
+
+    # Global variable dicts
+    stg      = {}
+    code     = {}
+    sched    = {}
+    compiler = {}
+
     # Context variables
     user                = str(os.getlogin())
     hostname            = str(socket.gethostname())
@@ -19,77 +28,96 @@ class settings(object):
     time_str            = datetime.now().strftime("%Y-%m-%d_%Hh%M")
     cwd                 = os.getcwd()
 
-    #----------------------------settings.cfg--------------------------------
+    # Resolve relative paths in settings.ini
+    def resolve_path(self, path):
+        if len(path) > 2:
+            if path[0:2] == "./":
+                return os.path.join(self.basedir, path[2:])
+        return path
 
-    # Check for empty params and datatypes in settings.cfg
-    def process(key, value):
+    # Check for empty params and datatypes in settings.ini
+    def process(self, key, value):
         optional = ['user',
                     'key',
-                    'django_static_dir',
-                    'server_dir']
-
+                    'scp_path',
+                    'blackhole_path']
         if key not in optional and not value:
-            print("Missing value for key '" + key + "' in settings.cfg, check the documentation.")
+            print("Missing value for key '" + key + "' in settings.ini, check the documentation.")
             sys.exit(2)
-
         # Test if True
-        elif value == "True":
+        elif value in  ["True", "true"]:
             return True
-
         # Test if False
-        elif value == "False":
+        elif value in ["False", "false"]:
             return False
-
         # Test if int
         elif value.isdigit():
             return int(value)
-        
         else: 
             return value
 
-    # Global settings dict
-    stg = {}
-
-    # Parse settings.cfg
-    settings_cfg    = "settings.cfg"
-    settings_parser = configparser.RawConfigParser(allow_no_value=True)
-    settings_parser.read(basedir + "/" + settings_cfg)
-
-    for section in settings_parser:
-        if not section == "DEFAULT":
-            for key in settings_parser[section]:
-                stg[key] = process(key, settings_parser[section][key])
-
-    # Derived variable
-    stg['top_env']             = stg['topdir_env_var'] + stg['sl']
-    stg['module_basedir']      = "modulefiles"
-    stg['log_path']            = basedir + stg['sl'] + stg['log_dir']
-    stg['build_path']          = basedir + stg['sl'] + stg['build_basedir']
-    stg['bench_path']          = basedir + stg['sl'] + stg['bench_basedir']
-    stg['config_path']         = basedir + stg['sl'] + stg['config_basedir']
-    stg['template_path']       = basedir + stg['sl'] + stg['template_basedir']
-    stg['script_path']         = basedir + stg['sl'] + stg['script_basedir']
-    stg['result_script_path']  = stg['script_path']  + stg['sl'] + stg['result_scripts_dir']
-    stg['system_scripts_path'] = stg['script_path']  + stg['sl'] + stg['result_scripts_dir']
-    stg['module_path']         = stg['build_path']   + stg['sl'] + stg['module_basedir']
-    stg['src_path']            = basedir + stg['sl'] + "src"
-    stg['utils_path']          = basedir + stg['sl'] + stg['system_utils_dir']
-
-    # Get system label
-    system = str(os.getenv(stg['system_env'].strip('$')))
-    if not system:
-        print("ERROR: " + stg['system_env'] + " not set.")
-        exit(2)
-
-    #----------------------------settings.cfg--------------------------------
-
     def __init__(self):
 
-        # Create logging obj
-        log = None
+        # Parse settings.ini
+        settings_ini    = os.path.join(self.basedir, "settings.ini")
+        settings_parser = configparser.RawConfigParser(allow_no_value=True)
+        settings_parser.read(settings_ini)
     
-        # Session variable dicts
-        code     = {}
-        sched    = {}
-        compiler = {}
+        #----------------------------settings.ini--------------------------------
 
+        # Read contents of settings.ini into dict
+        for section in settings_parser:
+            if not section == "DEFAULT":
+                for key in settings_parser[section]:
+                    # Convert values to correct datatype
+                    self.stg[key] = self.process(key, settings_parser[section][key])
+
+        # Read suites into own dict
+        suite = dict(settings_parser.items('suites'))
+
+        self.stg['script_basedir']   = self.resolve_path(self.stg['script_basedir'])
+        self.stg['ssh_key_dir']      = self.resolve_path(self.stg['ssh_key_dir'])
+        self.stg['config_basedir']   = self.resolve_path(self.stg['config_basedir'])
+        self.stg['template_basedir'] = self.resolve_path(self.stg['template_basedir'])
+        self.stg['build_basedir']    = self.resolve_path(self.stg['build_basedir'])
+        self.stg['bench_basedir']    = self.resolve_path(self.stg['bench_basedir'])
+
+        # Derived variables
+        self.stg['top_env']             = self.stg['topdir_env_var'] + self.stg['sl']
+        self.stg['module_basedir']      = "modulefiles"
+        self.stg['log_path']            = os.path.join(self.basedir, self.stg['log_dir'])
+        self.stg['build_path']          = os.path.join(self.basedir, self.stg['build_basedir'])
+        self.stg['bench_path']          = os.path.join(self.basedir, self.stg['bench_basedir'])
+        self.stg['config_path']         = os.path.join(self.basedir, self.stg['config_basedir'])
+        self.stg['template_path']       = os.path.join(self.basedir, self.stg['template_basedir'])
+        self.stg['script_path']         = os.path.join(self.basedir, self.stg['script_basedir'])
+        self.stg['result_script_path']  = os.path.join(self.stg['script_path'], self.stg['result_scripts_dir'])
+        self.stg['system_scripts_path'] = os.path.join(self.stg['script_path'], self.stg['result_scripts_dir'])
+        self.stg['module_path']         = os.path.join(self.stg['build_path'], self.stg['module_basedir'])
+        self.stg['src_path']            = os.path.join(self.basedir, "src")
+        self.stg['utils_path']          = os.path.join(self.basedir, self.stg['system_utils_dir'])
+
+        # Get system label
+        sys_env = str(os.getenv(self.stg['system_env'].strip('$')))
+        if not sys_env:
+            print("ERROR: " + self.stg['system_env'] + " not set.")
+            exit(2)
+
+        #----------------------------settings.ini--------------------------------
+
+        #----------------------------system.cfg----------------------------------
+        # Get arch and cores_per_node from system.cfg file
+        system_cfg      = os.path.join(self.stg['config_path'], self.stg['system_cfg_file'])
+        system_parser   = configparser.RawConfigParser(allow_no_value=True)
+        settings_parser.read(system_cfg)
+
+        self.system = {'sys_env': sys_env}
+
+        try:
+            self.system['cores'] = settings_parser[sys_env]['cores']
+            self.system['cores_per_node'] = settings_parser[sys_env]['cores']
+            self.system['default_arch']   = settings_parser[sys_env]['default_arch']
+        except:
+            print("Failed to read section ["+ sys_env +"] in " + os.path.join(self.stg['config_basedir'],  self.stg['system_cfg_file']) )
+
+        #----------------------------system.cfg----------------------------------

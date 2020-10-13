@@ -14,9 +14,11 @@ try:
     import src.input_handler as input_handler
     import src.result_handler as result_handler
     import src.splash as splash
+    import src.validate_setup as validate
 
 except ImportError as e:
-    print("You had an import error, you might be using Python2. Please run 'source sourceme'")
+    print("You had an import error, you might be using Python2 ?")
+    print("Please setup your environment with 'source sourceme'")
     print(e)
     sys.exit(1)
 
@@ -34,17 +36,15 @@ def get_var_overload_dict(vars_str):
 def main():
     # Parse cmdline args
     cmd_parser = argparse.ArgumentParser(
-        description='This is a builder tool for managing appliation benchmarks.')
+        description='This is a benchmarking tool to automate the installation of applications, execution of benchmarks and collection of results.')
 
     cmd_parser.add_argument("--build", default=False,
-                            type=str, help="Name of the code cfg file to build")
+                            type=str, help="Name of the code config file to build, run --avail to check.")
     cmd_parser.add_argument("--sched", default="system",
-                            type=str, help="Name of the scheduler cfg file.")
+                            type=str, help="Name of the scheduler config file, will use system default otherwise.")
 
     cmd_parser.add_argument("--bench", default=False,
-                            type=str, help="Run an installed application, run '--installed' for valid options.")
-    cmd_parser.add_argument("--params", default=False,
-                            type=str, help="Config file containing run parameters.")
+                            type=str, help="Name of benchmark config file to bench, run --avail to check.")
 
     cmd_parser.add_argument("--capture", default=False, action='store_true',
                             help="Send results to database.")
@@ -59,6 +59,7 @@ def main():
                             help="Show all installed applications.")
     cmd_parser.add_argument("--avail", default=False, action='store_true',
                             help="Show all available application profiles.")
+
     cmd_parser.add_argument("--remove", default=False,
                             help="Remove an installed application.")
 
@@ -73,6 +74,8 @@ def main():
     cmd_parser.add_argument("--overload", default=False,
                             help="Override any setting read from cfg files. Accepts colon-delimited list of assignments.")
 
+    cmd_parser.add_argument("--validate", default=False, action='store_true',
+                            help="Run installation validator.")
 
     print()
 
@@ -80,6 +83,7 @@ def main():
 
     # Init global settings
     glob = global_settings.settings()
+    # Add arg dict to global object
     glob.args = args
 
     # Get overload dict
@@ -94,12 +98,12 @@ def main():
     # Start builder
     if args.build:
         splash.print_splash(glob)
-        builder.build_code(glob)
+        builder.init(glob)
 
     # Start bencher
     elif args.bench:
         splash.print_splash(glob)
-        bencher.run_bench(glob)
+        bencher.init(glob)
 
     # Start capture
     elif args.capture:
@@ -116,7 +120,8 @@ def main():
 
     # Show available and exit
     elif args.avail:
-        handler.show_available()
+        handler.show_available_codes()
+        handler.show_available_benches()
 
     # Remove installation and exit
     elif args.remove:
@@ -142,8 +147,12 @@ def main():
     elif args.removeResult:
         result_handler.remove_result(glob)
 
+    elif args.validate:
+        validate.check_setup(glob)
+
     # No seletion provided
     else:
+        print("Invalid input")
         print("Try 'benchtool --help' for more information.")
 
     print()
