@@ -20,7 +20,7 @@ glob = common = build_running = None
 # Generate bench report after job is submitted
 def generate_bench_report(build_report, jobid):
 
-    bench_report = glob.code['metadata']['working_path'] + glob.stg['sl'] + glob.stg['bench_report_file']
+    bench_report = os.path.join(glob.code['metadata']['working_path'],glob.stg['bench_report_file'])
     glob.log.debug("Benchmark report file:" + bench_report)
 
     # Build report exists - copy it and append
@@ -56,22 +56,21 @@ def get_code_info(input_label, search_dict):
 
     # If application is not installed, check if cfg file is available to build
     if not glob.code['metadata']['app_mod']:
-        print("Application '" + input_label + "' not installed. Attempting to build now...")
+        print("Application '" + search_dict['code'] + "' not installed. Attempting to build now...")
         install_cfg = common.check_if_avail(search_dict)
 
         glob.args.build = common.get_filename_from_path(install_cfg)
-        builder.init(glob)
+        builder.init(copy.deepcopy(glob))
         build_running = True
         glob.code['metadata']['app_mod'] = common.check_if_installed(search_dict)
-
 
     # Code is built
     else:
         build_running = False
     
     # Get app info from build report
-    install_path = glob.stg['build_path'] + glob.stg['sl'] + glob.code['metadata']['app_mod']
-    build_report = install_path + glob.stg['sl'] + glob.stg['build_report_file']
+    install_path = os.path.join(glob.stg['build_path'], glob.code['metadata']['app_mod'])
+    build_report = os.path.join(install_path, glob.stg['build_report_file'])
     report_parser     = cp.ConfigParser()
     report_parser.optionxform=str
     report_parser.read(build_report)
@@ -106,9 +105,15 @@ def get_code_info(input_label, search_dict):
     # Build job complete
     else:
         if not glob.stg['dry_run']:
-            common.check_exe(glob.code['config']['exe'], install_path)
+            if glob.stg['bench_mode'] == 'sched':
+                if glob.code['config']['exe']:
+                    common.check_exe(glob.code['config']['exe'], install_path)
+                else:
+                    print("No exe defined, skipping application check.")
+            else:
+                print("Local build, skipping application exe check.")
         else:
-            print("Dry run, skipping application exe check")
+            print("Dry run, skipping application exe check.")
 
     return code, version, system, build_report
 
@@ -118,18 +123,15 @@ def run_bench(input_label):
 
     global build_running
 
-    # Check for unique bench config file from input label
-    bench_cfg = common.get_cfg_file(input_label)
-
-    # Get application search dict from bench cfg file 
-    search_dict = common.get_search_dict(bench_cfg)
-
-    # Does this benchmark require a code?    
     code = version = system = ""
     build_report = ""
     glob.dep_list = []
+    
+    # Get benchmark params from cfg file
+    cfg_handler.ingest_cfg('bench', input_label, glob)
 
-    cfg_handler.ingest_cfg('bench', bench_cfg, glob)
+    # Get application search dict for this benchmark
+    search_dict = glob.code['requirements']
 
     if common.needs_code(search_dict):
         search_dict['system'] = glob.system['sys_env']
@@ -155,16 +157,12 @@ def run_bench(input_label):
     glob.code['metadata']['build_running'] = build_running
 
     print()
+
     # Check for empty overload params
     common.check_for_unused_overloads()
 
     if not glob.code['config']['label']:
         glob.code['config']['label'] = glob.code['requirements']['code']
-
-    # Path to benchmark session directory
-    glob.code['metadata']['base_path'] = os.path.join(glob.stg['bench_path'], glob.system['sys_env'] + "_" + glob.code['config']['label'] + "_" + glob.time_str)
-    # Path to application's data directory
-    glob.code['metadata']['benchmark_repo'] = glob.stg['benchmark_repo']
 
     # Print inputs to log
     #common.send_inputs_to_log('Bencher')
@@ -195,12 +193,19 @@ def run_bench(input_label):
             glob.code['runtime']['ranks_per_node'] = rank_list[i]
 
             # Evaluate math in cfg dict
+            math_handler.eval_dict(glob.code['runtime'])
             math_handler.eval_dict(glob.code['config'])
+
 
             print()
             print("Building script " + str(counter)  + " of " + str(len(jobs)*len(thread_list)) + ": " + str(node) + " nodes, " + str(thread_list[i]) + " threads, " + str(rank_list[i]) + " ranks per node.")
 
             # Get working_path
+            # Path to benchmark session directory
+            glob.code['metadata']['base_path'] = os.path.join(glob.stg['bench_path'], glob.system['sys_env'] + "_" + glob.code['config']['label'] + "_" + glob.time_str)
+            # Path to application's data directory
+            glob.code['metadata']['benchmark_repo'] = glob.stg['benchmark_repo']
+
             subdir = node.zfill(3) + "N_" + str(rank_list[i]).zfill(2) + "R_" + str(thread_list[i]).zfill(2) + "T"
             glob.code['metadata']['working_path'] = glob.code['metadata']['base_path'] + "_" + subdir
             print("Benchmark working directory:")
@@ -227,7 +232,7 @@ def run_bench(input_label):
             common.install(glob.code['metadata']['working_path'], glob.tmp_script, None)
 
             # Copy bench cfg & template files to bench dir
-            provenance_path = glob.code['metadata']['working_path'] + glob.stg['sl'] + "bench_files"
+            provenance_path = os.path.join(glob.code['metadata']['working_path'], "bench_files")
             common.create_dir(provenance_path)
 
             common.install(provenance_path, glob.code['metadata']['cfg_file'], "bench.cfg")
@@ -241,9 +246,12 @@ def run_bench(input_label):
             # Delete tmp job script
             exception.remove_tmp_files(glob.log)
 
+            print(glob.success)
+
             # Dry_run
             if glob.stg['dry_run']:
-                exception.print_warning(glob.log, "This was a dryrun, skipping exec step. Script created at " + common.rel_path(os.path.join(glob.code['metadata']['working_path'], glob.tmp_script[4:])))
+                print("This was a dryrun, skipping exec step. Script created at:")
+                print(">  " + common.rel_path(os.path.join(glob.code['metadata']['working_path'], glob.tmp_script[4:])))
                 jobid = "dry_run"
 
             else:
@@ -296,6 +304,7 @@ def init(glob_obj):
     # Either bench codes in suite or user label
     input_list = []
     if 'suite' in glob.args.bench:
+        print("**", glob.suite)
         if glob.args.bench in glob.suite.keys():
             input_list = glob.suite[glob.args.bench].split(',')
             print("Benching application set '" + glob.args.bench + "': " + str(input_list))

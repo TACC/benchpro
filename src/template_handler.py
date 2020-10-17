@@ -39,8 +39,11 @@ def fill_modules(template_obj):
     if glob.code['general']['module_use']:
         template_obj.append("ml use " + glob.code['general']['module_use'] + "\n")
 
+    # Add non Null modules 
     for mod in glob.code['modules']:
-        template_obj.append("ml " + glob.code['modules'][mod] + "\n")
+        if glob.code['modules'][mod]:
+            template_obj.append("ml " + glob.code['modules'][mod] + "\n")
+
     template_obj.append("ml \n")
 
 # Add things to the bottom of the build script
@@ -66,9 +69,9 @@ def add_process_dep(template_obj):
 
     template_obj.append("echo Waiting for build to complete \n")
     template_obj.append("date \n")
-    template_obj.append("while ps -p $PID > /dev/null; do sleep 1; done; \n")
-    template_obj.append("date \n")
+    template_obj.append("while ps -p "+pid+" > /dev/null; do sleep 5; done; sleep 5; \n")
     template_obj.append("echo Build completed \n \n")
+    template_obj.append("date \n")
 
 # Contextualizes template script with variables from a list of config dicts
 def populate_template(cfg_dicts, template_obj):
@@ -132,6 +135,8 @@ def generate_build_script(glob_obj):
     common = common_funcs.init(glob)
 
     template_obj = []
+
+    template_obj.append("#!/bin/bash \n")
 
     # Parse template file names
     get_build_templates()
@@ -204,8 +209,7 @@ def generate_bench_script(glob_obj):
 
     template_obj = []
 
-    if glob.stg['bench_mode'] == "local":
-        template_obj.append("#!/bin/bash \n")
+    template_obj.append("#!/bin/bash \n")
 
     # Create dep to running build shell on local node
     if glob.code['metadata']['build_running']:
@@ -229,7 +233,9 @@ def generate_bench_script(glob_obj):
 
     # Take multiple config dicts and populate script template
     if glob.stg['bench_mode'] == "sched":
-        template_obj = populate_template([glob.code['metadata'], glob.code['runtime'], glob.code['config'], glob.sched['sched']], template_obj)
+        template_obj = populate_template(\
+                [glob.code['metadata'], glob.code['runtime'], glob.code['config'], glob.sched['sched'], glob.code['requirements']],\
+                template_obj)
     
     else:
         template_obj = populate_template([glob.code['metadata'], glob.code['runtime'], glob.code['config']], template_obj)

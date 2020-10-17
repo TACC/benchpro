@@ -99,15 +99,18 @@ class init(object):
 
         # Confirm defined modules exist on this system and extract full module name if necessary
         for module in module_dict:
-            try:
-                cmd = subprocess.run(cmd_prefix + "module spider " + module_dict[module], shell=True,
-                                    check=True, capture_output=True, universal_newlines=True)
+            # If module is non Null
+            if module_dict[module]:
+                try:
+                    cmd = subprocess.run(cmd_prefix + "module spider " + module_dict[module], shell=True,
+                                        check=True, capture_output=True, universal_newlines=True)
 
-            except subprocess.CalledProcessError as e:
-                exception.error_and_quit(self.glob.log, module + " module '" + module_dict[module] + "' not available on this system")
+                except subprocess.CalledProcessError as e:
+                    exception.error_and_quit(self.glob.log, module + " module '" + module_dict[module] \
+                                                            + "' not available on this system")
 
-            # Update module with full label
-            module_dict[module] = self.get_full_module_name(module_dict[module], default_modules)
+                # Update module with full label
+                module_dict[module] = self.get_full_module_name(module_dict[module], default_modules)
 
     # Convert module name to usable directory name, Eg: intel/18.0.2 -> intel18
     def get_module_label(self, module):
@@ -161,6 +164,7 @@ class init(object):
 
         installed_list = self.get_installed()
         matched_codes = []
+
         for code_string in installed_list:
             if search_list[0] in code_string:
                 matched_codes.append(code_string)
@@ -283,7 +287,7 @@ class init(object):
         # Uncaptured results + job complete
         pending_results = self.get_pending_results()
         if pending_results:
-            print("NOTE: There are " + str(len(pending_results)) + " uncaptured results found in " + self.rel_path(self.glob.stg['bench_path']))
+            print(self.glob.note + " There are " + str(len(pending_results)) + " uncaptured results found in " + self.rel_path(self.glob.stg['bench_path']))
             print("Run 'benchtool --capture' to send to database.")
             print()
         else:
@@ -413,7 +417,7 @@ class init(object):
         print("Starting script: " + self.rel_path(script_path))
 
         try:
-            with open(os.path.join(working_dir, "build.log"), 'w') as fp:
+            with open(os.path.join(working_dir, "startup.log"), 'w') as fp:
                 cmd = subprocess.Popen(['bash', script_path], stdout=fp, stderr=fp)
 
         except:
@@ -657,9 +661,6 @@ class init(object):
             print(err)
             exception.error_and_quit(self.glob.log, "failed to read [requirements] section of cfg file " + cfg_file)
         
-        # Search for local system tag
-        #search_dict['system'] = self.glob.system['sys_env']
-
         return search_dict 
 
     # Search code_path with values in search_dict
@@ -725,7 +726,7 @@ class init(object):
             try:
                 with open(cfg_file) as cfile:
                     cfg_parser.read_file(cfile)
-                    avail_list.append([cfg_file, cfg_parser['general']['code'], cfg_parser['general']['version'], cfg_parser['build']['build_label']])
+                    avail_list.append([cfg_file, cfg_parser['general']['code'], cfg_parser['general']['version'], cfg_parser['config']['build_label']])
 
             except Exception as err:
                 print(err)
@@ -756,17 +757,19 @@ class init(object):
             sys.exit(1)
 
     # Get the process PID for the build
-    def get_build_pid():
+    def get_build_pid(self):
         print("Trying to get PID for build script")
+        time.sleep(5)
         try:
-            cmd = subprocess.run("ps -aux | grep " + self.glob.user + " | grep bash | grep " + self.glob.code['bench']['label'], shell=True,
+            cmd = subprocess.run("ps -aux | grep " + self.glob.user + " | grep bash | grep build", shell=True,
                                     check=True, capture_output=True, universal_newlines=True)
 
         except subprocess.CalledProcessError as e:
             exception.error_and_quit("Failed to run 'ps -aux'")
+        print("FULL", cmd.stdout.split("\n"))
 
-        pid = cmd.stdout.split(" ")[0]
+        pid = cmd.stdout.split("\n")[0].split(" ")[2]
         if not pid:
-            exception.error_and_quit("Could not determine PID for build script. ps -aux gave: '" + cmd.stdout + "'")
+            exception.error_and_quit(self.glob.log, "Could not determine PID for build script. ps -aux gave: '" + cmd.stdout + "'")
 
         return pid

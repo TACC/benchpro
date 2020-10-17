@@ -39,16 +39,21 @@ def copy_mod_template(module_template):
 
 # Replace <<<>>> vars in copied template
 def populate_mod_template(mod_obj):
-    # Get comma delimited list of build modules
+    # Get comma delimited list of non-Null build modules
+    mod_list = []
+    for key in glob.code['modules']:
+        if glob.code['modules'][key]:
+            mod_list.append(glob.code['modules'][key])
+
     mod = {}
-    mod['mods'] = ', '.join('"{}"'.format(key) for key in glob.code['modules'].values())
+    mod['mods'] = ', '.join('"{}"'.format(m) for m in mod_list)
     # Get capitalized code name for env var
     mod['caps_code'] = glob.code['general']['code'].upper().replace("-", "_")
 
     pop_dict = {**mod, **glob.code['general'], **glob.code['config']}
 
     for key in pop_dict:
-        glob.log.debug("replace " + "<<<" + key + ">>> with " + pop_dict[key])
+        glob.log.debug("replace " + "<<<" + key + ">>> with " + str(pop_dict[key]))
         mod_obj = [line.replace("<<<" + str(key) + ">>>", str(pop_dict[key])) for line in mod_obj]
         
     return mod_obj
@@ -83,8 +88,7 @@ def make_mod(glob_obj):
 
     # Use generic module template if not found for this application
     if not os.path.isfile(module_template):
-        exception.print_warning(glob.log, "module template not found at " + common.rel_path(module_template))
-        exception.print_warning(glob.log, "using a generic module template")
+        exception.print_warning(glob.log, "No " + glob.code['general']['code'] + " module template found, using a generic module template.")
         module_template = os.path.join(glob.stg['template_path'], glob.stg['build_tmpl_dir'], "generic.module")
 
     glob.log.debug("Using module template file: " + module_template)

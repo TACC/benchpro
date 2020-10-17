@@ -47,7 +47,7 @@ class init(object):
             for f in file_list:
                 print(f)
 
-            print("\033[91;1mDeleting in", self.glob.stg['timeout'], "seconds...\033[0m")
+            print("\033[0;31mDeleting in", self.glob.stg['timeout'], "seconds...\033[0m")
             time.sleep(self.glob.stg['timeout'])
             print("No going back now...")
             deleted = self.clean_matching_files(file_list)
@@ -82,7 +82,7 @@ class init(object):
         for app in remove_list:
             # If not installed
             if not app:
-                print("Application '" + code_str  + "' not installed.")
+                print(self.glob.error + code_str  + "' is not installed.")
                 break
 
             # Get module dir from app dir, by adding 'modulefiles' prefix and stripping [version] suffix
@@ -92,7 +92,7 @@ class init(object):
             print("Found application installed in:")
             print(">  " + self.common.rel_path(app_dir))
             print()
-            print("\033[91;1mDeleting in", self.glob.stg['timeout'], "seconds...\033[0m")
+            print("\033[0;31mDeleting in", self.glob.stg['timeout'], "seconds...\033[0m")
             time.sleep(self.glob.stg['timeout'])
             print("No going back now...")
 
@@ -121,7 +121,14 @@ class init(object):
     def query_app(self):
 
         code_str = self.glob.args.queryApp
-        app_path = os.path.join(self.glob.stg['build_path'], self.common.check_if_installed({'code':code_str}))
+        search_dict = {'code':code_str}
+        app_dir = self.common.check_if_installed(search_dict)
+
+        if not app_dir:
+            print("Application '"+code_str+"' is not installed.")
+            sys.exit(1)
+
+        app_path = os.path.join(self.glob.stg['build_path'], self.common.check_if_installed(search_dict))
         build_report = os.path.join(app_path, self.glob.stg['build_report_file'])
         install_path = os.path.join(app_path, self.glob.stg['install_subdir'])
 
@@ -145,7 +152,7 @@ class init(object):
         else:
             # Local build        
             if jobid == "local":
-                print("Build was run in local shell")
+                print("App was built in local shell.")
 
             # Sched build
             else:
@@ -153,6 +160,7 @@ class init(object):
                     print("Build job " + jobid + " for '" + code_str + "' is complete.")
                 else:
                     print("Build job " + jobid + " for '" + code_str + "' is still running.")
+                    return
 
             # Look for exe 
             exe_search = self.common.find_exact(exe, install_path)

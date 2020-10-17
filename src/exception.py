@@ -3,6 +3,11 @@ import glob as gb
 import os
 import sys
 
+# Coloured text
+warning = '\033[1;33mWARNING: \033[0m'
+error = '\033[0;31mERROR: \033[0m'
+success = '\033[0;32mSUCCESS: \033[0m'
+
 # Delete tmp build files if installation fails
 def remove_tmp_files(log):
     file_list = gb.glob('tmp.*')
@@ -16,16 +21,16 @@ def remove_tmp_files(log):
 
 # Print message to log and stdout then continue
 def print_warning(log, message):
-    log.debug("WARNING: " + message)
-    print("WARNING: " + message)
+    log.debug(warning + message)
+    print(warning + message)
 
 # Print message to log and stdout then quit
 def error_and_quit(log, message):
-    log.debug("ERROR: " + message)
+    log.debug(error + message)
     log.debug("Quitting.")
     print()
     print()
-    print("ERROR: " + message)
+    print(error + message)
     print("Check log for details.")
     print("Cleaning up tmp files...")
     remove_tmp_files(log)

@@ -23,7 +23,5 @@ mkdir -p ${working_path} && cd ${working_path}
 
 cp ${benchmark_repo}/in.${dataset} . 
 
-sleep 2
-
 ${mpi_exec} ${exe} -var x ${x} -var y ${y} -var z ${z} -var t ${t} < in.${dataset} > ${output_file}
 

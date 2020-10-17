@@ -18,8 +18,8 @@ def search_cfg_str(cfg_name, search_path):
 
     if os.path.isdir(search_path):
         glob.log.debug("Looking for " + cfg_name + " in " + common.rel_path(search_path) + "...")
-        matches = gb.glob(search_path + glob.stg['sl'] + "*" + cfg_name + "*")
-
+        matches = gb.glob(os.path.join(search_path, "*" + cfg_name + "*"))
+        matches.sort()
         # Unique match
         if len(matches) == 1:
             glob.log.debug("Found")
@@ -47,6 +47,7 @@ def check_file(cfg_type, cfg_name):
     suffix = None
     subdir = None
 
+    glob.log.debug("Checking if " + cfg_name + " is a full path...")
     # 1: check if provided cfg_name is a path
     if cfg_name[0] == "/":
         glob.log.debug("Found")
@@ -96,7 +97,7 @@ def check_file(cfg_type, cfg_name):
     # Not found
     if cfg_type:
         handler = input_handler.init(glob)
-        handler.show_available()
+        handler.show_available(cfg_type, os.path.join(glob.stg['config_path'], cfg_type))
 
         exception.error_and_quit(glob.log, "config file '" + common.rel_path(cfg_name) + "' not found.")
 
@@ -142,6 +143,19 @@ def check_dict_key(cfg_file, cfg_dict, section, key):
     if not cfg_dict[section][key]:
         exception.error_and_quit(glob.log, "'" + key + "' value must be non-null in section [" + section + "] in " + common.rel_path(cfg_file) + ". Consult the documentation.")
 
+# Convert strings to correct dtype if detected
+def get_val_types(cfg_dict):
+    for sect in cfg_dict:
+        for key in cfg_dict[sect]:
+            if cfg_dict[sect][key] in  ["True", "true"]:
+                cfg_dict[sect][key] = True
+            # Test if False
+            elif cfg_dict[sect][key] in ["False", "false"]:
+                cfg_dict[sect][key] = False
+            # Test if int
+            elif cfg_dict[sect][key].isdigit():
+                cfg_dict[sect][key] =  int(cfg_dict[sect][key])
+
 # Check build config file and add required fields
 def process_build_cfg(cfg_dict):
 
@@ -168,11 +182,14 @@ def process_build_cfg(cfg_dict):
     if not 'bin_dir'          in cfg_dict['config'].keys():    cfg_dict['config']['bin_dir']          = ""
     if not 'collect_hw_stats' in cfg_dict['config'].keys():    cfg_dict['config']['collect_hw_stats'] = False
 
+    # Convert dtypes
+    get_val_types(cfg_dict)
+
     # Extract compiler type from label by splitting by / and removing ints
     cfg_dict['config']['compiler_type'] = re.sub("\d", "", cfg_dict['modules']['compiler'].split('/')[0])
 
     # Insert 1 node for build job
-    cfg_dict['config']['nodes'] = "1"
+    cfg_dict['config']['nodes'] = 1
     # Path to application's data directory
     cfg_dict['config']['benchmark_repo'] = glob.stg['benchmark_repo']
 
@@ -200,13 +217,21 @@ def process_build_cfg(cfg_dict):
         exception.error_and_quit(glob.log, "system profile '" + cfg_dict['general']['system'] + "' missing in " + common.rel_path(system_file))
 
     # If arch requested = 'system', get default arch for this system
-    if cfg_dict['config']['arch'] == 'default' or not cfg_dict['config']['arch']:
+    if cfg_dict['config']['arch'] == 'system' or not cfg_dict['config']['arch']:
         cfg_dict['config']['arch'] = glob.system['default_arch']
         glob.log.debug("Requested build arch='default'. Using system default for " + cfg_dict['general']['system'] + " = " + cfg_dict['config']['arch'])
 
     # If using custom opt_flags, must provide build_label
     if cfg_dict['config']['opt_flags'] and not cfg_dict['config']['build_label']:
         exception.error_and_quit(glob.log, "if building with custom optimization flags, please define a 'build_label in [build] section of " + common.rel_path(cfg_dict['metadata']['cfg_file']))
+
+    # Get default optimization flags based on system arch
+    if not cfg_dict['config']['opt_flags']:
+        try:
+            cfg_dict['config']['opt_flags'] = arch_dict[cfg_dict['config']['arch']][cfg_dict['config']['compiler_type']]
+        except:
+            exception.print_warning(glob.log, "Unable to determine default optimization flags for compiler '"\
+                                    + cfg_dict['config']['compiler_type'] + "' on arch:" + cfg_dict['config']['arch'])
 
     # Set default build label
     if not cfg_dict['config']['build_label']:
@@ -235,7 +260,6 @@ def process_bench_cfg(cfg_dict):
     check_dict_key(    cfg_dict['metadata']['cfg_file'], cfg_dict, 'runtime', 'threads')
 
     check_dict_section(cfg_dict['metadata']['cfg_file'], cfg_dict, 'config')
-    check_dict_key(    cfg_dict['metadata']['cfg_file'], cfg_dict, 'config', 'exe')
     check_dict_key(    cfg_dict['metadata']['cfg_file'], cfg_dict, 'config', 'dataset')
 
     check_dict_section(cfg_dict['metadata']['cfg_file'], cfg_dict, 'result')
@@ -253,20 +277,23 @@ def process_bench_cfg(cfg_dict):
     if not 'hostfile'           in cfg_dict['runtime'].keys():  cfg_dict['runtime']['hostfile']          = ""
     if not 'hostlist'           in cfg_dict['runtime'].keys():  cfg_dict['runtime']['hostlist']          = ""
 
+    if not 'exe'                in cfg_dict['config'].keys():    cfg_dict['config']['exe']                 = ""
     if not 'label'              in cfg_dict['config'].keys():    cfg_dict['config']['label']               = ""
     if not 'template'           in cfg_dict['config'].keys():    cfg_dict['config']['template']            = ""
     if not 'collect_hw_stats'   in cfg_dict['config'].keys():    cfg_dict['config']['collect_hw_stats']    = False
 
     if not 'description'        in cfg_dict['result'].keys():   cfg_dict['result']['description']        = ""
 
+    get_val_types(cfg_dict)
+
     # Set default 1 rank per core, if not defined
     if not cfg_dict['runtime']['ranks_per_node']:
         cfg_dict['runtime']['ranks_per_node'] = glob.system['cores_per_node']
 
     # Handle comma-delimited lists
-    cfg_dict['runtime']['nodes']            = cfg_dict['runtime']['nodes'].split(",")
-    cfg_dict['runtime']['threads']          = cfg_dict['runtime']['threads'].split(",")
-    cfg_dict['runtime']['ranks_per_node']   = cfg_dict['runtime']['ranks_per_node'].split(",")
+    cfg_dict['runtime']['nodes']            = str(cfg_dict['runtime']['nodes']).split(",")
+    cfg_dict['runtime']['threads']          = str(cfg_dict['runtime']['threads']).split(",")
+    cfg_dict['runtime']['ranks_per_node']   = str(cfg_dict['runtime']['ranks_per_node']).split(",")
 
     # num threads must equal num ranks
     if not len(cfg_dict['runtime']['threads']) == len(cfg_dict['runtime']['ranks_per_node']):
@@ -348,6 +375,7 @@ def ingest_cfg(cfg_type, cfg_name, glob_obj):
 
     # Check input file exists
     cfg_file = check_file(cfg_type, cfg_name)
+
     # Parse input fo;e
     cfg_dict = read_cfg_file(cfg_file)
 

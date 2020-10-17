@@ -13,11 +13,6 @@ echo "Slurm Job ID: ${SLURM_JOB_ID}"
 echo "Host: ${HOSTNAME}"
 echo "User: ${USER}"
 
-ml reset
-ml ${compiler}
-ml ${mpi}
-ml
-
 mkdir -p ${build_path}
 
 tar -xf ${benchmark_repo}/lammps-${version}.tgz -C ${build_path}

@@ -91,7 +91,7 @@ def main():
 
     # Use system default scheduler profile
     if glob.args.sched == "system":
-        glob.args.sched = "slurm-" + os.getenv('TACC_SYSTEM') + ".cfg"
+        glob.args.sched = "slurm_" + os.getenv('TACC_SYSTEM')
 
     handler = input_handler.init(glob)
 

@@ -178,38 +178,45 @@ def get_insert_dict(result_dir, result, unit):
         print(e)
         exception.print_warning(glob.log, "Failed to read key 'jobid' in " + common.rel_path(bench_report) + ". Skipping.")
         return False
-   
+  
+    elapsed_time = None
+    end_time = None
+    submit_time = get_required_key(report_parser, 'bench', 'start_time')
+    # Handle local exec
+    if jobid == "local":
+        elapsed_time = 0
+        end_time = submit_time
+        jobid = "0"
+
+    else:
+        elapsed_time = common.get_elapsed_time(jobid)
+        end_time = common.get_end_time(jobid)
+
     nodelist = common.get_nodelist(jobid)
 
     insert_dict = {}
-
-    try:
-        insert_dict['username']         = glob.user
-        insert_dict['system']           = get_required_key(report_parser, 'build', 'system')
-        insert_dict['submit_time']      = get_required_key(report_parser, 'bench', 'start_time')
-        insert_dict['elapsed_time']     = common.get_elapsed_time(jobid)
-        insert_dict['end_time']         = common.get_end_time(jobid)
-        insert_dict['description']      = get_optional_key(report_parser, 'bench', 'description')
-        insert_dict['jobid']            = jobid
-        insert_dict['nodelist']         = ", ".join(nodelist)
-        insert_dict['nodes']            = get_required_key(report_parser, 'bench', 'nodes')
-        insert_dict['ranks']            = get_required_key(report_parser, 'bench', 'ranks')
-        insert_dict['threads']          = get_required_key(report_parser, 'bench', 'threads')
-        insert_dict['code']             = get_required_key(report_parser, 'build', 'code')
-        insert_dict['version']          = get_optional_key(report_parser, 'build', 'version')
-        insert_dict['compiler']         = get_optional_key(report_parser, 'build', 'compiler')
-        insert_dict['mpi']              = get_optional_key(report_parser, 'build', 'mpi')
-        insert_dict['modules']          = get_optional_key(report_parser, 'build', 'modules')
-        insert_dict['dataset']          = get_required_key(report_parser, 'bench', 'dataset')
-        insert_dict['result']           = str(result)
-        insert_dict['result_unit']      = unit
-        insert_dict['resource_path']    = os.path.join(glob.user, insert_dict['system'], insert_dict['jobid'])
+   
+    insert_dict['username']         = glob.user
+    insert_dict['system']           = get_required_key(report_parser, 'build', 'system')
+    insert_dict['submit_time']      = submit_time
+    insert_dict['elapsed_time']     = elapsed_time
+    insert_dict['end_time']         = end_time
+    insert_dict['description']      = get_optional_key(report_parser, 'bench', 'description')
+    insert_dict['jobid']            = jobid
+    insert_dict['nodelist']         = ", ".join(nodelist)
+    insert_dict['nodes']            = get_required_key(report_parser, 'bench', 'nodes')
+    insert_dict['ranks']            = get_required_key(report_parser, 'bench', 'ranks')
+    insert_dict['threads']          = get_required_key(report_parser, 'bench', 'threads')
+    insert_dict['code']             = get_required_key(report_parser, 'build', 'code')
+    insert_dict['version']          = get_optional_key(report_parser, 'build', 'version')
+    insert_dict['compiler']         = get_optional_key(report_parser, 'build', 'compiler')
+    insert_dict['mpi']              = get_optional_key(report_parser, 'build', 'mpi')
+    insert_dict['modules']          = get_optional_key(report_parser, 'build', 'modules')
+    insert_dict['dataset']          = get_required_key(report_parser, 'bench', 'dataset')
+    insert_dict['result']           = str(result)
+    insert_dict['result_unit']      = unit
+    insert_dict['resource_path']    = os.path.join(glob.user, insert_dict['system'], insert_dict['jobid'])
     
-    except Exception as e:
-        print(e)
-        exception.print_warning(glob.log, "Failed to read a key in " + common.rel_path(bench_report) + ". Skipping.")
-        return False
-
     # Confirm model fields have all been filled
     model_fields = get_table_fields()
     insert_fields = insert_dict.keys()

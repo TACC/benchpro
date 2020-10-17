@@ -8,6 +8,12 @@ import sys
 # Global constants
 class settings(object):
 
+    # Coloured text
+    warning     = '\033[1;33mWARNING: \033[0m'
+    error       = '\033[0;31mERROR: \033[0m'
+    success     = '\033[0;32mSUCCESS: \033[0m'
+    note        = '\033[0;34mNOTE: \033[0m'
+
     # Create logging obj
     log = None
 
@@ -16,6 +22,7 @@ class settings(object):
     code     = {}
     sched    = {}
     compiler = {}
+    suite    = {}
 
     # Context variables
     user                = str(os.getlogin())
@@ -73,7 +80,7 @@ class settings(object):
                     self.stg[key] = self.process(key, settings_parser[section][key])
 
         # Read suites into own dict
-        suite = dict(settings_parser.items('suites'))
+        self.suite = dict(settings_parser.items('suites'))
 
         self.stg['script_basedir']   = self.resolve_path(self.stg['script_basedir'])
         self.stg['ssh_key_dir']      = self.resolve_path(self.stg['ssh_key_dir'])

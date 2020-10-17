@@ -15,7 +15,7 @@ class init(object):
     # Return True if operators are found in string
     def has_arithmatic(self, expr):
         matching_ops = ['\+', '\-', '\*', '\/', '\**']
-        if any(op in expr for op in matching_ops):
+        if any(op in str(expr) for op in matching_ops):
             return True
         else:
             return False
@@ -51,9 +51,10 @@ class init(object):
         global dicts_to_search 
         dicts_to_search = [self.glob.code['runtime'], self.glob.code['config'], self.glob.system]
 
+
         for key in cfg_dict:
             # Get list of {variables}
-            var_list = re.findall('\{([^}]+)',cfg_dict[key])
+            var_list = re.findall('\{([^}]+)',str(cfg_dict[key]))
             # Replace all vars in each dict value
             for var in var_list:
                 new_val = self.look_for_replacement(var)

@@ -28,7 +28,7 @@ def check_for_previous_install():
 
             print()
             print("WARNING: Application directory already exists and 'overwrite=True' in settings.ini")
-            print("\033[91;1mDeleting in 5 seconds...\033[0m")
+            print("\033[0;31mDeleting in 5 seconds...\033[0m")
             print()
 
             time.sleep(glob.stg['timeout'])
@@ -149,9 +149,12 @@ def build_code(code_label):
     # Clean up tmp files
     exception.remove_tmp_files(glob.log)
 
+    print(glob.success)
+
     # If dry_run
     if glob.stg['dry_run']:
-        exception.print_warning(glob.log, "This was a dryrun, skipping build step. Script created at " + common.rel_path(os.path.join(glob.code['general']['working_path'], glob.tmp_script[4:])))
+        print("This was a dryrun, skipping build step. Script created at:")
+        print(">  " + common.rel_path(os.path.join(glob.code['general']['working_path'], glob.tmp_script[4:])))
         jobid = "dry_run"
 
     else:
