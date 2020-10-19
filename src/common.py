@@ -78,7 +78,7 @@ class init(object):
         if not '/' in module:
             # Get default module version from 
             for line in default_modules:
-                if module+"/" in line:
+                if line.startswith(module):
                     return line
             else:
                 exception.error_and_quit(self.glob.log, "failed to process module '" + module + "'")
@@ -215,7 +215,7 @@ class init(object):
         state = cmd.stdout.split("\n")[2]
 
         # Job COMPLETE
-        if ("COMPLETED" in state) or ("CANCELLED" in state) or ("ERROR" in state):
+        if any (state == x for x in ["COMPLETED", "CANCELLED", "ERROR", "FAILED"]):
             return True
 
         # Job RUNNING or PENDING

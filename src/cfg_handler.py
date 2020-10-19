@@ -246,7 +246,7 @@ def process_build_cfg(cfg_dict):
     # Translate 'build_prefix' to 'working_path' for better readability
     else:
         cfg_dict['general']['working_path'] = cfg_dict['general']['build_prefix']
-    
+
     # Get build and install subdirs
     cfg_dict['general']['build_path']   = cfg_dict['general']['working_path'] + glob.stg['sl'] + glob.stg['build_subdir']
     cfg_dict['general']['install_path'] = cfg_dict['general']['working_path'] + glob.stg['sl'] + glob.stg['install_subdir']
