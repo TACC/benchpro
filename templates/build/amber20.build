@@ -67,6 +67,8 @@ fi
 # Build CUDA
 if [ ! -z ${cuda} ]; then
 
+  ml ${}
+
   # Add Ampere arch support
   sed -i '1255i\      sm80flags="-gencode arch=compute_80,code=sm_80"' AmberTools/src/configure2
 

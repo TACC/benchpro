@@ -215,7 +215,7 @@ class init(object):
         state = cmd.stdout.split("\n")[2]
 
         # Job COMPLETE
-        if any (state == x for x in ["COMPLETED", "CANCELLED", "ERROR", "FAILED"]):
+        if any (state.strip() == x for x in ["COMPLETED", "CANCELLED", "ERROR", "FAILED"]):
             return True
 
         # Job RUNNING or PENDING

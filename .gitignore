@@ -9,12 +9,9 @@ __pycache__/
 # Distribution / packaging
 hw_reporting/hw_report*
 .Python
-build/modulefiles/stampede2
-build/modulefiles/frontera
-build/stampede2
-build/frontera
-results/stampede2*
-results/frontera*
+build/*
+!build/modulefiles/builder.lua
+results/*
 develop-eggs/
 dist/
 downloads/
