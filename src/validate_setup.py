@@ -3,6 +3,8 @@
 #System Imports
 import configparser as cp
 import os 
+import psycopg2
+from psycopg2 import sql
 import shutil as sh
 import subprocess
 import sys
@@ -14,6 +16,14 @@ class bcolors:
     PASS = '\033[92mPASS:\033[0m'
     FAIL = '\033[91mFAIL:\033[0m'
     CREATE = '\033[94mCREATE:\033[0m'
+
+# Check python version 
+def check_python_version():
+    ver = sys.version.split(" ")[0]
+    if (ver[0] ==  3) and (ver[1] < 5):
+        print(bcolors.FAIL, "Python version: " + ver)
+    else:
+        print(bcolors.PASS, "Python version: " + ver)
 
 # Create path
 def create_path(path):
@@ -81,20 +91,49 @@ def check_ssh_connect(host, user, key):
     except subprocess.CalledProcessError as e:
         print(bcolors.FAIL, "connected to", host)
 
+def check_db_connect(glob):
+    try:
+        conn = psycopg2.connect(
+            dbname =    glob.stg['db_name'],
+            user =      glob.stg['db_user'],
+            host =      glob.stg['db_host'],
+            password =  glob.stg['db_passwd']
+        )
+    except Exception as err:
+        print (bcolors.FAIL, "connected to", glob.stg['db_name'])
+        sys.exit(1)
+
+    print (bcolors.PASS, "connected to", glob.stg['db_name'])
+
+
+
 # Validate setup 
 def check_setup(glob_obj):
     global glob
     glob = glob_obj
 
+    # Python version
+    check_python_version()
+
+    # Sys envs
     base_env = glob.stg['topdir_env_var'].strip("$")
     system_env = glob.stg['system_env'].strip("$")
-
     check_env_vars([system_env, base_env, 'LMOD_VERSION'])
+
+    # Check priv
     base_dir = os.environ.get(base_env)
     check_write_priv(base_dir)
 
+    # Check paths
     confirm_path_exists([glob.stg['log_path'], glob.stg['build_path']])
-
     ensure_path_exists([glob.stg['benchmark_repo'], glob.stg['config_path'], glob.stg['template_path']])
+
+
+    # Check exe
     check_exe(['benchtool', 'sinfo', 'sacct'])
+
+    # Check db host access
     check_ssh_connect(glob.stg['db_host'], glob.stg['ssh_user'], os.path.join(base_dir, "auth", glob.stg['ssh_key']))
+
+    # Check db access
+    check_db_connect(glob)
