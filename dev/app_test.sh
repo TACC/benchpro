@@ -2,7 +2,8 @@
 
 source sourceme
 
-APP=quantum
+APP=lammps
+BENCH=ljmelt
 
 # Remove existing installation
 benchtool --remove $APP		> /dev/null
@@ -11,7 +12,7 @@ echo "EXIT CODES:"
 benchtool --avail			> /dev/null
 echo     "--avail       $?"
 
-benchtool --build $APP --var dry_run=True	> /dev/null
+benchtool --build $APP --overload dry_run=True	> /dev/null
 echo     "--build       $?"
 
 benchtool --installed		> /dev/null
@@ -20,7 +21,7 @@ echo     "--installed   $?"
 benchtool --queryApp $APP	> /dev/null
 echo     "--queryApp    $?"
 
-benchtool --bench $APP --var dry_run=True > /dev/null
+benchtool --bench $BENCH --overload dry_run=True > /dev/null
 echo     "--bench       $?"
 
 benchtool --remove $APP  	> /dev/null

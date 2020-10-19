@@ -1,11 +1,13 @@
+# System imports
 import logging as lg
+import os
 
 # Start logger and return obj
 def start_logging(log_label, log_file, glob):
 
-    log_path = glob.stg['log_path'] + glob.stg['sl'] + log_file
+    log_path = os.path.join(glob.stg['log_path'], log_file)
 
-    print("Log file:   " + glob.stg['topdir_env_var'] + glob.stg['sl'] + glob.stg['log_dir']  + glob.stg['sl'] + log_file)
+    print("Log file:   " + os.path.join(glob.stg['topdir_env_var'], glob.stg['log_dir'], log_file))
     print()
 
     formatter = lg.Formatter("{0}: ".format(log_label) + glob.user + "@" + glob.hostname + ": " + \

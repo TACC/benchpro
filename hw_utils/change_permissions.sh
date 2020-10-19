@@ -1,5 +1,5 @@
 #!/bin/bash
-if [ $USER != "root" ]
+if [ `whoami` != "root" ]
 then
 	echo "Run as root."
 	exit 1

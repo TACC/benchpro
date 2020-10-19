@@ -39,24 +39,39 @@ def fill_modules(template_obj):
     if glob.code['general']['module_use']:
         template_obj.append("ml use " + glob.code['general']['module_use'] + "\n")
 
+    # Add non Null modules 
     for mod in glob.code['modules']:
-        template_obj.append("ml " + glob.code['modules'][mod] + "\n")
+        if glob.code['modules'][mod]:
+            template_obj.append("ml " + glob.code['modules'][mod] + "\n")
+
     template_obj.append("ml \n")
 
 # Add things to the bottom of the build script
 def template_epilog(template_obj):
 
     # Add sanity check
-    if glob.code['build']['exe']:
-        template_obj.append("ldd $(which " + glob.code['build']['exe'] + ") \n")
+    if glob.code['config']['exe']:
+        template_obj.append("ldd $(which " + glob.code['config']['exe'] + ") \n")
 
     # Add hardware collection script to job script
-    if glob.code['build']['collect_hw_stats']:
+    if glob.code['config']['collect_hw_stats']:
         if common.file_owner(glob.stg['utils_path'] + glob.stg['sl'] + "lshw") == "root":
             template_obj.append(glob.stg['src_path'] + glob.stg['sl'] + "collect_hw_info.sh " + glob.stg['utils_path'] + " " + \
                             glob.code['general']['working_path'] + glob.stg['sl'] + "hw_report" + "\n")
         else:
             exception.print_warning(glob.log, "Requested hardware stats but persmissions not set, run 'sudo hw_utils/change_permissions.sh'")
+
+# Add dependency to build process (if building locally)
+def add_process_dep(template_obj):
+
+    pid = common.get_build_pid()
+    glob.log.debug("Adding dependency to benchmark script, waiting for PID: " + pid)
+
+    template_obj.append("echo Waiting for build to complete \n")
+    template_obj.append("date \n")
+    template_obj.append("while ps -p "+pid+" > /dev/null; do sleep 5; done; sleep 5; \n")
+    template_obj.append("echo Build completed \n \n")
+    template_obj.append("date \n")
 
 # Contextualizes template script with variables from a list of config dicts
 def populate_template(cfg_dicts, template_obj):
@@ -73,11 +88,12 @@ def populate_template(cfg_dicts, template_obj):
 def get_build_templates():
 
     # Temp build script
-    glob.tmp_script = "tmp." + glob.code['general']['code'] + "-build." + glob.sched['sched']['type']
+    glob.tmp_script = "tmp." + glob.code['general']['code'] + "-build." + glob.stg['build_mode']
 
     # === Scheduler template file ===
 
-    glob.sched['template'] = common.find_exact(glob.sched['sched']['type'] + ".template", glob.stg['template_path'])
+    if glob.stg['build_mode'] == "sched":
+        glob.sched['template'] = common.find_exact(glob.sched['sched']['type'] + ".template", glob.stg['template_path'])
 
     # === Application template file ===
 
@@ -85,10 +101,10 @@ def get_build_templates():
     if glob.code['general']['template']:
         glob.code['template'] = glob.code['general']['template']
     else:
-        glob.code['template'] = glob.code['metadata']['cfg_label'] + ".build"
+        glob.code['template'] = glob.code['metadata']['cfg_label']
 
     # Search for application template file
-    build_template_search = common.find_partial(glob.code['template'], glob.stg['template_path'] + glob.stg['sl'] + glob.stg['build_tmpl_dir'])
+    build_template_search = common.find_partial(glob.code['template'], os.path.join(glob.stg['template_path'], glob.stg['build_tmpl_dir']))
 
     # Error if not found
     if not build_template_search:
@@ -103,7 +119,7 @@ def get_build_templates():
     # Get compiler cmds for gcc/intel/pgi, otherwise compiler type is unknown
     known_compiler_type = True
     try:
-        glob.compiler['common'].update(glob.compiler[glob.code['build']['compiler_type']])
+        glob.compiler['common'].update(glob.compiler[glob.code['config']['compiler_type']])
         glob.compiler['template'] = common.find_exact(glob.stg['compile_tmpl_file'], glob.stg['template_path'])
     except:
         glob.compiler['template'] = None
@@ -120,18 +136,24 @@ def generate_build_script(glob_obj):
 
     template_obj = []
 
-    # Get ranks from threads (?)
-    glob.sched['sched']['ranks'] = 1
-    # Get job label
-    glob.sched['sched']['job_label'] = glob.code['general']['code'] + "_build"
+    template_obj.append("#!/bin/bash \n")
 
     # Parse template file names
     get_build_templates()
 
-    # Take multiple input template files and combine them to generate unpopulated script
-    construct_template(template_obj, glob.sched['template'])
-    # Add reservation line to SLURM params if set
-    add_reservation(template_obj)
+    # Add scheduler directives if contructing job script
+    if glob.stg['build_mode'] == "sched":
+        # Get ranks from threads (?)
+        glob.sched['sched']['ranks'] = 1
+        # Get job label
+        glob.sched['sched']['job_label'] = glob.code['general']['code'] + "_build"
+
+
+        # Take multiple input template files and combine them to generate unpopulated script
+        construct_template(template_obj, glob.sched['template'])
+
+        # Add reservation line to SLURM params if set
+        add_reservation(template_obj)
 
     # Fill modules from cfg
     fill_modules(template_obj)
@@ -142,7 +164,9 @@ def generate_build_script(glob_obj):
     template_epilog(template_obj)
 
     # Populate template list with cfg dicts
-    template_obj = populate_template([glob.code['general'], glob.code['modules'], glob.code['build'], glob.sched['sched'], glob.compiler['common']], template_obj)
+    template_obj = populate_template([glob.code['general'], glob.code['modules'], glob.code['config'], glob.sched['sched'], glob.compiler['common']], template_obj)
+
+
     # Test for missing parameters
     common.test_template(template_obj)
 
@@ -152,24 +176,27 @@ def generate_build_script(glob_obj):
 def get_bench_templates():
     # Template files
 
-    glob.tmp_script = "tmp." + glob.code['bench']['code']  + "-bench." + glob.sched['sched']['type'] 
+    # Temp job script 
+    glob.tmp_script = "tmp." + glob.code['config']['label']  + "-bench." + glob.stg['bench_mode'] 
     
-    glob.sched['template'] = common.find_exact(glob.sched['sched']['type'] + ".template", glob.stg['template_path'] + glob.stg['sl'] + glob.stg['sched_tmpl_dir'])
+    # Scheduler template file
+    if glob.stg['bench_mode'] == "sched":
+        glob.sched['template'] = common.find_exact(glob.sched['sched']['type'] + ".template", os.path.join(glob.stg['template_path'], glob.stg['sched_tmpl_dir']))
 
     # Set bench template to default, if set in bench.cfg: overload
-    if glob.code['bench']['template']:
-        glob.code['template'] = glob.code['bench']['template']
+    if glob.code['config']['template']:
+        glob.code['template'] = glob.code['config']['template']
     else:
-        glob.code['template'] = glob.code['bench']['code'] + "-" + glob.code['bench']['version'] + ".bench"
+        glob.code['template'] = glob.code['config']['label']
 
-    bench_template_search = common.find_partial(glob.code['template'], glob.stg['template_path'] + glob.stg['sl'] + glob.stg['bench_tmpl_dir'])
+    bench_template_search = common.find_partial(glob.code['template'], os.path.join(glob.stg['template_path'],glob.stg['bench_tmpl_dir']))
 
     if not bench_template_search:
-        exception.error_and_quit(glob.log, "failed to locate bench template '" + glob.code['template'] + "' in " + common.rel_path(glob.stg['template_path'] + glob.stg['sl'] + glob.stg['bench_tmpl_dir']))
+        exception.error_and_quit(glob.log, "failed to locate bench template '" + glob.code['template'] + "' in " + common.rel_path(os.path.join(glob.stg['template_path'], glob.stg['bench_tmpl_dir'])))
     else:
         glob.code['template'] = bench_template_search
 
-    glob.code['bench']['job_script'] = glob.code['bench']['code'] + "-bench." + glob.sched['sched']['type']
+    glob.code['metadata']['job_script'] = glob.code['config']['label'] + "-bench." + glob.stg['bench_mode']
 
 
 def generate_bench_script(glob_obj):
@@ -183,23 +210,36 @@ def generate_bench_script(glob_obj):
 
     template_obj = []
 
+    template_obj.append("#!/bin/bash \n")
+
+    # Create dep to running build shell on local node
+    if glob.code['metadata']['build_running']:
+        add_process_dep(template_obj)  
+
     get_bench_templates()
 
-    construct_template(template_obj, glob.sched['template'])
-
-    add_reservation(template_obj)
+    # If generate sched script
+    if glob.stg['bench_mode'] == "sched":
+        construct_template(template_obj, glob.sched['template'])
+        add_reservation(template_obj)
 
     construct_template(template_obj, glob.code['template'])
 
     # Add hardware collection script to job script
-    if glob.code['bench']['collect_hw_stats']:
-        if common.file_owner(glob.stg['utils_path'] + glob.stg['sl'] + "lshw") == "root":
-            template_obj.append(glob.stg['src_path'] + glob.stg['sl'] + "collect_hw_info.sh " + glob.stg['utils_path'] + " " + glob.code['bench']['working_path'] + glob.stg['sl'] + "hw_report \n")
+    if glob.code['config']['collect_hw_stats']:
+        if common.file_owner(os.path.join(glob.stg['utils_path'], "lshw")) == "root":
+            template_obj.append(os.path.join(glob.stg['src_path'], "collect_hw_info.sh " + glob.stg['utils_path'] + " " + glob.code['metadata']['working_path'], "hw_report \n"))
         else:
             exception.print_warning(glob.log, "Requested hardware stats but persmissions not set, run 'sudo hw_utils/change_permissions.sh'")
 
     # Take multiple config dicts and populate script template
-    template_obj = populate_template([glob.code['sched'], glob.code['bench'], glob.sched['sched']], template_obj)
+    if glob.stg['bench_mode'] == "sched":
+        template_obj = populate_template(\
+                [glob.code['metadata'], glob.code['runtime'], glob.code['config'], glob.sched['sched'], glob.code['requirements']],\
+                template_obj)
+    
+    else:
+        template_obj = populate_template([glob.code['metadata'], glob.code['runtime'], glob.code['config']], template_obj)
 
     # Test for missing parameters
     common.test_template(template_obj)

@@ -1,4 +1,3 @@
-#!/bin/bash
 #SBATCH -J <<<job_label>>>
 #SBATCH -o <<<working_path>>>/%j.out
 #SBATCH -e <<<working_path>>>/%j.err

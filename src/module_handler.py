@@ -13,10 +13,10 @@ glob = common = None
 def check_for_existing_module(mod_path, mod_file):
 
     # Check if module already exists
-    if os.path.isfile(mod_path + glob.stg['sl'] + mod_file):
+    if os.path.isfile(os.path.join(mod_path, mod_file)):
 
         if glob.stg['overwrite']:
-            exception.print_warning(glob.log, "deleting old module in " + common.rel_path(mod_path) + " because 'overwrite=True' in settings.cfg")
+            exception.print_warning(glob.log, "deleting old module in " + common.rel_path(mod_path) + " because 'overwrite=True' in settings.ini")
             su.rmtree(mod_path)
             os.makedirs(mod_path)
 
@@ -39,16 +39,21 @@ def copy_mod_template(module_template):
 
 # Replace <<<>>> vars in copied template
 def populate_mod_template(mod_obj):
-    # Get comma delimited list of build modules
+    # Get comma delimited list of non-Null build modules
+    mod_list = []
+    for key in glob.code['modules']:
+        if glob.code['modules'][key]:
+            mod_list.append(glob.code['modules'][key])
+
     mod = {}
-    mod['mods'] = ', '.join('"{}"'.format(key) for key in glob.code['modules'].values())
+    mod['mods'] = ', '.join('"{}"'.format(m) for m in mod_list)
     # Get capitalized code name for env var
     mod['caps_code'] = glob.code['general']['code'].upper().replace("-", "_")
 
-    pop_dict = {**mod, **glob.code['general'], **glob.code['build']}
+    pop_dict = {**mod, **glob.code['general'], **glob.code['config']}
 
     for key in pop_dict:
-        glob.log.debug("replace " + "<<<" + key + ">>> with " + pop_dict[key])
+        glob.log.debug("replace " + "<<<" + key + ">>> with " + str(pop_dict[key]))
         mod_obj = [line.replace("<<<" + str(key) + ">>>", str(pop_dict[key])) for line in mod_obj]
         
     return mod_obj
@@ -72,20 +77,19 @@ def make_mod(glob_obj):
     glob.log.debug("Creating module file for " + glob.code['general']['code'])
 
     # Get module file path
-    mod_path = glob.stg['module_path'] + glob.stg['sl'] + glob.code['general']['system'] +  glob.stg['sl'] + glob.code['build']['arch'] + glob.stg['sl'] + common.get_module_label(glob.code['modules']['compiler']) + \
-               glob.stg['sl'] + common.get_module_label(glob.code['modules']['mpi']) + glob.stg['sl'] + glob.code['general']['code'] + glob.stg['sl'] + glob.code['general']['version']
+    mod_path = os.path.join(glob.stg['module_path'], glob.code['general']['system'], glob.code['config']['arch'], common.get_module_label(glob.code['modules']['compiler']), \
+                            common.get_module_label(glob.code['modules']['mpi']), glob.code['general']['code'], str(glob.code['general']['version']))
 
-    mod_file = glob.code['build']['build_label'] + ".lua"
+    mod_file = glob.code['config']['build_label'] + ".lua"
 
     check_for_existing_module(mod_path, mod_file)
 
-    module_template = glob.stg['template_path'] + glob.stg['sl'] + glob.stg['build_tmpl_dir'] + glob.stg['sl'] + glob.code['general']['code'] + "-" + glob.code['general']['version'] + ".module"
+    module_template = os.path.join(glob.stg['template_path'], glob.stg['build_tmpl_dir'], glob.code['general']['code'] + "-" + str(glob.code['general']['version']) + ".module")
 
     # Use generic module template if not found for this application
     if not os.path.isfile(module_template):
-        exception.print_warning(glob.log, "module template not found at " + common.rel_path(module_template))
-        exception.print_warning(glob.log, "using a generic module template")
-        module_template = glob.stg['template_path'] + glob.stg['sl'] + glob.stg['build_tmpl_dir'] + glob.stg['sl'] + "generic.module"
+        exception.print_warning(glob.log, "No " + glob.code['general']['code'] + " module template found, using a generic module template.")
+        module_template = os.path.join(glob.stg['template_path'], glob.stg['build_tmpl_dir'], "generic.module")
 
     glob.log.debug("Using module template file: " + module_template)
 

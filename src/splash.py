@@ -13,7 +13,7 @@ def print_splash(glob):
 
     print("  ->User         :", glob.user)
     print("  ->System       :", glob.hostname)
-    print("  ->$TOPDIR      :", glob.basedir)
+    print("  ->$BENCHTOOL   :", glob.basedir)
     print("  ->Date         :", glob.time_str)
     print("------------------------------------------------------------------")
 
