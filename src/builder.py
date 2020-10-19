@@ -40,7 +40,7 @@ def check_for_previous_install():
         # Else warn and skip build
         else:
             exception.print_warning(glob.log, "It seems this app is already installed in " + common.rel_path(install_path) +
-                                     ".\n The install directory already exists and 'overwrite=False' in settings.ini. Skipping build.")
+                                     ".\nThe install directory already exists and 'overwrite=False' in settings.ini. Skipping build.")
             return True
     # Installation not found
     else:
@@ -53,7 +53,7 @@ def generate_build_report(jobid):
     with open(report_file, 'a') as out:
         out.write("[build]\n")
         out.write("code           = "+ glob.code['general']['code']             + "\n")
-        out.write("version        = "+ glob.code['general']['version']          + "\n")
+        out.write("version        = "+ str(glob.code['general']['version'])     + "\n")
         out.write("system         = "+ glob.code['general']['system']           + "\n")
         out.write("compiler       = "+ glob.code['modules']['compiler']         + "\n")
         out.write("mpi            = "+ glob.code['modules']['mpi']              + "\n")

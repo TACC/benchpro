@@ -176,9 +176,10 @@ def generate_build_script(glob_obj):
 def get_bench_templates():
     # Template files
 
+    # Temp job script 
     glob.tmp_script = "tmp." + glob.code['config']['label']  + "-bench." + glob.stg['bench_mode'] 
     
-
+    # Scheduler template file
     if glob.stg['bench_mode'] == "sched":
         glob.sched['template'] = common.find_exact(glob.sched['sched']['type'] + ".template", os.path.join(glob.stg['template_path'], glob.stg['sched_tmpl_dir']))
 

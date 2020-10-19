@@ -241,7 +241,7 @@ def process_build_cfg(cfg_dict):
     if not cfg_dict['general']['build_prefix']:
         cfg_dict['general']['working_path'] = os.path.join(glob.stg['build_path'], cfg_dict['general']['system'], cfg_dict['config']['arch'],\
                                                 common.get_module_label(cfg_dict['modules']['compiler']), common.get_module_label(cfg_dict['modules']['mpi']), \
-                                                cfg_dict['general']['code'], cfg_dict['general']['version'], cfg_dict['config']['build_label'])
+                                                cfg_dict['general']['code'], str(cfg_dict['general']['version']), cfg_dict['config']['build_label'])
 
     # Translate 'build_prefix' to 'working_path' for better readability
     else:

@@ -32,6 +32,7 @@ def generate_bench_report(build_report, jobid):
         out.write("[bench]\n")
         out.write("bench_path  = "+ glob.code['metadata']['working_path']   + "\n")
         out.write("system      = "+ glob.system['sys_env']                  + "\n")
+        out.write("launch node = "+ glob.hostname                           + "\n")
         out.write("code        = "+ glob.code['config']['label']            + "\n")
         out.write("nodes       = "+ glob.code['runtime']['nodes']           + "\n")
         out.write("ranks       = "+ glob.code['runtime']['ranks_per_node']  + "\n")
@@ -161,11 +162,17 @@ def run_bench(input_label):
     # Check for empty overload params
     common.check_for_unused_overloads()
 
+    # Check if MPI is allow on this host
+    if glob.stg['bench_mode'] == "local":
+        if not common.check_mpi_allowed():
+            exception.error_and_quit(glob.log, "MPI execution is not allowed on this host!")
+
+    # Use code name for label if not set
     if not glob.code['config']['label']:
         glob.code['config']['label'] = glob.code['requirements']['code']
 
     # Print inputs to log
-    #common.send_inputs_to_log('Bencher')
+    common.send_inputs_to_log('Bencher')
 
     jobs = glob.code['runtime']['nodes']
     counter = 1
@@ -273,10 +280,6 @@ def run_bench(input_label):
     
                 # Local run
                 elif glob.stg['bench_mode'] == "local":
-                    # Check if MPI is allow on this host
-                    if not common.check_mpi_allowed():
-                        exception.error_and_quit(glob.log, "MPI execution is not allowed on this host!")
-
                     common.start_local_shell(glob.code['metadata']['working_path'], glob.tmp_script[4:])
                     jobid = "local"
 
@@ -304,7 +307,6 @@ def init(glob_obj):
     # Either bench codes in suite or user label
     input_list = []
     if 'suite' in glob.args.bench:
-        print("**", glob.suite)
         if glob.args.bench in glob.suite.keys():
             input_list = glob.suite[glob.args.bench].split(',')
             print("Benching application set '" + glob.args.bench + "': " + str(input_list))

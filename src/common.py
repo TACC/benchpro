@@ -287,7 +287,8 @@ class init(object):
         # Uncaptured results + job complete
         pending_results = self.get_pending_results()
         if pending_results:
-            print(self.glob.note + " There are " + str(len(pending_results)) + " uncaptured results found in " + self.rel_path(self.glob.stg['bench_path']))
+            print(self.glob.note)
+            print("There are " + str(len(pending_results)) + " uncaptured results found in " + self.rel_path(self.glob.stg['bench_path']))
             print("Run 'benchtool --capture' to send to database.")
             print()
         else:
