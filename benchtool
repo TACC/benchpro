@@ -60,6 +60,9 @@ def main():
     cmd_parser.add_argument("--avail", default=False, action='store_true',
                             help="Show all available application profiles.")
 
+    cmd_parser.add_argument("--defaults", default=False, action='store_true',
+                            help="Print default options from settings.ini")
+
     cmd_parser.add_argument("--remove", default=False,
                             help="Remove an installed application.")
 
@@ -117,6 +120,10 @@ def main():
     # Show installed and exit
     elif args.installed:
         handler.show_installed()
+
+    # Print defaults
+    elif args.defaults:
+        handler.print_defaults()
 
     # Show available and exit
     elif args.avail:

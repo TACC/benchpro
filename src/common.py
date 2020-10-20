@@ -459,9 +459,10 @@ class init(object):
             print(cmd.stdout)
 
             print()
-            print("Job " + jobid + " output log:")
+            print("Job " + jobid + " stdout:")
             print(">  "+ self.rel_path(os.path.join(job_path, jobid + ".out")))
-            print("Job " + jobid + " error log:")
+
+            print("Job " + jobid + " stderr:")
             print(">  "+ self.rel_path(os.path.join(job_path, jobid + ".err")))
             print()
 

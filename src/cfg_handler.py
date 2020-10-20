@@ -38,7 +38,7 @@ def search_cfg_str(cfg_name, search_path):
                 for match in matches:
                     print("  " + match.split('/')[-1])
             
-                exception.error_and_quit(glob.log, "please provide unique input config label.")
+                exception.error_and_quit(glob.log, "please provide a unique input config.")
 
     return None
 

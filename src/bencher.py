@@ -285,7 +285,6 @@ def run_bench(input_label):
 
             # Generate bench report
             generate_bench_report(build_report, jobid)
-
             counter += 1
 
 # Check input
