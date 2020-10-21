@@ -281,6 +281,7 @@ def process_bench_cfg(cfg_dict):
     if not 'label'              in cfg_dict['config'].keys():    cfg_dict['config']['label']               = ""
     if not 'template'           in cfg_dict['config'].keys():    cfg_dict['config']['template']            = ""
     if not 'collect_hw_stats'   in cfg_dict['config'].keys():    cfg_dict['config']['collect_hw_stats']    = False
+    if not 'output_file'        in cfg_dict['config'].keys():    cfg_dict['config']['output_file']         = ""
 
     if not 'description'        in cfg_dict['result'].keys():   cfg_dict['result']['description']        = ""
 
@@ -343,8 +344,7 @@ def process_bench_cfg(cfg_dict):
     # 'method' not == 'expr' or 'script'
     else:
         exception.error_and_quit(glob.log, "'method' key in [result] section of " + cfg_dict['metadata']['cfg_file'] + "must be either expr or script." )
-    # Add output filename from settings.ini
-    cfg_dict['config']['output_file'] = glob.stg['output_file']
+
 
 # Check sched config file and add required fields
 def process_sched_cfg(cfg_dict):

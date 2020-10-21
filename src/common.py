@@ -215,8 +215,8 @@ class init(object):
         state = cmd.stdout.split("\n")[2]
 
         # Job COMPLETE
-        if any (state.strip() == x for x in ["COMPLETED", "CANCELLED", "ERROR", "FAILED"]):
-            return True
+        if any (state.strip() == x for x in ["COMPLETED", "CANCELLED", "ERROR", "FAILED", "TIMEOUT"]):
+            return state.strip()
 
         # Job RUNNING or PENDING
         return False
@@ -411,14 +411,14 @@ class init(object):
             return True
 
     # Run script in shell
-    def start_local_shell(self, working_dir, script_file):
+    def start_local_shell(self, working_dir, script_file, output_dir):
 
         script_path = os.path.join(working_dir, script_file)
 
         print("Starting script: " + self.rel_path(script_path))
 
         try:
-            with open(os.path.join(working_dir, "startup.log"), 'w') as fp:
+            with open(os.path.join(working_dir, output_dir), 'w') as fp:
                 cmd = subprocess.Popen(['bash', script_path], stdout=fp, stderr=fp)
 
         except:

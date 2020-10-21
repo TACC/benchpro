@@ -156,8 +156,9 @@ class init(object):
 
             # Sched build
             else:
-                if self.common.check_job_complete(jobid):
-                    print("Build job " + jobid + " for '" + code_str + "' is complete.")
+                complete = self.common.check_job_complete(jobid)
+                if complete:
+                    print("Build job " + jobid + " state: " + complete)
                 else:
                     print("Build job " + jobid + " for '" + code_str + "' is still running.")
                     return

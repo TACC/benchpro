@@ -42,11 +42,11 @@ def generate_bench_report(build_report, jobid):
         out.write("job_script  = "+ glob.code['metadata']['job_script']     + "\n")
         out.write("jobid       = "+ jobid                                   + "\n")
         out.write("description = "+ glob.code['result']['description']      + "\n")
+        out.write("output_file = "+ glob.code['config']['output_file']      + "\n")
 
         if not jobid == "dry_run":
             out.write("stdout      = "+ jobid+".out"                        + "\n")
             out.write("stderr      = "+ jobid+".err"                        + "\n")
-            out.write("result_file = "+ glob.code['config']['output_file']  + "\n")
 
 # Get code info
 def get_code_info(input_label, search_dict):
@@ -85,15 +85,6 @@ def get_code_info(input_label, search_dict):
     # Get code label from build_report to find appropriate bench cfg file
     code = report_parser.get('build', 'code')
 
-#    print(report_parser.get('build', 'code'))
-#    print(glob.code)
-
-    # Add variables from build report to bench cfg dict
-#    glob.code['bench']['code']      = report_parser.get('build', 'code')
-#    glob.code['bench']['version']   = report_parser.get('build', 'version')
-#    glob.code['bench']['system']    = report_parser.get('build', 'system')
-
-    
     code      = report_parser.get('build', 'code')
     version   = report_parser.get('build', 'version')
     system    = report_parser.get('build', 'system')
@@ -280,8 +271,18 @@ def run_bench(input_label):
     
                 # Local run
                 elif glob.stg['bench_mode'] == "local":
-                    common.start_local_shell(glob.code['metadata']['working_path'], glob.tmp_script[4:])
+                    # For local bench, use default output file name if not set (can't use stdout)
+                    if not glob.code['config']['output_file']:
+                        glob.code['config']['output_file'] = glob.stg['output_file']
+                    common.start_local_shell(glob.code['metadata']['working_path'], glob.tmp_script[4:], glob.code['config']['output_file'])
                     jobid = "local"
+
+            # Use stdout for output if not set
+            if not glob.code['config']['output_file']:
+                glob.code['config']['output_file'] = jobid+".out"
+
+            print("Output file:")
+            print(">  " + os.path.join(glob.code['metadata']['working_path'], glob.code['config']['output_file']))
 
             # Generate bench report
             generate_bench_report(build_report, jobid)

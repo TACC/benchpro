@@ -164,8 +164,12 @@ def generate_build_script(glob_obj):
     template_epilog(template_obj)
 
     # Populate template list with cfg dicts
-    template_obj = populate_template([glob.code['general'], glob.code['modules'], glob.code['config'], glob.sched['sched'], glob.compiler['common']], template_obj)
-
+    template_obj = populate_template([glob.code['general'], \
+                                      glob.code['modules'], \
+                                      glob.code['config'], \
+                                      glob.sched['sched'], \
+                                      glob.compiler['common']], \
+                                      template_obj)
 
     # Test for missing parameters
     common.test_template(template_obj)
@@ -234,12 +238,19 @@ def generate_bench_script(glob_obj):
 
     # Take multiple config dicts and populate script template
     if glob.stg['bench_mode'] == "sched":
-        template_obj = populate_template(\
-                [glob.code['metadata'], glob.code['runtime'], glob.code['config'], glob.sched['sched'], glob.code['requirements']],\
-                template_obj)
+        template_obj = populate_template([glob.code['metadata'], \
+                                         glob.code['runtime'], \
+                                         glob.code['config'], \
+                                         glob.sched['sched'], \
+                                         glob.code['requirements']], \
+                                         template_obj)
     
     else:
-        template_obj = populate_template([glob.code['metadata'], glob.code['runtime'], glob.code['config']], template_obj)
+        template_obj = populate_template([glob.code['metadata'], \
+                                        glob.code['runtime'], \
+                                        glob.code['config'], \
+                                        glob.code['requirements']], \
+                                        template_obj)
 
     # Test for missing parameters
     common.test_template(template_obj)
