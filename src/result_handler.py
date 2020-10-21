@@ -615,7 +615,7 @@ def print_results(result_list):
 
 def delete_results(result_list):
     print()
-    print("\033[91;1mDeleting in", self.glob.stg['timeout'], "seconds...\033[0m")
+    print("\033[91;1mDeleting in", glob.stg['timeout'], "seconds...\033[0m")
     time.sleep(glob.stg['timeout'])
     print("No going back now...")
     for result in result_list:

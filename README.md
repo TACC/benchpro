@@ -44,7 +44,7 @@ benchtool --build lammps
 ```
 benchtool --installed
 ```
-NOTE: By default `dry_run=True` in `settings.cfg` so the build script was created but not submitted to the scheduler. You can now submit the job manually, or
+NOTE: By default `dry_run=True` in `settings.ini` so the build script was created but not submitted to the scheduler. You can now submit the job manually, or
 
 6 Remove the dry_run build:
 ```
@@ -91,49 +91,125 @@ benchtool --capture
 ```
 
 ## Adding a new Application
-benchtool requires two input files to build an application: a config file containing contextualization parameters, and a build template file which will be populated with these parameters. 
+benchtool requires two input files to build an application: a config file containing contextualization parameters, and a build template file which will be populated with these parameters and executed. 
 
 ### 1. Build config file
 
-You can define as many additional parameters as needed for your application. Eg: additional modules, build options etc. All parameter [label] defined here will be used to fill <<<[label]>>> variables in the template file, thus consistent naming is important.
-This file must be located in `configs/build`, with the naming scheme `[code]_build.cfg`
+A full detailed list of config file fields is provided below. A config file is seperated into the following sections:
+ - `[general]` where information about the application is specified. `module_use` can be provided to add a nonstandard path to MODULEPATH. By default benchtool will attempt to match this config file with its corresponsing template file. You can overwrite this default filename by adding the `template` field. 
+ - `[modules]` where `compiler` and `mpi` required, while more modules can be provided. Every module must be available on the local machine. 
+ - `[config]` where variables used in the build template script can be added.
+
+You can define as many additional parameters as needed for your application. Eg: additional modules, build options, etc. All parameters `[param]` defined here will be used to fill `<<<[param]>>>` variables of the same name in the template file, thus consistent naming is important.
+This file must be located in `config/build`, preferably with the naming scheme `[code]_[version]_build.cfg`. 
 
 ### 2. Build template file
 
-This file is the template for the scheduler job script which will compile the application.
-Variables are defined with `<<<[label]>>>` and populated with the variables defined in the config file above.
-The label in the template must match the label used in the config file.  
-You are able to make use of the `benchmark_repo` variable defined in `settings.cfg` to copy local files. 
-This file must be located in `templates/build`, with the naming scheme `[code]-[version].build` 
+This template file is used to gerenate a contextualized build script script which will compile the application.
+Variables are defined with `<<<[param]>>>` syntax and populated with the variables defined in the config file above.
+If a `<<<[param]>>>` in the build template in not successfully populated and `exit_on_missing=True` in settings.ini, an expection will be raised.
+You are able to make use of the `benchmark_repo` variable defined in `settings.ini` to store and use files locally. 
+This file must be located in `templates/build`, with the naming scheme `[code]_[version].build` 
 
 ### 3. Module template file (optional)
 
-You can define you own Lua module template, otherwise a generic one will be created for you.
-This file must be located in `templates/build`, with the naming scheme `[code]-[version].module` 
+You can define your own .lua module template, otherwise a generic one will be created for you.
+This file must be located in `templates/build`, with the naming scheme `[code]_[version].module` 
+
+
+The application added above would be built with the following command:
+```
+benchtool --build [code]_[version]
+```
+Note: benchtool will attempt to match your application input to a unique config filename. The specificity of the input will depend on the number of similar config files.
+It may be helpful to build with `dry_run=True` initially to confirm the build script was generated as expected, before `--removing` and rebuilding with `dry_run=False` to compile.
 
 ## Adding a new Benchmark
 
-The process of setting up an application benchmark is much the same as the build process; a config file is used to populate a job template. 
+The process of setting up an application benchmark is much the same as the build process; a config file is used to populate a benchmark template. 
 
-### 1. Bench config file
+### 1. Benchmark config file
+
+A full detailed list of config file fields is provided below. A config file is seperated into the following sections:
+ - `[requirements]` where fields are defined to create requirements to an application. More fields produce a finer, more specific application selection criteria.
+ - `[runtime]` where job setup parameters are defined.
+ - `[config]` where bench script parameters are defined.
+ - `[result]` where result collection parameters are defined.
 
 Any additional parameters may be defined in order to setup the benchmark, i.e dataset label, problem size variables etc.
-This file must be located in `configs/runs`, with the naming scheme `[code]_run.cfg`
+This file must be located in `config/bench`, preferably with the naming scheme `[code]_[bench].cfg`.
 
-### 2. Bench template file  
+### 2. Benchmark template file  
 
-As with the build template. this file is populated with the parameters defined in the config file above. This file should include setup of the dataset, any required pre-processing or domain decomposition steps if required, and the appropriate `ibrun` command.
-You are able to make use of the `benchmark_repo` variable defined in `settings.cfg` to copy local files. 
+As with the build template. The benchmark template file is populated with the parameters defined in the config file above. This file should include setup of the dataset, any required pre-processing or domain decomposition steps if required, and the appropriate mpi_exec command.
+You are able to make use of the `benchmark_repo` variable defined in `settings.ini` to copy local files. 
 
-This file must be located in `templates/bench`, with the naming scheme `[code]-[version].run` 
+This file must be located in `templates/bench`, with the naming scheme `[code]_[bench].bench`. 
+
+The benchmark added above would be run with the following command:
+```
+benchtool --bench [code]_[bench]
+```
+Note: benchtool will attempt to match your benchmark input to a unique config filename. The specificity of the input will depend on the number of similar config files.
+It may be helpful to build with `dry_run=True` initially to confirm the build script was generated as expected, before `--removing` and rebuilding with `dry_run=False` to run.
 
 ## Advanced Features
 
-WIP
- - input lists
- - overloading parameters
- - local building and benching
- - benchmarks with no application dependency
+Benchtool supports a number of more advanced features which may be of use.
+
+### Overloading parameters
+
+Useful for changing a setting for a onetime use. 
+Use `benchtool --defaults` to confirm important default params from settings.ini
+You can overload params from settings.ini and params from  your build/bench config file.
+Accepts colon delimited lists.
+Exception will be raised if overload param does not match existing key in settings.ini or config file.
+
+Example 1: overload dry_run and build locally rather than via sched:
+```
+benchtool --build lammps --overload dry_run=False:build_mode=local
+```
+
+Example 2: run LAMMPS benchmark with modified nodes, ranks and threads:
+```
+bench --bench ljmelt --overload nodes=16:ranks_per_node=8:threads=6
+```
+
+### Input list support
+
+Comma delimited lists of nodes, ranks and threads are supported which can be useful for automating scaling and optimization investigations.
+These lists can be specified in the config file, or via the overload feature detailed above.
+A list of nodes will be iterated over, and for each, the list of threads and ranks will both be iterated over.
+If the single thread and multiple ranks are specified, the same thread value will be used for all ranks, and vice versa. If ranks and threads and both larger than a single value but not equal length, an exception will be raised.
+
+Example 1: Run LAMMPS on 4, 8 and 16 nodes, first using 4 ranks per node with 8 threads each, and then 8 ranks per node using 4 threads each:
+```
+benchtool --bench ljmelt --overload nodes=4,8,16:ranks_per_node=4,8:threads=8,4
+```
+From this example, the resulting set of runs would look like:
+
+Nodes=  4, ranks= 4, threads= 8
+Nodes=  4, ranks= 8, threads= 4
+Nodes=  8, ranks= 4, threads= 8
+Nodes=  8, ranks= 8, threads= 4
+Nodes= 16, ranks= 4, threads= 8
+Nodes= 16, ranks= 8, threads= 4
+
+
+### Local build and bench modes
+
+Allows you to run the generated scripts in a shell on the local machine rather than  via the scheduler.
+Useful for evaluating hardware which is not integrated into the scheduler.
+
+In settings.ini `build_mode` and `bench_mode` are responsible for selecting this feature. Values `sched` or `local` are accepted, or an exception will be raised. 
+You can opt to build locally and run via the scheduler, or vice a versa.
+
+### Benchmarks with no application dependency
+
+Some benchmarks such as synthetics are microbenchmarks do require an application be compiled and module created.
+You are able to create a benchmark without any dependency to an application. 
+This is done by not specifying any values in the [requirements] section of the benchmark config file.
+
 
 # Inputs & settings format
 
@@ -270,6 +346,7 @@ These config files contain parameters used to populate the benchmark template sc
 | exe                   | Y          | Application executable.                                                          |
 | dataset               | Y          | Benchmark dataset label.                                                         |
 | collect_hw_stats      | N          | Run hardware info collection after benchmark.                                    |
+| output_file           | N          | File to redirect stdout, if empty will use stdout for sched jobs, or 'output_file' from settings.ini for local job.  | 
 | **[result]**          |            |                                                                                  |
 | description           | N          | Result explanation/description.                                                  |
 | method                | Y          | Results extraction method. Currently 'expr' or 'script' modes supported.         |
@@ -288,6 +365,7 @@ These config files contain parameters used to populate the benchmark template sc
 | ./dev             | Contains unit tests etc.                                  |
 | ./hw_reporting    | hardware state reporting tools.                           |
 | ./log             | Build, bench and catpure log files.                       |
+| ./resources       | Contains any useful content including modulefiles etc.    |
 | ./results         | Benchmark result basedir.                                 |
 | ./scripts         | Hardware collection and result validation scripts         |
 | ./src             | contains Python files and hardware collection bash script.| 

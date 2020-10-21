@@ -1,6 +1,5 @@
 
 export   working_path=<<<working_path>>>
-export    output_file=<<<output_file>>>
 export benchmark_repo=<<<benchmark_repo>>>
 export            exe=<<<exe>>>
 export       mpi_exec=<<<mpi_exec>>>
@@ -23,5 +22,5 @@ mkdir -p ${working_path} && cd ${working_path}
 
 cp ${benchmark_repo}/in.${dataset} . 
 
-${mpi_exec} ${exe} -var x ${x} -var y ${y} -var z ${z} -var t ${t} < in.${dataset} > ${output_file}
+${mpi_exec} ${exe} -var x ${x} -var y ${y} -var z ${z} -var t ${t} < in.${dataset}
 

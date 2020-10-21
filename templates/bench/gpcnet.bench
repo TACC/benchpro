@@ -1,6 +1,5 @@
 
 export   working_path=<<<working_path>>>
-export    output_file=<<<output_file>>>
 export            exe=<<<exe>>>
 export       mpi_exec=<<<mpi_exec>>>
 export    base_module=<<<base_mod>>>
@@ -14,5 +13,5 @@ ml
 
 mkdir -p ${working_path} && cd ${working_path}
 
-${mpi_exec} ${exe} > ${output_file}
+${mpi_exec} ${exe} 
 

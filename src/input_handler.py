@@ -156,8 +156,9 @@ class init(object):
 
             # Sched build
             else:
-                if self.common.check_job_complete(jobid):
-                    print("Build job " + jobid + " for '" + code_str + "' is complete.")
+                complete = self.common.check_job_complete(jobid)
+                if complete:
+                    print("Build job " + jobid + " state: " + complete)
                 else:
                     print("Build job " + jobid + " for '" + code_str + "' is still running.")
                     return
@@ -210,4 +211,16 @@ class init(object):
     def show_available_benches(self):
         search_path = os.path.join(self.glob.stg['config_basedir'], self.glob.stg['bench_cfg_dir'])
         self.show_available("benchmark", search_path)
+
+    # Print key/value pair from setting.ini dict
+    def print_setting(self, key):
+        print("  " + key.ljust(18) + " = " + str(self.glob.stg[key]))
+
+    # Print default params from settings.ini
+    def print_defaults(self):
+        print("Default options in settings.ini:")
+        print()
+        [self.print_setting(key) for key in ['dry_run', 'exit_on_missing', 'overwrite', 'build_mode', 'build_if_missing', 'bench_mode']]        
+        print("")
+        print("Overload with '--overload [SETTING1=ARG]:[SETTING2=ARG]'")
 

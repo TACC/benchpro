@@ -1,5 +1,4 @@
 export   working_path=<<<working_path>>>
-export    output_file=<<<output_file>>>
 export       mpi_exec=<<<mpi_exec>>>
 export        HPL_EXE=<<<exe>>>
 
@@ -15,8 +14,8 @@ cp -r ${MKLROOT}/benchmarks/mp_linpack/* .
 
 # Check file exists
 if [ ! -f "HPL.dat" ]; then
-  echo "File HPL.dat not found" >> ${output_file}
-  echo "Run this script in HPL dir." >> ${output_file}
+  echo "File HPL.dat not found" 
+  echo "Run this script in HPL dir."
   exit 1
 fi
 
@@ -69,18 +68,18 @@ sed -i "12s/.*/${Q}    Qs/"  HPL.dat
 
 # Start HPL
 
-echo -n "This run was done on: " >> ${output_file}
-date >> ${output_file}
+echo -n "This run was done on: "
+date 
 
-echo "HPL.dat: " >> ${output_file}
-cat HPL.dat >> ${output_file}
-echo "Binary name: " >> ${output_file}
-ls -l xhpl_intel64_dynamic >> ${output_file}
-echo "Environment variables: " >> ${output_file}
-env >> ${output_file}
+echo "HPL.dat: "
+cat HPL.dat
+echo "Binary name: "
+ls -l xhpl_intel64_dynamic 
+echo "Environment variables: "
+env
 
-${mpi_exec} ./runme_intel64_prv "$@" >> ${output_file}
+${mpi_exec} ./runme_intel64_prv "$@"
 
-echo -n "Done:" >> ${output_file}
-date >> ${output_file}
+echo -n "Done:"
+date
 

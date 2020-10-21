@@ -83,12 +83,13 @@ def make_mod(glob_obj):
     mod_file = glob.code['config']['build_label'] + ".lua"
 
     check_for_existing_module(mod_path, mod_file)
-
-    module_template = os.path.join(glob.stg['template_path'], glob.stg['build_tmpl_dir'], glob.code['general']['code'] + "-" + str(glob.code['general']['version']) + ".module")
+    
+    template_filename = glob.code['general']['code'] + "_" + str(glob.code['general']['version']) + ".module" 
+    module_template = os.path.join(glob.stg['template_path'], glob.stg['build_tmpl_dir'], template_filename)
 
     # Use generic module template if not found for this application
     if not os.path.isfile(module_template):
-        exception.print_warning(glob.log, "No " + glob.code['general']['code'] + " module template found, using a generic module template.")
+        exception.print_warning(glob.log, "Module template '" + template_filename + "' not found, using a generic module template.")
         module_template = os.path.join(glob.stg['template_path'], glob.stg['build_tmpl_dir'], "generic.module")
 
     glob.log.debug("Using module template file: " + module_template)
