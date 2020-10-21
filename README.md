@@ -187,19 +187,14 @@ Example 1: Run LAMMPS on 4, 8 and 16 nodes, first using 4 ranks per node with 8 
 benchtool --bench ljmelt --overload nodes=4,8,16:ranks_per_node=4,8:threads=8,4
 ```
 From this example, the resulting set of runs would look like:
-
+```
 Nodes=  4, ranks= 4, threads= 8 
-
 Nodes=  4, ranks= 8, threads= 4 
-
 Nodes=  8, ranks= 4, threads= 8 
-
 Nodes=  8, ranks= 8, threads= 4 
-
 Nodes= 16, ranks= 4, threads= 8 
-
 Nodes= 16, ranks= 8, threads= 4 
-
+```
 
 ### Local build and bench modes
 
