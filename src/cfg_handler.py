@@ -239,17 +239,17 @@ def process_build_cfg(cfg_dict):
 
     # Generate default build path if one is not defined
     if not cfg_dict['general']['build_prefix']:
-        cfg_dict['general']['working_path'] = os.path.join(glob.stg['build_path'], cfg_dict['general']['system'], cfg_dict['config']['arch'],\
+        cfg_dict['metadata']['working_path'] = os.path.join(glob.stg['build_path'], cfg_dict['general']['system'], cfg_dict['config']['arch'],\
                                                 common.get_module_label(cfg_dict['modules']['compiler']), common.get_module_label(cfg_dict['modules']['mpi']), \
                                                 cfg_dict['general']['code'], str(cfg_dict['general']['version']), cfg_dict['config']['build_label'])
 
     # Translate 'build_prefix' to 'working_path' for better readability
     else:
-        cfg_dict['general']['working_path'] = cfg_dict['general']['build_prefix']
+        cfg_dict['metadata']['working_path'] = cfg_dict['general']['build_prefix']
 
     # Get build and install subdirs
-    cfg_dict['general']['build_path']   = cfg_dict['general']['working_path'] + glob.stg['sl'] + glob.stg['build_subdir']
-    cfg_dict['general']['install_path'] = cfg_dict['general']['working_path'] + glob.stg['sl'] + glob.stg['install_subdir']
+    cfg_dict['metadata']['build_path']   = os.path.join(cfg_dict['metadata']['working_path'], glob.stg['build_subdir'])
+    cfg_dict['metadata']['install_path'] = os.path.join(cfg_dict['metadata']['working_path'], glob.stg['install_subdir'])
 
 # Check bench config file and add required fields
 def process_bench_cfg(cfg_dict):

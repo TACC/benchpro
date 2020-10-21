@@ -82,7 +82,7 @@ class init(object):
         for app in remove_list:
             # If not installed
             if not app:
-                print(self.glob.error + code_str  + "' is not installed.")
+                print(self.glob.error + "'" + code_str  + "' is not installed.")
                 break
 
             # Get module dir from app dir, by adding 'modulefiles' prefix and stripping [version] suffix
@@ -152,7 +152,7 @@ class init(object):
         else:
             # Local build        
             if jobid == "local":
-                print("App was built in local shell.")
+                print("Running local shells")
 
             # Sched build
             else:

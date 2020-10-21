@@ -309,20 +309,20 @@ class init(object):
         self.glob.log.debug("======================================")
 
     # Check for unpopulated <<<keys>>> in template file
-    def test_template(self, template_obj):
+    def test_template(self, template_file, template_obj):
 
         key = "<<<.*>>>"
         unfilled_keys = [re.search(key, line) for line in template_obj]
         unfilled_keys = [match.group(0) for match in unfilled_keys if match]
-    
+        
         if len(unfilled_keys) > 0:
             # Conitue regardless
             if not self.glob.stg['exit_on_missing']:
-                exception.print_warning(self.glob.log, "WARNING: Missing parameters were found in template file:" + ", ".join(unfilled_keys))
-                exception.print_warning(self.glob.log, "exit_on_missing=False in settings.ini so continuing anyway...")
+                exception.print_warning(self.glob.log, "Missing parameters were found in '" + template_file + "' template file:" + ", ".join(unfilled_keys))
+                exception.print_warning(self.glob.log, "'exit_on_missing=False' in settings.ini so continuing anyway...")
             # Error and exit
             else:
-                exception.error_and_quit(self.glob.log, "Missing parameters were found after populating the template file and exit_on_missing=True in settings.ini: " + ' '.join(unfilled_keys))
+                exception.error_and_quit(self.glob.log, "Missing parameters were found after populating '" + template_file + "' template file and exit_on_missing=True in settings.ini: " + ' '.join(unfilled_keys))
         else:
             self.glob.log.debug("All build parameters were filled, continuing")
 

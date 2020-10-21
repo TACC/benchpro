@@ -279,7 +279,7 @@ def run_bench(input_label):
 
             # Use stdout for output if not set
             if not glob.code['config']['output_file']:
-                glob.code['config']['output_file'] = jobid+".out"
+                glob.code['config']['output_file'] = jobid + ".out"
 
             print("Output file:")
             print(">  " + os.path.join(glob.code['metadata']['working_path'], glob.code['config']['output_file']))

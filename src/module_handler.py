@@ -50,7 +50,7 @@ def populate_mod_template(mod_obj):
     # Get capitalized code name for env var
     mod['caps_code'] = glob.code['general']['code'].upper().replace("-", "_")
 
-    pop_dict = {**mod, **glob.code['general'], **glob.code['config']}
+    pop_dict = {**mod, **glob.code['metadata'], **glob.code['general'], **glob.code['config']}
 
     for key in pop_dict:
         glob.log.debug("replace " + "<<<" + key + ">>> with " + str(pop_dict[key]))
@@ -100,9 +100,9 @@ def make_mod(glob_obj):
     # Populuate template with config params
     mod_obj = populate_mod_template(mod_obj)
     # Test module template
-    common.test_template(mod_obj)
-    # Write module template to file
     tmp_mod_file = "tmp." + mod_file
+    common.test_template(tmp_mod_file, mod_obj)
+    # Write module template to file
     common.write_list_to_file(mod_obj, tmp_mod_file)
 
     return mod_path, tmp_mod_file
