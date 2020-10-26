@@ -2,6 +2,7 @@
 import glob as gb
 import os
 import shutil as su
+import subprocess
 import sys
 import time
 
@@ -82,7 +83,7 @@ class init(object):
         for app in remove_list:
             # If not installed
             if not app:
-                print(self.glob.error + code_str  + "' is not installed.")
+                print(self.glob.error + "'" + code_str  + "' is not installed.")
                 break
 
             # Get module dir from app dir, by adding 'modulefiles' prefix and stripping [version] suffix
@@ -116,6 +117,20 @@ class init(object):
                 print("Warning: no associated module located in:")
                 print(">  " + self.common.rel_path(mod_dir))
                 print("Skipping")
+
+    # Display local shells to assist with determining if local job is still busy
+    def print_local_shells(self):
+
+        print("Running bash shells:")
+        try:
+            cmd = subprocess.run("ps -aux | grep " + self.glob.user + " | grep bash | grep bench", shell=True,
+                                    check=True, capture_output=True, universal_newlines=True)
+
+        except subprocess.CalledProcessError as e:
+            exception.error_and_quit("Failed to run 'ps -aux'")
+
+        for line in cmd.stdout.split("\n"):
+            print(" " + line)
 
     # Print build report of installed application
     def query_app(self):
@@ -152,8 +167,7 @@ class init(object):
         else:
             # Local build        
             if jobid == "local":
-                print("App was built in local shell.")
-
+                self.print_local_shells()
             # Sched build
             else:
                 complete = self.common.check_job_complete(jobid)

@@ -52,6 +52,9 @@ else
   exit -1
 fi
 
+# Add Ampere arch support
+sed -i '1255i\      sm80flags="-gencode arch=compute_80,code=sm_80"' AmberTools/src/configure2
+
 # Build serial
 echo "y" | ./configure ${config_comp}
 source amber.sh
@@ -60,20 +63,6 @@ make -j${threads} install
 # Build MPI
 if [ ! -z ${mpi} ]; then
   echo "y" | ./configure ${config_mpi} ${config_comp}
-  source amber.sh
-  make -j${threads} install
-fi
-
-# Build CUDA
-if [ ! -z ${cuda} ]; then
-
-  ml ${}
-
-  # Add Ampere arch support
-  sed -i '1255i\      sm80flags="-gencode arch=compute_80,code=sm_80"' AmberTools/src/configure2
-
-  export CUDA_HOME=${TACC_CUDA_DIR}
-  echo "y" | ./configure -cuda ${config_comp}
   source amber.sh
   make -j${threads} install
 fi

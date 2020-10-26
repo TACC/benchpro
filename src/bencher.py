@@ -15,7 +15,7 @@ import src.logger as logger
 import src.math_handler as math_funcs
 import src.template_handler as template_handler
 
-glob = common = build_running = None
+glob = common = None
 
 # Generate bench report after job is submitted
 def generate_bench_report(build_report, jobid):
@@ -51,23 +51,32 @@ def generate_bench_report(build_report, jobid):
 # Get code info
 def get_code_info(input_label, search_dict):
 
-    global build_running
     # Check if code is installed
     glob.code['metadata']['app_mod'] = common.check_if_installed(search_dict)
 
     # If application is not installed, check if cfg file is available to build
     if not glob.code['metadata']['app_mod']:
-        print("Application '" + search_dict['code'] + "' not installed. Attempting to build now...")
+        print("Failed to locate installed application with search criteria:")
+        for key in search_dict:
+            print("  " + key.ljust(12) + "= " + search_dict[key])
+        print()
+        print("Attempting to build now...")
         install_cfg = common.check_if_avail(search_dict)
 
         glob.args.build = common.get_filename_from_path(install_cfg)
         builder.init(copy.deepcopy(glob))
-        build_running = True
+
+        print("DRYRUN", glob.stg['dry_run'], type(glob.stg['dry_run']))
+
+        if glob.stg['dry_run']:
+            glob.code['metadata']['build_running'] = False
+        else:
+            glob.code['metadata']['build_running'] = True
         glob.code['metadata']['app_mod'] = common.check_if_installed(search_dict)
 
     # Code is built
     else:
-        build_running = False
+        glob.code['metadata']['build_running'] = False
     
     # Get app info from build report
     install_path = os.path.join(glob.stg['build_path'], glob.code['metadata']['app_mod'])
@@ -113,8 +122,6 @@ def get_code_info(input_label, search_dict):
 # Main function to check for installed application, setup benchmark and run it
 def run_bench(input_label):
 
-    global build_running
-
     code = version = system = ""
     build_report = ""
     glob.dep_list = []
@@ -126,7 +133,8 @@ def run_bench(input_label):
     search_dict = glob.code['requirements']
 
     if common.needs_code(search_dict):
-        search_dict['system'] = glob.system['sys_env']
+        search_dict['system'] = "dgx" #glob.system['sys_env']
+
         code, version, system, build_report = get_code_info(input_label, search_dict)
 
         # Directory to add to MODULEPATH
@@ -135,7 +143,7 @@ def run_bench(input_label):
     else:    
         print("No code required") 
         glob.code['metadata']['app_mod'] = ""
-        build_running = False
+        glob.code['metadata']['build_running'] = False
 
     # Get bench config dicts
     if glob.stg['bench_mode'] == "sched":
@@ -145,10 +153,6 @@ def run_bench(input_label):
         glob.sched['sched']['job_label'] = code+"_bench"
 
         sched_template = common.find_exact(glob.sched['sched']['type'] + ".template", os.path.join(glob.stg['template_path'], glob.stg['sched_tmpl_dir']))
-
-    glob.code['metadata']['build_running'] = build_running
-
-    print()
 
     # Check for empty overload params
     common.check_for_unused_overloads()
@@ -245,7 +249,6 @@ def run_bench(input_label):
             exception.remove_tmp_files(glob.log)
 
             print(glob.success)
-
             # Dry_run
             if glob.stg['dry_run']:
                 print("This was a dryrun, skipping exec step. Script created at:")
@@ -279,7 +282,7 @@ def run_bench(input_label):
 
             # Use stdout for output if not set
             if not glob.code['config']['output_file']:
-                glob.code['config']['output_file'] = jobid+".out"
+                glob.code['config']['output_file'] = jobid + ".out"
 
             print("Output file:")
             print(">  " + os.path.join(glob.code['metadata']['working_path'], glob.code['config']['output_file']))
@@ -297,6 +300,9 @@ def init(glob_obj):
 
     # Start logger
     glob.log = logger.start_logging("RUN", glob.stg['bench_log_file'] + "_" + glob.time_str + ".log", glob)
+
+    # Grab a copy of the overload_dict for this session
+    glob.overload_dict = copy.deepcopy(glob.overloads)
 
     # Check for new results
     common.print_new_results()

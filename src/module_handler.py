@@ -30,7 +30,17 @@ def copy_mod_template(module_template):
 
     # Add custom module path if set in cfg
     if glob.code['general']['module_use']:
-        mod_obj.append("prepend_path( \"MODULEPATH\" , \"" + glob.code['general']['module_use'] + "\") \n")
+
+        # Handle env vars in module path
+        if glob.code['general']['module_use'].startswith(glob.stg['topdir_env_var']):
+
+            topdir = glob.stg['topdir_env_var'].strip("$")
+
+            mod_obj.append("local " + topdir + " = os.getenv(\"" + topdir + "\") or \"\"\n")
+            mod_obj.append("prepend_path(\"MODULEPATH\", pathJoin(" + topdir + ", \"" + glob.code['general']['module_use'][len(topdir)+2:] + "\"))\n")
+
+        else:
+            mod_obj.append("prepend_path( \"MODULEPATH\" , \"" + glob.code['general']['module_use'] + "\") \n")
 
     with open(module_template, 'r') as inp:
         mod_obj.extend(inp.readlines())
@@ -50,7 +60,7 @@ def populate_mod_template(mod_obj):
     # Get capitalized code name for env var
     mod['caps_code'] = glob.code['general']['code'].upper().replace("-", "_")
 
-    pop_dict = {**mod, **glob.code['general'], **glob.code['config']}
+    pop_dict = {**mod, **glob.code['metadata'], **glob.code['general'], **glob.code['config']}
 
     for key in pop_dict:
         glob.log.debug("replace " + "<<<" + key + ">>> with " + str(pop_dict[key]))
@@ -100,9 +110,9 @@ def make_mod(glob_obj):
     # Populuate template with config params
     mod_obj = populate_mod_template(mod_obj)
     # Test module template
-    common.test_template(mod_obj)
-    # Write module template to file
     tmp_mod_file = "tmp." + mod_file
+    common.test_template(tmp_mod_file, mod_obj)
+    # Write module template to file
     common.write_list_to_file(mod_obj, tmp_mod_file)
 
     return mod_path, tmp_mod_file

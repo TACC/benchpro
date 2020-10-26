@@ -57,7 +57,7 @@ def template_epilog(template_obj):
     if glob.code['config']['collect_hw_stats']:
         if common.file_owner(glob.stg['utils_path'] + glob.stg['sl'] + "lshw") == "root":
             template_obj.append(glob.stg['src_path'] + glob.stg['sl'] + "collect_hw_info.sh " + glob.stg['utils_path'] + " " + \
-                            glob.code['general']['working_path'] + glob.stg['sl'] + "hw_report" + "\n")
+                            glob.code['metadata']['working_path'] + glob.stg['sl'] + "hw_report" + "\n")
         else:
             exception.print_warning(glob.log, "Requested hardware stats but persmissions not set, run 'sudo hw_utils/change_permissions.sh'")
 
@@ -89,7 +89,6 @@ def get_build_templates():
 
     # Temp build script
     glob.tmp_script = "tmp." + glob.code['general']['code'] + "-build." + glob.stg['build_mode']
-
     # === Scheduler template file ===
 
     if glob.stg['build_mode'] == "sched":
@@ -164,7 +163,8 @@ def generate_build_script(glob_obj):
     template_epilog(template_obj)
 
     # Populate template list with cfg dicts
-    template_obj = populate_template([glob.code['general'], \
+    template_obj = populate_template([glob.code['metadata'], \
+                                      glob.code['general'], \
                                       glob.code['modules'], \
                                       glob.code['config'], \
                                       glob.sched['sched'], \
@@ -172,7 +172,7 @@ def generate_build_script(glob_obj):
                                       template_obj)
 
     # Test for missing parameters
-    common.test_template(template_obj)
+    common.test_template(glob.tmp_script, template_obj)
 
     # Write populated script to file
     common.write_list_to_file(template_obj, glob.tmp_script)
@@ -253,7 +253,7 @@ def generate_bench_script(glob_obj):
                                         template_obj)
 
     # Test for missing parameters
-    common.test_template(template_obj)
+    common.test_template(glob.tmp_script, template_obj)
 
     # Write populated script to file
     common.write_list_to_file(template_obj, glob.tmp_script)

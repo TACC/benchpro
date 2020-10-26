@@ -1,4 +1,5 @@
 # System Imports
+import copy
 import datetime
 import os
 import shutil as su
@@ -18,7 +19,7 @@ glob = common = None
 
 # Check if an existing installation exists
 def check_for_previous_install():
-    install_path = glob.code['general']['working_path']
+    install_path = glob.code['metadata']['working_path']
     # If existing installation is found
     if os.path.isdir(install_path):
         # Delete if overwrite=True
@@ -48,7 +49,7 @@ def check_for_previous_install():
 
 # Generate build report after job is submitted
 def generate_build_report(jobid):
-    report_file = glob.code['general']['working_path'] + glob.stg['sl'] + glob.stg['build_report_file']
+    report_file = os.path.join(glob.code['metadata']['working_path'], glob.stg['build_report_file'])
 
     with open(report_file, 'a') as out:
         out.write("[build]\n")
@@ -57,12 +58,11 @@ def generate_build_report(jobid):
         out.write("system         = "+ glob.code['general']['system']           + "\n")
         out.write("compiler       = "+ glob.code['modules']['compiler']         + "\n")
         out.write("mpi            = "+ glob.code['modules']['mpi']              + "\n")
-        if glob.code['general']['module_use']:
-            out.write("module_use     = "+ glob.code['general']['module_use']   + "\n")
+        out.write("module_use     = "+ glob.code['general']['module_use']       + "\n")
         out.write("modules        = "+ ", ".join(glob.code['modules'].values()) + "\n")
         out.write("optimization   = "+ glob.code['config']['opt_flags']         + "\n")    
         out.write("exe            = "+ glob.code['config']['exe']               + "\n")
-        out.write("build_prefix   = "+ glob.code['general']['working_path']     + "\n")
+        out.write("build_prefix   = "+ glob.code['metadata']['working_path']    + "\n")
         out.write("build_date     = "+ str(datetime.datetime.now())             + "\n")
         out.write("jobid          = "+ jobid                                    + "\n")
 
@@ -119,11 +119,11 @@ def build_code(code_label):
     # ================== COPY INSTALLATION FILES ===================================
 
     # Make build path and move tmp build script file
-    common.create_dir(glob.code['general']['working_path'])
-    common.install(glob.code['general']['working_path'], glob.tmp_script, None)
+    common.create_dir(glob.code['metadata']['working_path'])
+    common.install(glob.code['metadata']['working_path'], glob.tmp_script, None)
     print()
     print("Build script location:")
-    print(">  " + common.rel_path(glob.code['general']['working_path']))
+    print(">  " + common.rel_path(glob.code['metadata']['working_path']))
     print()
 
     # Make module path and move tmp module file
@@ -135,7 +135,7 @@ def build_code(code_label):
     print()
 
     # Copy code and sched cfg & template files to build dir
-    provenance_path = os.path.join(glob.code['general']['working_path'], "build_files")
+    provenance_path = os.path.join(glob.code['metadata']['working_path'], "build_files")
     common.create_dir(provenance_path)
 
     common.install(provenance_path, glob.code['metadata']['cfg_file'], "build.cfg")
@@ -151,10 +151,12 @@ def build_code(code_label):
 
     print(glob.success)
 
+    output_file = ""
+
     # If dry_run
     if glob.stg['dry_run']:
         print("This was a dryrun, skipping build step. Script created at:")
-        print(">  " + common.rel_path(os.path.join(glob.code['general']['working_path'], glob.tmp_script[4:])))
+        print(">  " + common.rel_path(os.path.join(glob.code['metadata']['working_path'], glob.tmp_script[4:])))
         jobid = "dry_run"
 
     else:
@@ -169,12 +171,18 @@ def build_code(code_label):
             get_build_dep(job_limit)
 
             # Submit build script to scheduler
-            jobid = common.submit_job(common.get_dep_str(), glob.code['general']['working_path'], glob.tmp_script[4:])
+            jobid = common.submit_job(common.get_dep_str(), glob.code['metadata']['working_path'], glob.tmp_script[4:])
+            output_file = jobid + ".out"
 
         # Or start local shell
         else:
-            common.start_local_shell(glob.code['general']['working_path'], glob.tmp_script[4:])
+            output_file = "bash.stdout"
+            common.start_local_shell(glob.code['metadata']['working_path'], glob.tmp_script[4:], output_file)
             jobid = "local"
+
+        print("Output file:")
+        print(">  " + common.rel_path(os.path.join(glob.code['metadata']['working_path'], output_file)))
+
 
     # Generate build report
     generate_build_report(jobid)
@@ -188,6 +196,9 @@ def init(glob_obj):
 
     # Init loggers
     glob.log = logger.start_logging("BUILD", glob.stg['build_log_file'] + "_" + glob.time_str + ".log", glob)
+
+    # Grab a copy of the overload_dict for this session
+    glob.overload_dict = copy.deepcopy(glob.overloads)
 
     # Instantiate common_funcs
     common = common_funcs.init(glob)
