@@ -24,6 +24,9 @@ class settings(object):
     compiler = {}
     suite    = {}
 
+    overloads = {}
+    overload_dict = {}
+    
     # Context variables
     user                = str(os.getlogin())
     hostname            = str(socket.gethostname())
@@ -124,7 +127,9 @@ class settings(object):
             self.system['cores'] = settings_parser[sys_env]['cores']
             self.system['cores_per_node'] = settings_parser[sys_env]['cores']
             self.system['default_arch']   = settings_parser[sys_env]['default_arch']
-        except:
-            print("Failed to read section ["+ sys_env +"] in " + os.path.join(self.stg['config_basedir'],  self.stg['system_cfg_file']) )
 
+        except:
+            print("Failed to read system profile '"+ sys_env +"' in " + self.stg['config_basedir'] + self.stg['sl'] + self.stg['system_cfg_file'])
+            print("Please add this system profile.")
+            sys.exit(2)
         #----------------------------system.cfg----------------------------------

@@ -230,8 +230,8 @@ def process_build_cfg(cfg_dict):
         try:
             cfg_dict['config']['opt_flags'] = arch_dict[cfg_dict['config']['arch']][cfg_dict['config']['compiler_type']]
         except:
-            exception.print_warning(glob.log, "Unable to determine default optimization flags for compiler '"\
-                                    + cfg_dict['config']['compiler_type'] + "' on arch:" + cfg_dict['config']['arch'])
+            exception.print_warning(glob.log, "Unable to determine default optimization flags for '" + cfg_dict['config']['compiler_type'] + "' compiler "\
+                                    + "on arch '" + cfg_dict['config']['arch'] + "'")
 
     # Set default build label
     if not cfg_dict['config']['build_label']:

@@ -89,7 +89,6 @@ def get_build_templates():
 
     # Temp build script
     glob.tmp_script = "tmp." + glob.code['general']['code'] + "-build." + glob.stg['build_mode']
-
     # === Scheduler template file ===
 
     if glob.stg['build_mode'] == "sched":

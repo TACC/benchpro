@@ -30,7 +30,17 @@ def copy_mod_template(module_template):
 
     # Add custom module path if set in cfg
     if glob.code['general']['module_use']:
-        mod_obj.append("prepend_path( \"MODULEPATH\" , \"" + glob.code['general']['module_use'] + "\") \n")
+
+        # Handle env vars in module path
+        if glob.code['general']['module_use'].startswith(glob.stg['topdir_env_var']):
+
+            topdir = glob.stg['topdir_env_var'].strip("$")
+
+            mod_obj.append("local " + topdir + " = os.getenv(\"" + topdir + "\") or \"\"\n")
+            mod_obj.append("prepend_path(\"MODULEPATH\", pathJoin(" + topdir + ", \"" + glob.code['general']['module_use'][len(topdir)+2:] + "\"))\n")
+
+        else:
+            mod_obj.append("prepend_path( \"MODULEPATH\" , \"" + glob.code['general']['module_use'] + "\") \n")
 
     with open(module_template, 'r') as inp:
         mod_obj.extend(inp.readlines())

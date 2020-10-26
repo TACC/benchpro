@@ -20,24 +20,24 @@ glob = common = None
 def capture_complete(path):
     glob.log.debug("Successfully captured result in " + path)
     print("Successfully captured result in " + common.rel_path(path))
-    with open(path + glob.stg['sl'] + ".capture-complete", 'w'): pass
+    with open(os.path.join(path, ".capture-complete"), 'w'): pass
 
 # Create .capture-failed file in result dir
 def capture_failed(path):
     glob.log.debug("Failed to capture result in " + path)
     print("Failed to capture result in " + common.rel_path(path))
-    with open(path + glob.stg['sl'] + ".capture-failed", 'w'): pass
+    with open(os.path.join(path, ".capture-failed"), 'w'): pass
 
 # Function to test if benchmark produced valid result
 def validate_result(result_path):
     # Get validation requirement from bench cfg file
-    cfg_file = result_path + glob.stg['sl'] + "bench_files" + glob.stg['sl'] + "bench.cfg"
+    cfg_file = os.path.join(result_path, "bench_files", "bench.cfg")
 
     cfg_handler.ingest_cfg('bench', cfg_file, glob)
     glob.log.debug("Got result validation requirements from file: "+cfg_file)
 
     # Benchmark output file containing result, override default in glob_obj.cfg if 'output_file' set in bench.cfg 
-    output_file = glob.stg['output_file']
+    output_file = glob.code['config']['output_file']
     if 'output_file' in glob.code['result']:
         if glob.code['result']['output_file']:
             output_file = glob.code['result']['output_file']

@@ -90,7 +90,7 @@ def main():
     glob.args = args
 
     # Get overload dict
-    glob.overload_dict = get_var_overload_dict(args.overload)
+    glob.overloads = get_var_overload_dict(args.overload)
 
     # Use system default scheduler profile
     if glob.args.sched == "system":

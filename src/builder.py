@@ -1,4 +1,5 @@
 # System Imports
+import copy
 import datetime
 import os
 import shutil as su
@@ -195,6 +196,9 @@ def init(glob_obj):
 
     # Init loggers
     glob.log = logger.start_logging("BUILD", glob.stg['build_log_file'] + "_" + glob.time_str + ".log", glob)
+
+    # Grab a copy of the overload_dict for this session
+    glob.overload_dict = copy.deepcopy(glob.overloads)
 
     # Instantiate common_funcs
     common = common_funcs.init(glob)

@@ -212,11 +212,12 @@ class init(object):
         except:
             return True
 
-        state = cmd.stdout.split("\n")[2]
+        # Strip out bad chars from job state
+        state = ''.join(c for c in cmd.stdout.split("\n")[2] if c not in [' ', '*', '+'])
 
         # Job COMPLETE
-        if any (state.strip() == x for x in ["COMPLETED", "CANCELLED", "ERROR", "FAILED", "TIMEOUT"]):
-            return state.strip()
+        if any (state == x for x in ["COMPLETED", "CANCELLED", "ERROR", "FAILED", "TIMEOUT"]):
+            return state
 
         # Job RUNNING or PENDING
         return False
