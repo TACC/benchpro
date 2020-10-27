@@ -272,8 +272,8 @@ def process_bench_cfg(cfg_dict):
     if not 'version'            in cfg_dict['requirements'].keys():  cfg_dict['requirements']['version'] = ""
     if not 'label'              in cfg_dict['requirements'].keys():  cfg_dict['requirements']['label']   = ""
 
-    if not 'ranks_per_node'     in cfg_dict['runtime'].keys():  cfg_dict['runtime']['ranks_per_node']    = 0
-    if not 'max_running_jobs'   in cfg_dict['runtime'].keys():  cfg_dict['runtime']['max_running_jobs']  = 10
+    if not 'ranks_per_node'     in cfg_dict['runtime'].keys():  cfg_dict['runtime']['ranks_per_node']    = "0"
+    if not 'max_running_jobs'   in cfg_dict['runtime'].keys():  cfg_dict['runtime']['max_running_jobs']  = "10"
     if not 'hostfile'           in cfg_dict['runtime'].keys():  cfg_dict['runtime']['hostfile']          = ""
     if not 'hostlist'           in cfg_dict['runtime'].keys():  cfg_dict['runtime']['hostlist']          = ""
 
