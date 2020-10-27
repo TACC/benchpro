@@ -77,7 +77,11 @@ def get_code_info(input_label, search_dict):
     # Code is built
     else:
         glob.code['metadata']['build_running'] = False
-    
+
+    # Confirm application is installed after attempt
+    if not glob.code['metadata']['app_mod']:
+        exception.error_and_quit(glob.log, "it seems the attempt to build your application failed. Consult the logs.")
+
     # Get app info from build report
     install_path = os.path.join(glob.stg['build_path'], glob.code['metadata']['app_mod'])
     build_report = os.path.join(install_path, glob.stg['build_report_file'])
@@ -133,7 +137,7 @@ def run_bench(input_label):
     search_dict = glob.code['requirements']
 
     if common.needs_code(search_dict):
-        search_dict['system'] = "dgx" #glob.system['sys_env']
+        search_dict['system'] = glob.system['sys_env']
 
         code, version, system, build_report = get_code_info(input_label, search_dict)
 
