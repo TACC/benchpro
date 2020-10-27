@@ -1,0 +1,45 @@
+
+export     build_path=<<<build_path>>>
+export   install_path=<<<install_path>>>
+export    milc_version=<<<version>>>
+export       compiler=<<<compiler>>>
+export            mpi=<<<mpi>>>
+
+date
+echo "Slurm Job ID: ${SLURM_JOB_ID}"
+echo "Host: ${HOSTNAME}"
+echo "User: ${USER}"
+
+#load modules
+ml reset
+ml $compiler
+ml $mpi
+ml git
+ml 
+
+mkdir -p ${install_path}
+mkdir -p ${build_path}
+cd ${build_path}
+
+git clone https://github.com/milc-qcd/milc_qcd.git
+cd milc_qcd/libraries
+sed -i 's/avx/CORE-AVX512/g' Make_vanilla
+
+cd ../ks_imp_rhmc
+cp ../Makefile ./
+ls
+
+sed -i 's/COMPILER = gnu/COMPILER = intel/g' Makefile
+sed -i 's/PRECISION = 1/PRECISION = 2/g' Makefile
+sed -i 's/MPP = #true/MPP = true/g' Makefile
+sed -i 's/WANTQIO = true/WANTQIO = false/g' Makefile
+sed -i 's/mavx/xCORE-AVX512/g' Makefile
+
+CC=$MPICC
+CXX=$MPICXX
+#OMP=true
+
+make -j1 su3_rhmd_hisq
+cp su3_rhmd_hisq ${install_path}
+
+date
