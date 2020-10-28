@@ -776,3 +776,10 @@ class init(object):
             exception.error_and_quit(self.glob.log, "Could not determine PID for build script. ps -aux gave: '" + cmd.stdout + "'")
 
         return pid
+
+    # Replace SLURM variables in ouput files
+    def check_for_slurm_vars(self):
+        print("CHECKING", self.glob.code['config']['output_file'])
+        self.glob.code['config']['output_file'] = self.glob.code['config']['output_file'].replace("$SLURM_JOBID", self.glob.jobid) 
+
+        

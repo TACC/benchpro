@@ -18,7 +18,7 @@ import src.template_handler as template_handler
 glob = common = None
 
 # Generate bench report after job is submitted
-def generate_bench_report(build_report, jobid):
+def generate_bench_report(build_report):
 
     bench_report = os.path.join(glob.code['metadata']['working_path'],glob.stg['bench_report_file'])
     glob.log.debug("Benchmark report file:" + bench_report)
@@ -40,13 +40,13 @@ def generate_bench_report(build_report, jobid):
         out.write("dataset     = "+ glob.code['config']['dataset']          + "\n")
         out.write("start_time  = "+ str(datetime.datetime.now())            + "\n")
         out.write("job_script  = "+ glob.code['metadata']['job_script']     + "\n")
-        out.write("jobid       = "+ jobid                                   + "\n")
+        out.write("jobid       = "+ glob.jobid                                   + "\n")
         out.write("description = "+ glob.code['result']['description']      + "\n")
         out.write("output_file = "+ glob.code['config']['output_file']      + "\n")
 
-        if not jobid == "dry_run":
-            out.write("stdout      = "+ jobid+".out"                        + "\n")
-            out.write("stderr      = "+ jobid+".err"                        + "\n")
+        if not glob.jobid == "dry_run":
+            out.write("stdout      = "+ glob.jobid+".out"                        + "\n")
+            out.write("stderr      = "+ glob.jobid+".err"                        + "\n")
 
 # Get code info
 def get_code_info(input_label, search_dict):
@@ -257,7 +257,7 @@ def run_bench(input_label):
             if glob.stg['dry_run']:
                 print("This was a dryrun, skipping exec step. Script created at:")
                 print(">  " + common.rel_path(os.path.join(glob.code['metadata']['working_path'], glob.tmp_script[4:])))
-                jobid = "dry_run"
+                glob.jobid = "dry_run"
 
             else:
                 # Sched run
@@ -273,8 +273,8 @@ def run_bench(input_label):
                         glob.dep_list.append(prev_jobid[-1 * job_limit])
 
                     # Submit job
-                    jobid = common.submit_job(common.get_dep_str(), glob.code['metadata']['working_path'], glob.code['metadata']['job_script'])
-                    prev_jobid.append(jobid)
+                    glob.jobid = common.submit_job(common.get_dep_str(), glob.code['metadata']['working_path'], glob.code['metadata']['job_script'])
+                    prev_jobid.append(glob.jobid)
     
                 # Local run
                 elif glob.stg['bench_mode'] == "local":
@@ -282,17 +282,21 @@ def run_bench(input_label):
                     if not glob.code['config']['output_file']:
                         glob.code['config']['output_file'] = glob.stg['output_file']
                     common.start_local_shell(glob.code['metadata']['working_path'], glob.tmp_script[4:], glob.code['config']['output_file'])
-                    jobid = "local"
+                    glob.jobid = "local"
 
             # Use stdout for output if not set
             if not glob.code['config']['output_file']:
-                glob.code['config']['output_file'] = jobid + ".out"
+                glob.code['config']['output_file'] = glob.jobid + ".out"
+
+
+            common.check_for_slurm_vars()        
+
 
             print("Output file:")
             print(">  " + os.path.join(glob.code['metadata']['working_path'], glob.code['config']['output_file']))
 
             # Generate bench report
-            generate_bench_report(build_report, jobid)
+            generate_bench_report(build_report)
             counter += 1
 
 # Check input
