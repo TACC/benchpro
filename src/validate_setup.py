@@ -22,6 +22,7 @@ class bcolors:
     PASS = '\033[92mPASS:\033[0m'
     FAIL = '\033[91mFAIL:\033[0m'
     CREATE = '\033[94mCREATE:\033[0m'
+    SET = '\033[94mSET:\033[0m'
 
 # Check python version 
 def check_python_version():
@@ -87,6 +88,14 @@ def check_write_priv(path):
     else:
         print(bcolors.FAIL, path, "is not writable")
 
+# Check file permissions
+def check_file_perm(filename, perm):
+    if os.path.isfile(filename):
+        os.chmod(filename, perm)
+        print(bcolors.PASS, filename, "permissions set")
+    else:
+        print(bcolors.FAIL, filename, "not found.")
+
 # Confirm SSH connection is successful
 def check_ssh_connect(host, user, key):
     try:
@@ -134,9 +143,11 @@ def check_setup(glob_obj):
     confirm_path_exists([glob.stg['log_path'], glob.stg['build_path'], glob.stg['bench_path']])
     ensure_path_exists([glob.stg['benchmark_repo'], glob.stg['config_path'], glob.stg['template_path']])
 
-
     # Check exe
     check_exe(['benchtool', 'sinfo', 'sacct'])
+
+    # Check permissions
+    check_file_perm(os.path.join(glob.stg['ssh_key_dir'], glob.stg['ssh_key'] ), 0o600)
 
     # Check db host access
     check_ssh_connect(glob.stg['db_host'], glob.stg['ssh_user'], os.path.join(base_dir, "auth", glob.stg['ssh_key']))
