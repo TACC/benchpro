@@ -3,12 +3,18 @@
 #System Imports
 import configparser as cp
 import os 
-import psycopg2
-from psycopg2 import sql
 import shutil as sh
 import subprocess
 import sys
 
+db = True
+try:
+    import psycopg2
+    from psycopg2 import sql
+except ImportError:
+    db = False
+    print("No psycopg2 module available, db access will not be available!")
+    
 glob = None
 
 # ANSI escape squence for text color
@@ -44,7 +50,7 @@ def confirm_path_exists(path_list):
 # Test if path exists
 def ensure_path_exists(path_list):
     for path in path_list:
-        if os.path.isdir(path):
+        if os.path.isdir(os.path.expandvars(path)):
             print(bcolors.PASS, path, "found")
         else:
             print(bcolors.FAIL, path, "not found")
@@ -125,7 +131,7 @@ def check_setup(glob_obj):
     check_write_priv(base_dir)
 
     # Check paths
-    confirm_path_exists([glob.stg['log_path'], glob.stg['build_path']])
+    confirm_path_exists([glob.stg['log_path'], glob.stg['build_path'], glob.stg['bench_path']])
     ensure_path_exists([glob.stg['benchmark_repo'], glob.stg['config_path'], glob.stg['template_path']])
 
 
@@ -136,4 +142,7 @@ def check_setup(glob_obj):
     check_ssh_connect(glob.stg['db_host'], glob.stg['ssh_user'], os.path.join(base_dir, "auth", glob.stg['ssh_key']))
 
     # Check db access
-    check_db_connect(glob)
+    if db:
+        check_db_connect(glob)
+    else: 
+        print(bcolors.FAIL, "no psycopg2, no db access")

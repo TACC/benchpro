@@ -2,12 +2,16 @@
 import configparser as cp
 import csv
 import os
-import psycopg2
-from psycopg2 import sql
 import shutil as su
 import subprocess
 import sys
 import time
+
+try:
+    import psycopg2
+    from psycopg2 import sql
+except ImportError:
+    pass
 
 # Local Imports
 import src.cfg_handler as cfg_handler

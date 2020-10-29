@@ -56,13 +56,13 @@ fi
 sed -i '1255i\      sm80flags="-gencode arch=compute_80,code=sm_80"' AmberTools/src/configure2
 
 # Build serial
-echo "y" | ./configure ${config_comp}
+echo "y" | ./configure -noX11 ${config_comp}
 source amber.sh
 make -j${threads} install
 
 # Build MPI
 if [ ! -z ${mpi} ]; then
-  echo "y" | ./configure ${config_mpi} ${config_comp}
+  echo "y" | ./configure -noX11 ${config_mpi} ${config_comp}
   source amber.sh
   make -j${threads} install
 fi
@@ -70,7 +70,7 @@ fi
 # Build CUDA + MPI
 if [ ! -z ${mpi} ] && [ ! -z ${cuda} ]; then
   export CUDA_HOME=$TACC_CUDA_DIR
-  echo "y" | ./configure -cuda ${config_mpi} ${config_comp}
+  echo "y" | ./configure -noX11 -cuda ${config_mpi} ${config_comp}
   source amber.sh
   make -j${threads} install
 fi

@@ -33,6 +33,13 @@ def get_var_overload_dict(vars_str):
 
     return overload_dict
 
+# Write command line to history file
+def write_cmd_history(glob):
+    if not glob.args.history:
+        history_file = os.path.join(glob.basedir, ".history")
+        with open(history_file, "a") as hist: 
+            hist.write(sys.argv[0].split("/")[-1] + " " + " ".join(sys.argv[1:]) + "\n")
+
 def main():
     # Parse cmdline args
     cmd_parser = argparse.ArgumentParser(
@@ -76,14 +83,14 @@ def main():
     cmd_parser.add_argument("--queryDB", default=False,
                             help="Query database for results matching search criteria. Accepts colon-delimited list \
                                     of search criteria. Use 'all' to display all results in db.")
-
     cmd_parser.add_argument("--export", default=False, action='store_true',
                             help="Export database query to .csv file dbquery_[date].csv")
 
+    cmd_parser.add_argument("--history", default=False, action='store_true',
+                                help="Print benchtool input history.")
 
     cmd_parser.add_argument("--overload", default=False,
                             help="Override any setting read from cfg files. Accepts colon-delimited list of assignments.")
-
     cmd_parser.add_argument("--validate", default=False, action='store_true',
                             help="Run installation validator.")
 
@@ -95,6 +102,10 @@ def main():
     glob = global_settings.settings()
     # Add arg dict to global object
     glob.args = args
+
+
+    # Write cmd to history file
+    write_cmd_history(glob)
 
     # Get overload dict
     glob.overloads = get_var_overload_dict(args.overload)
@@ -144,6 +155,10 @@ def main():
     # Query installation and exit
     elif args.queryApp:
         handler.query_app()
+
+    # Print cmd line history
+    elif args.history:
+        handler.print_history()
 
     # Query db for results
     elif args.queryDB:

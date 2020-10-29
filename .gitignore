@@ -12,6 +12,7 @@ hw_reporting/hw_report*
 build/*
 !build/modulefiles/builder.lua
 results/*
+.history
 develop-eggs/
 dist/
 downloads/

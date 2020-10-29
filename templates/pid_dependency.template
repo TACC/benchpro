@@ -1,0 +1,15 @@
+
+echo "Waiting for PID <<<pid>>>"  
+date \n")
+timeout=21600 # 6hrs
+poll=5
+for (( i=0; i<$timeout; i+=$poll ))
+do
+    if ! ps -p <<<pid>>> > /dev/null; then
+        break
+    fi
+    sleep $poll
+done
+echo "PID <<<pid>>> complete" 
+date \n")
+

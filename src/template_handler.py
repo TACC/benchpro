@@ -64,14 +64,15 @@ def template_epilog(template_obj):
 # Add dependency to build process (if building locally)
 def add_process_dep(template_obj):
 
-    pid = common.get_build_pid()
-    glob.log.debug("Adding dependency to benchmark script, waiting for PID: " + pid)
+    glob.log.debug("Adding dependency to benchmark script, waiting for PID: " + glob.prev_pid)
 
-    template_obj.append("echo Waiting for build to complete \n")
-    template_obj.append("date \n")
-    template_obj.append("while ps -p "+pid+" > /dev/null; do sleep 5; done; sleep 5; \n")
-    template_obj.append("echo Build completed \n \n")
-    template_obj.append("date \n")
+    dep_file = os.path.join(glob.stg['template_path'], glob.stg['pid_dep_file'])
+    if os.path.isfile(dep_file):
+        with open(dep_file, 'r') as fd:
+            template_obj.extend(fd.readlines())
+
+    else:
+        exception.error_and_quit(glob.log, "unable to read pid dependency template " + common.rel_path(dep_file))
 
 # Contextualizes template script with variables from a list of config dicts
 def populate_template(cfg_dicts, template_obj):
@@ -217,7 +218,8 @@ def generate_bench_script(glob_obj):
     template_obj.append("#!/bin/bash \n")
 
     # Create dep to running build shell on local node
-    if glob.code['metadata']['build_running']:
+    if glob.prev_pid:
+        glob.code['config']['pid'] = glob.prev_pid
         add_process_dep(template_obj)  
 
     get_bench_templates()

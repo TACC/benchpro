@@ -176,7 +176,7 @@ def run_bench(input_label):
     jobs = glob.code['runtime']['nodes']
     counter = 1
     prev_jobid = []
-
+    prev_pid = 0
 
     # Init math handler
     math_handler = math_funcs.init(glob)
@@ -293,7 +293,7 @@ def run_bench(input_label):
 
 
             print("Output file:")
-            print(">  " + os.path.join(glob.code['metadata']['working_path'], glob.code['config']['output_file']))
+            print(">  " + common.rel_path(os.path.join(glob.code['metadata']['working_path'], glob.code['config']['output_file'])))
 
             # Generate bench report
             generate_bench_report(build_report)
@@ -333,7 +333,5 @@ def init(glob_obj):
     # Run benchmark on list of inputs
     for inp in input_list:
         run_bench(inp)
-        glob.code = {}
-        glob.args.params = None
 
 
