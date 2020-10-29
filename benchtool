@@ -36,7 +36,8 @@ def get_var_overload_dict(vars_str):
 def main():
     # Parse cmdline args
     cmd_parser = argparse.ArgumentParser(
-        description='This is a benchmarking tool to automate the installation of applications, execution of benchmarks and collection of results.')
+        description='This is a benchmarking tool to automate the installation of applications, \
+                    execution of benchmarks and collection of results.')
 
     cmd_parser.add_argument("--build", default=False,
                             type=str, help="Name of the code config file to build, run --avail to check.")
@@ -49,9 +50,11 @@ def main():
     cmd_parser.add_argument("--capture", default=False, action='store_true',
                             help="Send results to database.")
     cmd_parser.add_argument("--listResults", default=False,
-                            help="Provide summary of benchmarks results. Takes 'pending', 'complete', 'captured', 'failed' or 'all'")
+                            help="Provide summary of benchmarks results. Takes 'pending', 'complete', 'captured', \
+                                    'failed' or 'all'")
     cmd_parser.add_argument("--removeResult", default=False,
-                            help="Deletes benchmark result from local directory, takes benchmark label, 'captured', 'failed' or 'all'")
+                            help="Deletes benchmark result from local directory, takes benchmark label, 'captured', \
+                                    'failed' or 'all'")
     
     cmd_parser.add_argument("--clean", default=False, action='store_true',
                             help="Cleanup temp and log files.")
@@ -71,8 +74,12 @@ def main():
     cmd_parser.add_argument("--queryResult", default=False,
                             help="Query a local benchmark result for config info.")
     cmd_parser.add_argument("--queryDB", default=False,
-                            help="Query database for results matching search criteria. Accepts comma-delimited list of search criteria. Use 'all' to display all results in db.")
-    
+                            help="Query database for results matching search criteria. Accepts colon-delimited list \
+                                    of search criteria. Use 'all' to display all results in db.")
+
+    cmd_parser.add_argument("--export", default=False, action='store_true',
+                            help="Export database query to .csv file dbquery_[date].csv")
+
 
     cmd_parser.add_argument("--overload", default=False,
                             help="Override any setting read from cfg files. Accepts colon-delimited list of assignments.")
