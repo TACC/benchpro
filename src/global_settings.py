@@ -27,6 +27,9 @@ class settings(object):
     overloads = {}
     overload_dict = {}
     
+    prev_pid = 0
+
+
     # Context variables
     user                = str(os.getlogin())
     hostname            = str(socket.gethostname())
