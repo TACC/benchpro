@@ -39,7 +39,8 @@ class init(object):
         search_dict = ['*.out*',
                        '*.err*',
                        '*.log',
-                       'tmp.*']
+                       'tmp.*',
+                       '.history']
 
         file_list = self.find_matching_files(search_dict)
 
@@ -237,4 +238,13 @@ class init(object):
         [self.print_setting(key) for key in ['dry_run', 'exit_on_missing', 'overwrite', 'build_mode', 'build_if_missing', 'bench_mode']]        
         print("")
         print("Overload with '--overload [SETTING1=ARG]:[SETTING2=ARG]'")
+
+    # Print command line history file
+    def print_history(self):
+        history_file = os.path.join(self.glob.basedir, ".history")
+        if os.path.isfile(history_file):
+            with open(history_file, "r") as hist:
+                content = hist.read()
+                for line in content.split("\n"):
+                    print(line)
 

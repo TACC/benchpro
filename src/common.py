@@ -424,6 +424,7 @@ class init(object):
         try:
             with open(os.path.join(working_dir, output_dir), 'w') as fp:
                 cmd = subprocess.Popen(['bash', script_path], stdout=fp, stderr=fp)
+                self.glob.prev_pid = cmd.pid
 
         except:
             exception.error_and_quit(self.glob.log,"failed to start build script in local shell.")

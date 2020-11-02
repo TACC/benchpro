@@ -1,12 +1,17 @@
 # System Imports
 import configparser as cp
+import csv
 import os
-import psycopg2
-from psycopg2 import sql
 import shutil as su
 import subprocess
 import sys
 import time
+
+try:
+    import psycopg2
+    from psycopg2 import sql
+except ImportError:
+    pass
 
 # Local Imports
 import src.cfg_handler as cfg_handler
@@ -409,15 +414,15 @@ def capture_result(glob_obj):
         print("Done. ", captured, " results sucessfully captured")
 
 # Test if search field is valid in results/models.py
-def test_search_field(model_fields, field):
+def test_search_field(field):
 
-    if field in model_fields:
+    if field in glob.model_fields:
         return True
 
     else:
         print("ERROR: '" + field + "' is not a valid search field.")
         print("Available fields:")
-        for f in model_fields:
+        for f in glob.model_fields:
             print("  "+f)
         sys.exit(2)
 
@@ -425,14 +430,11 @@ def test_search_field(model_fields, field):
 def parse_input_str(args):
     input_list= args.split(':')
 
-    # Get fields from DB
-    model_fields = get_table_fields()
-
     select_str = ""
     for option in input_list:
         search = option.split('=')
         # Test search key is in db
-        if test_search_field(model_fields, search[0]):
+        if test_search_field(search[0]):
             if select_str: select_str += " AND "
             else: select_str += " " 
             select_str = select_str + search[0] + "='" + search[1] + "'"
@@ -479,6 +481,8 @@ def query_db(glob_obj):
     glob = glob_obj
     common = common_funcs.init(glob)
 
+    glob.model_fields = get_table_fields()
+
     query_results = None
     search_str="all"
     # No search filter 
@@ -489,19 +493,49 @@ def query_db(glob_obj):
         search_str = parse_input_str(glob.args.queryDB)
         query_results = run_query(search_str)
 
+    col_width = [12, 12, 12, 20, 32, 18]
     # If query produced results
     if query_results:
         print()
-        print("Using search '" + search_str + " ' " + str(len(query_results)) + " results were found:")
+        print("Using search " + search_str + " " + str(len(query_results)) + " results were found:")
         print()
-        print("|"+ "USER".center(12) +"|"+ "SYSTEM".center(12) +"|"+ "JOBID".center(12) +"|"+ "CODE".center(20) +"|"+ "DATASET".center(20) +"|"+ "RESULT".center(20) +"|")
-        print("|"+ "-"*12 +"+"+ "-"*12 +"+"+ "-"*12 +"+"+ "-"*20 +"+"+ "-"*20 +"+"+ "-"*20 +"|")
+        print("|"+  "USER".center(col_width[0]) +"|"+\
+                    "SYSTEM".center(col_width[1]) +"|"+ \
+                    "JOBID".center(col_width[2]) +"|"+ \
+                    "CODE".center(col_width[3]) +"|"+ \
+                    "DATASET".center(col_width[4]) +"|"+ \
+                    "RESULT".center(col_width[5]) +"|")
+
+        print("|"+  "-"*col_width[0] +"+" +\
+                    "-"*col_width[1] +"+"+ \
+                    "-"*col_width[2] +"+"+ \
+                    "-"*col_width[3] +"+"+ \
+                    "-"*col_width[4] +"+"+ \
+                    "-"*col_width[5] +"|")
         for result in query_results:
-            print("|"+ result[1].center(12) +"|"+ result[2].center(12) +"|"+ str(result[4]).center(12) +"|"+ (result[8]+"-"+result[9]).center(20) +"|"+ result[13].center(20) +"|"+ (str(result[14])+" "+result[15]).center(20) +"|")
+            print(  "|"+ result[1].center(col_width[0]) +\
+                    "|"+ result[2].center(col_width[1]) +"|"+ \
+                    str(result[4]).center(col_width[2]) +"|"+ \
+                    (result[8]+"-"+result[9]).center(col_width[3]) +"|"+ \
+                    result[13].center(col_width[4]) +"|"+ \
+                    (str(result[14])+" "+result[15]).center(col_width[5]) +"|")
 
     else:
         print("No results found matching search criteria.")
-    
+
+    # Export to csv
+    if glob.args.export:
+        csvFile = os.path.join(glob.basedir, "dbquery_"+ glob.time_str + ".csv")
+        print()
+        print("Exporting to csv file: " + common.rel_path(csvFile))
+
+        with open(csvFile, 'w') as outFile:
+            wr = csv.writer(outFile, quoting=csv.QUOTE_ALL)
+            wr.writerow(glob.model_fields)
+            wr.writerows(query_results)
+        
+        print("Done.")
+
 # List local results
 def list_results(glob_obj):
     global glob, common
