@@ -508,6 +508,8 @@ def list_results(glob_obj):
     glob = glob_obj
     common = common_funcs.init(glob)
 
+    glob.result_list = common.get_all_results()
+
     # Running results
     if glob.args.listResults == 'running' or glob.args.listResults == 'all':
         result_list = common.get_running_results()

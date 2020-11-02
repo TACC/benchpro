@@ -232,9 +232,12 @@ class init(object):
     def filter_results_by_file(self, results_dir_list, check_file, criteria):
         filtered_results = []
         result_path = self.glob.stg['bench_path'] + self.glob.stg['sl']
+        print("** Looking for results in", result_path)
         # Check list for 'check_file'
         for result_dir in results_dir_list:
+            print("    **Checking result", result_dir)
             if os.path.isfile(os.path.join(result_path, result_dir, check_file)) == criteria:
+                print("        ** result matches criteria")
                 filtered_results.append(result_dir)
         # Return list of dirs that pass the test
         return filtered_results
