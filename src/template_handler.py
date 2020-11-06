@@ -1,4 +1,5 @@
 # System Imports
+import glob as gb
 import os
 import shutil as su
 import sys
@@ -194,12 +195,18 @@ def get_bench_templates():
     else:
         glob.code['template'] = glob.code['config']['label']
 
-    bench_template_search = common.find_partial(glob.code['template'], os.path.join(glob.stg['template_path'],glob.stg['bench_tmpl_dir']))
+    matches = gb.glob(os.path.join(glob.stg['template_path'], glob.stg['bench_tmpl_dir'], "*" + glob.code['template'] + "*"))
+    matches.sort()
 
-    if not bench_template_search:
+    # If more than 1 template match found
+    if len(matches) > 1: 
+        matches[0] = min(matches, key=len)
+
+    # if no template match found 
+    if not matches:
         exception.error_and_quit(glob.log, "failed to locate bench template '" + glob.code['template'] + "' in " + common.rel_path(os.path.join(glob.stg['template_path'], glob.stg['bench_tmpl_dir'])))
     else:
-        glob.code['template'] = bench_template_search
+        glob.code['template'] = matches[0]
 
     glob.code['metadata']['job_script'] = glob.code['config']['label'] + "-bench." + glob.stg['bench_mode']
 

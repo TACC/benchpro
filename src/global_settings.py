@@ -24,9 +24,9 @@ class settings(object):
     compiler = {}
     suite    = {}
 
-    overloads = {}
+    dep_list = {}
     overload_dict = {}
-    
+    quiet_build =  False 
     prev_pid = 0
 
 
@@ -101,6 +101,8 @@ class settings(object):
         self.stg['log_path']            = os.path.join(self.basedir, self.stg['log_dir'])
         self.stg['build_path']          = os.path.join(self.basedir, self.stg['build_basedir'])
         self.stg['bench_path']          = os.path.join(self.basedir, self.stg['bench_basedir'])
+        self.stg['current_path']        = os.path.join(self.stg['bench_path'], self.stg['current_subdir'])
+        self.stg['archive_path']        = os.path.join(self.stg['bench_path'], self.stg['archive_subdir'])
         self.stg['config_path']         = os.path.join(self.basedir, self.stg['config_basedir'])
         self.stg['template_path']       = os.path.join(self.basedir, self.stg['template_basedir'])
         self.stg['script_path']         = os.path.join(self.basedir, self.stg['script_basedir'])

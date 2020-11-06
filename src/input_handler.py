@@ -176,7 +176,6 @@ class init(object):
                     print("Build job " + jobid + " state: " + complete)
                 else:
                     print("Build job " + jobid + " for '" + code_str + "' is still running.")
-                    return
 
             # Look for exe 
             exe_search = self.common.find_exact(exe, install_path)
@@ -226,6 +225,13 @@ class init(object):
     def show_available_benches(self):
         search_path = os.path.join(self.glob.stg['config_basedir'], self.glob.stg['bench_cfg_dir'])
         self.show_available("benchmark", search_path)
+
+    def show_available_suites(self):
+        print("Available benchmark suites:")
+        print("---------------------------------")
+        for key in self.glob.suite:
+            print ("  " + key)
+
 
     # Print key/value pair from setting.ini dict
     def print_setting(self, key):

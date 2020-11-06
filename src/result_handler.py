@@ -1,6 +1,7 @@
 # System Imports
 import configparser as cp
 import csv
+import glob as gb
 import os
 import shutil as su
 import subprocess
@@ -21,17 +22,28 @@ import src.logger as logger
 
 glob = common = None
 
+# Move benchmark directory from current to archive, once processed
+def move_to_archive(result_dir):
+    if not os.path.isdir(os.path.join(glob.stg['current_path'], result_dir)):
+        exception.error_and_quit(glob.log, "result directory '" + result_dir + "' not found.")
+
+    su.move(os.path.join(glob.stg['current_path'], result_dir), glob.stg['archive_path'])
+
 # Create .capture-complete file in result dir
-def capture_complete(path):
+def capture_complete(result_dir):
+    path = os.path.join(glob.stg['current_path'], result_dir)
     glob.log.debug("Successfully captured result in " + path)
     print("Successfully captured result in " + common.rel_path(path))
     with open(os.path.join(path, ".capture-complete"), 'w'): pass
+    move_to_archive(result_dir)
 
 # Create .capture-failed file in result dir
-def capture_failed(path):
+def capture_failed(result_dir):
+    path = os.path.join(glob.stg['current_path'], result_dir)
     glob.log.debug("Failed to capture result in " + path)
     print("Failed to capture result in " + common.rel_path(path))
     with open(os.path.join(path, ".capture-failed"), 'w'): pass
+    move_to_archive(result_dir)
 
 # Function to test if benchmark produced valid result
 def validate_result(result_path):
@@ -75,7 +87,7 @@ def validate_result(result_path):
 
     # Run scipt collection
     elif glob.code['result']['method'] == 'script':
-        result_script = glob.stg['script_path'] + glob.stg['sl'] + glob.stg['result_scripts_dir'] + glob.stg['sl'] + glob.code['result']['script']
+        result_script = os.path.join(glob.stg['script_path'], glob.stg['result_scripts_dir'], glob.code['result']['script'])
         if not os.path.exists(result_script):
             exception.print_warning(glob.log, "Result collection script not found at "+ common.rel_path(result_script))
             return False, None
@@ -167,7 +179,7 @@ def get_optional_key(report_parser, section, key):
 def get_insert_dict(result_dir, result, unit):
     
     # Bench report
-    bench_report = glob.stg['bench_path'] + glob.stg['sl'] + result_dir + glob.stg['sl'] + glob.stg['bench_report_file']
+    bench_report = os.path.join(glob.stg['current_path'], result_dir, glob.stg['bench_report_file'])
     if not os.path.exists(bench_report):
         exception.print_warning(glob.log, common.rel_path(bench_report) + " not found.")
         return False
@@ -328,13 +340,25 @@ def send_files(result_dir, dest_dir):
         if not glob.user or not glob.stg['ssh_key']:
             exception.error_and_quit(glob.log, "Keys 'ssh_user' and 'ssh_key' required in glob_obj.cfg if using SCP file transmission.")
 
-        server_path = glob.stg['scp_path'] + glob.stg['sl'] + dest_dir
+        server_path = os.path.join(glob.stg['scp_path'],dest_dir)
 
         # Create directory on remote server
         if make_remote_dir(server_path):
-            # SCP source dir to dest_dir
-            if scp_files(glob.stg['bench_path'] + glob.stg['sl'] + result_dir + glob.stg['sl'] + "hw_report", server_path):
-                return True
+
+            # Copy matching files to server
+            search_substrings = ["*.err", "*.out", "*.sched", "*.txt", "*.log"]
+            for substring in search_substrings:
+                matching_files = gb.glob(os.path.join(glob.stg['current_path'], result_dir, substring))
+                for match in matching_files:
+                    scp_files(match, server_path)
+
+            # SCP bench_files to server
+            if os.path.isdir(os.path.join(glob.stg['current_path'], result_dir, "bench_files")):
+                scp_files(os.path.join(glob.stg['current_path'], result_dir, "bench_files"), server_path)
+
+            # SCP hw_utils to server
+            if os.path.isdir(os.path.join(glob.stg['current_path'], result_dir, "hw_report")):
+                scp_files(os.path.join(glob.stg['current_path'], result_dir, "hw_report"), server_path)
 
         # Use network FS
     elif glob.stg['file_copy_handler'] == "fs":
@@ -345,8 +369,8 @@ def send_files(result_dir, dest_dir):
 
         # Transmission method neither 'scp' or 'fs'
     else:
-        return False
-
+       exception.error_and_quit(glob.log, "unknown 'file_copy_handler' option in settings.cfg. Accepts 'scp' or 'fs'.") 
+       
 # Look for results and send them to db
 def capture_result(glob_obj):
     global glob, common
@@ -357,11 +381,12 @@ def capture_result(glob_obj):
     glob.log = logger.start_logging("CAPTURE", glob.stg['results_log_file'] + "_" + glob.time_str + ".log", glob)
 
     # Get list of completed benchmarks
-    results = common.get_pending_results()
+
+    results = common.get_completed_results(common.get_current_results(), True)
 
     # No outstanding results
     if not results:
-        print("No new results found in " + common.rel_path(glob.stg['bench_path']))
+        print("No new results found in " + common.rel_path(glob.stg['current_path']))
 
     else:
         captured = 0
@@ -371,12 +396,12 @@ def capture_result(glob_obj):
 
         for result_dir in results:
 
-            result_path = glob.stg['bench_path'] + glob.stg['sl'] + result_dir
+            result_path = os.path.join(glob.stg['current_path'], result_dir)
             result, unit = validate_result(result_path)
 
             # If unable to get valid result, skipping this result
             if not result:
-                capture_failed(result_path)
+                capture_failed(result_dir)
                 print()
                 continue
 
@@ -386,7 +411,7 @@ def capture_result(glob_obj):
             insert_dict = get_insert_dict(result_dir, result, unit)
             # If insert_dict failed
             if not insert_dict:
-                capture_failed(result_path)
+                capture_failed(result_dir)
                 print()
                 continue
 
@@ -394,20 +419,15 @@ def capture_result(glob_obj):
 
             # If insert failed
             if not dest_dir:
-                capture_failed(result_path)
+                capture_failed(result_dir)
                 print()
                 continue
 
             # send files to db server
             sent = send_files(result_dir, dest_dir)
 
-            # If files copied successfully
-            if not sent:
-                exception.print_warning(glob.log, "Failed to copy provenance data to database server.")
-                print()
-
             # Touch .capture-complete file
-            capture_complete(glob.stg['bench_path'] + glob.stg['sl'] + result_dir)
+            capture_complete(result_dir)
             captured += 1
             print()
 
@@ -542,14 +562,17 @@ def list_results(glob_obj):
     glob = glob_obj
     common = common_funcs.init(glob)
 
-    glob.result_list = common.get_all_results()
+    # Get list of all results
+    current_list = common.get_current_results()
+    archive_list = common.get_archive_results()
 
     # Running results
     if glob.args.listResults == 'running' or glob.args.listResults == 'all':
-        result_list = common.get_running_results()
-        if result_list:
-            print("Found", len(result_list), "running benchmarks:")
-            for result in result_list:
+        # Get list of running results
+        running = common.get_completed_results(current_list, False)
+        if running:
+            print("Found", len(running), "running benchmarks:")
+            for result in running:
                 print("  " + result)
         else:
             print("No running benchmarks found.")
@@ -557,10 +580,11 @@ def list_results(glob_obj):
 
     # Completed results
     if glob.args.listResults == 'pending' or glob.args.listResults == 'all':
-        result_list = common.get_pending_results()
-        if result_list:
-            print("Found", len(result_list), "pending benchmark results:")
-            for result in result_list:
+        # Get list of pending results
+        pending = common.get_completed_results(current_list, True)
+        if pending:
+            print("Found", len(pending), "pending benchmark results:")
+            for result in pending:
                 print("  " + result)
         else:
             print("No pending benchmark results found.")
@@ -568,10 +592,11 @@ def list_results(glob_obj):
 
     # Captured results
     if glob.args.listResults == 'captured' or glob.args.listResults == 'all':
-        result_list = common.get_captured_results()
-        if result_list:
-            print("Found", len(result_list), "captured benchmark results:")
-            for result in result_list:
+        # Get list of results which successfully captured
+        captured = common.get_captured_results(archive_list, ".capture_complete")
+        if captured:
+            print("Found", len(captured), "captured benchmark results:")
+            for result in captured:
                 print("  " + result)
         else:
             print("No captured benchmark results found.")
@@ -579,10 +604,11 @@ def list_results(glob_obj):
 
     # Failed results
     if glob.args.listResults == 'failed' or glob.args.listResults == 'all':
-        result_list = common.get_failed_results()
-        if result_list:
-            print("Found", len(result_list), "failed benchmark results:")
-            for result in result_list:
+        # Get list of results which failed to capture
+        failed = common.get_captured_results(archive_list, ".capture_failed")
+        if failed:
+            print("Found", len(failed), "failed benchmark results:")
+            for result in failed:
                 print("  " + result)
         else:
             print("No failed benchmark results found.")
@@ -591,19 +617,16 @@ def list_results(glob_obj):
     if not glob.args.listResults in ['running', 'pending', 'captured', 'failed', 'all']:
         print("Invalid input, provide 'running', 'pending', 'captured', 'failed' or 'all'.")
 
-
 # Get list of results matching search str
-def get_matching_results(result_str):
-
-    matching_results = []
-    for result in common.get_subdirs(glob.stg['bench_path']):
-        if result_str in result:
-            matching_results.append(result)
-
+def get_matching_results(result_path, result_str):
+    # Get list of result dirs matching search string
+    matching_results = gb.glob(os.path.join(result_path, "*"+result_str+"*"))
+    # No matches
     if not matching_results:
         print("No results found matching selection '" + result_str + "'")
         sys.exit(1)
 
+    # Muliple matches
     elif len(matching_results) > 1:
         print("Multiple results found matching '" + result_str + "'")
         for result in sorted(matching_results):
@@ -621,7 +644,7 @@ def query_result(glob_obj):
 
     glob.log = logger.start_logging("CAPTURE", glob.stg['results_log_file'] + "_" + glob.time_str + ".log", glob)
 
-    result_path = os.path.join(glob.stg['bench_path'], get_matching_results(glob.args.queryResult)[0])
+    result_path = os.path.join(glob.stg['current_path'], get_matching_results(glob.stg['current_path'], glob.args.queryResult)[0])
     bench_report = os.path.join(result_path, "bench_report.txt")
 
     jobid = ""
@@ -655,7 +678,7 @@ def delete_results(result_list):
     time.sleep(glob.stg['timeout'])
     print("No going back now...")
     for result in result_list:
-        su.rmtree(glob.stg['bench_path'] + glob.stg['sl'] + result)
+        su.rmtree(os.path.join(glob.stg['bench_path'], result))
     print("Done.")
 
 # Remove local result
@@ -696,7 +719,8 @@ def remove_result(glob_obj):
 
     # Remove unique result matching input str
     else:
-        results = get_matching_results(glob.args.removeResult)
+        results = get_matching_results(glob.stg['current_path'], glob.args.removeResult)
+        results = results + get_matching_results(glob.stg['archive_path'], glob.args.removeResult)
         print("Found matching results: ")
         for res in results:
             print("  " + res)

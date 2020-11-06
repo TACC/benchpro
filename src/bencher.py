@@ -64,6 +64,7 @@ def get_code_info(input_label, search_dict):
         install_cfg = common.check_if_avail(search_dict)
 
         glob.args.build = common.get_filename_from_path(install_cfg)
+        glob.quiet_build = True
         builder.init(copy.deepcopy(glob))
 
         print("DRYRUN", glob.stg['dry_run'], type(glob.stg['dry_run']))
@@ -124,7 +125,11 @@ def get_code_info(input_label, search_dict):
 
 
 # Main function to check for installed application, setup benchmark and run it
-def run_bench(input_label):
+def run_bench(input_label, glob_copy):
+
+    global glob, common
+    glob = glob_copy
+    common = common_funcs.init(glob) 
 
     code = version = system = ""
     build_report = ""
@@ -208,7 +213,7 @@ def run_bench(input_label):
 
             # Get working_path
             # Path to benchmark session directory
-            glob.code['metadata']['base_path'] = os.path.join(glob.stg['bench_path'], glob.system['sys_env'] + "_" + glob.code['config']['label'] + "_" + glob.time_str)
+            glob.code['metadata']['base_path'] = os.path.join(glob.stg['current_path'], glob.system['sys_env'] + "_" + glob.code['config']['label'] + "_" + glob.time_str)
             # Path to application's data directory
             glob.code['metadata']['benchmark_repo'] = glob.stg['benchmark_repo']
 
@@ -302,7 +307,6 @@ def run_bench(input_label):
 # Check input
 def init(glob_obj):
 
-    global glob, common
     glob = glob_obj
     common = common_funcs.init(glob)
 
@@ -332,6 +336,6 @@ def init(glob_obj):
 
     # Run benchmark on list of inputs
     for inp in input_list:
-        run_bench(inp)
+        run_bench(inp, copy.deepcopy(glob))
 
 

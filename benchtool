@@ -147,6 +147,7 @@ def main():
     elif args.avail:
         handler.show_available_codes()
         handler.show_available_benches()
+        handler.show_available_suites()
 
     # Remove installation and exit
     elif args.remove:

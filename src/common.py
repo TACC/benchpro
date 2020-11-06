@@ -1,5 +1,6 @@
 # System Imports
 import configparser as cp
+import copy
 import datetime
 import glob as gb
 import os
@@ -157,51 +158,6 @@ class init(object):
         installed_list.sort()
         return installed_list
 
-    # Check if a string returns a unique installed application
-    def check_if_installed2(self, requested_code):
-
-        search_list = requested_code.split("_")
-
-        installed_list = self.get_installed()
-        matched_codes = []
-
-        for code_string in installed_list:
-            if search_list[0] in code_string:
-                matched_codes.append(code_string)
-
-        if len(search_list) > 1:
-            for code in matched_codes:
-                if not search_list[1] in code:
-                    matched_codes.remove(code)
-                    
-        # No matches, either exit, or if build_on_missing: return False
-        if len(matched_codes) == 0:
-            if self.glob.stg['build_if_missing']:
-                return False
-            else:
-
-                print("No installed applications match your selection '" + requested_code + "'")
-                print()
-                print("Currently installed applications:")
-                for code in installed_list:
-                    print(" " + code)
-                sys.exit(2)
-        # Unique match
-        elif len(matched_codes) == 1:
-            return matched_codes[0]
-        # More than 1 match
-        else:
-            for code in matched_codes:
-                # Exact match to 1 of multiple results
-                if requested_code == code:
-                    return code
-            
-        print("Multiple installed applications match your selection '" + requested_code + "':")
-        for code in matched_codes:
-            print("  ->" + code)
-        print("Please be more specific.")
-        sys.exit(1)
-
     # Check that job ID is not running
     def check_job_complete(self, jobid):
         # If job not available in squeue anymore
@@ -217,82 +173,78 @@ class init(object):
 
         # Job COMPLETE
         if any (state == x for x in ["COMPLETED", "CANCELLED", "ERROR", "FAILED", "TIMEOUT"]):
-            return state
+            return True
 
         # Job RUNNING or PENDING
         return False
 
-    # Get all results in ./results
-    def get_all_results(self):
-        results = self.get_subdirs(self.glob.stg['bench_path'])
-        results.sort()
-        return results
+    # Get results in ./results/current
+    def get_current_results(self):
+        return self.get_subdirs(self.glob.stg['current_path'])
+
+    # Get results in ./results/archive
+    def get_archive_results(self):
+        return self.get_subdirs(self.glob.stg['archive_path'])
 
     # Test list of result dirs for file presence
-    def filter_results_by_file(self, results_dir_list, check_file, criteria):
-        filtered_results = []
-        result_path = self.glob.stg['bench_path'] + self.glob.stg['sl']
-        print("** Looking for results in", result_path)
+    def check_for_file(self, result_dir, check_file):
         # Check list for 'check_file'
-        for result_dir in results_dir_list:
-            print("    **Checking result", result_dir)
-            if os.path.isfile(os.path.join(result_path, result_dir, check_file)) == criteria:
-                print("        ** result matches criteria")
-                filtered_results.append(result_dir)
-        # Return list of dirs that pass the test
-        return filtered_results
+        if os.path.isfile(os.path.join(result_dir, check_file)):
+            return True
+        else:
+            return False
 
-    # Return list of result dirs whose job RUNNING state meets criteria
-    def filter_results_by_complete_jobid(self, criteria):
+    # Return list of results meeting capture status 
+    def get_captured_results(self, search_list, check_file):
+        # List of results to return
+        matching_results = []
 
-        not_failed = self.filter_results_by_file(self.get_all_results(), ".capture-failed", False)
-        not_failed_and_not_captured = self.filter_results_by_file(not_failed, ".capture-complete", False)
-        filtered_results = []
+        # For each result
+        for result in search_list:
+            if self.check_for_file(os.path.join(self.glob.stg['archive_path'], result), check_file):            
+                matching_results.append(result)
+                search_list.remove(result)
 
-        # Check that job is complete
-        for result in not_failed_and_not_captured:
-            jobid = None
+        return matching_results
+    
+    # Return jobid for result
+    def get_result_jobid(self, result):
+        jobid = None
+        try:
+        # Get jobID from bench_report.txt
+            bench_report = os.path.join(self.glob.stg['current_path'], result, self.glob.stg['bench_report_file'])
+            report_parser = cp.ConfigParser()
+            report_parser.optionxform=str
+            report_parser.read(bench_report)
+            # Get JOBID in order to get NODELIST from sacct
+            return report_parser.get('bench', 'jobid')
+        except:
+            return False
 
-            try:
-            # Get jobID from bench_report.txt
-                with open(os.path.join(self.glob.stg['bench_path'], result, self.glob.stg['bench_report_file']), 'r') as inFile:
-                    for line in inFile:
-                        if "jobid" in line:
-                            jobid = line.split("=")[1].strip()
-            except:
-                pass
+    # Return list of results meeting jobid status (True = complete, False = running)
+    def get_completed_results(self, search_list, status):
+        # List of results to return
+        matching_results = []
+        # For every result
+        if search_list:
+            for result in copy.deepcopy(search_list):
+                # Get jobid and check it is comeplete, if so append to return list and remove from provided list
+                jobid = self.get_result_jobid(result)
+                if self.check_job_complete(jobid) == status:
+                    matching_results.append(result)
+                    search_list.remove(result)
 
-            # Check job is completed
-            if self.check_job_complete(jobid) == criteria:
-                filtered_results.append(result)
-
-        filtered_results.sort()
-        return filtered_results
-
-    # Get result dirs that have '.capture-failed' file inside
-    def get_failed_results(self):
-        return self.filter_results_by_file(self.get_all_results(), ".capture-failed", True)
-
-    # Get result dirs that have '.capture-complete' file inside
-    def get_captured_results(self):
-        return self.filter_results_by_file(self.get_all_results(), ".capture-complete", True)
-
-    # Check if there are don't have '.capture-failed' or '.capture-complete' and JOBID != RUNNING 
-    def get_pending_results(self):
-        return self.filter_results_by_complete_jobid(True)
-
-    # Check if there are benchmark jobs running
-    def get_running_results(self):
-        return self.filter_results_by_complete_jobid(False)
+        matching_results.sort()
+        return matching_results
 
     # Get list of uncaptured results and print note to user
     def print_new_results(self):
         print("Checking for uncaptured results...")
         # Uncaptured results + job complete
-        pending_results = self.get_pending_results()
+        pending_results = self.get_completed_results(self.get_current_results(), True)
         if pending_results:
             print(self.glob.note)
-            print("There are " + str(len(pending_results)) + " uncaptured results found in " + self.rel_path(self.glob.stg['bench_path']))
+            print("There are " + str(len(pending_results)) + " uncaptured results found in " + self.rel_path(self.glob.stg['current_path']))
             print("Run 'benchtool --capture' to send to database.")
             print()
         else:
@@ -773,7 +725,6 @@ class init(object):
 
         except subprocess.CalledProcessError as e:
             exception.error_and_quit("Failed to run 'ps -aux'")
-        print("FULL", cmd.stdout.split("\n"))
 
         pid = cmd.stdout.split("\n")[0].split(" ")[2]
         if not pid:
@@ -783,7 +734,6 @@ class init(object):
 
     # Replace SLURM variables in ouput files
     def check_for_slurm_vars(self):
-        print("CHECKING", self.glob.code['config']['output_file'])
         self.glob.code['config']['output_file'] = self.glob.code['config']['output_file'].replace("$SLURM_JOBID", self.glob.jobid) 
 
-        
+

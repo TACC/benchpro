@@ -103,7 +103,9 @@ def build_code(code_label):
 
     print()
     # Check for empty overload params
-    common.check_for_unused_overloads()
+
+    if not glob.quiet_build:
+        common.check_for_unused_overloads()
 
     # Print inputs to log
     common.send_inputs_to_log('Builder')
@@ -197,9 +199,6 @@ def init(glob_obj):
     # Init loggers
     glob.log = logger.start_logging("BUILD", glob.stg['build_log_file'] + "_" + glob.time_str + ".log", glob)
 
-    # Grab a copy of the overload_dict for this session
-    glob.overload_dict = copy.deepcopy(glob.overloads)
-
     # Instantiate common_funcs
     common = common_funcs.init(glob)
     
@@ -207,7 +206,8 @@ def init(glob_obj):
     common.overload_params(glob.stg)
 
     # Check for new results
-    common.print_new_results()
+    if not glob.quiet_build:
+        common.print_new_results()
 
 
     #Check build_mode in set correctly

@@ -40,6 +40,9 @@ def search_cfg_str(cfg_name, search_path):
             
                 exception.error_and_quit(glob.log, "please provide a unique input config.")
 
+    else:
+        exception.error_and_quit(glob.log, "directory '" + common.rel_path(search_path) + "' does not exist")
+
     return None
 
 # Check cfg file exists
