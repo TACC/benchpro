@@ -113,28 +113,10 @@ class settings(object):
         self.stg['utils_path']          = os.path.join(self.basedir, self.stg['system_utils_dir'])
 
         # Get system label
-        sys_env = str(os.getenv(self.stg['system_env'].strip('$')))
-        if not sys_env:
+        self.sys_env = str(os.getenv(self.stg['system_env'].strip('$')))
+        if not self.sys_env:
             print("ERROR: " + self.stg['system_env'] + " not set.")
             exit(2)
 
         #----------------------------settings.ini--------------------------------
 
-        #----------------------------system.cfg----------------------------------
-        # Get arch and cores_per_node from system.cfg file
-        system_cfg      = os.path.join(self.stg['config_path'], self.stg['system_cfg_file'])
-        system_parser   = configparser.RawConfigParser(allow_no_value=True)
-        settings_parser.read(system_cfg)
-
-        self.system = {'sys_env': sys_env}
-
-        try:
-            self.system['cores'] = settings_parser[sys_env]['cores']
-            self.system['cores_per_node'] = settings_parser[sys_env]['cores']
-            self.system['default_arch']   = settings_parser[sys_env]['default_arch']
-
-        except:
-            print("Failed to read system profile '"+ sys_env +"' in " + self.stg['config_basedir'] + self.stg['sl'] + self.stg['system_cfg_file'])
-            print("Please add this system profile.")
-            sys.exit(2)
-        #----------------------------system.cfg----------------------------------

@@ -52,10 +52,12 @@ def generate_bench_report(build_report):
 def get_code_info(input_label, search_dict):
 
     # Check if code is installed
-    glob.code['metadata']['app_mod'] = common.check_if_installed(search_dict)
+    glob.code['metadata']['code_path'] = common.check_if_installed(search_dict)
+    # Set application module path to install path 
+    glob.code['metadata']['app_mod'] = glob.code['metadata']['code_path']
 
     # If application is not installed, check if cfg file is available to build
-    if not glob.code['metadata']['app_mod']:
+    if not glob.code['metadata']['code_path']:
         print("Failed to locate installed application with search criteria:")
         for key in search_dict:
             print("  " + key.ljust(12) + "= " + search_dict[key])
@@ -67,24 +69,25 @@ def get_code_info(input_label, search_dict):
         glob.quiet_build = True
         builder.init(copy.deepcopy(glob))
 
-        print("DRYRUN", glob.stg['dry_run'], type(glob.stg['dry_run']))
-
         if glob.stg['dry_run']:
             glob.code['metadata']['build_running'] = False
         else:
             glob.code['metadata']['build_running'] = True
-        glob.code['metadata']['app_mod'] = common.check_if_installed(search_dict)
+        glob.code['metadata']['code_path'] = common.check_if_installed(search_dict)
 
     # Code is built
     else:
         glob.code['metadata']['build_running'] = False
 
+
+    print("APP_MOD", glob.code['metadata']['code_path'])
+
     # Confirm application is installed after attempt
-    if not glob.code['metadata']['app_mod']:
+    if not glob.code['metadata']['code_path']:
         exception.error_and_quit(glob.log, "it seems the attempt to build your application failed. Consult the logs.")
 
     # Get app info from build report
-    install_path = os.path.join(glob.stg['build_path'], glob.code['metadata']['app_mod'])
+    install_path = os.path.join(glob.stg['build_path'], glob.code['metadata']['code_path'])
     build_report = os.path.join(install_path, glob.stg['build_report_file'])
     report_parser     = cp.ConfigParser()
     report_parser.optionxform=str
@@ -141,9 +144,9 @@ def run_bench(input_label, glob_copy):
     # Get application search dict for this benchmark
     search_dict = glob.code['requirements']
 
-    if common.needs_code(search_dict):
-        search_dict['system'] = glob.system['sys_env']
+    print("search dict", search_dict)
 
+    if common.needs_code(search_dict):
         code, version, system, build_report = get_code_info(input_label, search_dict)
 
         # Directory to add to MODULEPATH
@@ -151,7 +154,7 @@ def run_bench(input_label, glob_copy):
 
     else:    
         print("No code required") 
-        glob.code['metadata']['app_mod'] = ""
+        glob.code['metadata']['code_path'] = ""
         glob.code['metadata']['build_running'] = False
 
     # Get bench config dicts
@@ -314,7 +317,7 @@ def init(glob_obj):
     glob.log = logger.start_logging("RUN", glob.stg['bench_log_file'] + "_" + glob.time_str + ".log", glob)
 
     # Grab a copy of the overload_dict for this session
-    glob.overload_dict = copy.deepcopy(glob.overloads)
+    glob.overload_dict = copy.deepcopy(glob.overload_dict)
 
     # Check for new results
     common.print_new_results()

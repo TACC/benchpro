@@ -108,7 +108,7 @@ def main():
     write_cmd_history(glob)
 
     # Get overload dict
-    glob.overloads = get_var_overload_dict(args.overload)
+    glob.overload_dict = get_var_overload_dict(args.overload)
 
     # Use system default scheduler profile
     if glob.args.sched == "system":

@@ -173,7 +173,7 @@ class init(object):
 
         # Job COMPLETE
         if any (state == x for x in ["COMPLETED", "CANCELLED", "ERROR", "FAILED", "TIMEOUT"]):
-            return True
+            return state
 
         # Job RUNNING or PENDING
         return False
@@ -535,7 +535,9 @@ class init(object):
 
     # Replace cfg params with cmd line inputs 
     def overload_params(self, search_dict):
+
         for overload_key in list(self.glob.overload_dict):
+
             # If dealing with code/sched/compiler cfg, descend another level
             if list(search_dict)[0] == "metadata":
                 for section_dict in search_dict:
@@ -625,8 +627,13 @@ class init(object):
     # Search code_path with values in search_dict
     def search_with_dict(self, search_dict, code_path):
         match = True
+        # Break code path by /
+        code_path_elems = code_path.split(self.glob.stg['sl'])
+
+        #Ensure every val that is set in search dict is found in code path
         for key in search_dict:
-            if not search_dict[key] in code_path:
+            if search_dict[key] and not search_dict[key] in code_path_elems:
+                # Otherwise not code does not match requirements
                 match = False
         return match
 

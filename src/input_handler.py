@@ -172,6 +172,7 @@ class init(object):
             # Sched build
             else:
                 complete = self.common.check_job_complete(jobid)
+
                 if complete:
                     print("Build job " + jobid + " state: " + complete)
                 else:
@@ -211,9 +212,9 @@ class init(object):
         self.print_codes(gb.glob(app_dir + "*.cfg"))
 
         # Scan config/build/[system]
-        app_dir = app_dir + self.glob.system['sys_env'] + self.glob.stg['sl']
+        app_dir = app_dir + self.glob.sys_env + self.glob.stg['sl']
         if os.path.isdir(app_dir):
-            print(self.common.rel_path(os.path.join(search_path, self.glob.system['sys_env'])) + ":")
+            print(self.common.rel_path(os.path.join(search_path, self.glob.sys_env)) + ":")
             self.print_codes(gb.glob(app_dir + "*.cfg"))
         print()
 

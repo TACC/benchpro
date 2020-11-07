@@ -92,7 +92,7 @@ def check_file(cfg_type, cfg_name):
         return cfg_file
 
     # 7: Seach system subdir 
-    search_path = search_path + glob.system['sys_env'] + glob.stg['sl']
+    search_path = search_path + glob.sys_env + glob.stg['sl']
     cfg_file = search_cfg_str(cfg_name, search_path)
     if cfg_file:
         return cfg_file
@@ -159,6 +159,23 @@ def get_val_types(cfg_dict):
             elif cfg_dict[sect][key].isdigit():
                 cfg_dict[sect][key] =  int(cfg_dict[sect][key])
 
+# Extract system variables from system.cfg
+def set_system_vars(system):
+
+    glob.system = {'sys_env': system}
+    cfg_file = os.path.join(glob.stg['config_path'], glob.stg['system_cfg_file'])
+    system_parser   = cp.RawConfigParser(allow_no_value=True)
+    system_parser.read(cfg_file)
+
+    try:    
+        glob.system['cores']          = system_parser[system]['cores']
+        glob.system['cores_per_node'] = system_parser[system]['cores']
+        glob.system['default_arch']   = system_parser[system]['default_arch']
+    except:
+        exception.error_and_quit(glob.log, "Failed to read system profile '"+ system +"' in " + os.path.join(glob.stg['config_basedir'], glob.stg['system_cfg_file'])\
+                                    +"\nPlease add this system profile.") 
+
+
 # Check build config file and add required fields
 def process_build_cfg(cfg_dict):
 
@@ -199,13 +216,17 @@ def process_build_cfg(cfg_dict):
     # Get system from env if not defined
     if not cfg_dict['general']['system']:
         glob.log.debug("WARNING: 'system' not defined in " + common.rel_path(cfg_dict['metadata']['cfg_file']))
-        glob.log.debug("WARNING: getting system label from $TACC_SYSTEM: " + glob.system['sys_env'])
-        cfg_dict['general']['system'] = glob.system['sys_env']
+        glob.log.debug("WARNING: getting system label from $TACC_SYSTEM: " + glob.sys_env)
+        cfg_dict['general']['system'] = glob.sys_env
         if not cfg_dict['general']['system']:
             exception.error_and_quit(glob.log, "$TACC_SYSTEM not set, unable to continue. Please define 'system' in " + common.rel_path(cfg_dict['metadata']['cfg_file']))
 
+    # Set system variables from system.cfg
+    set_system_vars(cfg_dict['general']['system'])
+
     # Check requested modules exist, and if so, result full module names
-    common.check_module_exists(cfg_dict['modules'], cfg_dict['general']['module_use'])
+    if glob.stg['check_modules']:
+        common.check_module_exists(cfg_dict['modules'], cfg_dict['general']['module_use'])
 
     # Parse architecture defaults config file 
     arch_file = check_file('arch', glob.stg['config_path'] + glob.stg['sl'] + glob.stg['arch_cfg_file'])
@@ -221,6 +242,7 @@ def process_build_cfg(cfg_dict):
 
     # If arch requested = 'system', get default arch for this system
     if cfg_dict['config']['arch'] == 'system' or not cfg_dict['config']['arch']:
+        print("HERE:",glob.system)
         cfg_dict['config']['arch'] = glob.system['default_arch']
         glob.log.debug("Requested build arch='default'. Using system default for " + cfg_dict['general']['system'] + " = " + cfg_dict['config']['arch'])
 
@@ -274,6 +296,7 @@ def process_bench_cfg(cfg_dict):
     if not 'code'               in cfg_dict['requirements'].keys():  cfg_dict['requirements']['code']    = ""
     if not 'version'            in cfg_dict['requirements'].keys():  cfg_dict['requirements']['version'] = ""
     if not 'label'              in cfg_dict['requirements'].keys():  cfg_dict['requirements']['label']   = ""
+    if not 'system'             in cfg_dict['requirements'].keys():  cfg_dict['requirements']['system']  = ""
 
     if not 'ranks_per_node'     in cfg_dict['runtime'].keys():  cfg_dict['runtime']['ranks_per_node']    = 0
     if not 'max_running_jobs'   in cfg_dict['runtime'].keys():  cfg_dict['runtime']['max_running_jobs']  = 10
@@ -289,6 +312,13 @@ def process_bench_cfg(cfg_dict):
     if not 'description'        in cfg_dict['result'].keys():   cfg_dict['result']['description']        = ""
 
     get_val_types(cfg_dict)
+
+
+    if not cfg_dict['requirements']['system']:
+        cfg_dict['requirements']['system'] = glob.sys_env
+
+    # Set system variables from system.cfg
+    set_system_vars(cfg_dict['requirements']['system'])
 
     # Set default 1 rank per core, if not defined
     if not cfg_dict['runtime']['ranks_per_node']:
