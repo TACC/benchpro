@@ -593,7 +593,7 @@ def list_results(glob_obj):
     # Captured results
     if glob.args.listResults == 'captured' or glob.args.listResults == 'all':
         # Get list of results which successfully captured
-        captured = common.get_captured_results(archive_list, ".capture_complete")
+        captured = common.get_captured_results(archive_list, ".capture-complete")
         if captured:
             print("Found", len(captured), "captured benchmark results:")
             for result in captured:
@@ -605,7 +605,7 @@ def list_results(glob_obj):
     # Failed results
     if glob.args.listResults == 'failed' or glob.args.listResults == 'all':
         # Get list of results which failed to capture
-        failed = common.get_captured_results(archive_list, ".capture_failed")
+        failed = common.get_captured_results(archive_list, ".capture-failed")
         if failed:
             print("Found", len(failed), "failed benchmark results:")
             for result in failed:

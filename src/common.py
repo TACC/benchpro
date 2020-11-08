@@ -200,7 +200,7 @@ class init(object):
         matching_results = []
 
         # For each result
-        for result in search_list:
+        for result in copy.deepcopy(search_list):
             if self.check_for_file(os.path.join(self.glob.stg['archive_path'], result), check_file):            
                 matching_results.append(result)
                 search_list.remove(result)
@@ -222,7 +222,7 @@ class init(object):
             return False
 
     # Return list of results meeting jobid status (True = complete, False = running)
-    def get_completed_results(self, search_list, status):
+    def get_completed_results(self, search_list, is_complete):
         # List of results to return
         matching_results = []
         # For every result
@@ -230,7 +230,8 @@ class init(object):
             for result in copy.deepcopy(search_list):
                 # Get jobid and check it is comeplete, if so append to return list and remove from provided list
                 jobid = self.get_result_jobid(result)
-                if self.check_job_complete(jobid) == status:
+                state = self.check_job_complete(jobid)
+                if (state and is_complete) or (not state and not is_complete):
                     matching_results.append(result)
                     search_list.remove(result)
 

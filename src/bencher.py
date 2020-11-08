@@ -79,9 +79,6 @@ def get_code_info(input_label, search_dict):
     else:
         glob.code['metadata']['build_running'] = False
 
-
-    print("APP_MOD", glob.code['metadata']['code_path'])
-
     # Confirm application is installed after attempt
     if not glob.code['metadata']['code_path']:
         exception.error_and_quit(glob.log, "it seems the attempt to build your application failed. Consult the logs.")
@@ -143,8 +140,6 @@ def run_bench(input_label, glob_copy):
 
     # Get application search dict for this benchmark
     search_dict = glob.code['requirements']
-
-    print("search dict", search_dict)
 
     if common.needs_code(search_dict):
         code, version, system, build_report = get_code_info(input_label, search_dict)
