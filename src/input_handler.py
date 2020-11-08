@@ -79,7 +79,10 @@ class init(object):
         if code_str == 'all':
             remove_list = self.common.get_installed()
         else:
-            remove_list.append(self.common.check_if_installed({'code':code_str}))
+            search_dict = {}
+            for code_elem in code_str.split(self.glob.stg['sl']):
+                search_dict[code_elem] = code_elem
+            remove_list.append(self.common.check_if_installed(search_dict))
 
         for app in remove_list:
             # If not installed
@@ -137,7 +140,12 @@ class init(object):
     def query_app(self):
 
         code_str = self.glob.args.queryApp
-        search_dict = {'code':code_str}
+        search_dict = {}
+        
+        # Disect search string into search dict
+        for search_elem in code_str.split("/"):
+            search_dict[search_elem] = search_elem
+        
         app_dir = self.common.check_if_installed(search_dict)
 
         if not app_dir:

@@ -56,7 +56,7 @@ def template_epilog(template_obj):
 
     # Add hardware collection script to job script
     if glob.code['config']['collect_hw_stats']:
-        if common.file_owner(glob.stg['utils_path'] + glob.stg['sl'] + "lshw") == "root":
+        if common.file_owner(os.path.join(glob.stg['utils_path'], "lshw")) == "root":
             template_obj.append(glob.stg['src_path'] + glob.stg['sl'] + "collect_hw_info.sh " + glob.stg['utils_path'] + " " + \
                             glob.code['metadata']['working_path'] + glob.stg['sl'] + "hw_report" + "\n")
         else:

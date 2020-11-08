@@ -194,6 +194,7 @@ def process_build_cfg(cfg_dict):
     if not 'build_prefix'     in cfg_dict['general'].keys():  cfg_dict['general']['build_prefix']   = ""
     if not 'template'         in cfg_dict['general'].keys():  cfg_dict['general']['template']       = ""
     if not 'module_use'       in cfg_dict['general'].keys():  cfg_dict['general']['module_use']     = ""
+    if not 'sched_cfg'        in cfg_dict['general'].keys():  cfg_dict['general']['sched_cfg']      = ""
 
     if not 'exe'              in cfg_dict['config'].keys():    cfg_dict['config']['exe']              = ""
     if not 'arch'             in cfg_dict['config'].keys():    cfg_dict['config']['arch']             = ""
@@ -242,7 +243,6 @@ def process_build_cfg(cfg_dict):
 
     # If arch requested = 'system', get default arch for this system
     if cfg_dict['config']['arch'] == 'system' or not cfg_dict['config']['arch']:
-        print("HERE:",glob.system)
         cfg_dict['config']['arch'] = glob.system['default_arch']
         glob.log.debug("Requested build arch='default'. Using system default for " + cfg_dict['general']['system'] + " = " + cfg_dict['config']['arch'])
 

@@ -94,7 +94,9 @@ def build_code(code_label):
 
     # Get sched config dict if exec_mode=sched, otherwise set threads 
     if glob.stg['build_mode'] == "sched":
-        cfg_handler.ingest_cfg('sched',    glob.args.sched,             glob)
+        if not glob.code['general']['sched_cfg']:
+            glob.code['general']['sched_cfg'] = glob.args.sched
+        cfg_handler.ingest_cfg('sched', glob.code['general']['sched_cfg'], glob)
         print("Using scheduler config file:")
         print(">  " + common.rel_path(glob.sched['metadata']['cfg_file']))
         print()
