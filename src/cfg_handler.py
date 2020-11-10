@@ -127,9 +127,6 @@ def read_cfg_file(cfg_file):
     for section in cfg_parser.sections():
         cfg_dict[section] = dict(cfg_parser.items(section))
 
-    # Overload cfg params with cmd line args
-    common.overload_params(cfg_dict)
-
     return cfg_dict
 
 # Error if section heading missing in cfg file
@@ -202,6 +199,9 @@ def process_build_cfg(cfg_dict):
     if not 'build_label'      in cfg_dict['config'].keys():    cfg_dict['config']['build_label']      = ""
     if not 'bin_dir'          in cfg_dict['config'].keys():    cfg_dict['config']['bin_dir']          = ""
     if not 'collect_hw_stats' in cfg_dict['config'].keys():    cfg_dict['config']['collect_hw_stats'] = False
+
+    # Overload params from cmdline
+    common.overload_params(cfg_dict)
 
     # Convert dtypes
     get_val_types(cfg_dict)
@@ -311,8 +311,11 @@ def process_bench_cfg(cfg_dict):
 
     if not 'description'        in cfg_dict['result'].keys():   cfg_dict['result']['description']        = ""
 
-    get_val_types(cfg_dict)
+    # Overload params from cmdline
+    common.overload_params(cfg_dict)
 
+    # Convert cfg keys to correct datatype
+    get_val_types(cfg_dict)
 
     if not cfg_dict['requirements']['system']:
         cfg_dict['requirements']['system'] = glob.sys_env

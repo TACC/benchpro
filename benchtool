@@ -5,6 +5,8 @@ import argparse
 import os
 import pprint as pp
 import sys
+from timeit import default_timer as timer
+
 
 # Local Imports
 try:
@@ -94,7 +96,8 @@ def main():
     cmd_parser.add_argument("--validate", default=False, action='store_true',
                             help="Run installation validator.")
 
-    print()
+    cmd_parser.add_argument("--version", default=False, action='store_true',
+                            help="Print version info.")
 
     args = cmd_parser.parse_args()
 
@@ -102,7 +105,6 @@ def main():
     glob = global_settings.settings()
     # Add arg dict to global object
     glob.args = args
-
 
     # Write cmd to history file
     write_cmd_history(glob)
@@ -179,6 +181,9 @@ def main():
 
     elif args.validate:
         validate.check_setup(glob)
+
+    elif args.version:
+        handler.print_version()
 
     # No seletion provided
     else:

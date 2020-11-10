@@ -71,7 +71,7 @@ class init(object):
         else:
             self.prune_tree(parent_path)
 
-    # Detele application and module matching path provided
+    # Delete application and module matching path provided
     def remove_app(self):
         code_str = self.glob.args.remove
  
@@ -250,7 +250,13 @@ class init(object):
     def print_defaults(self):
         print("Default options in settings.ini:")
         print()
-        [self.print_setting(key) for key in ['dry_run', 'exit_on_missing', 'overwrite', 'build_mode', 'build_if_missing', 'bench_mode']]        
+        [self.print_setting(key) for key in ['dry_run', \
+                                            'exit_on_missing', \
+                                            'overwrite', \
+                                            'build_mode', \
+                                            'build_if_missing', \
+                                            'bench_mode',\
+                                            'check_modules']]
         print("")
         print("Overload with '--overload [SETTING1=ARG]:[SETTING2=ARG]'")
 
@@ -263,3 +269,8 @@ class init(object):
                 for line in content.split("\n"):
                     print(line)
 
+    # Print version file and quit
+    def print_version(self):
+        with open(os.path.join(self.glob.basedir, ".version")) as vfile:
+            print(vfile.read())
+        

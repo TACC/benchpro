@@ -536,7 +536,6 @@ class init(object):
 
     # Replace cfg params with cmd line inputs 
     def overload_params(self, search_dict):
-
         for overload_key in list(self.glob.overload_dict):
 
             # If dealing with code/sched/compiler cfg, descend another level

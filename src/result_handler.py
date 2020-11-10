@@ -617,24 +617,10 @@ def list_results(glob_obj):
     if not glob.args.listResults in ['running', 'pending', 'captured', 'failed', 'all']:
         print("Invalid input, provide 'running', 'pending', 'captured', 'failed' or 'all'.")
 
-# Get list of results matching search str
+# Get list of result dirs matching search str
 def get_matching_results(result_path, result_str):
-    # Get list of result dirs matching search string
     matching_results = gb.glob(os.path.join(result_path, "*"+result_str+"*"))
-    # No matches
-    if not matching_results:
-        print("No results found matching selection '" + result_str + "'")
-        sys.exit(1)
-
-    # Muliple matches
-    elif len(matching_results) > 1:
-        print("Multiple results found matching '" + result_str + "'")
-        for result in sorted(matching_results):
-            print("  " + result)
-        sys.exit(1)
-
-    else:
-        return matching_results
+    return matching_results
 
 # Show info for local result
 def query_result(glob_obj):
@@ -642,10 +628,32 @@ def query_result(glob_obj):
     glob = glob_obj
     common = common_funcs.init(glob)
 
+    # Start logger
     glob.log = logger.start_logging("CAPTURE", glob.stg['results_log_file'] + "_" + glob.time_str + ".log", glob)
 
-    result_path = os.path.join(glob.stg['current_path'], get_matching_results(glob.stg['current_path'], glob.args.queryResult)[0])
+    # Search ./results/current and ./results/archive
+    matching_dirs = get_matching_results(glob.stg['current_path'], glob.args.queryResult) + \
+                    get_matching_results(glob.stg['archive_path'], glob.args.queryResult)
+
+    # No result found
+    if not matching_dirs:
+        print("No matching result found matching '" + glob.args.queryResult + "'.")
+        sys.exit(2)
+
+    # Multiple results
+    elif len(matching_dirs) > 1:
+        print("Multiple results found matching '" + glob.args.queryResult + "'")
+        for result in sorted(matching_dirs):
+            print("  " + common.rel_path(result))
+        sys.exit(2)
+
+    result_path = os.path.join(glob.stg['current_path'], matching_dirs[0])
     bench_report = os.path.join(result_path, "bench_report.txt")
+
+    if not os.path.isfile(bench_report):
+        print("Missing report file " + common.rel_path(bench_report))
+        print("It seems something went wrong with --bench")
+        sys.exit(2)
 
     jobid = ""
     print("Benchmark report:")
@@ -667,18 +675,19 @@ def query_result(glob_obj):
     else: 
         print("Job " + jobid + " still running.")
 
-
+# Print list of result directories
 def print_results(result_list):
     for result in result_list:
         print("  " + result)
 
+# Delete list of result directories
 def delete_results(result_list):
     print()
     print("\033[91;1mDeleting in", glob.stg['timeout'], "seconds...\033[0m")
     time.sleep(glob.stg['timeout'])
     print("No going back now...")
     for result in result_list:
-        su.rmtree(os.path.join(glob.stg['bench_path'], result))
+        su.rmtree(result)
     print("Done.")
 
 # Remove local result
@@ -687,33 +696,38 @@ def remove_result(glob_obj):
     glob = glob_obj
     common = common_funcs.init(glob)
 
+    # Get list of all results
+    current_list = common.get_current_results()
+    archive_list = common.get_archive_results()
+
     # Check all results for failed status and remove
     if glob.args.removeResult == 'failed':
-        result_list = common.get_failed_results()
+        result_list = common.get_captured_results(archive_list, ".capture-failed")
         if result_list:
             print("Found", len(result_list), "failed results:")
             print_results(result_list)
-            delete_results(result_list)
+            delete_results([os.path.join(glob.stg['archive_path'], x) for x in result_list])
         else:
             print("No failed results found.")
 
     # Check all results for captured status and remove
     elif glob.args.removeResult == 'captured':
-        result_list = common.get_submitted_results()
+        result_list = common.get_captured_results(archive_list, ".capture-complete")
         if result_list:
             print("Found", len(result_list), "captured results:")
             print_results(result_list)
-            delete_results(result_list)
+            delete_results([os.path.join(glob.stg['archive_path'], x) for x in result_list])
         else:
             print("No captured results found.")
 
     # Remove all results in ./results dir
     elif glob.args.removeResult == 'all':
-        result_list = common.get_subdirs(glob.stg['bench_path'])    
+        result_list = current_list + archive_list
         if result_list:
             print("Found", len(result_list), " results:")
             print_results(result_list)
-            delete_results(result_list)
+            delete_results([os.path.join(glob.stg['archive_path'], x) for x in archive_list] +\
+                            [os.path.join(glob.stg['current_path'], x) for x in current_list])
         else:
             print("No results found.")
 
@@ -721,8 +735,12 @@ def remove_result(glob_obj):
     else:
         results = get_matching_results(glob.stg['current_path'], glob.args.removeResult)
         results = results + get_matching_results(glob.stg['archive_path'], glob.args.removeResult)
-        print("Found matching results: ")
-        for res in results:
-            print("  " + res)
-        delete_results(results)
+        if results:
+            print("Found matching results: ")
+            for res in results:
+                print("  " + res.split(glob.stg['sl'])[-1])
+            delete_results(results)
+        else:
+            print("No results found matching '" + glob.args.removeResult + "'")
+
 

@@ -69,13 +69,12 @@ class settings(object):
         else: 
             return value
 
-    def __init__(self):
-
-        # Parse settings.ini
+    # Read in settings.ini file
+    def read_settings(self):
         settings_ini    = os.path.join(self.basedir, "settings.ini")
         settings_parser = configparser.RawConfigParser(allow_no_value=True)
         settings_parser.read(settings_ini)
-    
+
         #----------------------------settings.ini--------------------------------
 
         # Read contents of settings.ini into dict
@@ -111,6 +110,12 @@ class settings(object):
         self.stg['module_path']         = os.path.join(self.stg['build_path'], self.stg['module_basedir'])
         self.stg['src_path']            = os.path.join(self.basedir, "src")
         self.stg['utils_path']          = os.path.join(self.basedir, self.stg['system_utils_dir'])
+
+
+    def __init__(self):
+
+        # Parse settings.ini
+        self.read_settings() 
 
         # Get system label
         self.sys_env = str(os.getenv(self.stg['system_env'].strip('$')))
