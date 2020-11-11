@@ -351,7 +351,7 @@ class init(object):
         if not self.glob.dep_list:
             return ""
         else:
-            return "--dependency=afterany:" + ":".join(self.glob.dep_list) + " "
+            return "--dependency=afterany:" + ":".join([str(x) for x in self.glob.dep_list]) + " "
 
     # Check if host can run mpiexec
     def check_mpi_allowed(self):
@@ -743,4 +743,7 @@ class init(object):
     def check_for_slurm_vars(self):
         self.glob.code['config']['output_file'] = self.glob.code['config']['output_file'].replace("$SLURM_JOBID", self.glob.jobid) 
 
-
+    # Write operation to file
+    def write_to_outputs(self, op, label):
+        with open(os.path.join(self.glob.basedir, ".outputs"), "a") as f:
+            f.write(op + " " + label + "\n")

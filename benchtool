@@ -91,6 +91,9 @@ def main():
     cmd_parser.add_argument("--history", default=False, action='store_true',
                                 help="Print benchtool input history.")
 
+    cmd_parser.add_argument("--last", nargs='?', const=1, type=int,
+                                help="Print query from last build or bench task.")
+
     cmd_parser.add_argument("--overload", default=False,
                             help="Override any setting read from cfg files. Accepts colon-delimited list of assignments.")
     cmd_parser.add_argument("--validate", default=False, action='store_true',
@@ -157,7 +160,7 @@ def main():
 
     # Query installation and exit
     elif args.queryApp:
-        handler.query_app()
+        handler.query_app(args.queryApp)
 
     # Print cmd line history
     elif args.history:
@@ -173,7 +176,7 @@ def main():
 
     # Query result and exit
     elif args.queryResult:
-        result_handler.query_result(glob)
+        result_handler.query_result(glob, args.queryResult)
 
     # Remove result and exit
     elif args.removeResult:
@@ -184,6 +187,9 @@ def main():
 
     elif args.version:
         handler.print_version()
+
+    elif args.last:
+        handler.print_last()
 
     # No seletion provided
     else:

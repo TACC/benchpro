@@ -8,6 +8,7 @@ import time
 
 # Local Imports
 import src.common as common_funcs
+import src.result_handler as result_handler
 
 class init(object):
     def __init__(self, glob):
@@ -137,19 +138,18 @@ class init(object):
             print(" " + line)
 
     # Print build report of installed application
-    def query_app(self):
+    def query_app(self, app_label):
 
-        code_str = self.glob.args.queryApp
         search_dict = {}
         
         # Disect search string into search dict
-        for search_elem in code_str.split("/"):
+        for search_elem in app_label.split("/"):
             search_dict[search_elem] = search_elem
         
         app_dir = self.common.check_if_installed(search_dict)
 
         if not app_dir:
-            print("Application '"+code_str+"' is not installed.")
+            print("Application '"+app_label+"' is not installed.")
             sys.exit(1)
 
         app_path = os.path.join(self.glob.stg['build_path'], self.common.check_if_installed(search_dict))
@@ -158,7 +158,7 @@ class init(object):
 
         exe = None
         jobid = None
-        print("Build report for application '"+code_str+"'")
+        print("Build report for application '"+app_label+"'")
         print("-------------------------------------------")
         with open(build_report, 'r') as report:
             content = report.read()
@@ -184,7 +184,7 @@ class init(object):
                 if complete:
                     print("Build job " + jobid + " state: " + complete)
                 else:
-                    print("Build job " + jobid + " for '" + code_str + "' is still running.")
+                    print("Build job " + jobid + " for '" + app_label + "' is still running.")
 
             # Look for exe 
             exe_search = self.common.find_exact(exe, install_path)
@@ -271,6 +271,38 @@ class init(object):
 
     # Print version file and quit
     def print_version(self):
-        with open(os.path.join(self.glob.basedir, ".version")) as vfile:
-            print(vfile.read())
-        
+        with open(os.path.join(self.glob.basedir, ".version")) as f:
+            print(f.read())
+
+    # Return the last line of the .outputs file
+    def get_last_output(self):
+
+        if not os.path.isfile(os.path.join(self.glob.basedir, ".outputs")):
+            print("No previous outputs found.")
+            sys.exit(1)
+
+        with open(os.path.join(self.glob.basedir, ".outputs"), "r") as f:
+            lines = f.readlines()
+            if len(lines) == 0:
+                print("No previous outputs found.")    
+                sys.exit(1)
+       
+        # Return requested line in output file
+        return lines[min(len(lines), self.glob.args.last) * -1].rstrip('\n')
+
+    # Print report from the last build or bench command
+    def print_last(self):
+
+        # Get requested 
+        op, label = self.get_last_output().split(" ")       
+
+        # If last output was from build task
+        if op == "build":
+            self.query_app(label)
+
+        # If last output was from bench task
+        elif op == "bench":
+            result_handler.query_result(self.glob, label)
+        else:
+            print("ERROR unknown option in .outputs file:", op)
+

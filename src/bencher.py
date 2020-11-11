@@ -17,6 +17,11 @@ import src.template_handler as template_handler
 
 glob = common = None
 
+# Check that ranks == gpus
+def check_ranks_per_gpu(ranks, gpus):
+    if not ranks == gpus:
+        exception.print_warning(log, "MPI ranks per node ("+ranks+") does equal GPUs per node (" + gpus + ")")    
+
 # Generate bench report after job is submitted
 def generate_bench_report(build_report):
 
@@ -141,6 +146,8 @@ def run_bench(input_label, glob_copy):
     # Get application search dict for this benchmark
     search_dict = glob.code['requirements']
 
+    print()
+
     if common.needs_code(search_dict):
         code, version, system, build_report = get_code_info(input_label, search_dict)
 
@@ -148,7 +155,7 @@ def run_bench(input_label, glob_copy):
         glob.code['metadata']['base_mod'] = glob.stg['module_path']
 
     else:    
-        print("No code required") 
+        print("No installed appication required!") 
         glob.code['metadata']['code_path'] = ""
         glob.code['metadata']['build_running'] = False
 
@@ -159,7 +166,8 @@ def run_bench(input_label, glob_copy):
         # Get job label
         glob.sched['sched']['job_label'] = code+"_bench"
 
-        sched_template = common.find_exact(glob.sched['sched']['type'] + ".template", os.path.join(glob.stg['template_path'], glob.stg['sched_tmpl_dir']))
+        sched_template = common.find_exact(glob.sched['sched']['type'] + ".template", \
+                                            os.path.join(glob.stg['template_path'], glob.stg['sched_tmpl_dir']))
 
     # Check for empty overload params
     common.check_for_unused_overloads()
@@ -178,7 +186,7 @@ def run_bench(input_label, glob_copy):
 
     jobs = glob.code['runtime']['nodes']
     counter = 1
-    prev_jobid = []
+    prev_jobid = common.get_active_jobids('_bench')
     prev_pid = 0
 
     # Init math handler
@@ -205,18 +213,22 @@ def run_bench(input_label, glob_copy):
             math_handler.eval_dict(glob.code['runtime'])
             math_handler.eval_dict(glob.code['config'])
 
-
             print()
-            print("Building script " + str(counter)  + " of " + str(len(jobs)*len(thread_list)) + ": " + str(node) + " nodes, " + str(thread_list[i]) + " threads, " + str(rank_list[i]) + " ranks per node.")
+            print("Building script " + str(counter)  + " of " + str(len(jobs)*len(thread_list)) \
+                   + ": " + str(node) + " nodes, " + str(thread_list[i]) + " threads, " + \
+                   str(rank_list[i]) + " ranks per node.")
 
-            # Get working_path
-            # Path to benchmark session directory
-            glob.code['metadata']['base_path'] = os.path.join(glob.stg['current_path'], glob.system['sys_env'] + "_" + glob.code['config']['label'] + "_" + glob.time_str)
+            # Working Dir
+            glob.code['metadata']['working_dir'] =  glob.system['sys_env'] + "_" + \
+                                                    glob.code['config']['label'] + "_" + \
+                                                    glob.time_str + "_" + node.zfill(3) + "N_" + \
+                                                    str(rank_list[i]).zfill(2) + "R_" + \
+                                                    str(thread_list[i]).zfill(2) + "T"
+
             # Path to application's data directory
             glob.code['metadata']['benchmark_repo'] = glob.stg['benchmark_repo']
 
-            subdir = node.zfill(3) + "N_" + str(rank_list[i]).zfill(2) + "R_" + str(thread_list[i]).zfill(2) + "T"
-            glob.code['metadata']['working_path'] = glob.code['metadata']['base_path'] + "_" + subdir
+            glob.code['metadata']['working_path'] = os.path.join(glob.stg['current_path'], glob.code['metadata']['working_dir'])
             print("Benchmark working directory:")
             print(">  " + common.rel_path(glob.code['metadata']['working_path']))
             print()
@@ -230,8 +242,10 @@ def run_bench(input_label, glob_copy):
                 glob.code['runtime']['mpi_exec'] = glob.stg['sched_mpi'] + " "
 
             else:
-                glob.code['runtime']['mpi_exec'] = "\"" + glob.stg['local_mpi'] + " -np " + str(glob.code['runtime']['ranks']) + " -ppn " \
-                                                    + str(glob.code['runtime']['ranks_per_node']) + " " + glob.code['runtime']['host_str'] + "\""
+                glob.code['runtime']['mpi_exec'] = "\"" + glob.stg['local_mpi'] + " -np " + \
+                                                    str(glob.code['runtime']['ranks']) + " -ppn " + \
+                                                    str(glob.code['runtime']['ranks_per_node']) + \
+                                                    " " + glob.code['runtime']['host_str'] + "\""
 
             # Generate benchmark template
             template_handler.generate_bench_script(glob)
@@ -269,14 +283,17 @@ def run_bench(input_label, glob_copy):
                     try:
                         job_limit = int(glob.code['runtime']['max_running_jobs'])
                     except:
-                        exception.error_and_quit(glob.log, "'max_running_jobs' value '" + glob.code['runtime']['max_running_jobs'] + "' is not an integer")
+                        exception.error_and_quit(glob.log, "'max_running_jobs' value '" + \
+                                            glob.code['runtime']['max_running_jobs'] + "' is not an integer")
 
                     if len(prev_jobid) >= job_limit:
                         print("Max running jobs reached, creating dependency")
                         glob.dep_list.append(prev_jobid[-1 * job_limit])
 
                     # Submit job
-                    glob.jobid = common.submit_job(common.get_dep_str(), glob.code['metadata']['working_path'], glob.code['metadata']['job_script'])
+                    glob.jobid = common.submit_job( common.get_dep_str(), \
+                                                    glob.code['metadata']['working_path'], \
+                                                    glob.code['metadata']['job_script'])
                     prev_jobid.append(glob.jobid)
     
                 # Local run
@@ -284,7 +301,9 @@ def run_bench(input_label, glob_copy):
                     # For local bench, use default output file name if not set (can't use stdout)
                     if not glob.code['config']['output_file']:
                         glob.code['config']['output_file'] = glob.stg['output_file']
-                    common.start_local_shell(glob.code['metadata']['working_path'], glob.tmp_script[4:], glob.code['config']['output_file'])
+                    common.start_local_shell(   glob.code['metadata']['working_path'], \
+                                                glob.tmp_script[4:], \
+                                                glob.code['config']['output_file'])
                     glob.jobid = "local"
 
             # Use stdout for output if not set
@@ -300,6 +319,10 @@ def run_bench(input_label, glob_copy):
 
             # Generate bench report
             generate_bench_report(build_report)
+        
+            # Write to output file
+            common.write_to_outputs("bench", glob.code['metadata']['working_dir'])
+
             counter += 1
 
 # Check input
@@ -327,7 +350,8 @@ def init(glob_obj):
             input_list = glob.suite[glob.args.bench].split(',')
             print("Benching application set '" + glob.args.bench + "': " + str(input_list))
         else:
-            exception.error_and_quit(glob.log, "No suite '" + glob.args.bench + "' in settings.ini. Available suites: " + ', '.join(glob.suite.keys()))
+            exception.error_and_quit(glob.log, "No suite '" + glob.args.bench + \
+                                     "' in settings.ini. Available suites: " + ', '.join(glob.suite.keys()))
 
     else:
         input_list = glob.args.bench.split(":")

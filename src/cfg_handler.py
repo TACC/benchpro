@@ -132,16 +132,19 @@ def read_cfg_file(cfg_file):
 # Error if section heading missing in cfg file
 def check_dict_section(cfg_file, cfg_dict, section):
     if not section in cfg_dict:
-        exception.error_and_quit(glob.log, "["+section+"] section heading required in " + common.rel_path(cfg_file) + ". Consult the documentation.")
+        exception.error_and_quit(glob.log, "["+section+"] section heading required in " + common.rel_path(cfg_file) + \
+                                ". Consult the documentation.")
 
 # Error if value missing in cfg file
 def check_dict_key(cfg_file, cfg_dict, section, key):
     # If key not found 
     if not key in cfg_dict[section]:
-        exception.error_and_quit(glob.log, "'" + key + "' value must be present in section [" + section + "] in " + common.rel_path(cfg_file) + ". Consult the documentation.")
+        exception.error_and_quit(glob.log, "'" + key + "' value must be present in section [" + section + \
+                                "] in " + common.rel_path(cfg_file) + ". Consult the documentation.")
     # If key not set
     if not cfg_dict[section][key]:
-        exception.error_and_quit(glob.log, "'" + key + "' value must be non-null in section [" + section + "] in " + common.rel_path(cfg_file) + ". Consult the documentation.")
+        exception.error_and_quit(glob.log, "'" + key + "' value must be non-null in section [" + section + \
+                                "] in " + common.rel_path(cfg_file) + ". Consult the documentation.")
 
 # Convert strings to correct dtype if detected
 def get_val_types(cfg_dict):
@@ -169,8 +172,9 @@ def set_system_vars(system):
         glob.system['cores_per_node'] = system_parser[system]['cores']
         glob.system['default_arch']   = system_parser[system]['default_arch']
     except:
-        exception.error_and_quit(glob.log, "Failed to read system profile '"+ system +"' in " + os.path.join(glob.stg['config_basedir'], glob.stg['system_cfg_file'])\
-                                    +"\nPlease add this system profile.") 
+        exception.error_and_quit(glob.log, "Failed to read system profile '"+ system +"' in " + \
+                                os.path.join(glob.stg['config_basedir'], glob.stg['system_cfg_file']) + \
+                                "\nPlease add this system profile.") 
 
 
 # Check build config file and add required fields
@@ -200,9 +204,6 @@ def process_build_cfg(cfg_dict):
     if not 'bin_dir'          in cfg_dict['config'].keys():    cfg_dict['config']['bin_dir']          = ""
     if not 'collect_hw_stats' in cfg_dict['config'].keys():    cfg_dict['config']['collect_hw_stats'] = False
 
-    # Overload params from cmdline
-    common.overload_params(cfg_dict)
-
     # Convert dtypes
     get_val_types(cfg_dict)
 
@@ -220,7 +221,11 @@ def process_build_cfg(cfg_dict):
         glob.log.debug("WARNING: getting system label from $TACC_SYSTEM: " + glob.sys_env)
         cfg_dict['general']['system'] = glob.sys_env
         if not cfg_dict['general']['system']:
-            exception.error_and_quit(glob.log, "$TACC_SYSTEM not set, unable to continue. Please define 'system' in " + common.rel_path(cfg_dict['metadata']['cfg_file']))
+            exception.error_and_quit(glob.log, "$TACC_SYSTEM not set, unable to continue. Please define 'system' in " + \
+                                    common.rel_path(cfg_dict['metadata']['cfg_file']))
+
+    print("SYSTEM", cfg_dict['general']['system'])
+
 
     # Set system variables from system.cfg
     set_system_vars(cfg_dict['general']['system'])
@@ -239,24 +244,28 @@ def process_build_cfg(cfg_dict):
         glob.log.debug("Core count for " + cfg_dict['general']['system'] + " = " + cfg_dict['config']['cores'])
 
     except:
-        exception.error_and_quit(glob.log, "system profile '" + cfg_dict['general']['system'] + "' missing in " + common.rel_path(system_file))
+        exception.error_and_quit(glob.log, "system profile '" + cfg_dict['general']['system'] + \
+                                "' missing in " + common.rel_path(system_file))
 
     # If arch requested = 'system', get default arch for this system
     if cfg_dict['config']['arch'] == 'system' or not cfg_dict['config']['arch']:
         cfg_dict['config']['arch'] = glob.system['default_arch']
-        glob.log.debug("Requested build arch='default'. Using system default for " + cfg_dict['general']['system'] + " = " + cfg_dict['config']['arch'])
+        glob.log.debug("Requested build arch='default'. Using system default for " + cfg_dict['general']['system'] + \
+                        " = " + cfg_dict['config']['arch'])
 
     # If using custom opt_flags, must provide build_label
     if cfg_dict['config']['opt_flags'] and not cfg_dict['config']['build_label']:
-        exception.error_and_quit(glob.log, "if building with custom optimization flags, please define a 'build_label in [build] section of " + common.rel_path(cfg_dict['metadata']['cfg_file']))
+        exception.error_and_quit(glob.log, "if building with custom optimization flags, please define a " + \
+                                "'build_label in [build] section of " + common.rel_path(cfg_dict['metadata']['cfg_file']))
 
     # Get default optimization flags based on system arch
     if not cfg_dict['config']['opt_flags']:
         try:
             cfg_dict['config']['opt_flags'] = arch_dict[cfg_dict['config']['arch']][cfg_dict['config']['compiler_type']]
         except:
-            exception.print_warning(glob.log, "Unable to determine default optimization flags for '" + cfg_dict['config']['compiler_type'] + "' compiler "\
-                                    + "on arch '" + cfg_dict['config']['arch'] + "'")
+            exception.print_warning(glob.log, "Unable to determine default optimization flags for '" + \
+                                    cfg_dict['config']['compiler_type'] + "' compiler " + \
+                                    "on arch '" + cfg_dict['config']['arch'] + "'")
 
     # Set default build label
     if not cfg_dict['config']['build_label']:
@@ -264,9 +273,13 @@ def process_build_cfg(cfg_dict):
 
     # Generate default build path if one is not defined
     if not cfg_dict['general']['build_prefix']:
-        cfg_dict['metadata']['working_path'] = os.path.join(glob.stg['build_path'], cfg_dict['general']['system'], cfg_dict['config']['arch'],\
-                                                common.get_module_label(cfg_dict['modules']['compiler']), common.get_module_label(cfg_dict['modules']['mpi']), \
-                                                cfg_dict['general']['code'], str(cfg_dict['general']['version']), cfg_dict['config']['build_label'])
+        cfg_dict['metadata']['working_path'] = os.path.join(glob.stg['build_path'], \
+                                                            cfg_dict['general']['system'], \
+                                                            cfg_dict['config']['arch'],\
+                                                            common.get_module_label(cfg_dict['modules']['compiler']), \
+                                                            common.get_module_label(cfg_dict['modules']['mpi']), \
+                                                            cfg_dict['general']['code'], str(cfg_dict['general']['version']), \
+                                                            cfg_dict['config']['build_label'])
 
     # Translate 'build_prefix' to 'working_path' for better readability
     else:
@@ -275,6 +288,9 @@ def process_build_cfg(cfg_dict):
     # Get build and install subdirs
     cfg_dict['metadata']['build_path']   = os.path.join(cfg_dict['metadata']['working_path'], glob.stg['build_subdir'])
     cfg_dict['metadata']['install_path'] = os.path.join(cfg_dict['metadata']['working_path'], glob.stg['install_subdir'])
+
+    # Overload params from cmdline
+    common.overload_params(cfg_dict)
 
 # Check bench config file and add required fields
 def process_bench_cfg(cfg_dict):
@@ -303,16 +319,13 @@ def process_bench_cfg(cfg_dict):
     if not 'hostfile'           in cfg_dict['runtime'].keys():  cfg_dict['runtime']['hostfile']          = ""
     if not 'hostlist'           in cfg_dict['runtime'].keys():  cfg_dict['runtime']['hostlist']          = ""
 
-    if not 'exe'                in cfg_dict['config'].keys():    cfg_dict['config']['exe']                 = ""
-    if not 'label'              in cfg_dict['config'].keys():    cfg_dict['config']['label']               = ""
-    if not 'template'           in cfg_dict['config'].keys():    cfg_dict['config']['template']            = ""
-    if not 'collect_hw_stats'   in cfg_dict['config'].keys():    cfg_dict['config']['collect_hw_stats']    = False
-    if not 'output_file'        in cfg_dict['config'].keys():    cfg_dict['config']['output_file']         = ""
+    if not 'exe'                in cfg_dict['config'].keys():    cfg_dict['config']['exe']               = ""
+    if not 'label'              in cfg_dict['config'].keys():    cfg_dict['config']['label']             = ""
+    if not 'template'           in cfg_dict['config'].keys():    cfg_dict['config']['template']          = ""
+    if not 'collect_hw_stats'   in cfg_dict['config'].keys():    cfg_dict['config']['collect_hw_stats']  = False
+    if not 'output_file'        in cfg_dict['config'].keys():    cfg_dict['config']['output_file']       = ""
 
     if not 'description'        in cfg_dict['result'].keys():   cfg_dict['result']['description']        = ""
-
-    # Overload params from cmdline
-    common.overload_params(cfg_dict)
 
     # Convert cfg keys to correct datatype
     get_val_types(cfg_dict)
@@ -327,6 +340,24 @@ def process_bench_cfg(cfg_dict):
     if not cfg_dict['runtime']['ranks_per_node']:
         cfg_dict['runtime']['ranks_per_node'] = glob.system['cores_per_node']
 
+    # Expression method
+    if cfg_dict['result']['method'] == "expr":
+        if not 'expr' in cfg_dict['result']:
+            exception.error_and_quit(glob.log, "if using 'expr' result validation method, 'expr'" + \
+                            " key is required in [result] section of " + common.rel_path(cfg_dict['metadata']['cfg_file']))
+    # Script method
+    elif cfg_dict['result']['method'] == "script":
+        if not 'script' in cfg_dict['result']:
+            exception.error_and_quit(glob.log, "if using 'script' result validation method, 'script'" + \
+                            " key is required in [result] section of " + common.rel_path(cfg_dict['metadata']['cfg_file']))
+    # 'method' not == 'expr' or 'script'
+    else:
+        exception.error_and_quit(glob.log, "'method' key in [result] section of " + \
+                            cfg_dict['metadata']['cfg_file'] + "must be either expr or script." )
+
+    # Overload params from cmdline
+    common.overload_params(cfg_dict)
+
     # Handle comma-delimited lists
     cfg_dict['runtime']['nodes']            = str(cfg_dict['runtime']['nodes']).split(",")
     cfg_dict['runtime']['threads']          = str(cfg_dict['runtime']['threads']).split(",")
@@ -339,25 +370,29 @@ def process_bench_cfg(cfg_dict):
         elif len(cfg_dict['runtime']['ranks_per_node']) == 1:
             cfg_dict['runtime']['ranks_per_node'] = [cfg_dict['runtime']['ranks_per_node'][0]] * len(cfg_dict['runtime']['threads'])
         else:
-            exception.error_and_quit(glob.log, "input mismatch: 'threads' and 'ranks_per_node' must be of equal length in " + common.rel_path(cfg_dict['metadata']['cfg_file']))
+            exception.error_and_quit(glob.log, "input mismatch: 'threads' and 'ranks_per_node' must be of equal length in " + \
+                                common.rel_path(cfg_dict['metadata']['cfg_file']))
 
     # Require label if code not set
     if not cfg_dict['requirements']['code'] and not cfg_dict['config']['label']:
-        exception.error_and_quit(glob.log, "if 'code' is not set, provide 'label' in " + common.rel_path(cfg_dict['metadata']['cfg_file']))
+        exception.error_and_quit(glob.log, "if 'code' is not set, provide 'label' in " + \
+                                common.rel_path(cfg_dict['metadata']['cfg_file']))
 
     #Check bench_mode in set correctly
     if glob.stg['bench_mode'] not in  ["sched", "local"]:
-        exception.error_and_quit(glob.log, "Unsupported benchmark execution mode found: '"+glob.stg['bench_mode']+"' in settings.ini, please specify 'sched' or 'local'.")
+        exception.error_and_quit(glob.log, "Unsupported benchmark execution mode found: '"+glob.stg['bench_mode']+ \
+                                "' in settings.ini, please specify 'sched' or 'local'.")
 
     # Check for hostfile/hostlist if exec_mode is local (mpirun)
     if glob.stg['bench_mode'] == "local":
         # Both hostfile and hostlist is set?
         if cfg_dict['runtime']['hostfile'] and cfg_dict['runtime']['hostlist']:
-            exception.error_and_quit(glob.log, "both 'hostlist' and 'hostfile' set in " + common.rel_path(cfg_dict['metadata']['cfg_file']) + ", please provide only one.")
+            exception.error_and_quit(glob.log, "both 'hostlist' and 'hostfile' set in " + \
+                                    common.rel_path(cfg_dict['metadata']['cfg_file']) + ", please provide only one.")
 
-        # Define --hostfile args    
+        # Define --hostfile args
         if cfg_dict['runtime']['hostfile']:
-            hostfile = check_file("", cfg_dict['runtime']['hostfile'])    
+            hostfile = check_file("", cfg_dict['runtime']['hostfile'])
             cfg_dict['runtime']['host_str'] = "-hostfile " + hostfile
 
         # Define -host args
@@ -366,21 +401,9 @@ def process_bench_cfg(cfg_dict):
 
         # Error if neither is set
         else:
-            exception.error_and_quit(glob.log, "if using 'bench_mode=local' in settings.ini, provide either a 'hostfile' or 'hostlist' under [runtime] in " + \
-                                                common.rel_path(cfg_dict['metadata']['cfg_file']))
-
-    # Expression method
-    if cfg_dict['result']['method'] == "expr":
-        if not 'expr' in cfg_dict['result']:
-            exception.error_and_quit(glob.log, "if using 'expr' result validation method, 'expr' key is required in [result] section of " + common.rel_path(cfg_dict['metadata']['cfg_file']))
-    # Script method
-    elif cfg_dict['result']['method'] == "script":
-        if not 'script' in cfg_dict['result']:
-            exception.error_and_quit(glob.log, "if using 'script' result validation method, 'script' key is required in [result] section of " + common.rel_path(cfg_dict['metadata']['cfg_file']))
-    # 'method' not == 'expr' or 'script'
-    else:
-        exception.error_and_quit(glob.log, "'method' key in [result] section of " + cfg_dict['metadata']['cfg_file'] + "must be either expr or script." )
-
+            exception.error_and_quit(glob.log, "if using 'bench_mode=local' in settings.ini, " + \
+                                    "provide either a 'hostfile' or 'hostlist' under [runtime] in " + \
+                                    common.rel_path(cfg_dict['metadata']['cfg_file']))
 
 # Check sched config file and add required fields
 def process_sched_cfg(cfg_dict):

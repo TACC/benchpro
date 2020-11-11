@@ -20,25 +20,25 @@ ml
 
 export LD_PRELOAD=/opt/apps/gcc7_3/mvapich2-gdr/2.3.4/lib64/libmpi.so:$LD_PRELOAD
 
-#if [ ${gpus} == "1" ]; then
-#  export CUDA_VISIBLE_DEVICES=0
-#elif [ ${gpus} == "2" ]; then
-#  export CUDA_VISIBLE_DEVICES=0,1
-#elif [ ${gpus} == "3" ]; then
-#  export CUDA_VISIBLE_DEVICES=0,1,2
-#elif [ ${gpus} == "4" ]; then
-#  export CUDA_VISIBLE_DEVICES=0,1,2,3
-#elif [ ${gpus} == "5" ]; then
-#  export CUDA_VISIBLE_DEVICES=0,1,2,3,4
-#elif [ ${gpus} == "6" ]; then
-#  export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5
-#elif [ ${gpus} == "7" ]; then
-#  export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6
-#elif [ ${gpus} == "8" ]; then
-#  export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
-#else
-#  echo "Unknown number of GPUs ! provided"
-#fi
+if [ ${gpus} == "1" ]; then
+  export CUDA_VISIBLE_DEVICES=0
+elif [ ${gpus} == "2" ]; then
+  export CUDA_VISIBLE_DEVICES=0,1
+elif [ ${gpus} == "3" ]; then
+  export CUDA_VISIBLE_DEVICES=0,1,2
+elif [ ${gpus} == "4" ]; then
+  export CUDA_VISIBLE_DEVICES=0,1,2,3
+elif [ ${gpus} == "5" ]; then
+  export CUDA_VISIBLE_DEVICES=0,1,2,3,4
+elif [ ${gpus} == "6" ]; then
+  export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5
+elif [ ${gpus} == "7" ]; then
+  export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6
+elif [ ${gpus} == "8" ]; then
+  export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
+else
+  echo "Unknown number of GPUs ! provided"
+fi
 
 exe=""
 input=""

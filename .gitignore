@@ -13,6 +13,7 @@ build/*
 !build/modulefiles/builder.lua
 results/*
 .history
+.outputs
 develop-eggs/
 dist/
 downloads/

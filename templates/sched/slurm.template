@@ -6,3 +6,8 @@
 #SBATCH -N <<<nodes>>>
 #SBATCH -n <<<ranks>>>
 #SBATCH -A <<<account>>>
+
+date
+echo "JobID:    ${SLURM_JOB_ID}"
+echo "User:     ${USER}"
+echo "Hostlist: ${SLURM_NODELIST}"

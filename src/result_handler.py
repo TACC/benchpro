@@ -619,11 +619,12 @@ def list_results(glob_obj):
 
 # Get list of result dirs matching search str
 def get_matching_results(result_path, result_str):
+
     matching_results = gb.glob(os.path.join(result_path, "*"+result_str+"*"))
     return matching_results
 
 # Show info for local result
-def query_result(glob_obj):
+def query_result(glob_obj, result_label):
     global glob, common
     glob = glob_obj
     common = common_funcs.init(glob)
@@ -632,17 +633,17 @@ def query_result(glob_obj):
     glob.log = logger.start_logging("CAPTURE", glob.stg['results_log_file'] + "_" + glob.time_str + ".log", glob)
 
     # Search ./results/current and ./results/archive
-    matching_dirs = get_matching_results(glob.stg['current_path'], glob.args.queryResult) + \
-                    get_matching_results(glob.stg['archive_path'], glob.args.queryResult)
+    matching_dirs = get_matching_results(glob.stg['current_path'], result_label) + \
+                    get_matching_results(glob.stg['archive_path'], result_label)
 
     # No result found
     if not matching_dirs:
-        print("No matching result found matching '" + glob.args.queryResult + "'.")
+        print("No matching result found matching '" + result_label + "'.")
         sys.exit(2)
 
     # Multiple results
     elif len(matching_dirs) > 1:
-        print("Multiple results found matching '" + glob.args.queryResult + "'")
+        print("Multiple results found matching '" + result_label + "'")
         for result in sorted(matching_dirs):
             print("  " + common.rel_path(result))
         sys.exit(2)
