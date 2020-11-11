@@ -14,6 +14,7 @@ build/*
 results/*
 .history
 .outputs
+.validated
 develop-eggs/
 dist/
 downloads/

@@ -56,7 +56,7 @@ class settings(object):
                     'blackhole_path']
         if key not in optional and not value:
             print("Missing value for key '" + key + "' in settings.ini, check the documentation.")
-            sys.exit(2)
+            sys.exit(1)
         # Test if True
         elif value in  ["True", "true"]:
             return True

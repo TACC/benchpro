@@ -157,3 +157,6 @@ def check_setup(glob_obj):
         check_db_connect(glob)
     else: 
         print(bcolors.FAIL, "no psycopg2, no db access")
+
+    # Create validate file
+    with open(os.path.join(glob.basedir, ".validated"), 'w'): pass 

@@ -444,7 +444,7 @@ def test_search_field(field):
         print("Available fields:")
         for f in glob.model_fields:
             print("  "+f)
-        sys.exit(2)
+        sys.exit(1)
 
 # Parse comma-delmited list of search criteria, test keys and return SQL WHERE statement
 def parse_input_str(args):
@@ -639,14 +639,14 @@ def query_result(glob_obj, result_label):
     # No result found
     if not matching_dirs:
         print("No matching result found matching '" + result_label + "'.")
-        sys.exit(2)
+        sys.exit(1)
 
     # Multiple results
     elif len(matching_dirs) > 1:
         print("Multiple results found matching '" + result_label + "'")
         for result in sorted(matching_dirs):
             print("  " + common.rel_path(result))
-        sys.exit(2)
+        sys.exit(1)
 
     result_path = os.path.join(glob.stg['current_path'], matching_dirs[0])
     bench_report = os.path.join(result_path, "bench_report.txt")
@@ -654,7 +654,7 @@ def query_result(glob_obj, result_label):
     if not os.path.isfile(bench_report):
         print("Missing report file " + common.rel_path(bench_report))
         print("It seems something went wrong with --bench")
-        sys.exit(2)
+        sys.exit(1)
 
     jobid = ""
     print("Benchmark report:")

@@ -24,6 +24,15 @@ except ImportError as e:
     print(e)
     sys.exit(1)
 
+
+# Confirm installation has been validated
+def check_validatation(val_file):
+    if not os.path.isfile(val_file):
+        print("Please validate benchtool setup before use with:")
+        print("    benchtool --validate")
+        print()
+        sys.exit(1)
+
 # Generate dict fom coma-delimited params
 def get_var_overload_dict(vars_str):
     overload_dict = {} 
@@ -109,6 +118,14 @@ def main():
     # Add arg dict to global object
     glob.args = args
 
+    # Run validator script
+    if args.validate:
+        validate.check_setup(glob)
+        sys.exit(0)
+
+    # Check validate
+    check_validatation(os.path.join(glob.basedir, ".validated"))
+
     # Write cmd to history file
     write_cmd_history(glob)
 
@@ -181,9 +198,6 @@ def main():
     # Remove result and exit
     elif args.removeResult:
         result_handler.remove_result(glob)
-
-    elif args.validate:
-        validate.check_setup(glob)
 
     elif args.version:
         handler.print_version()

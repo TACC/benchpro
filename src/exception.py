@@ -40,4 +40,4 @@ def error_and_quit(log, message):
     print()
     print()
     print()
-    sys.exit(2)
+    sys.exit(1)
