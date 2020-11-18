@@ -486,32 +486,7 @@ class init(object):
         # Parse SLURM NODELIST into list
         return self.parse_nodelist(cmd.stdout.split("\n")[1])
 
-    # Convert "HH:MM:SS" to int(seconds)
-    def parse_runtime(self, runtime):
-        t = time.strptime(runtime.split(',')[0],'%H:%M:%S') 
-        return int(datetime.timedelta(hours=t.tm_hour,minutes=t.tm_min,seconds=t.tm_sec).total_seconds())
-
-    # Get elapsed time for jobID
-    def get_elapsed_time(self, jobid):
-        try:
-            expr = "sacct -j " + jobid + " --format elapsed"
-            cmd = subprocess.run(expr, shell=True, check=True, capture_output=True, universal_newlines=True)
-
-        except:
-            exception.error_and_quit(self.glob.log, "Failed to extract job elapsed time with: '" + expr + "'")
-
-        return self.parse_runtime(cmd.stdout.split("\n")[2].strip())
-
-    # Get end time for jobID
-    def get_end_time(self, jobid):
-        try:
-            expr = "sacct -j " + jobid + " --format end"
-            cmd = subprocess.run(expr, shell=True, check=True, capture_output=True, universal_newlines=True)
-        except:
-            exception.error_and_quit(self.glob.log, "Failed to extract job end time with: '" + expr + "'")
-
-        return cmd.stdout.split("\n")[2].strip()
-
+    # Overload dict keys with overload key
     def overload(self, overload_key, param_dict):
         # If found matching key
             if overload_key in param_dict:
@@ -537,7 +512,6 @@ class init(object):
     # Replace cfg params with cmd line inputs 
     def overload_params(self, search_dict):
         for overload_key in list(self.glob.overload_dict):
-
             # If dealing with code/sched/compiler cfg, descend another level
             if list(search_dict)[0] == "metadata":
                 for section_dict in search_dict:
@@ -747,3 +721,38 @@ class init(object):
     def write_to_outputs(self, op, label):
         with open(os.path.join(self.glob.basedir, ".outputs"), "a") as f:
             f.write(op + " " + label + "\n")
+
+    # Get scheduler config filename based on user input or defaults
+    def get_sched_cfg(self):
+        # If user provided custom sched cfg cmdline arg
+        if not self.glob.args.sched == "system":
+            return self.glob.args.sched 
+        # Using default sched cfg file
+        else:
+            # If default_sched set in system.cfg file
+            if 'default_sched' in self.glob.system:
+                return self.glob.system['default_sched']
+            # Use generic filename string and hope
+            else:
+                return "slurm_" + self.glob.sys_env
+   
+    # Extract system variables from system.cfg
+    def get_system_vars(self, system):
+    
+        system_dict = {'sys_env': system}
+        cfg_file = os.path.join(self.glob.stg['config_path'], self.glob.stg['system_cfg_file'])
+        system_parser   = cp.RawConfigParser(allow_no_value=True)
+        system_parser.read(cfg_file)
+
+        try:
+            system_dict['cores']          = system_parser[system]['cores']
+            system_dict['cores_per_node'] = system_parser[system]['cores']
+            system_dict['default_arch']   = system_parser[system]['default_arch']
+            # Set system default sched cfg if available
+            if 'default_sched' in system_parser[system]:
+                system_dict['default_sched'] = system_parser[system]['default_sched']
+            return system_dict
+
+        except:
+            return False
+

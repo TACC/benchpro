@@ -22,86 +22,113 @@ import src.logger as logger
 
 glob = common = None
 
-# Move benchmark directory from current to archive, once processed
-def move_to_archive(result_dir):
-    if not os.path.isdir(os.path.join(glob.stg['current_path'], result_dir)):
-        exception.error_and_quit(glob.log, "result directory '" + result_dir + "' not found.")
+# Read benchmark report file input dict
+def get_bench_report(result_path):
 
-    su.move(os.path.join(glob.stg['current_path'], result_dir), glob.stg['archive_path'])
+    # Confirm file exists
+    bench_report = os.path.join(result_path, glob.stg['bench_report_file'])
+    if not os.path.isfile(bench_report):
+        exception.print_warning(glob.log, "File '" + glob.stg['bench_report_file'] + "' not found in " + common.rel_path(result_path) + ". Skipping.")
+        return False
+
+    report_parser    = cp.ConfigParser()
+    report_parser.optionxform=str
+    report_parser.read(bench_report)
+
+    print()
+
+    # Confirm jobid is readable in report file
+    try:
+        jobid = report_parser.get('bench', 'jobid')
+    except:
+        print(e)
+        exception.print_warning(glob.log, "Failed to read key 'jobid' in " + common.rel_path(bench_report) + ". Skipping.")
+        return False
+
+    # Return dict of report file sections
+    return {section: dict(report_parser.items(section)) for section in report_parser.sections()}
+
+# Move benchmark directory from current to archive, once processed
+def move_to_archive(result_path):
+    if not os.path.isdir(result_path):
+        exception.error_and_quit(glob.log, "result directory '" + common.rel_path(result_path) + "' not found.")
+
+    su.move(result_path, glob.stg['archive_path'])
 
 # Create .capture-complete file in result dir
-def capture_complete(result_dir):
-    path = os.path.join(glob.stg['current_path'], result_dir)
-    glob.log.debug("Successfully captured result in " + path)
-    print("Successfully captured result in " + common.rel_path(path))
-    with open(os.path.join(path, ".capture-complete"), 'w'): pass
-    move_to_archive(result_dir)
+def capture_complete(result_path):
+    glob.log.debug("Successfully captured result in " + result_path)
+    print("Successfully captured result in " + common.rel_path(result_path))
+    with open(os.path.join(result_path, ".capture-complete"), 'w'): pass
+    move_to_archive(result_path)
 
 # Create .capture-failed file in result dir
-def capture_failed(result_dir):
-    path = os.path.join(glob.stg['current_path'], result_dir)
-    glob.log.debug("Failed to capture result in " + path)
-    print("Failed to capture result in " + common.rel_path(path))
-    with open(os.path.join(path, ".capture-failed"), 'w'): pass
-    move_to_archive(result_dir)
+def capture_failed(result_path):
+    glob.log.debug("Failed to capture result in " + result_path)
+    print("Failed to capture result in " + common.rel_path(result_path))
+    with open(os.path.join(result_path, ".capture-failed"), 'w'): pass
+    move_to_archive(result_path)
 
 # Function to test if benchmark produced valid result
 def validate_result(result_path):
-    # Get validation requirement from bench cfg file
-    cfg_file = os.path.join(result_path, "bench_files", "bench.cfg")
-
-    cfg_handler.ingest_cfg('bench', cfg_file, glob)
-    glob.log.debug("Got result validation requirements from file: "+cfg_file)
-
-    # Benchmark output file containing result, override default in glob_obj.cfg if 'output_file' set in bench.cfg 
-    output_file = glob.code['config']['output_file']
-    if 'output_file' in glob.code['result']:
-        if glob.code['result']['output_file']:
-            output_file = glob.code['result']['output_file']
-
-    output_path = common.find_exact(output_file, result_path)
-    # Test for benchmark output file
-    if not output_path:
-        exception.print_warning(glob.log, "Result file " + output_file + " not found in " + common.rel_path(result_path) + ". It seems the benchmark failed to run.\nWas dry_run=True?")
+    # Get dict of report file contents
+    glob.report_dict = get_bench_report(result_path)
+    if not glob.report_dict:
+        print("Unable to read benchmark report file in " + common.rel_path(result_path))
         return False, None
 
-    glob.log.debug("Looking for valid result in "+output_path)
+    # Get output file path
+    glob.output_path = common.find_exact(glob.report_dict['result']['output_file'], result_path)
+
+    # Test for benchmark output file
+    if not glob.output_path:
+        exception.print_warning(glob.log, "Result file " + output_file + " not found in " + \
+                                common.rel_path(result_path) + ". It seems the benchmark failed to run.\nWas dry_run=True?")
+        return False, None
+
+    glob.log.debug("Looking for valid result in " + glob.output_path)
 
     # Run expr collection
-    if glob.code['result']['method'] == 'expr':
+    if glob.report_dict['result']['method'] == 'expr':
 
         # replace <file> filename placeholder with value in glob_obj.cfg
-        glob.code['result']['expr'] = glob.code['result']['expr'].replace("{output_file}", output_path)
+        glob.report_dict['result']['expr'] = glob.report_dict['result']['expr'].replace("{output_file}", glob.output_path)
 
         # Run validation expression on output file
         try:
-            glob.log.debug("Running: '" + glob.code['result']['expr'] + "'")
-            cmd = subprocess.run(glob.code['result']['expr'], shell=True,
+            glob.log.debug("Running: '" + glob.report_dict['result']['expr'] + "'")
+            cmd = subprocess.run(glob.report_dict['result']['expr'], shell=True,
                                          check=True, capture_output=True, universal_newlines=True)
             result_str = cmd.stdout.strip()
-            glob.log.debug("Pulled result from " + output_path + ":  " + result_str + " " + glob.code['result']['unit'])
+            glob.log.debug("Pulled result from " + glob.output_path + ":  " + result_str + \
+                            " " + glob.report_dict['result']['unit'])
 
         except subprocess.CalledProcessError as e:
-            exception.print_warning(glob.log, "Using '" + glob.code['result']['expr'] + "' on file " + common.rel_path(output_path) + " failed to find a valid a result. Skipping." )
+            exception.print_warning(glob.log, "Using '" + glob.report_dict['result']['expr'] + "' on file " + \
+                                    common.rel_path(glob.output_path) + \
+                                    " failed to find a valid a result. Skipping." )
             return False, None
 
     # Run scipt collection
-    elif glob.code['result']['method'] == 'script':
-        result_script = os.path.join(glob.stg['script_path'], glob.stg['result_scripts_dir'], glob.code['result']['script'])
+    elif glob.report_dict['result']['method'] == 'script':
+        result_script = os.path.join(glob.stg['script_path'], glob.stg['result_scripts_dir'], glob.report_dict['result']['script'])
         if not os.path.exists(result_script):
-            exception.print_warning(glob.log, "Result collection script not found at "+ common.rel_path(result_script))
+            exception.print_warning(glob.log, "Result collection script not found in "+ common.rel_path(result_script))
             return False, None
 
         # Run validation script on output file
         try:
-            glob.log.debug("Running: '" + result_script + " " + output_path + "'")
-            cmd = subprocess.run(result_script + " " + output_path, shell=True,
+            glob.log.debug("Running: '" + result_script + " " + glob.output_path + "'")
+            cmd = subprocess.run(result_script + " " + glob.output_path, shell=True,
                                 check=True, capture_output=True, universal_newlines=True)
             result_str = cmd.stdout.strip()
-            glob.log.debug("Pulled result from " + output_path + ":  " + result_str + " " + glob.code['result']['unit'])
+            glob.log.debug("Pulled result from " + glob.output_path + ":  " + result_str + " " + \
+                            glob.report_dict['result']['unit'])
 
         except subprocess.CalledProcessError as e:
-            exception.print_warning(glob.log, "Running script '" + common.rel_path(result_script) + "' on file " + common.rel_path(output_path) + " failed to find a valid a result." )
+            exception.print_warning(glob.log, "Running script '" + common.rel_path(result_script) + "' on file " + \
+                                            common.rel_path(glob.output_path) + \
+                                            " failed to find a valid a result." )
             return False, None
             
      # Cast to float
@@ -116,10 +143,11 @@ def validate_result(result_path):
         exception.print_warning(glob.log, "result extracted from " + output_file + " is '0.0'.")
         return False, None
 
-    glob.log.debug("Successfully found result '" + str(result) + " " + glob.code['result']['unit'] + " for result " + common.rel_path(result_path))
+    glob.log.debug("Successfully found result '" + str(result) + " " + glob.report_dict['result']['unit'] + " for result " + \
+                    common.rel_path(result_path))
 
     # Return valid result and unit
-    return result, glob.code['result']['unit']
+    return result, glob.report_dict['result']['unit']
 
 # Get list of fields in results table
 def get_table_fields():
@@ -174,12 +202,36 @@ def get_optional_key(report_parser, section, key):
         return report_parser.get(section, key)
     except:
         return ""
-        
+
+# Get timestamp from output file
+def get_timestamp(line_id):
+    output_file = os.path.join(glob.result_path, glob.report_dict['bench']['stdout'])
+    with open(output_file, 'r') as f:
+        for line in f.readlines():
+            if line.startswith(line_id):
+                return line
+   
+    return None
+
+# Return start time from job output file
+def get_start_time():
+    return get_timestamp("START").split(" ")[1]
+
+# Return end time from job output file
+def get_end_time():
+    return get_timestamp("END").split(" ")[1]
+
+# Get difference of end and start times from job output file
+def get_elapsed_time():
+    start_sec = get_timestamp("START").split(" ")[2]
+    end_sec   = get_timestamp("END").split(" ")[2]
+    return int(end_sec) - int(start_sec)
+
 # Generate dict for postgresql 
-def get_insert_dict(result_dir, result, unit):
+def get_insert_dict(result_path, result, unit):
     
     # Bench report
-    bench_report = os.path.join(glob.stg['current_path'], result_dir, glob.stg['bench_report_file'])
+    bench_report = os.path.join(result_path, glob.stg['bench_report_file'])
     if not os.path.exists(bench_report):
         exception.print_warning(glob.log, common.rel_path(bench_report) + " not found.")
         return False
@@ -201,13 +253,11 @@ def get_insert_dict(result_dir, result, unit):
     submit_time = get_required_key(report_parser, 'bench', 'start_time')
     # Handle local exec
     if jobid == "local":
-        elapsed_time = 0
-        end_time = submit_time
         jobid = "0"
 
-    else:
-        elapsed_time = common.get_elapsed_time(jobid)
-        end_time = common.get_end_time(jobid)
+    # Get elapsed and end time from output file
+    elapsed_time = get_elapsed_time()
+    end_time = get_end_time()
 
     nodelist = common.get_nodelist(jobid)
 
@@ -244,11 +294,13 @@ def get_insert_dict(result_dir, result, unit):
             model_fields.remove(key)
         # Error if trying to insert field not in model
         else:
-            exception.error_and_quit(glob.log, "Trying to insert into field '" + key + "' not present in results table '" + glob.stg['table_name'] + "'")
+            exception.error_and_quit(glob.log, "Trying to insert into field '" + key + \
+                                    "' not present in results table '" + glob.stg['table_name'] + "'")
 
     # If missing model fields in INSERT dict
     if len(model_fields) > 0:
-        exception.error_and_quit(glob.log, "The benchmark result is missing fields present in the results table:" + str(model_fields))
+        exception.error_and_quit(glob.log, "The benchmark result is missing fields present in the results table:" + \
+                                str(model_fields))
 
     return insert_dict
 
@@ -338,27 +390,35 @@ def send_files(result_dir, dest_dir):
     # Use SCP
     if glob.stg['file_copy_handler'] == "scp":
         if not glob.user or not glob.stg['ssh_key']:
-            exception.error_and_quit(glob.log, "Keys 'ssh_user' and 'ssh_key' required in glob_obj.cfg if using SCP file transmission.")
+            exception.error_and_quit(glob.log, \
+                        "Keys 'ssh_user' and 'ssh_key' required in glob_obj.cfg if using SCP file transmission.")
 
         server_path = os.path.join(glob.stg['scp_path'],dest_dir)
 
         # Create directory on remote server
         if make_remote_dir(server_path):
 
+            # Copy main output file
+            scp_files(glob.output_path, server_path)
+
             # Copy matching files to server
             search_substrings = ["*.err", "*.out", "*.sched", "*.txt", "*.log"]
             for substring in search_substrings:
-                matching_files = gb.glob(os.path.join(glob.stg['current_path'], result_dir, substring))
+                matching_files = gb.glob(os.path.join(glob.result_path, substring))
                 for match in matching_files:
                     scp_files(match, server_path)
 
             # SCP bench_files to server
-            if os.path.isdir(os.path.join(glob.stg['current_path'], result_dir, "bench_files")):
-                scp_files(os.path.join(glob.stg['current_path'], result_dir, "bench_files"), server_path)
+            if os.path.isdir(os.path.join(glob.result_path, "bench_files")):
+                scp_files(os.path.join(glob.result_path, "bench_files"), server_path)
 
             # SCP hw_utils to server
-            if os.path.isdir(os.path.join(glob.stg['current_path'], result_dir, "hw_report")):
-                scp_files(os.path.join(glob.stg['current_path'], result_dir, "hw_report"), server_path)
+            if os.path.isdir(os.path.join(glob.result_path, "hw_report")):
+                scp_files(os.path.join(glob.result_path, "hw_report"), server_path)
+
+
+        else:
+            exception.error_and_quit(glob.log, "Failed to create remote directory on database server.")
 
         # Use network FS
     elif glob.stg['file_copy_handler'] == "fs":
@@ -396,38 +456,42 @@ def capture_result(glob_obj):
 
         for result_dir in results:
 
-            result_path = os.path.join(glob.stg['current_path'], result_dir)
-            result, unit = validate_result(result_path)
+            glob.result_path = os.path.join(glob.stg['current_path'], result_dir)
+            result, unit = validate_result(glob.result_path)
 
             # If unable to get valid result, skipping this result
             if not result:
-                capture_failed(result_dir)
+                capture_failed(glob.result_path)
                 print()
                 continue
 
             print("Result:", result, unit)
 
-            # Get insert_dict
-            insert_dict = get_insert_dict(result_dir, result, unit)
+            # 1. Get insert_dict
+            insert_dict = get_insert_dict(glob.result_path, result, unit)
+
             # If insert_dict failed
             if not insert_dict:
-                capture_failed(result_dir)
+                capture_failed(glob.result_path)
                 print()
                 continue
 
+            # 2. Insert dict into db
+            print("Inserting into database...")
             dest_dir = insert_db(insert_dict)
 
             # If insert failed
             if not dest_dir:
-                capture_failed(result_dir)
+                capture_failed(glob.result_path)
                 print()
                 continue
 
-            # send files to db server
-            sent = send_files(result_dir, dest_dir)
+            # 3. Send files to db server
+            print("Sending provenance data...")
+            send_files(glob.result_path, dest_dir)
 
-            # Touch .capture-complete file
-            capture_complete(result_dir)
+            # 4. Touch .capture-complete file
+            capture_complete(glob.result_path)
             captured += 1
             print()
 

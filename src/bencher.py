@@ -15,7 +15,7 @@ import src.logger as logger
 import src.math_handler as math_funcs
 import src.template_handler as template_handler
 
-glob = common = None
+glob = glob_master = common = None
 
 # Check that ranks == gpus
 def check_ranks_per_gpu(ranks, gpus):
@@ -35,23 +35,28 @@ def generate_bench_report(build_report):
 
     with open(bench_report, 'a') as out:
         out.write("[bench]\n")
-        out.write("bench_path  = "+ glob.code['metadata']['working_path']   + "\n")
-        out.write("system      = "+ glob.system['sys_env']                  + "\n")
-        out.write("launch node = "+ glob.hostname                           + "\n")
-        out.write("code        = "+ glob.code['config']['label']            + "\n")
-        out.write("nodes       = "+ glob.code['runtime']['nodes']           + "\n")
-        out.write("ranks       = "+ glob.code['runtime']['ranks_per_node']  + "\n")
-        out.write("threads     = "+ glob.code['runtime']['threads']         + "\n")
-        out.write("dataset     = "+ glob.code['config']['dataset']          + "\n")
-        out.write("start_time  = "+ str(datetime.datetime.now())            + "\n")
-        out.write("job_script  = "+ glob.code['metadata']['job_script']     + "\n")
-        out.write("jobid       = "+ glob.jobid                                   + "\n")
-        out.write("description = "+ glob.code['result']['description']      + "\n")
-        out.write("output_file = "+ glob.code['config']['output_file']      + "\n")
+        out.write("bench_path     = "+ glob.code['metadata']['working_path']   + "\n")
+        out.write("system         = "+ glob.system['sys_env']                  + "\n")
+        out.write("launch node    = "+ glob.hostname                           + "\n")
+        out.write("code           = "+ glob.code['config']['label']            + "\n")
+        out.write("nodes          = "+ glob.code['runtime']['nodes']           + "\n")
+        out.write("ranks          = "+ glob.code['runtime']['ranks_per_node']  + "\n")
+        out.write("threads        = "+ glob.code['runtime']['threads']         + "\n")
+        out.write("dataset        = "+ glob.code['config']['dataset']          + "\n")
+        out.write("start_time     = "+ str(datetime.datetime.now())            + "\n")
+        out.write("job_script     = "+ glob.code['metadata']['job_script']     + "\n")
+        out.write("jobid          = "+ glob.jobid                                   + "\n")
 
         if not glob.jobid == "dry_run":
-            out.write("stdout      = "+ glob.jobid+".out"                        + "\n")
-            out.write("stderr      = "+ glob.jobid+".err"                        + "\n")
+            out.write("stdout         = "+ glob.jobid+".out"                        + "\n")
+            out.write("stderr         = "+ glob.jobid+".err"                        + "\n")
+
+        # Print contents of [result] to end of bench_report
+        out.write("[result]\n")
+        out.write("output_file    = "+ glob.code['config']['output_file']      + "\n")
+        for key in glob.code['result']:
+            out.write(key.ljust(15) + "= " + glob.code['result'][key] + "\n")
+            
 
 # Get code info
 def get_code_info(input_label, search_dict):
@@ -72,7 +77,12 @@ def get_code_info(input_label, search_dict):
 
         glob.args.build = common.get_filename_from_path(install_cfg)
         glob.quiet_build = True
-        builder.init(copy.deepcopy(glob))
+
+        #print("GLOB", glob.code['']['system']) 
+
+        glob_master.args.build = search_dict['code']
+        glob_master.quiet_build = True
+        builder.init(glob_master)
 
         if glob.stg['dry_run']:
             glob.code['metadata']['build_running'] = False
@@ -161,7 +171,7 @@ def run_bench(input_label, glob_copy):
 
     # Get bench config dicts
     if glob.stg['bench_mode'] == "sched":
-        cfg_handler.ingest_cfg('sched', glob.args.sched,  glob)
+        cfg_handler.ingest_cfg('sched', common.get_sched_cfg(),  glob)
 
         # Get job label
         glob.sched['sched']['job_label'] = code+"_bench"
@@ -173,8 +183,7 @@ def run_bench(input_label, glob_copy):
     common.check_for_unused_overloads()
 
     # Check if MPI is allow on this host
-    if glob.stg['bench_mode'] == "local":
-        if not common.check_mpi_allowed():
+    if glob.stg['bench_mode'] == "local" and not glob.stg['dry_run'] and not common.check_mpi_allowed():
             exception.error_and_quit(glob.log, "MPI execution is not allowed on this host!")
 
     # Use code name for label if not set
@@ -328,14 +337,17 @@ def run_bench(input_label, glob_copy):
 # Check input
 def init(glob_obj):
 
-    glob = glob_obj
+
+    global glob, glob_master, common    
+    glob_master = glob_obj
+
+    ## Grab a copy of the glob dict for this session
+    glob = copy.deepcopy(glob_master)
+
     common = common_funcs.init(glob)
 
     # Start logger
     glob.log = logger.start_logging("RUN", glob.stg['bench_log_file'] + "_" + glob.time_str + ".log", glob)
-
-    # Grab a copy of the overload_dict for this session
-    glob.overload_dict = copy.deepcopy(glob.overload_dict)
 
     # Check for new results
     common.print_new_results()

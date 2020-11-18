@@ -25,6 +25,12 @@ except ImportError as e:
     sys.exit(1)
 
 
+# Confirm BENCHTOOL is set in environment
+def check_env(var):
+    if not os.getenv(var.strip('$')):
+        print(var + " variable not set, please run 'source sourceme'")
+        sys.exit(1)
+
 # Confirm installation has been validated
 def check_validatation(val_file):
     if not os.path.isfile(val_file):
@@ -67,9 +73,9 @@ def main():
 
     cmd_parser.add_argument("--capture", default=False, action='store_true',
                             help="Send results to database.")
-    cmd_parser.add_argument("--listResults", default=False,
-                            help="Provide summary of benchmarks results. Takes 'pending', 'complete', 'captured', \
-                                    'failed' or 'all'")
+    cmd_parser.add_argument("--listResults", nargs='?', const="all", type=str,
+                            help="Provide summary of benchmarks results. Default is 'all', also takes 'pending', 'complete', 'captured' or \
+                                    'failed'")
     cmd_parser.add_argument("--removeResult", default=False,
                             help="Deletes benchmark result from local directory, takes benchmark label, 'captured', \
                                     'failed' or 'all'")
@@ -78,11 +84,11 @@ def main():
                             help="Cleanup temp and log files.")
     cmd_parser.add_argument("--installed", default=False, action='store_true',
                             help="Show all installed applications.")
-    cmd_parser.add_argument("--avail", default=False, action='store_true',
-                            help="Show all available application profiles.")
+    cmd_parser.add_argument("--avail", nargs='?', const="all", type=str,
+                            help="Show all available application profiles. Default is 'all', also accepts 'code', 'bench' or 'suite'.")
 
-    cmd_parser.add_argument("--defaults", default=False, action='store_true',
-                            help="Print default options from settings.ini")
+    cmd_parser.add_argument("--setup", default=False, action='store_true',
+                            help="Print default options for current system.")
 
     cmd_parser.add_argument("--remove", default=False,
                             help="Remove an installed application.")
@@ -91,9 +97,9 @@ def main():
                             help="Query build report of an installed application.")
     cmd_parser.add_argument("--queryResult", default=False,
                             help="Query a local benchmark result for config info.")
-    cmd_parser.add_argument("--queryDB", default=False,
-                            help="Query database for results matching search criteria. Accepts colon-delimited list \
-                                    of search criteria. Use 'all' to display all results in db.")
+    cmd_parser.add_argument("--queryDB", nargs='?', const="all", type=str,
+                            help="Query database for benchmark results. Default is 'all'. Also accepts colon-delimited list \
+                                    of search criteria.")
     cmd_parser.add_argument("--export", default=False, action='store_true',
                             help="Export database query to .csv file dbquery_[date].csv")
 
@@ -118,6 +124,9 @@ def main():
     # Add arg dict to global object
     glob.args = args
 
+    # Confirm environment is configured
+    check_env(glob.stg['topdir_env_var'])
+
     # Run validator script
     if args.validate:
         validate.check_setup(glob)
@@ -132,10 +141,7 @@ def main():
     # Get overload dict
     glob.overload_dict = get_var_overload_dict(args.overload)
 
-    # Use system default scheduler profile
-    if glob.args.sched == "system":
-        glob.args.sched = "slurm_" + os.getenv('TACC_SYSTEM')
-
+    # Init input handler - for misc operations
     handler = input_handler.init(glob)
 
     # Start builder
@@ -161,15 +167,13 @@ def main():
     elif args.installed:
         handler.show_installed()
 
-    # Print defaults
-    elif args.defaults:
-        handler.print_defaults()
+    # Print setup settings
+    elif args.setup:
+        handler.print_setup()
 
     # Show available and exit
     elif args.avail:
-        handler.show_available_codes()
-        handler.show_available_benches()
-        handler.show_available_suites()
+        handler.show_available()
 
     # Remove installation and exit
     elif args.remove:

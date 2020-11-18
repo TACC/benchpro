@@ -201,6 +201,7 @@ class init(object):
         for app in self.common.get_installed():
             print("  " + os.path.join(self.common.rel_path(self.glob.stg['build_path']), app))
 
+    # Print list of code strings
     def print_codes(self, code_list):
         code_list.sort()
         for code in code_list:
@@ -211,8 +212,8 @@ class init(object):
                 print("    " + code[:-4])
 
     # Print applications that can be installed from available cfg files
-    def show_available(self, label, search_path):
-        print("Available " + label + " profiles:")
+    def print_avail_type(self, atype, search_path):
+        print("Available " + atype + " profiles:")
         print("---------------------------------")
         print(self.common.rel_path(search_path) + ":")
         # Scan config/build
@@ -226,29 +227,32 @@ class init(object):
             self.print_codes(gb.glob(app_dir + "*.cfg"))
         print()
 
-    def show_available_codes(self):
-        search_path = os.path.join(self.glob.stg['config_basedir'], self.glob.stg['build_cfg_dir'])
-        self.show_available("application", search_path)
+    # Print available code/bench/suite depending on user input
+    def show_available(self):
+        if self.glob.args.avail in ['code', 'all']:
+            search_path = os.path.join(self.glob.stg['config_basedir'], self.glob.stg['build_cfg_dir'])
+            self.print_avail_type("application", search_path)
 
-    
-    def show_available_benches(self):
-        search_path = os.path.join(self.glob.stg['config_basedir'], self.glob.stg['bench_cfg_dir'])
-        self.show_available("benchmark", search_path)
+        if self.glob.args.avail in ['bench', 'all']:
+            search_path = os.path.join(self.glob.stg['config_basedir'], self.glob.stg['bench_cfg_dir'])
+            self.print_avail_type("benchmark", search_path)
 
-    def show_available_suites(self):
-        print("Available benchmark suites:")
-        print("---------------------------------")
-        for key in self.glob.suite:
-            print ("  " + key)
+        if self.glob.args.avail in ['suite', 'all']:
+            print("Available benchmark suites:")
+            print("---------------------------------")
+            for key in self.glob.suite:
+                print ("  " + key)
 
-
+        if self.glob.args.avail not in ['code', 'bench', 'suite', 'all']:
+            print("Invalid input '"+self.glob.args.avail+"'")
+            
     # Print key/value pair from setting.ini dict
     def print_setting(self, key):
         print("  " + key.ljust(18) + " = " + str(self.glob.stg[key]))
 
     # Print default params from settings.ini
-    def print_defaults(self):
-        print("Default options in settings.ini:")
+    def print_setup(self):
+        print("Default benchtool options in settings.ini:")
         print()
         [self.print_setting(key) for key in ['dry_run', \
                                             'exit_on_missing', \
@@ -258,7 +262,25 @@ class init(object):
                                             'bench_mode',\
                                             'check_modules']]
         print("")
+        # Print scheduler defaults for this system if available
+        self.glob.system = self.common.get_system_vars(self.glob.sys_env)
+        if self.glob.system:
+
+            sched_cfg = self.common.get_sched_cfg()
+            try:
+                with open(os.path.join(self.glob.stg['config_path'], self.glob.stg['sched_cfg_dir'], sched_cfg)) as f:
+                    print("Scheduler settings for " + self.glob.sys_env + ":")
+                    print(f.read())
+
+            except:
+                print("Unable to read " + sched_cfg)
+                print()
+        else:
+            print("No default scheduler settings found for system " + self.glob.sys_env + ".")
+            print() 
+
         print("Overload with '--overload [SETTING1=ARG]:[SETTING2=ARG]'")
+        print("")
 
     # Print command line history file
     def print_history(self):

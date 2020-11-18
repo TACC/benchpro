@@ -40,9 +40,6 @@ def search_cfg_str(cfg_name, search_path):
             
                 exception.error_and_quit(glob.log, "please provide a unique input config.")
 
-    else:
-        exception.error_and_quit(glob.log, "directory '" + common.rel_path(search_path) + "' does not exist")
-
     return None
 
 # Check cfg file exists
@@ -100,7 +97,7 @@ def check_file(cfg_type, cfg_name):
     # Not found
     if cfg_type:
         handler = input_handler.init(glob)
-        handler.show_available(cfg_type, os.path.join(glob.stg['config_path'], cfg_type))
+        handler.print_avail_type(cfg_type, os.path.join(glob.stg['config_path'], cfg_type))
 
         exception.error_and_quit(glob.log, "config file '" + common.rel_path(cfg_name) + "' not found.")
 
@@ -159,24 +156,6 @@ def get_val_types(cfg_dict):
             elif cfg_dict[sect][key].isdigit():
                 cfg_dict[sect][key] =  int(cfg_dict[sect][key])
 
-# Extract system variables from system.cfg
-def set_system_vars(system):
-
-    glob.system = {'sys_env': system}
-    cfg_file = os.path.join(glob.stg['config_path'], glob.stg['system_cfg_file'])
-    system_parser   = cp.RawConfigParser(allow_no_value=True)
-    system_parser.read(cfg_file)
-
-    try:    
-        glob.system['cores']          = system_parser[system]['cores']
-        glob.system['cores_per_node'] = system_parser[system]['cores']
-        glob.system['default_arch']   = system_parser[system]['default_arch']
-    except:
-        exception.error_and_quit(glob.log, "Failed to read system profile '"+ system +"' in " + \
-                                os.path.join(glob.stg['config_basedir'], glob.stg['system_cfg_file']) + \
-                                "\nPlease add this system profile.") 
-
-
 # Check build config file and add required fields
 def process_build_cfg(cfg_dict):
 
@@ -215,6 +194,8 @@ def process_build_cfg(cfg_dict):
     # Path to application's data directory
     cfg_dict['config']['benchmark_repo'] = glob.stg['benchmark_repo']
 
+    common.overload_params(cfg_dict)
+
     # Get system from env if not defined
     if not cfg_dict['general']['system']:
         glob.log.debug("WARNING: 'system' not defined in " + common.rel_path(cfg_dict['metadata']['cfg_file']))
@@ -224,11 +205,14 @@ def process_build_cfg(cfg_dict):
             exception.error_and_quit(glob.log, "$TACC_SYSTEM not set, unable to continue. Please define 'system' in " + \
                                     common.rel_path(cfg_dict['metadata']['cfg_file']))
 
-    print("SYSTEM", cfg_dict['general']['system'])
-
-
     # Set system variables from system.cfg
-    set_system_vars(cfg_dict['general']['system'])
+    glob.system = common.get_system_vars(cfg_dict['requirements']['system'])
+
+    # Check that system settings were successfully parserd from file
+    if not glob.system:
+        exception.error_and_quit(glob.log, "Failed to read system profile '"+ cfg_dict['requirements']['system'] +"' in " + \
+                                    common.rel_path(os.path.join(glob.stg['config_basedir'], glob.stg['system_cfg_file'])) + \
+                                    "\nPlease add this system profile.")
 
     # Check requested modules exist, and if so, result full module names
     if glob.stg['check_modules']:
@@ -292,6 +276,7 @@ def process_build_cfg(cfg_dict):
     # Overload params from cmdline
     common.overload_params(cfg_dict)
 
+
 # Check bench config file and add required fields
 def process_bench_cfg(cfg_dict):
 
@@ -330,11 +315,20 @@ def process_bench_cfg(cfg_dict):
     # Convert cfg keys to correct datatype
     get_val_types(cfg_dict)
 
+    # Overload params from cmdline
+    common.overload_params(cfg_dict)
+
     if not cfg_dict['requirements']['system']:
         cfg_dict['requirements']['system'] = glob.sys_env
 
     # Set system variables from system.cfg
-    set_system_vars(cfg_dict['requirements']['system'])
+    glob.system = common.get_system_vars(cfg_dict['requirements']['system'])
+    
+    # Check that system settings were successfully parserd from file
+    if not glob.system:
+        exception.error_and_quit(glob.log, "Failed to read system profile '"+ cfg_dict['requirements']['system'] +"' in " + \
+                                    common.rel_path(os.path.join(glob.stg['config_basedir'], glob.stg['system_cfg_file'])) + \
+                                    "\nPlease add this system profile.")
 
     # Set default 1 rank per core, if not defined
     if not cfg_dict['runtime']['ranks_per_node']:
@@ -354,9 +348,6 @@ def process_bench_cfg(cfg_dict):
     else:
         exception.error_and_quit(glob.log, "'method' key in [result] section of " + \
                             cfg_dict['metadata']['cfg_file'] + "must be either expr or script." )
-
-    # Overload params from cmdline
-    common.overload_params(cfg_dict)
 
     # Handle comma-delimited lists
     cfg_dict['runtime']['nodes']            = str(cfg_dict['runtime']['nodes']).split(",")
@@ -416,6 +407,8 @@ def process_sched_cfg(cfg_dict):
 
     # Instantiate missing optional parameters
     if not 'reservation' in    cfg_dict['sched'].keys():   cfg_dict['sched']['reservation']   = ""
+
+    common.overload_params(cfg_dict)
 
     # Fill missing parameters
     if not cfg_dict['sched']['runtime']:

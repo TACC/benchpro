@@ -236,6 +236,10 @@ def generate_bench_script(glob_obj):
         construct_template(template_obj, glob.sched['template'])
         add_reservation(template_obj)
 
+  
+    # Add start time line
+    template_obj.append("echo \"START `date +\"%Y\"-%m-%dT%T` `date +\"%s\"`\" \n")
+
     construct_template(template_obj, glob.code['template'])
 
     # Add hardware collection script to job script
@@ -260,6 +264,9 @@ def generate_bench_script(glob_obj):
                                         glob.code['config'], \
                                         glob.code['requirements']], \
                                         template_obj)
+
+    # Add end time line
+    template_obj.append("echo \"END `date +\"%Y\"-%m-%dT%T` `date +\"%s\"`\" \n")
 
     # Test for missing parameters
     common.test_template(glob.tmp_script, template_obj)
