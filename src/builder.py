@@ -77,10 +77,10 @@ def get_build_dep(job_limit):
         glob.dep_list.append(str(running_jobids[len(running_jobids)-job_limit]))
 
 # Main method for generating and submitting build script
-def build_code(code_label):
+def build_code(code_dict):
 
     # Parse config input files
-    cfg_handler.ingest_cfg('build',    code_label,                  glob)
+    cfg_handler.ingest_cfg('build',    code_dict,                  glob)
     cfg_handler.ingest_cfg('compiler', glob.stg['compile_cfg_file'],glob)
 
     # If build dir already exists, skip this build
@@ -217,19 +217,26 @@ def init(glob_obj):
     if glob.stg['build_mode'] not in  ['sched', 'local']:
         exception.error_and_quit(glob.log, "Unsupported build execution mode found: '"+glob.stg['bench_mode']+"' in settings.ini, please specify 'sched' or 'local'.")
 
-    # Either build codes in suite or user label
-    if 'suite' in glob.args.build:
-        if glob.args.build in glob.suite.keys():
-            code_label_list = glob.stg[glob.args.build].split(',')
-            print("Building application set '" + glob.args.build + "': " + str(code_label_list))
-            for code_label in code_label_list:
-                build_code(code_label)
+    # ----------------- IF CODE LABEL IS A STRING (FROM USER INPUT) --------------------------
+    if isinstance(glob.args.build, str):
+
+        # Either build codes in suite or user label
+        if 'suite' in glob.args.build:
+            if glob.args.build in glob.suite.keys():
+                code_label_list = glob.stg[glob.args.build].split(',')
+                print("Building application suite '" + glob.args.build + "': " + glob.stg[glob.args.build])
+                for code_label in code_label_list:
+                    build_code({'code': code_label})
+            else:
+                exception.error_and_quit(glob.log, "No suite '" + glob.args.build + "' in settings.ini. Available suites: " + ', '.join(glob.suite.keys())) 
+
+        # User build input (can be ':' delimited)
         else:
-            exception.error_and_quit(glob.log, "No suite '" + glob.args.build + "' in settings.ini. Available suites: " + ', '.join(glob.suite.keys())) 
+            code_list = glob.args.build.split(":")
+            for code_label in code_list:
+                build_code({'code' : code_label})
 
-    # User build input (can be ':' delimited)
+
+    # ----------------- IF CODE LABEL IS A DICT (FROM BENCHER) --------------------------
     else:
-        code_list = glob.args.build.split(":")
-        for code in code_list:
-            build_code(code)
-
+        build_code(glob.args.build)

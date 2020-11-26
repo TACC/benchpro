@@ -59,28 +59,29 @@ def generate_bench_report(build_report):
             
 
 # Get code info
-def get_code_info(input_label, search_dict):
+def get_code_info(input_label, search_list):
 
     # Check if code is installed
-    glob.code['metadata']['code_path'] = common.check_if_installed(search_dict)
+    glob.code['metadata']['code_path'] = common.check_if_installed(search_list)
     # Set application module path to install path 
     glob.code['metadata']['app_mod'] = glob.code['metadata']['code_path']
 
     # If application is not installed, check if cfg file is available to build
     if not glob.code['metadata']['code_path']:
         print("Failed to locate installed application with search criteria:")
-        for key in search_dict:
-            print("  " + key.ljust(12) + "= " + search_dict[key])
+        for key in search_list:
+            print("  " + key.ljust(12) + "= " + key)
         print()
         print("Attempting to build now...")
-        install_cfg = common.check_if_avail(search_dict)
 
-        glob.args.build = common.get_filename_from_path(install_cfg)
-        glob.quiet_build = True
+        #install_cfg = common.check_if_avail(search_list)
+
+        #glob.args.build = common.get_filename_from_path(install_cfg)
+        #glob.quiet_build = True
 
         #print("GLOB", glob.code['']['system']) 
 
-        glob_master.args.build = search_dict['code']
+        glob_master.args.build = search_list[0:-1]
         glob_master.quiet_build = True
         builder.init(glob_master)
 
@@ -88,22 +89,27 @@ def get_code_info(input_label, search_dict):
             glob.code['metadata']['build_running'] = False
         else:
             glob.code['metadata']['build_running'] = True
-        glob.code['metadata']['code_path'] = common.check_if_installed(search_dict)
+        glob.code['metadata']['code_path'] = common.check_if_installed(search_list)
 
     # Code is built
     else:
+
+        print("Installed application found, continuing...")
         glob.code['metadata']['build_running'] = False
 
     # Confirm application is installed after attempt
     if not glob.code['metadata']['code_path']:
         exception.error_and_quit(glob.log, "it seems the attempt to build your application failed. Consult the logs.")
 
+
+    glob.build = {}
+
     # Get app info from build report
     install_path = os.path.join(glob.stg['build_path'], glob.code['metadata']['code_path'])
-    build_report = os.path.join(install_path, glob.stg['build_report_file'])
+    glob.build['build_report'] = os.path.join(install_path, glob.stg['build_report_file'])
     report_parser     = cp.ConfigParser()
     report_parser.optionxform=str
-    report_parser.read(build_report)
+    report_parser.read(glob.build['build_report'])
 
     # Get build jobid from build_report, for checking build state
     try:
@@ -112,17 +118,16 @@ def get_code_info(input_label, search_dict):
         exception.error_and_quit(glob.log, "Unable to read build_report.txt file in " + common.rel_path(install_path))
 
     # Get code label from build_report to find appropriate bench cfg file
-    code = report_parser.get('build', 'code')
 
-    code      = report_parser.get('build', 'code')
-    version   = report_parser.get('build', 'version')
-    system    = report_parser.get('build', 'system')
+    glob.build['code']      = report_parser.get('build', 'code')
+    glob.build['version']   = report_parser.get('build', 'version')
+    glob.build['system']    = report_parser.get('build', 'system')
 
     # Get build job depenency
     common.get_build_job_dependency(build_jobid)
     # Build job running
     if glob.dep_list:
-        print(code + " build job is still running, creating dependency")
+        print(glob.build['code'] + " build job is still running, creating dependency")
     # Build job complete
     else:
         if not glob.stg['dry_run']:
@@ -136,8 +141,134 @@ def get_code_info(input_label, search_dict):
         else:
             print("Dry run, skipping application exe check.")
 
-    return code, version, system, build_report
+# Sets the mpi_exec string for schduler or local exec modes
+def set_mpi_exec_str():
 
+    if glob.stg['bench_mode'] == "sched":
+        glob.code['runtime']['mpi_exec'] = glob.stg['sched_mpi'] + " "
+
+    else:
+        glob.code['runtime']['mpi_exec'] = "\"" + glob.stg['local_mpi'] + " -np " + \
+                                            str(glob.code['runtime']['ranks']) + " -ppn " + \
+                                            str(glob.code['runtime']['ranks_per_node']) + \
+                                            " " + glob.code['runtime']['host_str'] + "\""
+
+# Generate the bench script
+def gen_bench_script():
+
+    # Evaluate math in cfg dict - for every node/rank/thread, allows for references to them in each iteration
+    glob.math_handler.eval_dict(glob.code['runtime'])
+    glob.math_handler.eval_dict(glob.code['config'])
+
+    gpu_path_str = ""
+    gpu_print_str = ""
+    # Get GPU string
+    if glob.code['config']['gpus']:
+        gpu_path_str = str(glob.code['config']['gpus']).zfill(2) + "G"
+        gpu_print_str = ", on " + glob.code['config']['gpus'] + " GPUs."
+        
+
+    print()
+    print("Building script " + str(glob.counter)  + " of " + str(glob.num_tasks) \
+            + ": " + str(glob.code['runtime']['nodes']) + " nodes, " + str(glob.code['runtime']['threads']) + " threads, " + \
+            str(glob.code['runtime']['ranks_per_node']) + " ranks per node" + gpu_print_str)
+
+    glob.counter += 1
+
+    # Working Dir
+    glob.code['metadata']['working_dir'] =  glob.system['sys_env'] + "_" + \
+                                            glob.code['config']['label'] + "_" + \
+                                            glob.time_str + "_" + str(glob.code['runtime']['nodes']).zfill(3) + "N_" + \
+                                            str(glob.code['runtime']['ranks_per_node']).zfill(2) + "R_" + \
+                                            str(glob.code['runtime']['threads']).zfill(2) + "T" + \
+                                            gpu_path_str
+
+    glob.code['metadata']['working_path'] = os.path.join(glob.stg['current_path'], glob.code['metadata']['working_dir'])
+    print("Benchmark working directory:")
+    print(">  " + common.rel_path(glob.code['metadata']['working_path']))
+    print()
+
+    # Generate benchmark template
+    template_handler.generate_bench_script(glob)
+
+
+# Execute the bench, locally or through sched
+def start_task():
+    # Make bench path and move tmp bench script file
+    common.create_dir(glob.code['metadata']['working_path'])
+    common.install(glob.code['metadata']['working_path'], glob.tmp_script, None)
+
+    # Copy bench cfg & template files to bench dir
+    provenance_path = os.path.join(glob.code['metadata']['working_path'], "bench_files")
+    common.create_dir(provenance_path)
+
+    common.install(provenance_path, glob.code['metadata']['cfg_file'], "bench.cfg")
+    common.install(provenance_path, glob.code['template'], "bench.template")
+
+    # If bench_mode == sched
+    if glob.stg['bench_mode'] == "sched":
+        common.install(provenance_path, glob.sched['metadata']['cfg_file'], None)
+        common.install(provenance_path, glob.sched_template, None)
+
+    # Delete tmp job script
+    exception.remove_tmp_files(glob.log)
+
+    print(glob.success)
+    # dry_run = True
+    if glob.stg['dry_run']:
+        print("This was a dryrun, skipping exec step. Script created at:")
+        print(">  " + common.rel_path(os.path.join(glob.code['metadata']['working_path'], glob.tmp_script[4:])))
+        glob.jobid = "dry_run"
+
+    # dry_run = False
+    else:
+        # bench_mode = sched
+        if glob.stg['bench_mode'] == "sched":
+            # Get dep list
+            try:
+                job_limit = int(glob.code['runtime']['max_running_jobs'])
+            except:
+                exception.error_and_quit(glob.log, "'max_running_jobs' value '" + \
+                                        glob.code['runtime']['max_running_jobs'] + "' is not an integer")
+
+            if len(glob.prev_jobid) >= job_limit:
+                print("Max running jobs reached, creating dependency")
+                glob.dep_list.append(glob.prev_jobid[-1 * job_limit])
+
+            # Submit job
+            glob.jobid = common.submit_job( common.get_dep_str(), \
+                                            glob.code['metadata']['working_path'], \
+                                            glob.code['metadata']['job_script'])
+            glob.prev_jobid.append(glob.jobid)
+
+        # bench_mode = local
+        elif glob.stg['bench_mode'] == "local":
+            # For local bench, use default output file name if not set (can't use stdout)
+            if not glob.code['config']['output_file']:
+                glob.code['config']['output_file'] = glob.stg['output_file']
+
+            common.start_local_shell(   glob.code['metadata']['working_path'], \
+                                        glob.tmp_script[4:], \
+                                        glob.code['config']['output_file'])
+
+            glob.jobid = "local"
+
+    # Use stdout for output if not set
+    if not glob.code['config']['output_file']:
+        glob.code['config']['output_file'] = glob.jobid + ".out"
+
+
+    common.check_for_slurm_vars()
+
+
+    print("Output file:")
+    print(">  " + common.rel_path(os.path.join(glob.code['metadata']['working_path'], glob.code['config']['output_file'])))
+
+    # Generate bench report
+    generate_bench_report(glob.build['build_report'])
+
+    # Write to output file
+    common.write_to_outputs("bench", glob.code['metadata']['working_dir'])
 
 # Main function to check for installed application, setup benchmark and run it
 def run_bench(input_label, glob_copy):
@@ -146,20 +277,21 @@ def run_bench(input_label, glob_copy):
     glob = glob_copy
     common = common_funcs.init(glob) 
 
-    code = version = system = ""
-    build_report = ""
     glob.dep_list = []
     
     # Get benchmark params from cfg file
     cfg_handler.ingest_cfg('bench', input_label, glob)
 
-    # Get application search dict for this benchmark
-    search_dict = glob.code['requirements']
+
+    
+    # Get application search list for this benchmark
+    search_list = list(glob.code['requirements'].values())
 
     print()
+    print("Using benchmark profile: " + glob.code['metadata']['cfg_label'])
 
-    if common.needs_code(search_dict):
-        code, version, system, build_report = get_code_info(input_label, search_dict)
+    if common.needs_code(search_list):
+        get_code_info(input_label, search_list)
 
         # Directory to add to MODULEPATH
         glob.code['metadata']['base_mod'] = glob.stg['module_path']
@@ -169,14 +301,14 @@ def run_bench(input_label, glob_copy):
         glob.code['metadata']['code_path'] = ""
         glob.code['metadata']['build_running'] = False
 
-    # Get bench config dicts
+    # Get bench config cfgs
     if glob.stg['bench_mode'] == "sched":
         cfg_handler.ingest_cfg('sched', common.get_sched_cfg(),  glob)
 
         # Get job label
-        glob.sched['sched']['job_label'] = code+"_bench"
+        glob.sched['sched']['job_label'] = glob.build['code']+"_bench"
 
-        sched_template = common.find_exact(glob.sched['sched']['type'] + ".template", \
+        glob.sched_template = common.find_exact(glob.sched['sched']['type'] + ".template", \
                                             os.path.join(glob.stg['template_path'], glob.stg['sched_tmpl_dir']))
 
     # Check for empty overload params
@@ -194,17 +326,22 @@ def run_bench(input_label, glob_copy):
     common.send_inputs_to_log('Bencher')
 
     jobs = glob.code['runtime']['nodes']
-    counter = 1
-    prev_jobid = common.get_active_jobids('_bench')
+    glob.counter = 1
+    glob.prev_jobid = common.get_active_jobids('_bench')
     prev_pid = 0
 
     # Init math handler
-    math_handler = math_funcs.init(glob)
+    glob.math_handler = math_funcs.init(glob)
     # Create backup on benchmark cfg params, to be modified by each loop 
     backup_dict = copy.deepcopy(glob.code) 
 
     thread_list = glob.code['runtime']['threads']
     rank_list = glob.code['runtime']['ranks_per_node']
+
+    # Get total number of bench tasks 
+    glob.num_tasks = len(jobs) * len(thread_list)
+    if glob.code['config']['gpus']:
+        glob.num_tasks *= len(glob.code['config']['gpus']) 
 
     # for each nodes in list
     for node in jobs:
@@ -218,125 +355,33 @@ def run_bench(input_label, glob_copy):
             glob.code['runtime']['threads'] = thread_list[i]
             glob.code['runtime']['ranks_per_node'] = rank_list[i]
 
-            # Evaluate math in cfg dict
-            math_handler.eval_dict(glob.code['runtime'])
-            math_handler.eval_dict(glob.code['config'])
+            # Get total ranks from nodes * ranks_per_node
+            glob.code['runtime']['ranks'] = int(node) * int(glob.code['runtime']['ranks_per_node'])
 
-            print()
-            print("Building script " + str(counter)  + " of " + str(len(jobs)*len(thread_list)) \
-                   + ": " + str(node) + " nodes, " + str(thread_list[i]) + " threads, " + \
-                   str(rank_list[i]) + " ranks per node.")
+            # Generate mpi_exec str
+            set_mpi_exec_str()
 
-            # Working Dir
-            glob.code['metadata']['working_dir'] =  glob.system['sys_env'] + "_" + \
-                                                    glob.code['config']['label'] + "_" + \
-                                                    glob.time_str + "_" + node.zfill(3) + "N_" + \
-                                                    str(rank_list[i]).zfill(2) + "R_" + \
-                                                    str(thread_list[i]).zfill(2) + "T"
 
             # Path to application's data directory
             glob.code['metadata']['benchmark_repo'] = glob.stg['benchmark_repo']
 
-            glob.code['metadata']['working_path'] = os.path.join(glob.stg['current_path'], glob.code['metadata']['working_dir'])
-            print("Benchmark working directory:")
-            print(">  " + common.rel_path(glob.code['metadata']['working_path']))
-            print()
+            # GPU run mode
+            if glob.code['config']['gpus']:
+                gpu_list = glob.code['config']['gpus']
+                for gpu in gpu_list:
+                    glob.code['config']['gpus'] = gpu
+                        
+                    # Generate bench script       
+                    gen_bench_script()
+                    start_task()                
 
-            # Get total ranks from nodes * ranks_per_node
-
-            glob.code['runtime']['ranks'] = int(node) * int(glob.code['runtime']['ranks_per_node'])
-
-            # Generate mpi_exec str 
-            if glob.stg['bench_mode'] == "sched":
-                glob.code['runtime']['mpi_exec'] = glob.stg['sched_mpi'] + " "
-
+            # No GPUs
             else:
-                glob.code['runtime']['mpi_exec'] = "\"" + glob.stg['local_mpi'] + " -np " + \
-                                                    str(glob.code['runtime']['ranks']) + " -ppn " + \
-                                                    str(glob.code['runtime']['ranks_per_node']) + \
-                                                    " " + glob.code['runtime']['host_str'] + "\""
-
-            # Generate benchmark template
-            template_handler.generate_bench_script(glob)
-
-            # Make bench path and move tmp bench script file
-            common.create_dir(glob.code['metadata']['working_path'])
-            common.install(glob.code['metadata']['working_path'], glob.tmp_script, None)
-
-            # Copy bench cfg & template files to bench dir
-            provenance_path = os.path.join(glob.code['metadata']['working_path'], "bench_files")
-            common.create_dir(provenance_path)
-
-            common.install(provenance_path, glob.code['metadata']['cfg_file'], "bench.cfg")
-            common.install(provenance_path, glob.code['template'], "bench.template")
-
-            # If bench_mode == sched
-            if glob.stg['bench_mode'] == "sched":
-                common.install(provenance_path, glob.sched['metadata']['cfg_file'], None)
-                common.install(provenance_path, sched_template, None)
-
-            # Delete tmp job script
-            exception.remove_tmp_files(glob.log)
-
-            print(glob.success)
-            # Dry_run
-            if glob.stg['dry_run']:
-                print("This was a dryrun, skipping exec step. Script created at:")
-                print(">  " + common.rel_path(os.path.join(glob.code['metadata']['working_path'], glob.tmp_script[4:])))
-                glob.jobid = "dry_run"
-
-            else:
-                # Sched run
-                if glob.stg['bench_mode'] == "sched":
-                    # Get dep list
-                    try:
-                        job_limit = int(glob.code['runtime']['max_running_jobs'])
-                    except:
-                        exception.error_and_quit(glob.log, "'max_running_jobs' value '" + \
-                                            glob.code['runtime']['max_running_jobs'] + "' is not an integer")
-
-                    if len(prev_jobid) >= job_limit:
-                        print("Max running jobs reached, creating dependency")
-                        glob.dep_list.append(prev_jobid[-1 * job_limit])
-
-                    # Submit job
-                    glob.jobid = common.submit_job( common.get_dep_str(), \
-                                                    glob.code['metadata']['working_path'], \
-                                                    glob.code['metadata']['job_script'])
-                    prev_jobid.append(glob.jobid)
-    
-                # Local run
-                elif glob.stg['bench_mode'] == "local":
-                    # For local bench, use default output file name if not set (can't use stdout)
-                    if not glob.code['config']['output_file']:
-                        glob.code['config']['output_file'] = glob.stg['output_file']
-                    common.start_local_shell(   glob.code['metadata']['working_path'], \
-                                                glob.tmp_script[4:], \
-                                                glob.code['config']['output_file'])
-                    glob.jobid = "local"
-
-            # Use stdout for output if not set
-            if not glob.code['config']['output_file']:
-                glob.code['config']['output_file'] = glob.jobid + ".out"
-
-
-            common.check_for_slurm_vars()        
-
-
-            print("Output file:")
-            print(">  " + common.rel_path(os.path.join(glob.code['metadata']['working_path'], glob.code['config']['output_file'])))
-
-            # Generate bench report
-            generate_bench_report(build_report)
-        
-            # Write to output file
-            common.write_to_outputs("bench", glob.code['metadata']['working_dir'])
-
-            counter += 1
+                gen_bench_script()
+                start_task()
 
 # Check input
 def init(glob_obj):
-
 
     global glob, glob_master, common    
     glob_master = glob_obj

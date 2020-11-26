@@ -491,19 +491,24 @@ class init(object):
         # If found matching key
             if overload_key in param_dict:
                 old = param_dict[overload_key]
-                datatype = type(param_dict[overload_key])
 
-                try:
-                    # Convert datatypes
-                    if datatype is str: 
-                        param_dict[overload_key] = str(self.glob.overload_dict[overload_key])
-                    elif datatype is int:
-                        param_dict[overload_key] = int(self.glob.overload_dict[overload_key])
-                    elif datatype is bool:
-                        param_dict[overload_key] = self.glob.overload_dict[overload_key] == 'True'
+                # If cfg value is a list, skip datatype check
+                if "," in self.glob.overload_dict[overload_key]:
+                    param_dict[overload_key] = self.glob.overload_dict[overload_key]
 
-                except:
-                    exception.error_and_quit(self.glob.log, "datatype mismatch for '" + overload_key +"', expected=" + datatype + ", provided=" + type(overload_key))
+                else:
+                    datatype = type(param_dict[overload_key])
+
+                    try:
+                        # Convert datatypes
+                        if datatype is str: 
+                            param_dict[overload_key] = str(self.glob.overload_dict[overload_key])
+                        elif datatype is int:
+                            param_dict[overload_key] = int(self.glob.overload_dict[overload_key])
+                        elif datatype is bool:
+                            param_dict[overload_key] = self.glob.overload_dict[overload_key] == 'True'
+                    except:
+                        exception.error_and_quit(self.glob.log, "datatype mismatch for '" + overload_key +"', expected=" + str(datatype) + ", provided=" + str(type(overload_key)))
 
                 print("Overloading " + overload_key + ": '" + str(old) + "' -> '" + str(param_dict[overload_key]) + "'" )
                 # Remove key from overload dict
@@ -584,49 +589,49 @@ class init(object):
         exception.error_and_quit(self.glob.log, "input cfg file matching '" + input_label + "' not found.")
 
     # returns dict of search fields to locate installed application, from bench cfg file
-    def get_search_dict(self, cfg_file):
+    def get_search_list(self, cfg_file):
 
         cfg_parser = cp.ConfigParser()
         try:
             with open(cfg_file) as cfile:
                 cfg_parser.read_file(cfile)
-                search_dict = dict(cfg_parser.items('requirements'))
+                search_list = cfg_parser.items('requirements').values()
 
         except Exception as err:
             print(err)
             exception.error_and_quit(self.glob.log, "failed to read [requirements] section of cfg file " + cfg_file)
         
-        return search_dict 
+        return search_list
 
-    # Search code_path with values in search_dict
-    def search_with_dict(self, search_dict, code_path):
+    # Search code_path with values in search_list
+    def search_with_list(self, search_list, code_path):
         match = True
         # Break code path by /
         code_path_elems = code_path.split(self.glob.stg['sl'])
 
         #Ensure every val that is set in search dict is found in code path
-        for key in search_dict:
-            if search_dict[key] and not search_dict[key] in code_path_elems:
+        for search in search_list:
+            if search and not search in code_path_elems:
                 # Otherwise not code does not match requirements
                 match = False
         return match
 
     # Check if the requirements in bench.cfg need a built code 
-    def needs_code(self, search_dict):
-        # Check if all search_dict values are empty
-        if all(value == "" for value in search_dict.values()):
+    def needs_code(self, search_list):
+        # Check if all search_list values are empty
+        if not search_list:
             return False
         else:
             return True
 
-    # Check if search_dict returns unique installed application
-    def check_if_installed(self, search_dict):
+    # Check if search_list returns unique installed application
+    def check_if_installed(self, search_list):
 
         # Get list of installed applications
         installed_list = self.get_installed()
 
         # For each installed code
-        results = [app for app in installed_list if self.search_with_dict(search_dict, app)]
+        results = [app for app in installed_list if self.search_with_list(search_list, app)]
 
         # Unique result
         if len(results) == 1:
@@ -638,7 +643,7 @@ class init(object):
             if self.glob.stg['build_if_missing']:
                 return False
             else:
-                print("No installed applications match your selection criteria: ", search_dict)
+                print("No installed applications match your selection criteria: ", search_list)
                 print("And 'build_if_missing'=False in settings.ini")
                 print("Currently installed applications:")
                 for code in installed_list:
@@ -648,7 +653,7 @@ class init(object):
         # Multiple results
         elif len(results) > 1:
 
-            print("Multiple installed applications match your selection critera: ", search_dict)
+            print("Multiple installed applications match your selection critera: ", search_list)
             for code in results:
                 print("  ->" + code)
             print("Please be more specific.")
@@ -657,29 +662,39 @@ class init(object):
     # Read every build config file and construct a list with format [[cfg_file, code, version, build_label],...]
     def get_avail_codes(self):
 
+        # Get all application build config files
         cfg_list = self.get_list_of_cfgs("build")
 
         avail_list = []
         for cfg_file in cfg_list:
 
+            # Read each application cfg file 
             cfg_parser = cp.ConfigParser()
             try:
                 with open(cfg_file) as cfile:
                     cfg_parser.read_file(cfile)
+                    # Append application info to list
                     avail_list.append([cfg_file, cfg_parser['general']['code'], cfg_parser['general']['version'], cfg_parser['config']['build_label']])
 
             except Exception as err:
                 print(err)
                 exception.error_and_quit(self.glob.log, "failed to read [requirements] section of cfg file " + cfg_file)
-
+        
+        # Return list
         return avail_list
 
     # Check if search dict matches an avaiable application
-    def check_if_avail(self, search_dict):
+    def check_if_avail(self, search_list):
+
+        # Get list of available application config files
         avail_list = self.get_avail_codes()
+
         results = []
+        # Check for matching available applications
         for code in avail_list:
-            if search_dict['code'] in code[1] and search_dict['version'] in code[2] and search_dict['label'] in code[3]:
+            print("&&&", code)
+            print("%%%", search_list)
+            if search_list[0] in code[1] and search_list[1] in code[2] and search_list[2] in code[3]:
                 results.append(code[0])
 
         # Unique match
@@ -687,7 +702,7 @@ class init(object):
             return results[0]
 
         elif len(results) == 0:
-            print("No application profile available which meet your search criteria:", search_dict)
+            print("No application profile available which meet your search criteria:", search_list)
             sys.exit(1)
 
         elif len(results) > 1:

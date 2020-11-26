@@ -135,12 +135,13 @@ def validate_result(result_path):
     try:
         result = float(result_str)
     except:
-        exception.print_warning(glob.log, "result extracted from " + output_file + " is not a float: '" + result_str + "'")
+        exception.print_warning(glob.log, "result extracted from " + common.rel_path(glob.output_path) + " is not a float: '" + \
+                                result_str + "'")
         return False, None
 
     # Check float non-zero
     if not result:
-        exception.print_warning(glob.log, "result extracted from " + output_file + " is '0.0'.")
+        exception.print_warning(glob.log, "result extracted from " + common.rel_path(glob.output_path) + " is '0.0'.")
         return False, None
 
     glob.log.debug("Successfully found result '" + str(result) + " " + glob.report_dict['result']['unit'] + " for result " + \

@@ -42,55 +42,78 @@ def search_cfg_str(cfg_name, search_path):
 
     return None
 
+
+# Search path of cfg files for unique match of search list
+def search_cfg_with_list(search_list, search_path):
+
+    if os.path.isdir(search_path):
+        glob.log.debug("Looking for config file in " + common.rel_path(search_path) + "...")
+        cfg_list = gb.glob(os.path.join(search_path, "*"))
+
+        # For every cfg file in directory
+        for cfg in cfg_list:
+            # Ignore directories
+            if all(search in cfg for search in search_list):
+                # If all search list elems found, return matching cfg file
+                return cfg      
+    return None
+
 # Check cfg file exists
 def check_file(cfg_type, cfg_name):
     suffix = None
     subdir = None
 
-    glob.log.debug("Checking if " + cfg_name + " is a full path...")
-    # 1: check if provided cfg_name is a path
-    if cfg_name[0] == "/":
-        glob.log.debug("Found")
-        return cfg_name
+    # If search input is a string, assume user input and search for cfg in various locations
+    if isinstance(cfg_name, str):
 
-    # 2: check for file in user's CWD
-    search_path = glob.cwd + glob.stg['sl']
-    glob.log.debug("Looking for " + cfg_name + " in " + search_path + "...")
-    if os.path.isfile(search_path + cfg_name):
-        glob.log.debug("Found")
-        return search_path + cfg_name
+        glob.log.debug("Checking if " + cfg_name + " is a full path...")
+        # 1: check if provided cfg_name is a path
+        if cfg_name[0] == "/":
+            glob.log.debug("Found")
+            return cfg_name
 
-    # 3: check user's HOME
-    search_path = os.getenv("HOME") + glob.stg['sl']
-    glob.log.debug("Looking for " + cfg_name + " in " + search_path + "...")
-    if os.path.isfile(search_path + cfg_name):
-        glob.log.debug("Found")
-        return search_path + cfg_name
+        # 2: check for file in user's CWD
+        search_path = glob.cwd + glob.stg['sl']
+        glob.log.debug("Looking for " + cfg_name + " in " + search_path + "...")
+        if os.path.isfile(search_path + cfg_name):
+            glob.log.debug("Found")
+            return search_path + cfg_name
+
+        # 3: check user's HOME
+        search_path = os.getenv("HOME") + glob.stg['sl']
+        glob.log.debug("Looking for " + cfg_name + " in " + search_path + "...")
+        if os.path.isfile(search_path + cfg_name):
+            glob.log.debug("Found")
+            return search_path + cfg_name
 
 
-    # 4: check in project basedir
-    search_path = glob.basedir + glob.stg['sl']
-    glob.log.debug("Looking for " + cfg_name + " in " + common.rel_path(search_path) + "...")
-    if os.path.isfile(search_path + cfg_name):
-        glob.log.debug("Found")
-        return search_path + cfg_name
+        # 4: check in project basedir
+        search_path = glob.basedir + glob.stg['sl']
+        glob.log.debug("Looking for " + cfg_name + " in " + common.rel_path(search_path) + "...")
+        if os.path.isfile(search_path + cfg_name):
+            glob.log.debug("Found")
+            return search_path + cfg_name
+
+        # If not found, cast to list for further searching 
+        cfg_name = [cfg_name]
+
+    # Use search list to look in expected places
 
     # 5: Search cfg dir
     search_path = glob.stg['config_path'] + glob.stg['sl'] 
-    glob.log.debug("Looking for " + cfg_name + " in " + common.rel_path(search_path) + "...")
-    if os.path.isfile(search_path + cfg_name):
-        glob.log.debug("Found")
-        return search_path + cfg_name
+    cfg_file = search_cfg_with_list(cfg_name, search_path)
+    if cfg_file:
+        return cfg_file
 
     # 6: Search 'type' subdir
     search_path = search_path + cfg_type + glob.stg['sl']
-    cfg_file = search_cfg_str(cfg_name, search_path)
+    cfg_file = search_cfg_with_list(cfg_name, search_path)
     if cfg_file:
         return cfg_file
 
     # 7: Seach system subdir 
     search_path = search_path + glob.sys_env + glob.stg['sl']
-    cfg_file = search_cfg_str(cfg_name, search_path)
+    cfg_file = search_cfg_with_list(cfg_name, search_path)
     if cfg_file:
         return cfg_file
 
@@ -99,12 +122,11 @@ def check_file(cfg_type, cfg_name):
         handler = input_handler.init(glob)
         handler.print_avail_type(cfg_type, os.path.join(glob.stg['config_path'], cfg_type))
 
-        exception.error_and_quit(glob.log, "config file '" + common.rel_path(cfg_name) + "' not found.")
+        exception.error_and_quit(glob.log, "config file containing '" + ", ".join(cfg_name) + "' not found.")
 
     else:
-        exception.error_and_quit(glob.log, "input file '" + common.rel_path(cfg_name) + "' not found.")
+        exception.error_and_quit(glob.log, "input file containing '" + ", ".join(cfg_name) + "' not found.")
         
-
 # Parse cfg file into dict
 def read_cfg_file(cfg_file):
     cfg_parser = cp.ConfigParser()
@@ -112,12 +134,10 @@ def read_cfg_file(cfg_file):
     cfg_parser.read(cfg_file)
 
     # Add file name & label to dict
-    cfg_label = cfg_file.split(glob.stg['sl'])[-1][:-10]
-    
     cfg_dict = {}
     cfg_dict['metadata'] ={}
 
-    cfg_dict['metadata']['cfg_label'] = cfg_label
+    cfg_dict['metadata']['cfg_label'] = cfg_file.split(glob.stg['sl'])[-1].split(".")[0]
     cfg_dict['metadata']['cfg_file']  = cfg_file
 
     # Read sections into dict 
@@ -147,14 +167,17 @@ def check_dict_key(cfg_file, cfg_dict, section, key):
 def get_val_types(cfg_dict):
     for sect in cfg_dict:
         for key in cfg_dict[sect]:
-            if cfg_dict[sect][key] in  ["True", "true"]:
-                cfg_dict[sect][key] = True
-            # Test if False
-            elif cfg_dict[sect][key] in ["False", "false"]:
-                cfg_dict[sect][key] = False
-            # Test if int
-            elif cfg_dict[sect][key].isdigit():
-                cfg_dict[sect][key] =  int(cfg_dict[sect][key])
+
+            # If cfg value is string, try cast it to other types
+            if isinstance(cfg_dict[sect][key], str):
+                if cfg_dict[sect][key] in  ["True", "true"]:
+                    cfg_dict[sect][key] = True
+                # Test if False
+                elif cfg_dict[sect][key] in ["False", "false"]:
+                    cfg_dict[sect][key] = False
+                # Test if int
+                elif cfg_dict[sect][key].isdigit():
+                    cfg_dict[sect][key] =  int(cfg_dict[sect][key])
 
 # Check build config file and add required fields
 def process_build_cfg(cfg_dict):
@@ -170,7 +193,7 @@ def process_build_cfg(cfg_dict):
     check_dict_section(cfg_dict['metadata']['cfg_file'], cfg_dict, 'config')
 
     # Instantiate missing optional parameters
-    if not 'system'           in cfg_dict['general'].keys():  cfg_dict['general']['system']         = ""
+    if not 'system'           in cfg_dict['general'].keys():  cfg_dict['general']['system']         = glob.sys_env
     if not 'build_prefix'     in cfg_dict['general'].keys():  cfg_dict['general']['build_prefix']   = ""
     if not 'template'         in cfg_dict['general'].keys():  cfg_dict['general']['template']       = ""
     if not 'module_use'       in cfg_dict['general'].keys():  cfg_dict['general']['module_use']     = ""
@@ -206,7 +229,7 @@ def process_build_cfg(cfg_dict):
                                     common.rel_path(cfg_dict['metadata']['cfg_file']))
 
     # Set system variables from system.cfg
-    glob.system = common.get_system_vars(cfg_dict['requirements']['system'])
+    glob.system = common.get_system_vars(cfg_dict['general']['system'])
 
     # Check that system settings were successfully parserd from file
     if not glob.system:
@@ -309,6 +332,7 @@ def process_bench_cfg(cfg_dict):
     if not 'template'           in cfg_dict['config'].keys():    cfg_dict['config']['template']          = ""
     if not 'collect_hw_stats'   in cfg_dict['config'].keys():    cfg_dict['config']['collect_hw_stats']  = False
     if not 'output_file'        in cfg_dict['config'].keys():    cfg_dict['config']['output_file']       = ""
+    if not 'gpus'               in cfg_dict['config'].keys():    cfg_dict['config']['gpus']              = 0
 
     if not 'description'        in cfg_dict['result'].keys():   cfg_dict['result']['description']        = ""
 
@@ -318,6 +342,7 @@ def process_bench_cfg(cfg_dict):
     # Overload params from cmdline
     common.overload_params(cfg_dict)
 
+    # If system not specified for bench requirements, add current system
     if not cfg_dict['requirements']['system']:
         cfg_dict['requirements']['system'] = glob.sys_env
 
@@ -348,6 +373,10 @@ def process_bench_cfg(cfg_dict):
     else:
         exception.error_and_quit(glob.log, "'method' key in [result] section of " + \
                             cfg_dict['metadata']['cfg_file'] + "must be either expr or script." )
+
+    # If benchmark uses GPUs, delimit any lists
+    if cfg_dict['config']['gpus']:
+        cfg_dict['config']['gpus']          = str(cfg_dict['config']['gpus']).split(",")
 
     # Handle comma-delimited lists
     cfg_dict['runtime']['nodes']            = str(cfg_dict['runtime']['nodes']).split(",")
@@ -396,6 +425,10 @@ def process_bench_cfg(cfg_dict):
                                     "provide either a 'hostfile' or 'hostlist' under [runtime] in " + \
                                     common.rel_path(cfg_dict['metadata']['cfg_file']))
 
+    # Deal with empty values
+    if not cfg_dict['runtime']['max_running_jobs']:
+        cfg_dict['runtime']['max_running_jobs'] = 10
+
 # Check sched config file and add required fields
 def process_sched_cfg(cfg_dict):
 
@@ -419,14 +452,14 @@ def process_sched_cfg(cfg_dict):
         glob.log.debug("Set threads = " + cfg_dict['sched']['threads'])
 
 # Read input param config and test 
-def ingest_cfg(cfg_type, cfg_name, glob_obj):
+def ingest_cfg(cfg_type, cfg_search, glob_obj):
 
     global glob, common 
     glob = glob_obj
     common = common_funcs.init(glob)
 
     # Check input file exists
-    cfg_file = check_file(cfg_type, cfg_name)
+    cfg_file = check_file(cfg_type, cfg_search)
 
     # Parse input fo;e
     cfg_dict = read_cfg_file(cfg_file)

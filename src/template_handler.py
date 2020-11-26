@@ -10,6 +10,29 @@ import src.exception as exception
 
 glob = common = None
 
+# Validate that the template contains all mandetory parameters
+def check_template_params(param_list, template_file):
+    
+    for line in template_file:
+        for param in param_list:
+            #print(line)
+            if "<<<"+param+">>>" in line.strip():
+                param_list.remove(param)
+                break
+
+    if param_list:
+        exception.error_and_quit(glob.log, "your template file is missing an essential parameter(s) needed by benchtool: " + ", ".join([ "<<<" + x + ">>>" for x in param_list]))
+
+# Pass build template params to checker
+def check_build_template(template_file):
+    param_list = ['compiler', 'build_path']
+    check_template_params(param_list, template_file)
+
+# Pass bench template params to checker
+def check_bench_template(template_file):
+    param_list = ['working_path']
+    check_template_params(param_list, template_file)
+
 # Combines list of input templates to single script file
 def construct_template(template_obj, input_template):
 
@@ -52,7 +75,7 @@ def template_epilog(template_obj):
 
     # Add sanity check
     if glob.code['config']['exe']:
-        template_obj.append("ldd $(which " + glob.code['config']['exe'] + ") \n")
+        template_obj.append("ldd " + os.path.join("${install_path}", glob.code['config']['bin_dir'], glob.code['config']['exe']) + " \n")
 
     # Add hardware collection script to job script
     if glob.code['config']['collect_hw_stats']:
@@ -164,7 +187,11 @@ def generate_build_script(glob_obj):
 
     template_epilog(template_obj)
 
+    print("Checking template...")
+    check_build_template(template_obj)
+
     # Populate template list with cfg dicts
+    print("Populating template...")
     template_obj = populate_template([glob.code['metadata'], \
                                       glob.code['general'], \
                                       glob.code['modules'], \
@@ -174,6 +201,7 @@ def generate_build_script(glob_obj):
                                       template_obj)
 
     # Test for missing parameters
+    print("Validating template...")
     common.test_template(glob.tmp_script, template_obj)
 
     # Write populated script to file
@@ -249,6 +277,10 @@ def generate_bench_script(glob_obj):
         else:
             exception.print_warning(glob.log, "Requested hardware stats but persmissions not set, run 'sudo hw_utils/change_permissions.sh'")
 
+    print("Checking template...")
+    check_bench_template(template_obj)
+
+    print("Populating template...")
     # Take multiple config dicts and populate script template
     if glob.stg['bench_mode'] == "sched":
         template_obj = populate_template([glob.code['metadata'], \
@@ -268,6 +300,7 @@ def generate_bench_script(glob_obj):
     # Add end time line
     template_obj.append("echo \"END `date +\"%Y\"-%m-%dT%T` `date +\"%s\"`\" \n")
 
+    print("Validating template...")
     # Test for missing parameters
     common.test_template(glob.tmp_script, template_obj)
 

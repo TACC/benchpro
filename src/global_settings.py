@@ -38,7 +38,7 @@ class settings(object):
 
     # Chicken & egg situation with 'sl' here - hardcoded 
     basedir             = "/".join(os.path.dirname(os.path.abspath(__file__)).split("/")[:-1])
-    time_str            = datetime.now().strftime("%Y-%m-%d_%Hh%M")
+    time_str            = datetime.now().strftime("%Y-%m-%dT%H-%M")
     cwd                 = os.getcwd()
 
     # Resolve relative paths in settings.ini
