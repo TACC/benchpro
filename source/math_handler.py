@@ -3,7 +3,7 @@ import re
 import sys
 
 # Local Imports
-import src.exception as exception
+import source.exception as exception
 
 glob = None
 dicts_to_search = []

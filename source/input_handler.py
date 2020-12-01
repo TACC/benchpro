@@ -7,8 +7,8 @@ import sys
 import time
 
 # Local Imports
-import src.common as common_funcs
-import src.result_handler as result_handler
+import source.common as common_funcs
+import source.result_handler as result_handler
 
 class init(object):
     def __init__(self, glob):
@@ -37,11 +37,13 @@ class init(object):
     def clean_temp_files(self):
         print("Cleaning up temp files...")
         # Search space for tmp files
-        search_dict = ['*.out*',
-                       '*.err*',
-                       '*.log',
-                       'tmp.*',
-                       '.history']
+        search_dict = [ "*.out*",
+                        "*.err*",
+                        "*.log",
+                        "tmp.*",
+                        ".history",
+                        "*.csv",
+                        ".outputs"]
 
         file_list = self.find_matching_files(search_dict)
 

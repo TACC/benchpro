@@ -12,7 +12,7 @@ import sys
 import time
 
 # Local Imports
-import src.exception as exception
+import source.exception as exception
 
 # Contains several useful functions, mostly used by bencher and builder
 class init(object):

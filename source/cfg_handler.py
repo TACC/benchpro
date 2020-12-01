@@ -7,9 +7,9 @@ import subprocess
 import sys
 
 # Local Imports
-import src.common as common_funcs
-import src.exception as exception
-import src.input_handler as input_handler
+import source.common as common_funcs
+import source.exception as exception
+import source.input_handler as input_handler
 
 glob = common = None
 
@@ -297,6 +297,8 @@ def process_build_cfg(cfg_dict):
     # Overload params from cmdline
     common.overload_params(cfg_dict)
 
+    # Set sched nodes to 1 for build jobs
+    cfg_dict['config']['nodes'] = 1
 
 # Check bench config file and add required fields
 def process_bench_cfg(cfg_dict):

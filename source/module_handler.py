@@ -4,8 +4,8 @@ import shutil as su
 import sys
 
 # Local Imports
-import src.common as common_funcs
-import src.exception as exception
+import source.common as common_funcs
+import source.exception as exception
 
 glob = common = None
 

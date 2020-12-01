@@ -108,7 +108,7 @@ class settings(object):
         self.stg['result_script_path']  = os.path.join(self.stg['script_path'], self.stg['result_scripts_dir'])
         self.stg['system_scripts_path'] = os.path.join(self.stg['script_path'], self.stg['result_scripts_dir'])
         self.stg['module_path']         = os.path.join(self.stg['build_path'], self.stg['module_basedir'])
-        self.stg['src_path']            = os.path.join(self.basedir, "src")
+        self.stg['src_path']            = os.path.join(self.basedir, "source")
         self.stg['utils_path']          = os.path.join(self.basedir, self.stg['system_utils_dir'])
 
 

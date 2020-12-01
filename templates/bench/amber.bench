@@ -1,11 +1,4 @@
 
-export   working_path=<<<working_path>>>
-export    output_file=<<<output_file>>>
-export benchmark_repo=<<<benchmark_repo>>>
-export       mpi_exec=<<<mpi_exec>>>
-export    base_module=<<<base_mod>>>
-export     app_module=<<<app_mod>>>
-
 export        dataset=<<<dataset>>>
 export           arch=<<<arch>>>
 

@@ -7,13 +7,13 @@ import shutil as su
 import sys
 
 # Local Imports
-import src.builder as builder
-import src.cfg_handler as cfg_handler
-import src.common as common_funcs
-import src.exception as exception
-import src.logger as logger
-import src.math_handler as math_funcs
-import src.template_handler as template_handler
+import source.builder as builder
+import source.cfg_handler as cfg_handler
+import source.common as common_funcs
+import source.exception as exception
+import source.logger as logger
+import source.math_handler as math_funcs
+import source.template_handler as template_handler
 
 glob = glob_master = common = None
 

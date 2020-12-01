@@ -15,10 +15,10 @@ except ImportError:
     pass
 
 # Local Imports
-import src.cfg_handler as cfg_handler
-import src.common as common_funcs
-import src.exception as exception
-import src.logger as logger
+import source.cfg_handler as cfg_handler
+import source.common as common_funcs
+import source.exception as exception
+import source.logger as logger
 
 glob = common = None
 

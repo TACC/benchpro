@@ -5,33 +5,10 @@ import shutil as su
 import sys
 
 # Local Imports
-import src.common as common_funcs
-import src.exception as exception
+import source.common as common_funcs
+import source.exception as exception
 
 glob = common = None
-
-# Validate that the template contains all mandetory parameters
-def check_template_params(param_list, template_file):
-    
-    for line in template_file:
-        for param in param_list:
-            #print(line)
-            if "<<<"+param+">>>" in line.strip():
-                param_list.remove(param)
-                break
-
-    if param_list:
-        exception.error_and_quit(glob.log, "your template file is missing an essential parameter(s) needed by benchtool: " + ", ".join([ "<<<" + x + ">>>" for x in param_list]))
-
-# Pass build template params to checker
-def check_build_template(template_file):
-    param_list = ['compiler', 'build_path']
-    check_template_params(param_list, template_file)
-
-# Pass bench template params to checker
-def check_bench_template(template_file):
-    param_list = ['working_path']
-    check_template_params(param_list, template_file)
 
 # Combines list of input templates to single script file
 def construct_template(template_obj, input_template):
@@ -53,10 +30,18 @@ def add_reservation(template_obj):
     if glob.sched['sched']['reservation']:
             template_obj.append("#SBATCH --reservation=" + glob.sched['sched']['reservation'] + "\n")
 
-# Add modules from build.cfg
-def fill_modules(template_obj):
+# Add standard lines to build template
+def add_standard_build_definitions(template_obj):
+
+    default_template = os.path.join(glob.stg['template_path'], glob.stg['build_tmpl_dir'], "default.template")
+    construct_template(template_obj, default_template)
+
+    # export module names
+    for mod in glob.code['modules']:
+        template_obj.append("export" + mod.rjust(15) + "=" + glob.code['modules'][mod] + "\n")
 
     template_obj.append("\n")
+    template_obj.append("# Load modules \n")
     template_obj.append("ml reset \n")
         
     # add 'module use' if set
@@ -66,9 +51,18 @@ def fill_modules(template_obj):
     # Add non Null modules 
     for mod in glob.code['modules']:
         if glob.code['modules'][mod]:
-            template_obj.append("ml " + glob.code['modules'][mod] + "\n")
+            template_obj.append("ml $" + mod + "\n")
 
     template_obj.append("ml \n")
+    template_obj.append("\n")
+    template_obj.append("# Create application directories\n")
+    template_obj.append("mkdir -p ${build_path} \n")
+    template_obj.append("mkdir -p ${install_path} \n")
+
+# Add standard lines to bench template
+def add_standard_bench_definitions(template_obj):
+    default_template = os.path.join(glob.stg['template_path'], glob.stg['bench_tmpl_dir'], "default.template")
+    construct_template(template_obj, default_template)
 
 # Add things to the bottom of the build script
 def template_epilog(template_obj):
@@ -179,16 +173,13 @@ def generate_build_script(glob_obj):
         # Add reservation line to SLURM params if set
         add_reservation(template_obj)
 
-    # Fill modules from cfg
-    fill_modules(template_obj)
+    # Add standard lines to template
+    add_standard_build_definitions(template_obj)
 
     construct_template(template_obj, glob.compiler['template'])
     construct_template(template_obj, glob.code['template'])
 
     template_epilog(template_obj)
-
-    print("Checking template...")
-    check_build_template(template_obj)
 
     # Populate template list with cfg dicts
     print("Populating template...")
@@ -199,6 +190,9 @@ def generate_build_script(glob_obj):
                                       glob.sched['sched'], \
                                       glob.compiler['common']], \
                                       template_obj)
+
+
+    template_obj.append("date \n")
 
     # Test for missing parameters
     print("Validating template...")
@@ -268,6 +262,10 @@ def generate_bench_script(glob_obj):
     # Add start time line
     template_obj.append("echo \"START `date +\"%Y\"-%m-%dT%T` `date +\"%s\"`\" \n")
 
+    # Add standard lines to script
+    add_standard_bench_definitions(template_obj)
+
+    # Add bench templat to script
     construct_template(template_obj, glob.code['template'])
 
     # Add hardware collection script to job script
@@ -277,8 +275,7 @@ def generate_bench_script(glob_obj):
         else:
             exception.print_warning(glob.log, "Requested hardware stats but persmissions not set, run 'sudo hw_utils/change_permissions.sh'")
 
-    print("Checking template...")
-    check_bench_template(template_obj)
+    template_obj.append("date \n")
 
     print("Populating template...")
     # Take multiple config dicts and populate script template

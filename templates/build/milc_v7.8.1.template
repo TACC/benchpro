@@ -1,23 +1,3 @@
-export     build_path=<<<build_path>>>
-export   install_path=<<<install_path>>>
-export    milc_version=<<<version>>>
-export       compiler=<<<compiler>>>
-export            mpi=<<<mpi>>>
-
-date
-echo "Slurm Job ID: ${SLURM_JOB_ID}"
-echo "Host: ${HOSTNAME}"
-echo "User: ${USER}"
-
-#load modules
-ml reset
-ml $compiler
-ml $mpi
-ml git
-ml 
-
-mkdir -p ${install_path}
-mkdir -p ${build_path}
 cd ${build_path}
 
 git clone https://github.com/milc-qcd/milc_qcd.git
@@ -40,6 +20,4 @@ CXX=$MPICXX
 
 make -j1 su3_rhmd_hisq
 cp su3_rhmd_hisq ${install_path}
-
-date
 

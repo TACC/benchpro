@@ -1,22 +1,4 @@
 
-export     build_path=<<<build_path>>>
-export   install_path=<<<install_path>>>
-export benchmark_repo=<<<benchmark_repo>>>
-export       compiler=<<<compiler>>>
-export            mpi=<<<mpi>>>
-export           cuda=<<<cuda>>>
-export        version=<<<version>>>
-export      opt_flags=<<<opt_flags>>>
-export            exe=<<<exe>>>
-export        threads=<<<threads>>>
-
-date
-echo "Slurm Job ID: ${SLURM_JOB_ID}"
-echo "Host: ${HOSTNAME}"
-echo "User: ${USER}"
-
-mkdir -p ${build_path}
-
 tar -xf ${benchmark_repo}/Amber${version}.tar.bz2 -C ${build_path}/
 tar -xf ${benchmark_repo}/AmberTools${version}.tar.bz2 -C ${build_path}/
 tar -xf ${benchmark_repo}/AmberPatch${version}.tar.bz2 -C ${build_path}/
@@ -77,5 +59,3 @@ fi
 
 mkdir -p ${install_path}
 cp -r bin ${install_path}/
-
-date

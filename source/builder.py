@@ -8,12 +8,12 @@ import sys
 import time
 
 # Local Imports
-import src.cfg_handler as cfg_handler
-import src.common as common_funcs
-import src.exception as exception
-import src.logger as logger
-import src.module_handler as module_handler
-import src.template_handler as template_handler
+import source.cfg_handler as cfg_handler
+import source.common as common_funcs
+import source.exception as exception
+import source.logger as logger
+import source.module_handler as module_handler
+import source.template_handler as template_handler
 
 glob = common = None
 
@@ -77,13 +77,15 @@ def get_build_dep(job_limit):
         glob.dep_list.append(str(running_jobids[len(running_jobids)-job_limit]))
 
 # Main method for generating and submitting build script
-def build_code(code_dict):
+#
+# code_label can be string or list of strings, this is handled in cfg_handler
+#
+def build_code(code_label):
+
+    print("Starting build process for application '" + code_label + "'")
 
     # Parse config input files
-    cfg_handler.ingest_cfg('build',    code_dict,                  glob)
-
-    # Undo nodes overload for build jobs
-    glob.code['config']['nodes'] = 1
+    cfg_handler.ingest_cfg('build',    code_label,                  glob)
 
     cfg_handler.ingest_cfg('compiler', glob.stg['compile_cfg_file'],glob)
 
@@ -95,8 +97,6 @@ def build_code(code_dict):
     print("Using application config file:")
     print(">  " + common.rel_path(glob.code['metadata']['cfg_file']))
     print()
-
-    
 
     # Get sched config dict if exec_mode=sched, otherwise set threads 
     if glob.stg['build_mode'] == "sched":
@@ -230,7 +230,7 @@ def init(glob_obj):
                 code_label_list = glob.stg[glob.args.build].split(',')
                 print("Building application suite '" + glob.args.build + "': " + glob.stg[glob.args.build])
                 for code_label in code_label_list:
-                    build_code({'code': code_label})
+                    build_code(code_label)
             else:
                 exception.error_and_quit(glob.log, "No suite '" + glob.args.build + "' in settings.ini. Available suites: " + ', '.join(glob.suite.keys())) 
 
@@ -238,7 +238,7 @@ def init(glob_obj):
         else:
             code_list = glob.args.build.split(":")
             for code_label in code_list:
-                build_code({'code' : code_label})
+                build_code(code_label)
 
 
     # ----------------- IF CODE LABEL IS A DICT (FROM BENCHER) --------------------------

@@ -10,13 +10,13 @@ from timeit import default_timer as timer
 
 # Local Imports
 try:
-    import src.bencher as bencher
-    import src.builder as builder
-    import src.global_settings as global_settings
-    import src.input_handler as input_handler
-    import src.result_handler as result_handler
-    import src.splash as splash
-    import src.validate_setup as validate
+    import source.bencher as bencher
+    import source.builder as builder
+    import source.global_settings as global_settings
+    import source.input_handler as input_handler
+    import source.result_handler as result_handler
+    import source.splash as splash
+    import source.validate_setup as validate
 
 except ImportError as e:
     print("You had an import error, you might be using Python2 ?")
