@@ -12,10 +12,14 @@ hw_reporting/hw_report*
 build/*
 !build/modulefiles/builder.lua
 results/*
+.history
+.outputs
+.validated
 develop-eggs/
 dist/
 downloads/
 eggs/
+*.csv
 .eggs/
 lib/
 lib64/

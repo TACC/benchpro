@@ -1,0 +1,61 @@
+
+tar -xf ${benchmark_repo}/Amber${version}.tar.bz2 -C ${build_path}/
+tar -xf ${benchmark_repo}/AmberTools${version}.tar.bz2 -C ${build_path}/
+tar -xf ${benchmark_repo}/AmberPatch${version}.tar.bz2 -C ${build_path}/
+
+cd ${build_path}/amber${version}_src
+
+export AMBERHOME=`pwd`
+
+# Grab updates
+./update_amber --update
+
+# Compiler type
+config_comp=""
+if [[ "${compiler}" == *"intel"* ]]; then
+  config_comp="-mkl intel" 
+elif [[ "${compiler}" == *"gcc"* ]]; then
+  config_comp="gnu"
+else
+  echo "Unknown compiler type: ${compiler}"
+  exit -1
+fi
+
+# MPI type
+config_mpi=""
+if [[ "${mpi}" == *"impi"* ]] && [[ "${compiler}" == *"intel"* ]]; then
+  config_mpi="-intelmpi"
+elif [[ "${mpi}" == *"impi"* ]] && [[ "${compiler}" == *"gcc"* ]]; then
+  config_mpi="-mpi"
+elif [[ "${mpi}" == *"mvapich"* ]]; then
+  config_mpi="-mpi"
+else
+  echo "Unknown MPI type: ${mpi}"
+  exit -1
+fi
+
+# Add Ampere arch support
+sed -i '1255i\      sm80flags="-gencode arch=compute_80,code=sm_80"' AmberTools/src/configure2
+
+# Build serial
+echo "y" | ./configure -noX11 ${config_comp}
+source amber.sh
+make -j${threads} install
+
+# Build MPI
+if [ ! -z ${mpi} ]; then
+  echo "y" | ./configure -noX11 ${config_mpi} ${config_comp}
+  source amber.sh
+  make -j${threads} install
+fi
+
+# Build CUDA + MPI
+if [ ! -z ${mpi} ] && [ ! -z ${cuda} ]; then
+  export CUDA_HOME=$TACC_CUDA_DIR
+  echo "y" | ./configure -noX11 -cuda ${config_mpi} ${config_comp}
+  source amber.sh
+  make -j${threads} install
+fi
+
+mkdir -p ${install_path}
+cp -r bin ${install_path}/

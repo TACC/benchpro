@@ -1,0 +1,14 @@
+
+date
+echo "JobID:    ${SLURM_JOB_ID}"
+echo "User:     ${USER}"
+echo "Hostlist: ${SLURM_NODELIST}"
+
+export     build_path=<<<build_path>>>
+export   install_path=<<<install_path>>>
+export benchmark_repo=<<<benchmark_repo>>>
+export        version=<<<version>>>
+export      opt_flags=<<<opt_flags>>>
+export            exe=<<<exe>>>
+export        threads=<<<threads>>>
+

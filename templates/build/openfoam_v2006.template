@@ -1,0 +1,17 @@
+export       mpilabel=<<<mpilabel>>>
+export      complabel=<<<complabel>>>
+
+tar -xf ${benchmark_repo}/OpenFOAM-${version}.tgz -C ${install_path}
+tar -xf ${benchmark_repo}/ThirdParty-${version}.tgz -C ${install_path}
+
+cd ${install_path}/OpenFOAM-${version}
+
+sed -i "/projectDir=/c\projectDir=${install_path}\/OpenFOAM-${version}" etc/bashrc
+sed -i "/export WM_MPLIB=SYSTEMOPENMPI/c\export WM_MPLIB=${mpilabel}" etc/bashrc
+sed -i "/export WM_COMPILER=Gcc/c\export WM_COMPILER=${complabel}" etc/bashrc
+
+export WM_NCOMPPROCS=${threads}
+
+source etc/bashrc
+
+./Allwmake

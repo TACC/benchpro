@@ -1,0 +1,13 @@
+tar -xf ${benchmark_repo}/lammps-${version}.tgz -C ${build_path}
+
+cd ${build_path}/lammps-${version}/src
+
+make yes-user-intel
+make yes-user-omp
+
+make package-status
+
+make intel_cpu_intelmpi -j${threads}
+
+cp ${exe} ${install_path}
+
