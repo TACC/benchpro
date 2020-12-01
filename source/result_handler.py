@@ -623,7 +623,7 @@ def query_db(glob_obj):
                     (str(result[14])+" "+result[15]).center(col_width[5]) +"|")
 
     else:
-        print("No results found matching search criteria.")
+        print("No results found matching search criteria: '" + search_str + "'")
 
     # Export to csv
     if glob.args.export:

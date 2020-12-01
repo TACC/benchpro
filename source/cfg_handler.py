@@ -331,10 +331,10 @@ def process_bench_cfg(cfg_dict):
     if not 'label'              in cfg_dict['config'].keys():    cfg_dict['config']['label']             = ""
     if not 'template'           in cfg_dict['config'].keys():    cfg_dict['config']['template']          = ""
     if not 'collect_hw_stats'   in cfg_dict['config'].keys():    cfg_dict['config']['collect_hw_stats']  = False
-    if not 'output_file'        in cfg_dict['config'].keys():    cfg_dict['config']['output_file']       = ""
     if not 'gpus'               in cfg_dict['config'].keys():    cfg_dict['config']['gpus']              = 0
 
     if not 'description'        in cfg_dict['result'].keys():   cfg_dict['result']['description']        = ""
+    if not 'output_file'        in cfg_dict['result'].keys():   cfg_dict['result']['output_file']        = ""
 
     # Convert cfg keys to correct datatype
     get_val_types(cfg_dict)

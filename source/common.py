@@ -730,7 +730,7 @@ class init(object):
 
     # Replace SLURM variables in ouput files
     def check_for_slurm_vars(self):
-        self.glob.code['config']['output_file'] = self.glob.code['config']['output_file'].replace("$SLURM_JOBID", self.glob.jobid) 
+        self.glob.code['result']['output_file'] = self.glob.code['result']['output_file'].replace("$SLURM_JOBID", self.glob.jobid) 
 
     # Write operation to file
     def write_to_outputs(self, op, label):
