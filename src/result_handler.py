@@ -53,7 +53,14 @@ def move_to_archive(result_path):
     if not os.path.isdir(result_path):
         exception.error_and_quit(glob.log, "result directory '" + common.rel_path(result_path) + "' not found.")
 
-    su.move(result_path, glob.stg['archive_path'])
+    # Move to archive
+    try:
+        su.move(result_path, glob.stg['archive_path'])
+    # If folder exists, rename and try again
+    except:
+        exception.print_warning(glob.log, "Result directory already exists in archive. Appending suffix .dup")        
+        su.move(result_path, result_path + ".dup")
+        move_to_archive(result_path + ".dup")
 
 # Create .capture-complete file in result dir
 def capture_complete(result_path):
@@ -82,7 +89,7 @@ def validate_result(result_path):
 
     # Test for benchmark output file
     if not glob.output_path:
-        exception.print_warning(glob.log, "Result file " + output_file + " not found in " + \
+        exception.print_warning(glob.log, "Result file " + glob.report_dict['result']['output_file'] + " not found in " + \
                                 common.rel_path(result_path) + ". It seems the benchmark failed to run.\nWas dry_run=True?")
         return False, None
 
@@ -518,11 +525,20 @@ def parse_input_str(args):
     select_str = ""
     for option in input_list:
         search = option.split('=')
+        if not len(search) == 2:
+            print("ERROR: invalid query key-value pair: " + option)   
+            sys.exit(1)
+    
         # Test search key is in db
         if test_search_field(search[0]):
             if select_str: select_str += " AND "
             else: select_str += " " 
-            select_str = select_str + search[0] + "='" + search[1] + "'"
+
+            # Handle time related query fields
+            if search[0] in ['submit_time']:
+                select_str += "DATE(" + search[0] + ") = '" + search[1] + "'"
+            else:
+                select_str += search[0] + "='" + search[1] + "'"
 
     return select_str
 
@@ -540,7 +556,8 @@ def run_query(query_str):
         cur = conn.cursor()
     except psycopg2.Error as e:
         print(e)
-        exception.error_and_quit(glob.log, "Unable to connect to database")
+        print("Unable to connect to database")
+        sys.exit(1)
 
     if query_str == "all":
         query_str = ""

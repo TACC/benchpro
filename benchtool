@@ -46,6 +46,10 @@ def get_var_overload_dict(vars_str):
         settings_list = vars_str.split(':')
         for setting in settings_list:
             pair = setting.split('=')
+            # Test key-value pair
+            if not len(pair) == 2:
+                print("Invalid overload key-value pair detected: ", setting)
+                sys.exit(1)
             overload_dict[pair[0]] = pair[1]
 
     return overload_dict

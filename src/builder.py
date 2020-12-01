@@ -81,6 +81,10 @@ def build_code(code_dict):
 
     # Parse config input files
     cfg_handler.ingest_cfg('build',    code_dict,                  glob)
+
+    # Undo nodes overload for build jobs
+    glob.code['config']['nodes'] = 1
+
     cfg_handler.ingest_cfg('compiler', glob.stg['compile_cfg_file'],glob)
 
     # If build dir already exists, skip this build

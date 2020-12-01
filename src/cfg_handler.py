@@ -212,8 +212,6 @@ def process_build_cfg(cfg_dict):
     # Extract compiler type from label by splitting by / and removing ints
     cfg_dict['config']['compiler_type'] = re.sub("\d", "", cfg_dict['modules']['compiler'].split('/')[0])
 
-    # Insert 1 node for build job
-    cfg_dict['config']['nodes'] = 1
     # Path to application's data directory
     cfg_dict['config']['benchmark_repo'] = glob.stg['benchmark_repo']
 

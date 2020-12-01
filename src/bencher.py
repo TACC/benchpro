@@ -63,8 +63,6 @@ def get_code_info(input_label, search_list):
 
     # Check if code is installed
     glob.code['metadata']['code_path'] = common.check_if_installed(search_list)
-    # Set application module path to install path 
-    glob.code['metadata']['app_mod'] = glob.code['metadata']['code_path']
 
     # If application is not installed, check if cfg file is available to build
     if not glob.code['metadata']['code_path']:
@@ -101,6 +99,8 @@ def get_code_info(input_label, search_list):
     if not glob.code['metadata']['code_path']:
         exception.error_and_quit(glob.log, "it seems the attempt to build your application failed. Consult the logs.")
 
+    # Set application module path to install path
+    glob.code['metadata']['app_mod'] = glob.code['metadata']['code_path']
 
     glob.build = {}
 
@@ -169,7 +169,7 @@ def gen_bench_script():
         
 
     print()
-    print("Building script " + str(glob.counter)  + " of " + str(glob.num_tasks) \
+    print("BENCH TASK " + str(glob.counter) \
             + ": " + str(glob.code['runtime']['nodes']) + " nodes, " + str(glob.code['runtime']['threads']) + " threads, " + \
             str(glob.code['runtime']['ranks_per_node']) + " ranks per node" + gpu_print_str)
 
@@ -326,7 +326,6 @@ def run_bench(input_label, glob_copy):
     common.send_inputs_to_log('Bencher')
 
     jobs = glob.code['runtime']['nodes']
-    glob.counter = 1
     glob.prev_jobid = common.get_active_jobids('_bench')
     prev_pid = 0
 
@@ -337,11 +336,6 @@ def run_bench(input_label, glob_copy):
 
     thread_list = glob.code['runtime']['threads']
     rank_list = glob.code['runtime']['ranks_per_node']
-
-    # Get total number of bench tasks 
-    glob.num_tasks = len(jobs) * len(thread_list)
-    if glob.code['config']['gpus']:
-        glob.num_tasks *= len(glob.code['config']['gpus']) 
 
     # for each nodes in list
     for node in jobs:
@@ -380,14 +374,18 @@ def run_bench(input_label, glob_copy):
                 gen_bench_script()
                 start_task()
 
-# Check input
-def init(glob_obj):
+    # Return number of tasks compeleted for this benchmark 
+    return glob.counter
 
-    global glob, glob_master, common    
-    glob_master = glob_obj
+# Check input
+def init(glob):
+
+    global common    
 
     ## Grab a copy of the glob dict for this session
-    glob = copy.deepcopy(glob_master)
+    #glob = copy.deepcopy(glob_master)
+
+    glob.counter = 1
 
     common = common_funcs.init(glob)
 
@@ -400,7 +398,7 @@ def init(glob_obj):
     # Overload settings.ini with cmd line args
     common.overload_params(glob.stg)
 
-    # Either bench codes in suite or user label
+    # Benchmark suite
     input_list = []
     if 'suite' in glob.args.bench:
         if glob.args.bench in glob.suite.keys():
@@ -409,12 +407,16 @@ def init(glob_obj):
         else:
             exception.error_and_quit(glob.log, "No suite '" + glob.args.bench + \
                                      "' in settings.ini. Available suites: " + ', '.join(glob.suite.keys()))
-
+    # User input - list of benchmarks
     else:
         input_list = glob.args.bench.split(":")
 
     # Run benchmark on list of inputs
     for inp in input_list:
-        run_bench(inp, copy.deepcopy(glob))
 
+        # Get a copy of the global object for use in this benchmark session
+        glob_copy = copy.deepcopy(glob)
+
+        # Start benchmark session and collect number of runs
+        glob.counter = run_bench(inp, glob_copy)
 
