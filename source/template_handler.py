@@ -283,6 +283,7 @@ def generate_bench_script(glob_obj):
         template_obj = populate_template([glob.code['metadata'], \
                                          glob.code['runtime'], \
                                          glob.code['config'], \
+                                         glob.code['result'], \
                                          glob.sched['sched'], \
                                          glob.code['requirements']], \
                                          template_obj)
@@ -291,6 +292,7 @@ def generate_bench_script(glob_obj):
         template_obj = populate_template([glob.code['metadata'], \
                                         glob.code['runtime'], \
                                         glob.code['config'], \
+                                        glob.code['result'], \
                                         glob.code['requirements']], \
                                         template_obj)
 

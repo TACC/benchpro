@@ -53,7 +53,6 @@ def generate_bench_report(build_report):
 
         # Print contents of [result] to end of bench_report
         out.write("[result]\n")
-        out.write("output_file    = "+ glob.code['config']['output_file']      + "\n")
         for key in glob.code['result']:
             out.write(key.ljust(15) + "= " + glob.code['result'][key] + "\n")
             
@@ -66,9 +65,7 @@ def get_code_info(input_label, search_list):
 
     # If application is not installed, check if cfg file is available to build
     if not glob.code['metadata']['code_path']:
-        print("Failed to locate installed application with search criteria:")
-        for key in search_list:
-            print("  " + key.ljust(12) + "= " + key)
+        print("Failed to locate installed application with search criteria: " + ", ".join(search_list))
         print()
         print("Attempting to build now...")
 
@@ -244,25 +241,25 @@ def start_task():
         # bench_mode = local
         elif glob.stg['bench_mode'] == "local":
             # For local bench, use default output file name if not set (can't use stdout)
-            if not glob.code['config']['output_file']:
-                glob.code['config']['output_file'] = glob.stg['output_file']
+            if not glob.code['result']['output_file']:
+                glob.code['result']['output_file'] = glob.stg['output_file']
 
             common.start_local_shell(   glob.code['metadata']['working_path'], \
                                         glob.tmp_script[4:], \
-                                        glob.code['config']['output_file'])
+                                        glob.code['result']['output_file'])
 
             glob.jobid = "local"
 
     # Use stdout for output if not set
-    if not glob.code['config']['output_file']:
-        glob.code['config']['output_file'] = glob.jobid + ".out"
+    if not glob.code['result']['output_file']:
+        glob.code['result']['output_file'] = glob.jobid + ".out"
 
 
     common.check_for_slurm_vars()
 
 
     print("Output file:")
-    print(">  " + common.rel_path(os.path.join(glob.code['metadata']['working_path'], glob.code['config']['output_file'])))
+    print(">  " + common.rel_path(os.path.join(glob.code['metadata']['working_path'], glob.code['result']['output_file'])))
 
     # Generate bench report
     generate_bench_report(glob.build['build_report'])
