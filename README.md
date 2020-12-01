@@ -7,13 +7,15 @@ Currently there are 5 application profiles available for debugging and testing:
    - SWIFTsim-0.8.5
    - WRF-4.2
 
+In addition there are new applications being added.
+
 ## Getting Started
 
 The following steps will walk you through the basic usage of benchtool and should hopefully produce a small LAMMPS LJ-melt benchmark. Tested on Stampede2 and Frontera.
 
 ### Initial setup
 
-1 Download and validate setup: 
+1 Download and validate benchtool: 
 
 NOTE: some of the hardware info collection scripts require root priviledges, you can either run the permissions script below, or live with the warning.
 
@@ -25,9 +27,10 @@ source sourceme
 benchtool --validate
 ```
 
-2 Print help:
+2 Print help & version info:
 ```
 benchtool --help
+benchtool --version
 ```
 
 ### Build an Application
@@ -44,13 +47,12 @@ benchtool --build lammps
 ```
 benchtool --installed
 ```
-NOTE: By default `dry_run=True` in `settings.ini` so the build script was created but not submitted to the scheduler. You can now submit the job manually, or
-
+NOTE: By default `dry_run=True` in `settings.ini` so the build script was created but not submitted to the scheduler. You can now submit your LAMMPS benchmark job manually, or
 6 Remove the dry_run build:
 ```
 benchtool --remove lammps
 ```
-7 Rerun with: 
+7 Overload the dry_run value in settings.ini and re-run with: 
 ```
 benchtool --install lammps --overload dry_run=False
 ```
@@ -59,12 +61,12 @@ benchtool --install lammps --overload dry_run=False
 benchtool --queryApp lammps
 ```
 
-In this example, parameters in `config/build/lammps-3Mar20_build.cfg` were used to populate the build template `templates/build/lammps-3Mar20.build` which was submitted to the scheduler.
+In this example, parameters in `config/build/lammps_3Mar20.cfg` were used to populate the build template `templates/build/lammps_3Mar20.template` which was submitted to the scheduler.
 You can review the populated job script located in the `build_prefix` directory and named `lammps-build.sched`.
 
 ### Run a Benchmark
 
-We can now proceed with running a benchmark with our LAMMPS installation. There is no need to wait for the LAMMPS compile job to complete, benchtool knows to check and create a job dependency as needed. In fact if `build_if_missing=True` in settings.ini, benchtool will automatically build LAMMPS without us doing the steps above. 
+We can now proceed with running a benchmark with our LAMMPS installation. There is no need to wait for the LAMMPS compile job to complete, benchtool knows to check and create a job dependency as needed. In fact if `build_if_missing=True` in `settings.ini`, benchtool will automatically build LAMMPS without us doing the steps above. 
 The process to run a benchmark is similar to building; a config file is used to populate a template script. 
 A benchmark is specified with `--bench`, once again you can check for available benchmarks with `--avail`  
 
@@ -72,23 +74,65 @@ A benchmark is specified with `--bench`, once again you can check for available 
 ```
 benchtool --bench ljmelt --overload dry_run=False
 ```
-2 Check benchmark report with:
+It is important to note that benchtool will use the default scheduler parameters for your system from a file defined in `config/system.cfg`. You can overload individual parameters using `--overload`, or use another scheduler config file with the flag `--sched [FILENAME]`. 
+
+2 Check the benchmark report with:
 ```
-benchtool --queryResult lammps
+benchtool --queryResult ljmelt
 ```
-In this example, parameters in `config/bench/lammps_ljmelt.cfg` were used to populate the template `templates/bench/lammps-3Mar20.bench`
+3 Because this LAMMPS LJ-Melt benchmark was the last executed, a useful shortcut to check this report is:
+```
+benchtool --last
+```
+
+In this example, parameters in `config/bench/lammps_ljmelt.cfg` were used to populate the template `templates/bench/lammps.template`
 
 ### Capture Benchmark Result
 
 A benchmark result exists in four states, during queueing and execution it is considered running (state=running), upon completion it will remain on the local system (state=pending) until you capture it to the database (state=captured/failed). 
-1 We can check on the status of benchmarks with:
+1 We can check on the status of all benchmark runs with:
 ```
-benchtool --listResults all
+benchtool --listResults 
 ```
 2 Once the result is in pending state, capture all pending results to the database with:
 ```
 benchtool --capture
 ```
+3 You can now query your result in the database with 
+```
+benchtool --queryDB
+```
+4 You can provide search criteria to narrow the results and export these results to a .csv file with:
+```
+benchtool --queryDB username=$USER:system=$TACC_SYSTEM:submit_time=$(date +"%Y-%m-%d") --export
+```
+5 Once you are satisfied the benchmark result and its associated files have been uploaded to the database, you can remove the local copy with:
+```
+benchtool --removeResult captured
+```
+
+### Useful commands
+
+You can print the default values of several important parameters with:
+```
+benchtool --setup
+```
+
+It may be useful to review your previous benchtool commands, do this with:
+```
+benchtool --history
+```
+
+You can remove tmp, log, csv, and history files by running:
+```
+benchtool --clean
+```
+
+This will NOT remove your all installed applications, to do that run:
+```
+benchtool --remove all
+```
+
 
 ## Adding a new Application
 benchtool requires two input files to build an application: a config file containing contextualization parameters, and a build template file which will be populated with these parameters and executed. 
@@ -109,13 +153,12 @@ This template file is used to gerenate a contextualized build script script whic
 Variables are defined with `<<<[param]>>>` syntax and populated with the variables defined in the config file above.
 If a `<<<[param]>>>` in the build template in not successfully populated and `exit_on_missing=True` in settings.ini, an expection will be raised.
 You are able to make use of the `benchmark_repo` variable defined in `settings.ini` to store and use files locally. 
-This file must be located in `templates/build`, with the naming scheme `[code]_[version].build` 
+This file must be located in `templates/build`, with the naming scheme `[code]_[version].template` 
 
 ### 3. Module template file (optional)
 
 You can define your own .lua module template, otherwise a generic one will be created for you.
 This file must be located in `templates/build`, with the naming scheme `[code]_[version].module` 
-
 
 The application added above would be built with the following command:
 ```
@@ -144,14 +187,14 @@ This file must be located in `config/bench`, preferably with the naming scheme `
 As with the build template. The benchmark template file is populated with the parameters defined in the config file above. This file should include setup of the dataset, any required pre-processing or domain decomposition steps if required, and the appropriate mpi_exec command.
 You are able to make use of the `benchmark_repo` variable defined in `settings.ini` to copy local files. 
 
-This file must be located in `templates/bench`, with the naming scheme `[code]_[bench].bench`. 
+This file must be located in `templates/bench`, with the naming scheme `[code]_[bench].template`. 
 
 The benchmark added above would be run with the following command:
 ```
 benchtool --bench [code]_[bench]
 ```
 Note: benchtool will attempt to match your benchmark input to a unique config filename. The specificity of the input will depend on the number of similar config files.
-It may be helpful to build with `dry_run=True` initially to confirm the build script was generated as expected, before `--removing` and rebuilding with `dry_run=False` to run.
+It may be helpful to build with `dry_run=True` initially to confirm the build script was generated as expected, before `--removing` and rebuilding with `dry_run=False` to launch the build job.
 
 ## Advanced Features
 
