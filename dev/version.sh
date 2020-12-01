@@ -5,7 +5,7 @@ if [ -z $1 ]; then
     exit 1
 fi
 
-echo "benchtool v$1" > ../.version
-date >> ../.version
+echo "benchtool v$1" > $BENCHTOOL/.version
+date >> $BENCHTOOL/.version
 
 echo "Version file updated."
