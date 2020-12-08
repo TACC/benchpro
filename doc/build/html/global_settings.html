@@ -1,0 +1,347 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>global_settings module &mdash; benchtool 0.7.6 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="input_handler module" href="input_handler.html" />
+    <link rel="prev" title="exception module" href="exception.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home" alt="Documentation Home"> benchtool
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">python</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="bencher.html">bencher module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="builder.html">builder module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cfg_handler.html">cfg_handler module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="common.html">common module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="exception.html">exception module</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">global_settings module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="input_handler.html">input_handler module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="logger.html">logger module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="math_handler.html">math_handler module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="module_handler.html">module_handler module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="result_handler.html">result_handler module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="splash.html">splash module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="template_handler.html">template_handler module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="validate_setup.html">validate_setup module</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">benchtool</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="modules.html">python</a> &raquo;</li>
+        
+      <li>global_settings module</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/global_settings.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-global_settings">
+<span id="global-settings-module"></span><h1>global_settings module<a class="headerlink" href="#module-global_settings" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt id="global_settings.settings">
+<em class="property">class </em><code class="sig-prename descclassname">global_settings.</code><code class="sig-name descname">settings</code><a class="headerlink" href="#global_settings.settings" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py attribute">
+<dt id="global_settings.settings.basedir">
+<code class="sig-name descname">basedir</code><em class="property"> = '/scratch/06280/mcawood/bench-framework'</em><a class="headerlink" href="#global_settings.settings.basedir" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="global_settings.settings.code">
+<code class="sig-name descname">code</code><em class="property"> = {}</em><a class="headerlink" href="#global_settings.settings.code" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="global_settings.settings.compiler">
+<code class="sig-name descname">compiler</code><em class="property"> = {}</em><a class="headerlink" href="#global_settings.settings.compiler" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="global_settings.settings.cwd">
+<code class="sig-name descname">cwd</code><em class="property"> = '/scratch/06280/mcawood/bench-framework/doc'</em><a class="headerlink" href="#global_settings.settings.cwd" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="global_settings.settings.dep_list">
+<code class="sig-name descname">dep_list</code><em class="property"> = {}</em><a class="headerlink" href="#global_settings.settings.dep_list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="global_settings.settings.error">
+<code class="sig-name descname">error</code><em class="property"> = '\x1b[0;31mERROR: \x1b[0m'</em><a class="headerlink" href="#global_settings.settings.error" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="global_settings.settings.hostname">
+<code class="sig-name descname">hostname</code><em class="property"> = 'staff.stampede2'</em><a class="headerlink" href="#global_settings.settings.hostname" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="global_settings.settings.log">
+<code class="sig-name descname">log</code><em class="property"> = None</em><a class="headerlink" href="#global_settings.settings.log" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="global_settings.settings.note">
+<code class="sig-name descname">note</code><em class="property"> = '\x1b[0;34mNOTE: \x1b[0m'</em><a class="headerlink" href="#global_settings.settings.note" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="global_settings.settings.overload_dict">
+<code class="sig-name descname">overload_dict</code><em class="property"> = {}</em><a class="headerlink" href="#global_settings.settings.overload_dict" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="global_settings.settings.prev_pid">
+<code class="sig-name descname">prev_pid</code><em class="property"> = 0</em><a class="headerlink" href="#global_settings.settings.prev_pid" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="global_settings.settings.process">
+<code class="sig-name descname">process</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">key</span></em>, <em class="sig-param"><span class="n">value</span></em><span class="sig-paren">)</span><a class="headerlink" href="#global_settings.settings.process" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="global_settings.settings.quiet_build">
+<code class="sig-name descname">quiet_build</code><em class="property"> = False</em><a class="headerlink" href="#global_settings.settings.quiet_build" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="global_settings.settings.read_settings">
+<code class="sig-name descname">read_settings</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#global_settings.settings.read_settings" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="global_settings.settings.resolve_path">
+<code class="sig-name descname">resolve_path</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path</span></em><span class="sig-paren">)</span><a class="headerlink" href="#global_settings.settings.resolve_path" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="global_settings.settings.sched">
+<code class="sig-name descname">sched</code><em class="property"> = {}</em><a class="headerlink" href="#global_settings.settings.sched" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="global_settings.settings.stg">
+<code class="sig-name descname">stg</code><em class="property"> = {}</em><a class="headerlink" href="#global_settings.settings.stg" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="global_settings.settings.success">
+<code class="sig-name descname">success</code><em class="property"> = '\x1b[0;32mSUCCESS: \x1b[0m'</em><a class="headerlink" href="#global_settings.settings.success" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="global_settings.settings.suite">
+<code class="sig-name descname">suite</code><em class="property"> = {}</em><a class="headerlink" href="#global_settings.settings.suite" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="global_settings.settings.time_str">
+<code class="sig-name descname">time_str</code><em class="property"> = '2020-12-02T15-07'</em><a class="headerlink" href="#global_settings.settings.time_str" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="global_settings.settings.user">
+<code class="sig-name descname">user</code><em class="property"> = 'mcawood'</em><a class="headerlink" href="#global_settings.settings.user" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="global_settings.settings.warning">
+<code class="sig-name descname">warning</code><em class="property"> = '\x1b[1;33mWARNING: \x1b[0m'</em><a class="headerlink" href="#global_settings.settings.warning" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="input_handler.html" class="btn btn-neutral float-right" title="input_handler module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="exception.html" class="btn btn-neutral float-left" title="exception module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Matthew Cawood
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

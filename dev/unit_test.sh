@@ -39,7 +39,7 @@ echo     "--last          $?"
 
 output=$(benchtool --listResults | tail -n 3 | head -n 1)
 benchtool --queryResult $output > /dev/null
-echo     "----queryResult $?"
+echo     "--queryResult   $?"
 
 benchtool --remove $APP  	> /dev/null
 echo     "--remove        $?"

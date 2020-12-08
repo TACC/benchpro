@@ -1,0 +1,502 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>common module &mdash; benchtool 0.7.6 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="exception module" href="exception.html" />
+    <link rel="prev" title="cfg_handler module" href="cfg_handler.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home" alt="Documentation Home"> benchtool
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">python</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="bencher.html">bencher module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="builder.html">builder module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cfg_handler.html">cfg_handler module</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">common module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="exception.html">exception module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="global_settings.html">global_settings module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="input_handler.html">input_handler module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="logger.html">logger module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="math_handler.html">math_handler module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="module_handler.html">module_handler module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="result_handler.html">result_handler module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="splash.html">splash module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="template_handler.html">template_handler module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="validate_setup.html">validate_setup module</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">benchtool</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="modules.html">python</a> &raquo;</li>
+        
+      <li>common module</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/common.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-common">
+<span id="common-module"></span><h1>common module<a class="headerlink" href="#module-common" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt id="common.init">
+<em class="property">class </em><code class="sig-prename descclassname">common.</code><code class="sig-name descname">init</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">glob</span></em><span class="sig-paren">)</span><a class="headerlink" href="#common.init" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="common.init.check_exe">
+<code class="sig-name descname">check_exe</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">exe</span></em>, <em class="sig-param"><span class="n">code_path</span></em><span class="sig-paren">)</span><a class="headerlink" href="#common.init.check_exe" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="common.init.check_for_file">
+<code class="sig-name descname">check_for_file</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">result_dir</span></em>, <em class="sig-param"><span class="n">check_file</span></em><span class="sig-paren">)</span><a class="headerlink" href="#common.init.check_for_file" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="common.init.check_for_slurm_vars">
+<code class="sig-name descname">check_for_slurm_vars</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#common.init.check_for_slurm_vars" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="common.init.check_for_unused_overloads">
+<code class="sig-name descname">check_for_unused_overloads</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#common.init.check_for_unused_overloads" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="common.init.check_if_avail">
+<code class="sig-name descname">check_if_avail</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">search_list</span></em><span class="sig-paren">)</span><a class="headerlink" href="#common.init.check_if_avail" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="common.init.check_if_installed">
+<code class="sig-name descname">check_if_installed</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">search_list</span></em><span class="sig-paren">)</span><a class="headerlink" href="#common.init.check_if_installed" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="common.init.check_job_complete">
+<code class="sig-name descname">check_job_complete</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">jobid</span></em><span class="sig-paren">)</span><a class="headerlink" href="#common.init.check_job_complete" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="common.init.check_module_exists">
+<code class="sig-name descname">check_module_exists</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">module_dict</span></em>, <em class="sig-param"><span class="n">module_use</span></em><span class="sig-paren">)</span><a class="headerlink" href="#common.init.check_module_exists" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="common.init.check_mpi_allowed">
+<code class="sig-name descname">check_mpi_allowed</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#common.init.check_mpi_allowed" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="common.init.create_dir">
+<code class="sig-name descname">create_dir</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path</span></em><span class="sig-paren">)</span><a class="headerlink" href="#common.init.create_dir" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="common.init.file_owner">
+<code class="sig-name descname">file_owner</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">file_name</span></em><span class="sig-paren">)</span><a class="headerlink" href="#common.init.file_owner" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="common.init.find_exact">
+<code class="sig-name descname">find_exact</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">file_name</span></em>, <em class="sig-param"><span class="n">path</span></em><span class="sig-paren">)</span><a class="headerlink" href="#common.init.find_exact" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="common.init.find_partial">
+<code class="sig-name descname">find_partial</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">file_name</span></em>, <em class="sig-param"><span class="n">path</span></em><span class="sig-paren">)</span><a class="headerlink" href="#common.init.find_partial" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="common.init.get_active_jobids">
+<code class="sig-name descname">get_active_jobids</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">job_label</span></em><span class="sig-paren">)</span><a class="headerlink" href="#common.init.get_active_jobids" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="common.init.get_archive_results">
+<code class="sig-name descname">get_archive_results</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#common.init.get_archive_results" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="common.init.get_avail_codes">
+<code class="sig-name descname">get_avail_codes</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#common.init.get_avail_codes" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="common.init.get_build_job_dependency">
+<code class="sig-name descname">get_build_job_dependency</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">jobid</span></em><span class="sig-paren">)</span><a class="headerlink" href="#common.init.get_build_job_dependency" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="common.init.get_build_pid">
+<code class="sig-name descname">get_build_pid</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#common.init.get_build_pid" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="common.init.get_captured_results">
+<code class="sig-name descname">get_captured_results</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">search_list</span></em>, <em class="sig-param"><span class="n">check_file</span></em><span class="sig-paren">)</span><a class="headerlink" href="#common.init.get_captured_results" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="common.init.get_cfg_file">
+<code class="sig-name descname">get_cfg_file</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">input_label</span></em><span class="sig-paren">)</span><a class="headerlink" href="#common.init.get_cfg_file" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="common.init.get_completed_results">
+<code class="sig-name descname">get_completed_results</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">search_list</span></em>, <em class="sig-param"><span class="n">is_complete</span></em><span class="sig-paren">)</span><a class="headerlink" href="#common.init.get_completed_results" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="common.init.get_current_results">
+<code class="sig-name descname">get_current_results</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#common.init.get_current_results" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="common.init.get_default_modules">
+<code class="sig-name descname">get_default_modules</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">cmd_prefix</span></em><span class="sig-paren">)</span><a class="headerlink" href="#common.init.get_default_modules" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="common.init.get_dep_str">
+<code class="sig-name descname">get_dep_str</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#common.init.get_dep_str" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="common.init.get_filename_from_path">
+<code class="sig-name descname">get_filename_from_path</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">full_path</span></em><span class="sig-paren">)</span><a class="headerlink" href="#common.init.get_filename_from_path" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="common.init.get_files_in_path">
+<code class="sig-name descname">get_files_in_path</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">search_path</span></em><span class="sig-paren">)</span><a class="headerlink" href="#common.init.get_files_in_path" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="common.init.get_full_module_name">
+<code class="sig-name descname">get_full_module_name</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">module</span></em>, <em class="sig-param"><span class="n">default_modules</span></em><span class="sig-paren">)</span><a class="headerlink" href="#common.init.get_full_module_name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="common.init.get_installed">
+<code class="sig-name descname">get_installed</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#common.init.get_installed" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="common.init.get_list_of_cfgs">
+<code class="sig-name descname">get_list_of_cfgs</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">cfg_type</span></em><span class="sig-paren">)</span><a class="headerlink" href="#common.init.get_list_of_cfgs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="common.init.get_module_label">
+<code class="sig-name descname">get_module_label</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">module</span></em><span class="sig-paren">)</span><a class="headerlink" href="#common.init.get_module_label" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="common.init.get_node_suffixes">
+<code class="sig-name descname">get_node_suffixes</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">suffix_str</span></em><span class="sig-paren">)</span><a class="headerlink" href="#common.init.get_node_suffixes" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="common.init.get_nodelist">
+<code class="sig-name descname">get_nodelist</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">jobid</span></em><span class="sig-paren">)</span><a class="headerlink" href="#common.init.get_nodelist" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="common.init.get_result_jobid">
+<code class="sig-name descname">get_result_jobid</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">result</span></em><span class="sig-paren">)</span><a class="headerlink" href="#common.init.get_result_jobid" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="common.init.get_sched_cfg">
+<code class="sig-name descname">get_sched_cfg</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#common.init.get_sched_cfg" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="common.init.get_search_list">
+<code class="sig-name descname">get_search_list</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">cfg_file</span></em><span class="sig-paren">)</span><a class="headerlink" href="#common.init.get_search_list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="common.init.get_subdirs">
+<code class="sig-name descname">get_subdirs</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">base</span></em><span class="sig-paren">)</span><a class="headerlink" href="#common.init.get_subdirs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="common.init.get_system_vars">
+<code class="sig-name descname">get_system_vars</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">system</span></em><span class="sig-paren">)</span><a class="headerlink" href="#common.init.get_system_vars" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="common.init.install">
+<code class="sig-name descname">install</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path</span></em>, <em class="sig-param"><span class="n">obj</span></em>, <em class="sig-param"><span class="n">new_obj_name</span></em><span class="sig-paren">)</span><a class="headerlink" href="#common.init.install" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="common.init.needs_code">
+<code class="sig-name descname">needs_code</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">search_list</span></em><span class="sig-paren">)</span><a class="headerlink" href="#common.init.needs_code" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="common.init.overload">
+<code class="sig-name descname">overload</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">overload_key</span></em>, <em class="sig-param"><span class="n">param_dict</span></em><span class="sig-paren">)</span><a class="headerlink" href="#common.init.overload" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="common.init.overload_params">
+<code class="sig-name descname">overload_params</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">search_dict</span></em><span class="sig-paren">)</span><a class="headerlink" href="#common.init.overload_params" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="common.init.parse_nodelist">
+<code class="sig-name descname">parse_nodelist</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">slurm_nodes</span></em><span class="sig-paren">)</span><a class="headerlink" href="#common.init.parse_nodelist" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="common.init.print_avail_cfgs">
+<code class="sig-name descname">print_avail_cfgs</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">avail_cfgs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#common.init.print_avail_cfgs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="common.init.print_new_results">
+<code class="sig-name descname">print_new_results</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#common.init.print_new_results" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="common.init.rel_path">
+<code class="sig-name descname">rel_path</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path</span></em><span class="sig-paren">)</span><a class="headerlink" href="#common.init.rel_path" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="common.init.search_tree">
+<code class="sig-name descname">search_tree</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">installed_list</span></em>, <em class="sig-param"><span class="n">app_dir</span></em>, <em class="sig-param"><span class="n">start_depth</span></em>, <em class="sig-param"><span class="n">current_depth</span></em>, <em class="sig-param"><span class="n">max_depth</span></em><span class="sig-paren">)</span><a class="headerlink" href="#common.init.search_tree" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="common.init.search_with_list">
+<code class="sig-name descname">search_with_list</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">search_list</span></em>, <em class="sig-param"><span class="n">code_path</span></em><span class="sig-paren">)</span><a class="headerlink" href="#common.init.search_with_list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="common.init.send_inputs_to_log">
+<code class="sig-name descname">send_inputs_to_log</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">label</span></em><span class="sig-paren">)</span><a class="headerlink" href="#common.init.send_inputs_to_log" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="common.init.start_local_shell">
+<code class="sig-name descname">start_local_shell</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">working_dir</span></em>, <em class="sig-param"><span class="n">script_file</span></em>, <em class="sig-param"><span class="n">output_dir</span></em><span class="sig-paren">)</span><a class="headerlink" href="#common.init.start_local_shell" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="common.init.submit_job">
+<code class="sig-name descname">submit_job</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dep</span></em>, <em class="sig-param"><span class="n">job_path</span></em>, <em class="sig-param"><span class="n">script_file</span></em><span class="sig-paren">)</span><a class="headerlink" href="#common.init.submit_job" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="common.init.test_template">
+<code class="sig-name descname">test_template</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">template_file</span></em>, <em class="sig-param"><span class="n">template_obj</span></em><span class="sig-paren">)</span><a class="headerlink" href="#common.init.test_template" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="common.init.write_list_to_file">
+<code class="sig-name descname">write_list_to_file</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">list_obj</span></em>, <em class="sig-param"><span class="n">output_file</span></em><span class="sig-paren">)</span><a class="headerlink" href="#common.init.write_list_to_file" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="common.init.write_to_outputs">
+<code class="sig-name descname">write_to_outputs</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">op</span></em>, <em class="sig-param"><span class="n">label</span></em><span class="sig-paren">)</span><a class="headerlink" href="#common.init.write_to_outputs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="exception.html" class="btn btn-neutral float-right" title="exception module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="cfg_handler.html" class="btn btn-neutral float-left" title="cfg_handler module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Matthew Cawood
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

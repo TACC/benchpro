@@ -1,8 +1,8 @@
 
 date
 echo "JobID:    ${SLURM_JOB_ID}"
-echo "User:     ${USER}\"
-echo "Hostlist: ${SLURM_NODELIST}\"
+echo "User:     ${USER}"
+echo "Hostlist: ${SLURM_NODELIST}"
 
 export   working_path=<<<working_path>>>
 export benchmark_repo=<<<benchmark_repo>>>
