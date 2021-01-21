@@ -5,9 +5,6 @@ import sys
 # Local Imports
 import exception
 
-glob = None
-dicts_to_search = []
-
 class init(object):
     def __init__(self, glob):
         self.glob = glob
@@ -39,7 +36,7 @@ class init(object):
     # Look for key in multiple dicts, return value or error
     def look_for_replacement(self, var):
         # For each dict in list
-        for search_dict in dicts_to_search:
+        for search_dict in [self.glob.code['runtime'], self.glob.code['config'], self.glob.system]:
             # Look for key in dict
             matched, new_val = self.replace_var(var, search_dict)
             if matched:
@@ -48,9 +45,6 @@ class init(object):
 
     # Check dict for vars, resolve them and then evaluate for arithmatic
     def eval_dict(self, cfg_dict):
-        global dicts_to_search 
-        dicts_to_search = [self.glob.code['runtime'], self.glob.code['config'], self.glob.system]
-
 
         for key in cfg_dict:
             # Get list of {variables}

@@ -23,6 +23,7 @@ def remove_tmp_files(log):
 def print_warning(log, message):
     log.debug(warning + message)
     print(warning + "\n" + message)
+    print()
 
 # Print message to log and stdout then quit
 def error_and_quit(log, message):

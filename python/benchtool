@@ -8,21 +8,20 @@ import sys
 from timeit import default_timer as timer
 
 # Local Imports
-try:
-    import bencher
-    import builder
-    import global_settings
-    import input_handler
-    import result_handler
-    import splash
-    import validate_setup as validate
+#try:
+import bench_manager
+import build_manager
+import global_settings
+import splash
+import result_manager
+import validate_setup as validate
 
 # Catch import exception
-except ImportError as e:
-    print("You had an import error, you might be using Python2 ?")
-    print("Please setup your environment with 'source sourceme'")
-    print(e)
-    sys.exit(1)
+#except ImportError as e:
+#    print("You had an import error, you might be using Python2 ?")
+#    print("Please setup your environment with 'source sourceme'")
+#    print(e)
+#    sys.exit(1)
 
 # Confirm BENCHTOOL is set in environment
 def check_env(var):
@@ -103,6 +102,8 @@ def main():
     cmd_parser.add_argument("--queryDB", nargs='?', const="all", type=str,
                             help="Query database for benchmark results. Default is 'all'. Also accepts colon-delimited list \
                                     of search criteria.")
+    cmd_parser.add_argument("--db_app", default=False, type=str, help="Provide application ID to print info report from database.")
+
     cmd_parser.add_argument("--export", default=False, action='store_true',
                             help="Export database query to .csv file dbquery_[date].csv")
 
@@ -124,6 +125,7 @@ def main():
 
     # Init global settings
     glob = global_settings.settings()
+
     # Add arg dict to global object
     glob.args = args
 
@@ -144,58 +146,58 @@ def main():
     # Get overload dict
     glob.overload_dict = get_var_overload_dict(args.overload)
 
-    # Init input handler - for misc operations
-    handler = input_handler.init(glob)
-
     # Start builder
     if args.build:
         splash.print_splash(glob)
-        builder.init(glob)
+        build_manager.init(glob)
     # Start bencher
     elif args.bench:
         splash.print_splash(glob)
-        bencher.init(glob)
+        bench_manager.init(glob)
     # Start capture
     elif args.capture:
         splash.print_splash(glob)
-        result_handler.capture_result(glob)
+        result_manager.capture_result(glob)
     # Cleanup and exit
     elif args.clean:
-        handler.clean_temp_files()
+        glob.lib.misc.clean_temp_files()
     # Show installed and exit
     elif args.installed:
-        handler.show_installed()
+        glob.lib.misc.show_installed()
     # Print setup settings
     elif args.setup:
-        handler.print_setup()
+        glob.lib.misc.print_setup()
     # Show available and exit
     elif args.avail:
-        handler.show_available()
+        glob.lib.misc.show_available()
     # Remove installation and exit
     elif args.remove:
-        handler.remove_app()
+        glob.lib.misc.remove_app()
     # Query installation and exit
     elif args.queryApp:
-        handler.query_app(args.queryApp)
+        glob.lib.misc.query_app(args.queryApp)
     # Print cmd line history
     elif args.history:
-        handler.print_history()
+        glob.lib.misc.print_history()
     # Query db for results
     elif args.queryDB:
-        result_handler.query_db(glob)
+        result_manager.query_db(glob)
+    # Query db for application
+    elif args.db_app:
+        result_manager.print_app_from_table(glob)
     # Show results and exit
     elif args.listResults:
-        result_handler.list_results(glob)
+        result_manager.list_results(glob)
     # Query result and exit
     elif args.queryResult:
-        result_handler.query_result(glob, args.queryResult)
+        result_manager.query_result(glob, args.queryResult)
     # Remove result and exit
     elif args.removeResult:
-        result_handler.remove_result(glob)
+        result_manager.remove_result(glob)
     elif args.version:
-        handler.print_version()
+        glob.lib.misc.print_version()
     elif args.last:
-        handler.print_last()
+        glob.lib.misc.print_last()
     # No seletion provided
     else:
         print("Invalid input")

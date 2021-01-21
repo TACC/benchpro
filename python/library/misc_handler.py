@@ -7,13 +7,11 @@ import sys
 import time
 
 # Local Imports
-import common as common_funcs
-import result_handler
+import result_manager
 
 class init(object):
     def __init__(self, glob):
         self.glob = glob
-        self.common = common_funcs.init(self.glob) 
 
     # Get list of files matching search
     def find_matching_files(self, search_dict):
@@ -80,12 +78,12 @@ class init(object):
  
         remove_list = []
         if code_str == 'all':
-            remove_list = self.common.get_installed()
+            remove_list = self.glob.lib.get_installed()
         else:
             search_dict = {}
             for code_elem in code_str.split(self.glob.stg['sl']):
                 search_dict[code_elem] = code_elem
-            remove_list.append(self.common.check_if_installed(search_dict))
+            remove_list.append(self.glob.lib.check_if_installed(search_dict))
 
         for app in remove_list:
             # If not installed
@@ -98,7 +96,7 @@ class init(object):
             app_dir = os.path.join(self.glob.stg['build_path'], app)
 
             print("Found application installed in:")
-            print(">  " + self.common.rel_path(app_dir))
+            print(">  " + self.glob.lib.rel_path(app_dir))
             print()
             print("\033[0;31mDeleting in", self.glob.stg['timeout'], "seconds...\033[0m")
             time.sleep(self.glob.stg['timeout'])
@@ -111,7 +109,7 @@ class init(object):
                 print("Application removed.")
             except:
                 print("Warning: Failed to remove application directory:")
-                print(">  "  + self.common.rel_path(app_dir))
+                print(">  "  + self.glob.lib.rel_path(app_dir))
                 print("Skipping")
 
             print()
@@ -122,7 +120,7 @@ class init(object):
                 print()
             except:
                 print("Warning: no associated module located in:")
-                print(">  " + self.common.rel_path(mod_dir))
+                print(">  " + self.glob.lib.rel_path(mod_dir))
                 print("Skipping")
 
     # Display local shells to assist with determining if local job is still busy
@@ -148,13 +146,13 @@ class init(object):
         for search_elem in app_label.split("/"):
             search_dict[search_elem] = search_elem
         
-        app_dir = self.common.check_if_installed(search_dict)
+        app_dir = self.glob.lib.check_if_installed(search_dict)
 
         if not app_dir:
             print("Application '"+app_label+"' is not installed.")
             sys.exit(1)
 
-        app_path = os.path.join(self.glob.stg['build_path'], self.common.check_if_installed(search_dict))
+        app_path = os.path.join(self.glob.stg['build_path'], self.glob.lib.check_if_installed(search_dict))
         build_report = os.path.join(app_path, self.glob.stg['build_report_file'])
         install_path = os.path.join(app_path, self.glob.stg['install_subdir'])
 
@@ -181,7 +179,7 @@ class init(object):
                 self.print_local_shells()
             # Sched build
             else:
-                complete = self.common.check_job_complete(jobid)
+                complete = self.glob.lib.sched.check_job_complete(jobid)
 
                 if complete:
                     print("Build job " + jobid + " state: " + complete)
@@ -189,9 +187,9 @@ class init(object):
                     print("Build job " + jobid + " for '" + app_label + "' is still running.")
 
             # Look for exe 
-            exe_search = self.common.find_exact(exe, install_path)
+            exe_search = self.glob.lib.find_exact(exe, install_path)
             if exe_search:
-                print("Executable found: " + self.common.rel_path(exe_search))
+                print("Executable found: " + self.glob.lib.rel_path(exe_search))
             else:
                 print("WARNING: executable '" + exe + "' not found in application directory.")
 
@@ -200,8 +198,8 @@ class init(object):
     def show_installed(self):
         print("Currently installed applications:")
         print("---------------------------------")
-        for app in self.common.get_installed():
-            print("  " + os.path.join(self.common.rel_path(self.glob.stg['build_path']), app))
+        for app in self.glob.lib.get_installed():
+            print("  " + os.path.join(self.glob.lib.rel_path(self.glob.stg['build_path']), app))
 
     # Print list of code strings
     def print_codes(self, code_list):
@@ -217,7 +215,7 @@ class init(object):
     def print_avail_type(self, atype, search_path):
         print("Available " + atype + " profiles:")
         print("---------------------------------")
-        print(self.common.rel_path(search_path) + ":")
+        print(self.glob.lib.rel_path(search_path) + ":")
         # Scan config/build
         app_dir = search_path + self.glob.stg['sl']
         self.print_codes(gb.glob(app_dir + "*.cfg"))
@@ -225,7 +223,7 @@ class init(object):
         # Scan config/build/[system]
         app_dir = app_dir + self.glob.sys_env + self.glob.stg['sl']
         if os.path.isdir(app_dir):
-            print(self.common.rel_path(os.path.join(search_path, self.glob.sys_env)) + ":")
+            print(self.glob.lib.rel_path(os.path.join(search_path, self.glob.sys_env)) + ":")
             self.print_codes(gb.glob(app_dir + "*.cfg"))
         print()
 
@@ -265,10 +263,10 @@ class init(object):
                                             'check_modules']]
         print("")
         # Print scheduler defaults for this system if available
-        self.glob.system = self.common.get_system_vars(self.glob.sys_env)
+        self.glob.system = self.glob.lib.get_system_vars(self.glob.sys_env)
         if self.glob.system:
 
-            sched_cfg = self.common.get_sched_cfg()
+            sched_cfg = self.glob.lib.get_sched_cfg()
             try:
                 with open(os.path.join(self.glob.stg['config_path'], self.glob.stg['sched_cfg_dir'], sched_cfg)) as f:
                     print("Scheduler settings for " + self.glob.sys_env + ":")
@@ -303,13 +301,13 @@ class init(object):
 
         if not os.path.isfile(os.path.join(self.glob.basedir, ".outputs")):
             print("No previous outputs found.")
-            sys.exit(1)
+            sys.exit(0)
 
         with open(os.path.join(self.glob.basedir, ".outputs"), "r") as f:
             lines = f.readlines()
             if len(lines) == 0:
                 print("No previous outputs found.")    
-                sys.exit(1)
+                sys.exit(0)
        
         # Return requested line in output file
         return lines[min(len(lines), self.glob.args.last) * -1].rstrip('\n')
@@ -326,7 +324,7 @@ class init(object):
 
         # If last output was from bench task
         elif op == "bench":
-            result_handler.query_result(self.glob, label)
+            result_manager.query_result(self.glob, label)
         else:
             print("ERROR unknown option in .outputs file:", op)
 

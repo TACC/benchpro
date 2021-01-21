@@ -5,6 +5,9 @@ import os
 import socket
 import sys
 
+# Local Imports
+import lib 
+
 # Global constants
 class settings(object):
 
@@ -71,11 +74,10 @@ class settings(object):
 
     # Read in settings.ini file
     def read_settings(self):
+
         settings_ini    = os.path.join(self.basedir, "settings.ini")
         settings_parser = configparser.RawConfigParser(allow_no_value=True)
         settings_parser.read(settings_ini)
-
-        #----------------------------settings.ini--------------------------------
 
         # Read contents of settings.ini into dict
         for section in settings_parser:
@@ -94,19 +96,19 @@ class settings(object):
         self.stg['bench_path']    = self.resolve_path(self.stg['bench_basedir'])
         self.stg['resource_path'] = self.resolve_path(self.stg['resource_basedir'])
 
-        print("&&", self.stg['resource_basedir'])
-
         # Derived variables
         self.stg['top_env']             = self.stg['topdir_env_var'] + self.stg['sl']
         self.stg['module_basedir']      = "modulefiles"
         self.stg['log_path']            = os.path.join(self.basedir, self.stg['log_dir'])
-        self.stg['current_path']        = os.path.join(self.stg['bench_path'], self.stg['current_subdir'])
-        self.stg['archive_path']        = os.path.join(self.stg['bench_path'], self.stg['archive_subdir'])
+        self.stg['pending_path']        = os.path.join(self.stg['bench_path'], self.stg['pending_subdir'])
+        self.stg['captured_path']       = os.path.join(self.stg['bench_path'], self.stg['captured_subdir'])
+        self.stg['failed_path']         = os.path.join(self.stg['bench_path'], self.stg['failed_subdir'])
         self.stg['module_path']         = os.path.join(self.stg['build_path'], self.stg['module_basedir'])
         self.stg['src_path']            = os.path.join(self.basedir, "python")
         self.stg['utils_path']          = os.path.join(self.stg['resource_path'], self.stg['hw_utils_subdir'])
         self.stg['script_path']         = os.path.join(self.stg['resource_path'], self.stg['script_subdir'])
 
+    # Initialize the global object, settings and libraries
     def __init__(self):
 
         # Parse settings.ini
@@ -118,5 +120,5 @@ class settings(object):
             print("ERROR: " + self.stg['system_env'] + " not set.")
             exit(2)
 
-        #----------------------------settings.ini--------------------------------
-
+        # Init function library
+        self.lib = lib.init(self)

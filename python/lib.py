@@ -3,6 +3,7 @@ import configparser as cp
 import copy
 import datetime
 import glob as gb
+import hashlib
 import os
 import pwd
 import re
@@ -13,11 +14,31 @@ import time
 
 # Local Imports
 import exception
+import library.cfg_handler as cfg_handler
+import library.db_handler as db_handler
+import library.misc_handler as misc_handler
+import library.math_handler as math_handler
+import library.module_handler as module_handler
+import library.msg_handler as msg_handler
+import library.report_handler as report_handler
+import library.sched_handler as sched_handler
+import library.template_handler as template_handler
 
 # Contains several useful functions, mostly used by bencher and builder
 class init(object):
     def __init__(self, glob):
         self.glob = glob
+
+        # Init all sub-libraries
+        self.cfg      = cfg_handler.init(self.glob)
+        self.db       = db_handler.init(self.glob)
+        self.misc     = misc_handler.init(self.glob)
+        self.math     = math_handler.init(self.glob)
+        self.module   = module_handler.init(self.glob)
+        self.msg      = msg_handler.init(self.glob)
+        self.report   = report_handler.init(self.glob)
+        self.sched    = sched_handler.init(self.glob)
+        self.template = template_handler.init(self.glob)
 
     # Get relative paths for full paths before printing to stdout
     def rel_path(self, path):
@@ -158,68 +179,23 @@ class init(object):
         installed_list.sort()
         return installed_list
 
-    # Check that job ID is not running
-    def check_job_complete(self, jobid):
-        # If job not available in squeue anymore
-        try:
-            cmd = subprocess.run("sacct -j " + jobid + " --format State", shell=True, \
-                            check=True, capture_output=True, universal_newlines=True)
-        # Assuming complete
-        except:
-            return True
+    # Get results in ./results/pending
+    def get_pending_results(self):
+        pending =  self.get_subdirs(self.glob.stg['pending_path'])
+        pending.sort()
+        return pending
 
-        # Strip out bad chars from job state
-        state = ''.join(c for c in cmd.stdout.split("\n")[2] if c not in [' ', '*', '+'])
+    # Get results in ./results/captured
+    def get_captured_results(self):
+        captured = self.get_subdirs(self.glob.stg['captured_path'])
+        captured.sort()
+        return captured
 
-        # Job COMPLETE
-        if any (state == x for x in ["COMPLETED", "CANCELLED", "ERROR", "FAILED", "TIMEOUT"]):
-            return state
-
-        # Job RUNNING or PENDING
-        return False
-
-    # Get results in ./results/current
-    def get_current_results(self):
-        return self.get_subdirs(self.glob.stg['current_path'])
-
-    # Get results in ./results/archive
-    def get_archive_results(self):
-        return self.get_subdirs(self.glob.stg['archive_path'])
-
-    # Test list of result dirs for file presence
-    def check_for_file(self, result_dir, check_file):
-        # Check list for 'check_file'
-        if os.path.isfile(os.path.join(result_dir, check_file)):
-            return True
-        else:
-            return False
-
-    # Return list of results meeting capture status 
-    def get_captured_results(self, search_list, check_file):
-        # List of results to return
-        matching_results = []
-
-        # For each result
-        for result in copy.deepcopy(search_list):
-            if self.check_for_file(os.path.join(self.glob.stg['archive_path'], result), check_file):            
-                matching_results.append(result)
-                search_list.remove(result)
-
-        return matching_results
-    
-    # Return jobid for result
-    def get_result_jobid(self, result):
-        jobid = None
-        try:
-        # Get jobID from bench_report.txt
-            bench_report = os.path.join(self.glob.stg['current_path'], result, self.glob.stg['bench_report_file'])
-            report_parser = cp.ConfigParser()
-            report_parser.optionxform=str
-            report_parser.read(bench_report)
-            # Get JOBID in order to get NODELIST from sacct
-            return report_parser.get('bench', 'jobid')
-        except:
-            return False
+    # Get results in ./results/failed
+    def get_failed_results(self):
+        failed = self.get_subdirs(self.glob.stg['failed_path'])
+        failed.sort()
+        return failed
 
     # Return list of results meeting jobid status (True = complete, False = running)
     def get_completed_results(self, search_list, is_complete):
@@ -229,27 +205,15 @@ class init(object):
         if search_list:
             for result in copy.deepcopy(search_list):
                 # Get jobid and check it is comeplete, if so append to return list and remove from provided list
-                jobid = self.get_result_jobid(result)
-                state = self.check_job_complete(jobid)
-                if (state and is_complete) or (not state and not is_complete):
-                    matching_results.append(result)
-                    search_list.remove(result)
+                jobid = self.glob.lib.report.result_jobid(result)
+                if jobid:
+                    state = self.glob.lib.sched.check_job_complete(jobid)
+                    if (state and is_complete) or (not state and not is_complete):
+                        matching_results.append(result)
+                search_list.remove(result)
 
         matching_results.sort()
         return matching_results
-
-    # Get list of uncaptured results and print note to user
-    def print_new_results(self):
-        print("Checking for uncaptured results...")
-        # Uncaptured results + job complete
-        pending_results = self.get_completed_results(self.get_current_results(), True)
-        if pending_results:
-            print(self.glob.note)
-            print("There are " + str(len(pending_results)) + " uncaptured results found in " + self.rel_path(self.glob.stg['current_path']))
-            print("Run 'benchtool --capture' to send to database.")
-            print()
-        else:
-            print("No new results found.")
 
     # Log cfg contents
     def send_inputs_to_log(self, label):
@@ -311,47 +275,10 @@ class init(object):
             exception.error_and_quit(
                 self.glob.log, "Failed to move " + obj + " to " + path + self.glob.stg['sl'] + new_obj_name)
 
-    # Get Job IDs of RUNNING AND PENDNIG jobs
-    def get_active_jobids(self, job_label):
-        # Get list of jobs from sacct
-        running_jobs_list = []
-        job_list = None
-        try:
-            cmd = subprocess.run("sacct -u mcawood", shell=True, \
-                                check=True, capture_output=True, universal_newlines=True)
-            job_list = cmd.stdout.split("\n")
-
-        except:
-            pass
-
-        # Add RUNNING job IDs to list
-        for job in job_list:
-            if "RUNNING" in job or "PENDING" in job:
-                # If job label provided
-                if job_label:
-                    print(job, job_label)
-                    # Search for it
-                    if job_label in job:
-                        running_jobs_list.append(int(job.split(" ")[0]))
-
-                else:
-                    running_jobs_list.append(int(job.split(" ")[0]))
-
-        running_jobs_list.sort()
-
-        return running_jobs_list
-
     # If build job is running, add dependency str
     def get_build_job_dependency(self, jobid):
-        if not self.check_job_complete(jobid):
+        if not self.glob.lib.sched.check_job_complete(jobid):
             self.glob.dep_list.append(jobid)
-
-    # Set job dependency if max_running_jobs is reached
-    def get_dep_str(self):
-        if not self.glob.dep_list:
-            return ""
-        else:
-            return "--dependency=afterany:" + ":".join([str(x) for x in self.glob.dep_list]) + " "
 
     # Check if host can run mpiexec
     def check_mpi_allowed(self):
@@ -384,107 +311,6 @@ class init(object):
 
         print("Script started on local machine.")
 
-    # Submit script to scheduler
-    def submit_job(self, dep, job_path, script_file):
-        script_path = os.path.join(job_path, script_file)
-        print("Job script:")
-        print(">  " + self.rel_path(script_path))
-        print()
-        print("Submitting to scheduler...")
-        self.glob.log.debug("Submitting " + script_path + " to scheduler...")
-
-        try:
-            cmd = subprocess.run("sbatch " + dep + script_path, shell=True, \
-                                 check=True, capture_output=True, universal_newlines=True)
-    
-            self.glob.log.debug(cmd.stdout)
-            self.glob.log.debug(cmd.stderr)
-
-            jobid = None
-            i = 0
-            jobid_line = "Submitted batch job"
-
-            # Find job ID
-            for line in cmd.stdout.splitlines():
-                if jobid_line in line:
-                    jobid = line.split(" ")[-1]
-
-            time.sleep(self.glob.stg['timeout'])
-
-            cmd = subprocess.run("squeue -a --job " + jobid, shell=True, \
-                                 check=True, capture_output=True, universal_newlines=True)
-
-            print(cmd.stdout)
-
-            print()
-            print("Job " + jobid + " stdout:")
-            print(">  "+ self.rel_path(os.path.join(job_path, jobid + ".out")))
-
-            print("Job " + jobid + " stderr:")
-            print(">  "+ self.rel_path(os.path.join(job_path, jobid + ".err")))
-            print()
-
-            self.glob.log.debug(cmd.stdout)
-            self.glob.log.debug(cmd.stderr)
-            # Return job info
-            return jobid
-
-        except subprocess.CalledProcessError as e:
-            print(e)
-            exception.error_and_quit(self.glob.log, "failed to submit job to scheduler")
-
-    # Get node suffixes from brackets: "[094-096]" => ['094', '095', '096']
-    def get_node_suffixes(self, suffix_str):
-        suffix_list = []
-        for suf in suffix_str.split(','):
-            if '-' in suf:
-                start, end = suf.split('-')
-                tmp = range(int(start), int(end)+1)
-                tmp = [str(t).zfill(3) for t in tmp]
-                suffix_list.extend(tmp)
-            else:
-                suffix_list.append(suf)
-        return suffix_list
-
-    # Parse SLURM nodelist to list: "c478-[094,102],c479-[032,094]" => ['c478-094', 'c478-102', 'c479-032', 'c479-094'] 
-    def parse_nodelist(self, slurm_nodes):
-        node_list = []
-        while slurm_nodes:
-            prefix_len = 4
-            # Expand brackets first
-            if '[' in slurm_nodes:
-                # Get position of first '[' and ']'
-                start = slurm_nodes.index('[')+1
-                end = slurm_nodes.index(']')
-                # Get node prefix for brackets, eg 'c478-'
-                prefix = slurm_nodes[start-6:start-1]
-                # Expand brackets 
-                suffix = self.get_node_suffixes(slurm_nodes[start:end])
-                node_list.extend([prefix + s for s in suffix])
-                # Remove parsed nodes
-                slurm_nodes = slurm_nodes[:start-6] + slurm_nodes[end+2:]
-            # Extract remaining nodes
-            else:
-                additions = slurm_nodes.split(',')
-                node_list.extend([s.strip() for s in additions])
-                slurm_nodes = None
-
-        node_list.sort()
-
-        return node_list
-
-    # Get NODELIST from sacct  using JOBID
-    def get_nodelist(self, jobid):
-
-        try:
-            cmd = subprocess.run("sacct -X -P -j  " + jobid + " --format NodeList", shell=True, \
-                                    check=True, capture_output=True, universal_newlines=True)
-
-        except:
-            return ""
-
-        # Parse SLURM NODELIST into list
-        return self.parse_nodelist(cmd.stdout.split("\n")[1])
 
     # Overload dict keys with overload key
     def overload(self, overload_key, param_dict):
@@ -692,8 +518,6 @@ class init(object):
         results = []
         # Check for matching available applications
         for code in avail_list:
-            print("&&&", code)
-            print("%%%", search_list)
             if search_list[0] in code[1] and search_list[1] in code[2] and search_list[2] in code[3]:
                 results.append(code[0])
 
@@ -771,3 +595,8 @@ class init(object):
         except:
             return False
 
+    # Generate unique application ID based on current time
+    def get_application_id(self):
+        app_id = hashlib.sha1()
+        app_id.update(str(time.time()).encode('utf-8'))
+        return app_id.hexdigest()[:10]

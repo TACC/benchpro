@@ -140,7 +140,7 @@ def check_setup(glob_obj):
     check_write_priv(base_dir)
 
     # Check paths
-    confirm_path_exists([glob.stg['log_path'], glob.stg['build_path'], glob.stg['bench_path'], glob.stg['current_path'], glob.stg['archive_path']])
+    confirm_path_exists([glob.stg['log_path'], glob.stg['build_path'], glob.stg['bench_path'], glob.stg['pending_path'], glob.stg['captured_path'], glob.stg['failed_path']])
     ensure_path_exists([glob.stg['benchmark_repo'], glob.stg['config_path'], glob.stg['template_path']])
 
     # Check exe

@@ -50,7 +50,7 @@ echo     "--capture       $?"
 benchtool --listResults all > /dev/null
 echo     "--listResults   $?"
 
-benchtool --queryDB code=$APP --export    > /dev/null
+benchtool --queryDB dataset=$BENCH --export    > /dev/null
 echo     "--queryDB       $?"
 
 benchtool --history           > /dev/null
