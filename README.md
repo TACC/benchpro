@@ -115,6 +115,7 @@ benchtool --dbResult
 benchtool --dbResult username=$USER:system=$TACC_SYSTEM:submit_time=$(date +"%Y-%m-%d") --export
 ```
 Because your LAMMPS application was recently compiled and not present in the database, it would have been automatically added.
+
 5 Query your application details using the [APPID] from above:
 ```
 benchtool --dbApp [APPID]
