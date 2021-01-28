@@ -521,21 +521,21 @@ def query_db(glob_obj):
                     "|"+ str(result[8]).center(col_width[4]) +\
                     "|"+ (str(result[9])+" "+str(result[10])).center(col_width[5]) +"|")
 
+        # Export to csv
+        if glob.args.export:
+            csvFile = os.path.join(glob.basedir, "dbquery_"+ glob.time_str + ".csv")
+            print()
+            print("Exporting to csv file: " + glob.lib.rel_path(csvFile))
+
+            with open(csvFile, 'w') as outFile:
+                wr = csv.writer(outFile, quoting=csv.QUOTE_ALL)
+                wr.writerow(glob.model_fields)
+                wr.writerows(query_results)
+
+            print("Done.")
+
     else:
         print("No results found matching search criteria: '" + search_str + "'")
-
-    # Export to csv
-    if glob.args.export:
-        csvFile = os.path.join(glob.basedir, "dbquery_"+ glob.time_str + ".csv")
-        print()
-        print("Exporting to csv file: " + glob.lib.rel_path(csvFile))
-
-        with open(csvFile, 'w') as outFile:
-            wr = csv.writer(outFile, quoting=csv.QUOTE_ALL)
-            wr.writerow(glob.model_fields)
-            wr.writerows(query_results)
-        
-        print("Done.")
 
 # List local results
 def list_results(glob_obj):
@@ -683,7 +683,7 @@ def remove_result(glob_obj):
     failed_list   = glob.lib.get_failed_results()
 
     # Check all results for failed status and remove
-    if glob.args.removeResult == 'failed':
+    if glob.args.delResult == 'failed':
         if failed_list:
             print("Found", len(failed_list), "failed results:")
             print_results(failed_list)
@@ -692,7 +692,7 @@ def remove_result(glob_obj):
             print("No failed results found.")
 
     # Check all results for captured status and remove
-    elif glob.args.removeResult == 'captured':
+    elif glob.args.delResult == 'captured':
         if captured_list:
             print("Found", len(captured_list), "captured results:")
             print_results(captured_list)
@@ -701,7 +701,7 @@ def remove_result(glob_obj):
             print("No captured results found.")
 
     # Remove all results in ./results dir
-    elif glob.args.removeResult == 'all':
+    elif glob.args.delResult == 'all':
         all_results = pending_list + captured_list + failed_list
         if all_results:
             print("Found", len(all_results), " results:")
@@ -714,16 +714,16 @@ def remove_result(glob_obj):
 
     # Remove unique result matching input str
     else:
-        results = get_matching_results(glob.stg['pending_path'], glob.args.removeResult) +\
-                  get_matching_results(glob.stg['captured_path'], glob.args.removeResult) +\
-                  get_matching_results(glob.stg['failed_path'], glob.args.removeResult)
+        results = get_matching_results(glob.stg['pending_path'], glob.args.delResult) +\
+                  get_matching_results(glob.stg['captured_path'], glob.args.delResult) +\
+                  get_matching_results(glob.stg['failed_path'], glob.args.delResult)
         if results:
-            print("Found " + len(results) + " matching results: ")
+            print("Found " + str(len(results)) + " matching results: ")
             for res in results:
                 print("  " + res.split(glob.stg['sl'])[-1])
             delete_results(results)
         else:
-            print("No results found matching '" + glob.args.removeResult + "'")
+            print("No results found matching '" + glob.args.delResult + "'")
 
 
 # Print app info from table
