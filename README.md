@@ -1,11 +1,13 @@
 # bench-framework
 This is a framework to automate and standardize application compilation, benchmarking and result collection on large scale HPC systems.
-Currently there are 5 application profiles available for debugging and testing:
-   - LAMMPS-3Mar20
-   - OpenFOAM-v2006
-   - Quantum Espresso-6.5
-   - SWIFTsim-0.8.5
-   - WRF-4.2
+Currently there are 7 application profiles available for debugging and testing:
+   - AMBER 20
+   - LAMMPS 3Mar20
+   - OpenFOAM v2006
+   - Quantum Espresso 6.5
+   - SWIFTsim 0.8.5
+   - WRF 4.2
+   - MILC 7.8.1
 
 In addition there are new applications being added.
 
@@ -15,17 +17,19 @@ The following steps will walk you through the basic usage of benchtool and shoul
 
 ### Initial setup
 
-1 Download and validate benchtool: 
-
-NOTE: some of the hardware info collection scripts require root priviledges, you can either run the permissions script below, or live with the warning.
+1 Download, setup enivronment and validate benchtool: 
 
 ```
 git clone https://gitlab.tacc.utexas.edu/mcawood/bench-framework
 cd bench-framework
+```
+NOTE: some of the hardware info collection scripts require root priviledges, you can either run the permissions script below, or live with the warning.
+```
 sudo hw_utils/change_permissions.sh
 source sourceme
 benchtool --validate
 ```
+This validation step will confirm that the system, environment and directory structure are correctly configured.
 
 2 Print help & version info:
 ```
@@ -35,52 +39,56 @@ benchtool --version
 
 ### Build an Application
 
-3 List applications available to install:
+3 List all available applications and benchmarks with:
 ```
 benchtool --avail
 ```
-4 Install a new application:
+4 Install the LAMMPS application (LAMMPS builds and runs quickly):
 ```
 benchtool --build lammps
 ```
 5 List applications currently installed:
 ```
-benchtool --installed
+benchtool --listApps
 ```
-NOTE: By default `dry_run=True` in `settings.ini` so the build script was created but not submitted to the scheduler. You can now submit your LAMMPS benchmark job manually, or
+NOTE: By default `dry_run=True` in `settings.ini` so the LAMMPS build script was created but not submitted to the scheduler. You can now submit your LAMMPS build job manually, or
 6 Remove the dry_run build:
 ```
-benchtool --remove lammps
+benchtool --delApp lammps
 ```
-7 Overload the dry_run value in settings.ini and re-run with: 
+7 Overload the dry_run value in settings.ini and re-build with: 
 ```
 benchtool --install lammps --overload dry_run=False
 ```
-8 Check the status of your application compile:
+8 Check the details and status of your LAMMPS build with:
 ```
 benchtool --queryApp lammps
 ```
 
 In this example, parameters in `config/build/lammps_3Mar20.cfg` were used to populate the build template `templates/build/lammps_3Mar20.template` which was submitted to the scheduler.
-You can review the populated job script located in the `build_prefix` directory and named `lammps-build.sched`.
+You can review the populated job script located in the `build_prefix` directory and named `lammps-build.sched`. Parameters for the scheduler job, system architecure, compile time optimizations and a module file were automatically generated.  
 
 ### Run a Benchmark
 
-We can now proceed with running a benchmark with our LAMMPS installation. There is no need to wait for the LAMMPS compile job to complete, benchtool knows to check and create a job dependency as needed. In fact if `build_if_missing=True` in `settings.ini`, benchtool will automatically build LAMMPS without us doing the steps above. 
+We can now proceed with running a benchmark with our LAMMPS installation. There is no need to wait for the LAMMPS build job to complete, benchtool knows to check and create a job dependency as needed. In fact if `build_if_missing=True` in `settings.ini`, benchtool would have automatically detected LAMMPS was not installed and built it without us needing to do the steps above. 
 The process to run a benchmark is similar to building; a config file is used to populate a template script. 
-A benchmark is specified with `--bench`, once again you can check for available benchmarks with `--avail`  
-
-1 Run the LAMMPS LJ-melt benchmark with: 
+A benchmark run is specified with `--bench`. The argument may be a single benchmark label, or a benchmark 'suite' (i.e collection of benchmarks) defined in `settings.ini`. Once again you can check for available benchmarks with `--avail`.  
+1 Modify `settings.ini`
 ```
-benchtool --bench ljmelt --overload dry_run=False
+dry_run = False
 ```
+2 Run the LAMMPS LJ-melt benchmark with: 
+```
+benchtool --bench ljmelt 
+```
+We changed `settings.ini` so we don't need to use the `--overload` anymore. 
 It is important to note that benchtool will use the default scheduler parameters for your system from a file defined in `config/system.cfg`. You can overload individual parameters using `--overload`, or use another scheduler config file with the flag `--sched [FILENAME]`. 
 
-2 Check the benchmark report with:
+3 Check the benchmark report with:
 ```
 benchtool --queryResult ljmelt
 ```
-3 Because this LAMMPS LJ-Melt benchmark was the last executed, a useful shortcut to check this report is:
+4 Because this LAMMPS LJ-Melt benchmark was the last benchtool job executed, a useful shortcut to check this report is:
 ```
 benchtool --last
 ```
@@ -89,27 +97,38 @@ In this example, parameters in `config/bench/lammps_ljmelt.cfg` were used to pop
 
 ### Capture Benchmark Result
 
-A benchmark result exists in four states, during queueing and execution it is considered running (state=running), upon completion it will remain on the local system (state=pending) until you capture it to the database (state=captured/failed). 
+A benchmark result exists in four states, during scheduler queueing and execution it is considered in `running` state, upon completion it will remain on the local system in a `pending` state, until it is captured it to the database when its state changes to `captured` or `failed`. 
 1 We can check on the status of all benchmark runs with:
 ```
 benchtool --listResults 
 ```
-2 Once the result is in pending state, capture all pending results to the database with:
+2 Once your LAMMPS benchmark result is in the pending state, capture all pending results to the database with:
 ```
 benchtool --capture
 ```
-3 You can now query your result in the database with 
+3 You can now query your result in the database with :
 ```
-benchtool --queryDB
+benchtool --dbResult 
 ```
 4 You can provide search criteria to narrow the results and export these results to a .csv file with:
 ```
-benchtool --queryDB username=$USER:system=$TACC_SYSTEM:submit_time=$(date +"%Y-%m-%d") --export
+benchtool --dbResult username=$USER:system=$TACC_SYSTEM:submit_time=$(date +"%Y-%m-%d") --export
 ```
-5 Once you are satisfied the benchmark result and its associated files have been uploaded to the database, you can remove the local copy with:
+Because your LAMMPS application was recently compiled and not present in the database, it would have been automatically added.
+
+5 Query your application details using the [APPID] from above:
 ```
-benchtool --removeResult captured
+benchtool --dbApp [APPID]
 ```
+6 Once you are satisfied the benchmark result and its associated files have been uploaded to the database, you can remove the local copy with:
+```
+benchtool --delResult captured
+```
+
+
+### Web frontend
+
+The captured applications and benchmark results are available through a Django frontend, which is currently running on tacc-stats03 port 8001. 
 
 ### Useful commands
 
@@ -128,11 +147,10 @@ You can remove tmp, log, csv, and history files by running:
 benchtool --clean
 ```
 
-This will NOT remove your all installed applications, to do that run:
+clean will NOT remove your all installed applications, to do that run:
 ```
-benchtool --remove all
+benchtool --delApp all
 ```
-
 
 ## Adding a new Application
 benchtool requires two input files to build an application: a config file containing contextualization parameters, and a build template file which will be populated with these parameters and executed. 
@@ -265,16 +283,17 @@ This is done by not specifying any values in the [requirements] section of the b
 | --clean                                               | Remove logs and other temp files left after an execption.     |
 | --avail                                               | Print the available application and benchmark profiles.       |
 | --build [LABEL]                                       | Compile an available application.                             |
-| --installed                                           | Print a list of currently installed applications.             |
+| --listApps                                            | Print a list of currently installed applications.             |
 | --queryApp [LABEL]                                    | Print compilation information for an installed app.           |
-| --remove [LABEL]                                      | Remove application installation matching inpout.              |
+| --delApp [LABEL]                                      | Remove application installation matching inpout.              |
 | --bench [LABEL]                                       | Run a benchmark.                                              |
 | --sched [LABEL]                                       | Use with '--build' or '--bench' to specify a custom scheduler config file instead of the system default. |
 | --listResults [all/running/pending/captured/failed]   | List all benchmark results in requested state.                |
 | --queryResult [LABEL]                                 | Print config and result of a benchmark run.                   |
 | --capture                                             | Validate and capture all pending results to the database.     |
-| --queryDB [all/LIST]                                  | Display either all results from DB or results matching colon delimited search list, eg "username=mcawood:code=lammps". |
-| --removeResult [all/captured/failed/LABEL]            | Remove local benchmark results matching input criteria.       |
+| --dbResult [all/LIST]                                 | Display either all results from DB or results matching colon delimited search list, eg "username=mcawood:code=lammps". |
+| --dbApp [APPID]                                       | Display application details                                   |
+| --delResult [all/captured/failed/LABEL]               | Remove local benchmark results matching input criteria.       |
 | --overload [LIST]                                     | Replace options in settings.ini or any config file, acceptes a colon delimited list. |
 
 ## Global settings
@@ -337,7 +356,8 @@ Global settings are defined in the file `settings.ini`
 | db_name           | bench_db                      | Database name.                                                                    |
 | db_user           | postgres                      | Database user.                                                                    |
 | db_passwd         | postgres                      | Datanase user password.                                                           |
-| table_name        | results_result                | Postgres table name.                                                              |
+| result_table      | results_result                | Postgres results table name.                                                      |
+| app_table         | results_application           | Django application table name.                                                    |
 | file_copy_handler | scp                           | File transfer method, only scp working currently.                                 |
 | ssh_user          | mcawood                       | Username for SSH access to database host.                                         |
 | ssh_key           | id_rsa                        | SSH key filename (stored in ./auth)                                               |
@@ -406,10 +426,9 @@ These config files contain parameters used to populate the benchmark template sc
 | ./build           | Application build basedir.                                |
 | ./config          | config files containing template parameters.              |
 | ./dev             | Contains unit tests etc.                                  |
-| ./hw_reporting    | hardware state reporting tools.                           |
+| ./doc             | Contains Sphinx generated documentation. WIP              |
 | ./log             | Build, bench and catpure log files.                       |
-| ./resources       | Contains any useful content including modulefiles etc.    |
+| ./python          | contains Python files and hardware collection bash script.| 
+| ./resources       | Contains useful content including modulefiles, hardware collection and result validation scripts.    |
 | ./results         | Benchmark result basedir.                                 |
-| ./scripts         | Hardware collection and result validation scripts         |
-| ./src             | contains Python files and hardware collection bash script.| 
 | ./templates       | job template files                                        |

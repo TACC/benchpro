@@ -32,4 +32,4 @@ else
     cp $config_file configure.wrf
 fi
 
-./compile -j${threads} em_real
+./compile -j ${threads} em_real
