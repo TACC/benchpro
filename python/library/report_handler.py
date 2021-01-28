@@ -86,6 +86,7 @@ class init(object):
                         "nodes          = "+ self.glob.code['runtime']['nodes'],
                         "ranks          = "+ self.glob.code['runtime']['ranks_per_node'],
                         "threads        = "+ self.glob.code['runtime']['threads'],
+                        "gpus           = "+ str(self.glob.code['config']['gpus']),
                         "dataset        = "+ self.glob.code['config']['dataset'],
                         "start_time     = "+ str(datetime.now()),
                         "job_script     = "+ self.glob.code['metadata']['job_script'],

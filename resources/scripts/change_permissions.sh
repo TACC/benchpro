@@ -1,8 +1,8 @@
 #!/bin/bash
 if [ `whoami` != "root" ]
 then
-	echo "Run as root."
-	exit 1
+    echo "Run as root."
+    exit 1
 fi
 
 declare -a exe=("ibnetdiscover"
@@ -12,12 +12,12 @@ declare -a exe=("ibnetdiscover"
 		"TACC_HWP_set"
 				)
 
-path=$(dirname $0)
+path=$(dirname $(dirname "$(realpath $BASH_SOURCE)"))/hw_utils
 
 for i in "${exe[@]}"
 do
-  chown root.root $path/$i
-  chmod 4755 $path/$i
+  chown root.root ${path}/$i
+  chmod 4755 ${path}/$i
 done
 
 echo "Done."

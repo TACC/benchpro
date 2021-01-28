@@ -66,7 +66,7 @@ class init(object):
         if isinstance(cfg_name, str):
 
             self.glob.log.debug("Checking if " + cfg_name + " is a full path...")
-            # 1: check if provided cfg_name is a path
+            # 1: check if rovided cfg_name is a path
             if cfg_name[0] == "/":
                 self.glob.log.debug("Found")
                 return cfg_name
@@ -388,7 +388,7 @@ class init(object):
             elif len(cfg_dict['runtime']['ranks_per_node']) == 1:
                 cfg_dict['runtime']['ranks_per_node'] = [cfg_dict['runtime']['ranks_per_node'][0]] * len(cfg_dict['runtime']['threads'])
             else:
-                exception.error_and_quit(self.glob.log, "input mismatch: 'threads' and 'ranks_per_node' must be of equal length in " + \
+                exception.error_and_quit(self.glob.log, "input mismatch: 'threads' and 'ranks_per_node' lists must be of equal length in " + \
                                     self.glob.lib.rel_path(cfg_dict['metadata']['cfg_file']))
     
         # Require label if code not set

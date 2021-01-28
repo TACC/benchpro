@@ -123,12 +123,19 @@ class init(object):
 
     # Set job dependency if max_running_jobs is reached
     def get_dep_str(self):
-        if not self.glob.dep_list:
-            return ""
-        else:
-            dep_str = "--dependency=afterany:" + ":".join([str(x) for x in self.glob.dep_list]) + " "
-            print("Job dependency string: " + dep_str)
-            return dep_str
+
+        dep = ""
+
+        if self.glob.any_dep_list:
+            dep += "--dependency=afterany:" + ":".join([str(x) for x in self.glob.any_dep_list]) + " "
+
+        if self.glob.ok_dep_list:
+            dep += "--dependency=afterok:" + ":".join([str(x) for x in self.glob.ok_dep_list]) + " " 
+
+        if dep:
+            print("Job dependency string: " + dep)
+
+        return dep
 
     # Submit script to scheduler
     def submit(self):

@@ -6,7 +6,7 @@ APP=lammps
 BENCH=ljmelt
 
 # Remove existing installation
-benchtool --remove $APP		> /dev/null
+benchtool --delApp $APP		> /dev/null
 
 echo "EXIT CODES:"
 
@@ -25,8 +25,8 @@ echo     "--avail         $?"
 benchtool --build $APP --overload dry_run=True	> /dev/null
 echo     "--build         $?"
 
-benchtool --installed		> /dev/null
-echo     "--installed     $?"
+benchtool --listApps		> /dev/null
+echo     "--listApps      $?"
 
 benchtool --queryApp $APP	> /dev/null
 echo     "--queryApp      $?"
@@ -41,8 +41,8 @@ output=$(benchtool --listResults | tail -n 3 | head -n 1)
 benchtool --queryResult $output > /dev/null
 echo     "--queryResult   $?"
 
-benchtool --remove $APP  	> /dev/null
-echo     "--remove        $?"
+benchtool --delApp $APP  	> /dev/null
+echo     "--delApp        $?"
 
 benchtool --capture         > /dev/null
 echo     "--capture       $?"
@@ -50,8 +50,14 @@ echo     "--capture       $?"
 benchtool --listResults all > /dev/null
 echo     "--listResults   $?"
 
-benchtool --queryDB dataset=$BENCH --export    > /dev/null
-echo     "--queryDB       $?"
+benchtool --dbResult dataset=$BENCH --export    > /dev/null
+echo     "--dbResult      $?"
+
+benchtool --dbApp code=$APP   > /dev/null
+echo     "--dbApp         $?"
+
+benchtool --build all_apps --overload dry_run=True > /dev/null
+echo     "--suite         $?"
 
 benchtool --history           > /dev/null
 echo     "--history       $?"

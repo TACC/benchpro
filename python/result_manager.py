@@ -1,5 +1,6 @@
 # System Imports
 import configparser as cp
+import copy
 import csv
 import glob as gb
 import os
@@ -249,6 +250,7 @@ def get_insert_dict(result_path, result, unit):
     insert_dict['nodes']            = get_required_key('bench', 'nodes')
     insert_dict['ranks']            = get_required_key('bench', 'ranks')
     insert_dict['threads']          = get_required_key('bench', 'threads')
+    insert_dict['gpus']             = get_required_key('config', 'gpus')
     insert_dict['dataset']          = get_required_key('bench', 'dataset')
     insert_dict['result']           = str(result)
     insert_dict['result_unit']      = unit
@@ -488,7 +490,7 @@ def query_db(glob_obj):
     glob.model_fields = glob.lib.db.get_table_fields(glob.stg['result_table'])
 
     # Get sql query statement 
-    search_str = "SELECT * FROM " + glob.stg['result_table'] + " " + parse_input_str(glob.args.queryDB)
+    search_str = "SELECT * FROM " + glob.stg['result_table'] + " " + parse_input_str(glob.args.dbResult)
 
     query_results = glob.lib.db.exec_query(search_str)
 
@@ -548,7 +550,7 @@ def list_results(glob_obj):
     # Running results
     if glob.args.listResults == 'running' or glob.args.listResults == 'all':
         # Get list of running results
-        running = glob.lib.get_completed_results(pending_list, False)
+        running = glob.lib.get_completed_results(copy.deepcopy(pending_list), False)
         if running:
             print("Found", len(running), "running benchmarks:")
             for result in running:
@@ -560,10 +562,10 @@ def list_results(glob_obj):
     # Completed results
     if glob.args.listResults == 'pending' or glob.args.listResults == 'all':
         # Get list of pending results
-        pending = glob.lib.get_completed_results(pending_list, True)
-        if pending:
-            print("Found", len(pending_list), "pending benchmark results:")
-            for result in pending_list:
+        complete_list = glob.lib.get_completed_results(pending_list, True)
+        if complete_list:
+            print("Found", len(complete_list), "pending benchmark results:")
+            for result in complete_list:
                 print("  " + result)
         else:
             print("No pending benchmark results found.")
@@ -676,25 +678,25 @@ def remove_result(glob_obj):
     glob = glob_obj
 
     # Get list of all results
-    pending  = glob.lib.get_pending_results()
-    captured = glob.lib.get_captured_results()
-    failed   = glob.lib.get_failed_results()
+    pending_list  = glob.lib.get_pending_results()
+    captured_list = glob.lib.get_captured_results()
+    failed_list   = glob.lib.get_failed_results()
 
     # Check all results for failed status and remove
     if glob.args.removeResult == 'failed':
-        if failed:
-            print("Found", len(failed), "failed results:")
-            print_results(failed)
-            delete_results([os.path.join(glob.stg['failed_path'], x) for x in failed])
+        if failed_list:
+            print("Found", len(failed_list), "failed results:")
+            print_results(failed_list)
+            delete_results([os.path.join(glob.stg['failed_path'], x) for x in failed_list])
         else:
             print("No failed results found.")
 
     # Check all results for captured status and remove
     elif glob.args.removeResult == 'captured':
-        if captured:
-            print("Found", len(captured), "captured results:")
-            print_results(captured)
-            delete_results([os.path.join(glob.stg['captured_path'], x) for x in captured])
+        if captured_list:
+            print("Found", len(captured_list), "captured results:")
+            print_results(captured_list)
+            delete_results([os.path.join(glob.stg['captured_path'], x) for x in captured_list])
         else:
             print("No captured results found.")
 
@@ -704,9 +706,9 @@ def remove_result(glob_obj):
         if all_results:
             print("Found", len(all_results), " results:")
             print_results(all_results)
-            delete_results([os.path.join(glob.stg['pending_path'], x) for x in pending] +\
-                            [os.path.join(glob.stg['captured_path'], x) for x in captured] +\
-                            [os.path.join(glob.stg['failed_path'], x) for x in failed])
+            delete_results([os.path.join(glob.stg['pending_path'], x) for x in pending_list] +\
+                            [os.path.join(glob.stg['captured_path'], x) for x in captured_list] +\
+                            [os.path.join(glob.stg['failed_path'], x) for x in failed_list])
         else:
             print("No results found.")
 
@@ -730,19 +732,43 @@ def print_app_from_table(glob_obj):
     global glob
     glob = glob_obj
     # Get app from table
-    app = glob.lib.db.get_app_from_table(glob.args.db_app)
 
-    if not app:
-        print("No application found matching app_id='" + glob.args.db_app + "'")
+    query = glob.args.dbApp
 
-    app = app[0][1:]
+    # Print all applications in table 
+    if query == "all":
+        all_apps = glob.lib.db.get_app_from_table("*")    
+        print(all_apps)
 
-    labels = ["Code", "Version", "System", "Compiler", "MPI", "Module list", "Optimization Flags", "Executable", "Install prefix", "Build date", "Job ID", "App_ID"]
 
-    print("----Application Report----")
-    for i in range(12):
-        print(labels[i].ljust(20) + " = " + str(app[i]))
+    else:
 
-    print("-------------------------")
+        app = glob.lib.db.get_app_from_table(glob.args.dbApp)
+
+
+        if not app:
+            print("No application found matching app_id='" + glob.args.dbApp + "'")
+            sys.exit(0)
+
+        app = app[0][1:]
+
+        labels = [  "Code", 
+                    "Version", 
+                    "System", 
+                    "Compiler", 
+                    "MPI", 
+                    "Module list", 
+                    "Optimization Flags", 
+                    "Executable", 
+                    "Install prefix", 
+                    "Build date", 
+                    "Job ID", 
+                    "App_ID"]
+
+        print("----Application Report----")
+        for i in range(12):
+            print(labels[i].ljust(20) + " = " + str(app[i]))
+
+        print("-------------------------")
 
 

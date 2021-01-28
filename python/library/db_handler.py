@@ -94,6 +94,11 @@ class init(object):
             print("Application build job was a dry run, skipping database presence check...")
             return
 
+        # Error if key is missing
+        if not 'app_id' in insert_dict.keys():
+            exception.error_and_quit(self.glob.log, "key 'app_id' not present in report " + self.glob.lib.rel_path(report_file))
+
+
         # Do nothing if application is already capture to db
         if self.application_captured(insert_dict['app_id']):
             print("Application present in database.")
@@ -117,11 +122,9 @@ class init(object):
         keys = ', '.join(insert_dict.keys())
         vals = ", ".join(["'" + str(v).replace("'", "").replace("\"", "") + "'" for v in insert_dict.values()])
  
-
         # Insert statement
         statement = "INSERT INTO " + self.glob.stg['result_table'] + " (" + keys + ") VALUES (" + vals + ");"
         self.exec_insert(statement)
-
 
     # Return fields of db table
     def get_table_fields(self, table):
@@ -140,6 +143,4 @@ class init(object):
         columns.remove('id')
 
         return columns
-
-
 

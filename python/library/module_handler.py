@@ -93,7 +93,7 @@ class init(object):
 
         # Use generic module template if not found for this application
         if not os.path.isfile(module_template):
-            exception.print_warning(self.glob.log, "Module template '" + template_filename + "' not found, using a generic module template.")
+            exception.print_warning(self.glob.log, "Module template '" + template_filename + "' not found, generating a generic module.")
             module_template = os.path.join(self.glob.stg['template_path'], self.glob.stg['build_tmpl_dir'], "generic.module")
 
         self.glob.log.debug("Using module template file: " + module_template)

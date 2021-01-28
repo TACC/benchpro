@@ -26,9 +26,9 @@ def get_code_info(input_label, search_list):
 
     # If application is not installed, check if cfg file is available to build
     if not glob.code['metadata']['code_path']:
-        print("Failed to locate installed application with search criteria: " + ", ".join(search_list))
-        print()
+        exception.print_warning(glob.log, "No installed application meeting benchmark requirements: '" + "', '".join([i for i in search_list if i]) + "'") 
         print("Attempting to build now...")
+        print()
 
         #install_cfg = glob.lib.check_if_avail(search_list)
 
@@ -37,9 +37,9 @@ def get_code_info(input_label, search_list):
 
         #print("GLOB", glob.code['']['system']) 
 
-        glob_master.args.build = search_list[0:-1]
-        glob_master.quiet_build = True
-        builder.init(glob_master)
+        glob.args.build = search_list[0:-1]
+        glob.quiet_build = True
+        build_manager.init(copy.deepcopy(glob))
 
         if glob.stg['dry_run']:
             glob.code['metadata']['build_running'] = False
@@ -84,26 +84,31 @@ def get_code_info(input_label, search_list):
     # Get build job depenency
     glob.lib.get_build_job_dependency(build_jobid)
     # Build job running
-    if glob.dep_list:
+    if glob.ok_dep_list:
         print(glob.build['code'] + " build job is still running, creating dependency")
     # Build job complete
     else:
         # dry_run=False
         if not glob.stg['dry_run']:
-            # bench_mode=sched
-            if glob.stg['bench_mode'] == 'sched':
-                # exe not null
-                if glob.code['config']['exe']:
-                    glob.lib.check_exe(glob.code['config']['exe'], install_path)
-                # exe null
+            # check_exe=True
+            if glob.stg['check_exe']:
+                # bench_mode=sched
+                if glob.stg['bench_mode'] == 'sched':
+                    # exe not null
+                    if glob.code['config']['exe']:
+                        glob.lib.check_exe(glob.code['config']['exe'], install_path)
+                    # exe null
+                    else:
+                        print("No exe defined, skipping application check.")
+                # bench_mode=local
                 else:
-                    print("No exe defined, skipping application check.")
-            # bench_mode=local
+                    print("Application was built locally, skipping application exe check.")
+            # check_exe=False
             else:
-                print("Local build, skipping application exe check.")
+                print("'check_exe=False' in settings.ini, skipping application exe check.")
         # dry_run=True
         else:
-            print("Dry run, skipping application exe check.")
+            print("This is a dry run, skipping application exe check.")
 
 # Sets the mpi_exec string for schduler or local exec modes
 def set_mpi_exec_str():
@@ -133,9 +138,9 @@ def gen_bench_script():
         
 
     print()
-    print("BENCH TASK " + str(glob.counter) \
-            + ": " + str(glob.code['runtime']['nodes']) + " nodes, " + str(glob.code['runtime']['threads']) + " threads, " + \
-            str(glob.code['runtime']['ranks_per_node']) + " ranks per node" + gpu_print_str)
+    print(glob.bold + "Task " + str(glob.counter) \
+            + ": " + glob.code['config']['label'] + " : " + str(glob.code['runtime']['nodes']) + " nodes, " + str(glob.code['runtime']['threads']) + " threads, " + \
+            str(glob.code['runtime']['ranks_per_node']) + " ranks per node" + gpu_print_str + glob.end)
 
     glob.counter += 1
 
@@ -197,7 +202,7 @@ def start_task():
 
             if len(glob.prev_jobid) >= job_limit:
                 print("Max running jobs reached, creating dependency")
-                glob.dep_list.append(glob.prev_jobid[-1 * job_limit])
+                glob.any_dep_list.append(glob.prev_jobid[-1 * job_limit])
 
             # Submit job
             glob.lib.sched.submit()
@@ -241,8 +246,10 @@ def run_bench(input_label, glob_copy):
     global glob
     glob = glob_copy
 
-    glob.dep_list = []
-    
+    # Reset dependency lists
+    glob.any_dep_list = []
+    glob.ok_dep_list = []
+
     # Get benchmark params from cfg file
     glob.lib.cfg.ingest('bench', input_label)
 
@@ -250,7 +257,8 @@ def run_bench(input_label, glob_copy):
     search_list = list(glob.code['requirements'].values())
 
     print()
-    print("Using benchmark profile: " + glob.code['metadata']['cfg_label'])
+    print("Found matching benchmark config file:")
+    print(">  " + glob.lib.rel_path(glob.code['metadata']['cfg_file'])) 
 
     if glob.lib.needs_code(search_list):
         get_code_info(input_label, search_list)
@@ -327,12 +335,14 @@ def run_bench(input_label, glob_copy):
                         
                     # Generate bench script       
                     gen_bench_script()
-                    start_task()                
+                    start_task()
+                    glob.lib.msg.prt_brk()
 
             # No GPUs
             else:
                 gen_bench_script()
                 start_task()
+                glob.lib.msg.prt_brk()
 
     # Return number of tasks compeleted for this benchmark 
     return glob.counter
@@ -359,7 +369,7 @@ def init(glob):
     if 'suite' in glob.args.bench:
         if glob.args.bench in glob.suite.keys():
             input_list = glob.suite[glob.args.bench].split(',')
-            print("Benching application set '" + glob.args.bench + "': " + str(input_list))
+            print("Running benchmark suite '" + glob.args.bench + "' containing: '" + "' ,'".join(input_list) + "'")
         else:
             exception.error_and_quit(glob.log, "No suite '" + glob.args.bench + \
                                      "' in settings.ini. Available suites: " + ', '.join(glob.suite.keys()))

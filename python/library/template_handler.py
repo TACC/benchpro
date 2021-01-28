@@ -105,7 +105,7 @@ class init(object):
 
         return template_obj
 
-    def get_build_templates(self):
+    def set_build_files(self):
 
         # Temp build script
         self.glob.tmp_script = "tmp." + self.glob.code['general']['code'] + "-build." + self.glob.stg['build_mode']
@@ -151,7 +151,7 @@ class init(object):
         template_obj.append("#!/bin/bash \n")
 
         # Parse template file names
-        self.get_build_templates()
+        self.set_build_files()
 
         # Add scheduler directives if contructing job script
         if self.glob.stg['build_mode'] == "sched":
@@ -195,10 +195,9 @@ class init(object):
         # Write populated script to file
         print("Writing template... ")
         self.glob.lib.write_list_to_file(template_obj, self.glob.tmp_script)
-
         print()
 
-    def get_bench_templates(self):
+    def set_bench_files(self):
         # Template files
 
         # Temp job script 
@@ -241,7 +240,7 @@ class init(object):
             self.glob.code['config']['pid'] = self.glob.prev_pid
             self.add_process_dep(template_obj)  
 
-        self.get_bench_templates()
+        self.set_bench_files()
 
         # If generate sched script
         if self.glob.stg['bench_mode'] == "sched":
@@ -294,6 +293,7 @@ class init(object):
         self.glob.lib.test_template(self.glob.tmp_script, template_obj)
 
         # Write populated script to file
+        print("Writing template... ")
         self.glob.lib.write_list_to_file(template_obj, self.glob.tmp_script)
-
+        print()
 

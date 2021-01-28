@@ -45,13 +45,17 @@ def check_for_previous_install():
 
 # Get build job dependency
 def get_build_dep(job_limit):
-    glob.dep_list = []
+
+    # Reset dependency lists
+    glob.any_dep_list = []
+    glob.ok_dep_list = []
+
     # Get queued/running build jobs
     running_jobids = glob.lib.sched.get_active_jobids('_build')
 
     # Create dependency on apropriate running job 
     if len(running_jobids) >= job_limit:
-        glob.dep_list.append(str(running_jobids[len(running_jobids)-job_limit]))
+        glob.any_dep_list.append(str(running_jobids[len(running_jobids)-job_limit]))
 
 # Main method for generating and submitting build script
 #
@@ -59,7 +63,10 @@ def get_build_dep(job_limit):
 #
 def build_code(code_label):
 
-    print("Starting build process for application '" + code_label + "'")
+    if isinstance(glob.args.build, str):
+        print("Starting build process for application with search criteria:  '" + code_label +"'")
+    else:
+        print("Starting build process for application with search criteria:  '" + "', '".join([i for i in code_label if i]) + "'")
 
     # Parse config input files
     glob.lib.cfg.ingest('build',    code_label)
@@ -70,7 +77,7 @@ def build_code(code_label):
         return
 
     print()
-    print("Using application config file:")
+    print("Found matching application config file:")
     print(">  " + glob.lib.rel_path(glob.code['metadata']['cfg_file']))
     print()
 
@@ -188,22 +195,24 @@ def init(glob_obj):
     if isinstance(glob.args.build, str):
 
         # Either build codes in suite or user label
-        if 'suite' in glob.args.build:
-            if glob.args.build in glob.suite.keys():
-                code_label_list = glob.stg[glob.args.build].split(',')
-                print("Building application suite '" + glob.args.build + "': " + glob.stg[glob.args.build])
-                for code_label in code_label_list:
-                    build_code(code_label)
-            else:
-                exception.error_and_quit(glob.log, "No suite '" + glob.args.build + "' in settings.ini. Available suites: " + ', '.join(glob.suite.keys())) 
+        if glob.args.build in glob.suite.keys():
+            code_label_list = glob.stg[glob.args.build].split(',')
+            print("Building application suite '" + glob.args.build + "': " + glob.stg[glob.args.build])
+            for code_label in code_label_list:
+                build_code(code_label)
+                glob.lib.msg.prt_brk()
 
         # User build input (can be ':' delimited)
         else:
             code_list = glob.args.build.split(":")
             for code_label in code_list:
                 build_code(code_label)
+                glob.lib.msg.prt_brk()
 
 
     # ----------------- IF CODE LABEL IS A DICT (FROM BENCHER) --------------------------
     else:
         build_code(glob.args.build)
+
+
+    print()

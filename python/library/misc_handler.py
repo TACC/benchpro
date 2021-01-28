@@ -74,7 +74,7 @@ class init(object):
 
     # Delete application and module matching path provided
     def remove_app(self):
-        code_str = self.glob.args.remove
+        code_str = self.glob.args.delApp
  
         remove_list = []
         if code_str == 'all':

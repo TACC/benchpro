@@ -78,13 +78,13 @@ def main():
     cmd_parser.add_argument("--listResults", nargs='?', const="all", type=str,
                             help="Provide summary of benchmarks results. Default is 'all', also takes 'pending', 'complete', 'captured' or \
                                     'failed'")
-    cmd_parser.add_argument("--removeResult", default=False,
+    cmd_parser.add_argument("--delResult", default=False,
                             help="Deletes benchmark result from local directory, takes benchmark label, 'captured', \
                                     'failed' or 'all'")
     
     cmd_parser.add_argument("--clean", default=False, action='store_true',
                             help="Cleanup temp and log files.")
-    cmd_parser.add_argument("--installed", default=False, action='store_true',
+    cmd_parser.add_argument("--listApps", default=False, action='store_true',
                             help="Show all installed applications.")
     cmd_parser.add_argument("--avail", nargs='?', const="all", type=str,
                             help="Show all available application profiles. Default is 'all', also accepts 'code', 'bench' or 'suite'.")
@@ -92,17 +92,17 @@ def main():
     cmd_parser.add_argument("--setup", default=False, action='store_true',
                             help="Print default options for current system.")
 
-    cmd_parser.add_argument("--remove", default=False,
+    cmd_parser.add_argument("--delApp", default=False,
                             help="Remove an installed application.")
 
     cmd_parser.add_argument("--queryApp", default=False,
                             help="Query build report of an installed application.")
     cmd_parser.add_argument("--queryResult", default=False,
                             help="Query a local benchmark result for config info.")
-    cmd_parser.add_argument("--queryDB", nargs='?', const="all", type=str,
+    cmd_parser.add_argument("--dbResult", nargs='?', const="all", type=str,
                             help="Query database for benchmark results. Default is 'all'. Also accepts colon-delimited list \
                                     of search criteria.")
-    cmd_parser.add_argument("--db_app", default=False, type=str, help="Provide application ID to print info report from database.")
+    cmd_parser.add_argument("--dbApp", default=False, type=str, help="Provide application ID to print info report from database.")
 
     cmd_parser.add_argument("--export", default=False, action='store_true',
                             help="Export database query to .csv file dbquery_[date].csv")
@@ -162,7 +162,7 @@ def main():
     elif args.clean:
         glob.lib.misc.clean_temp_files()
     # Show installed and exit
-    elif args.installed:
+    elif args.listApps:
         glob.lib.misc.show_installed()
     # Print setup settings
     elif args.setup:
@@ -171,7 +171,7 @@ def main():
     elif args.avail:
         glob.lib.misc.show_available()
     # Remove installation and exit
-    elif args.remove:
+    elif args.delApp:
         glob.lib.misc.remove_app()
     # Query installation and exit
     elif args.queryApp:
@@ -180,10 +180,10 @@ def main():
     elif args.history:
         glob.lib.misc.print_history()
     # Query db for results
-    elif args.queryDB:
+    elif args.dbResult:
         result_manager.query_db(glob)
     # Query db for application
-    elif args.db_app:
+    elif args.dbApp:
         result_manager.print_app_from_table(glob)
     # Show results and exit
     elif args.listResults:
@@ -192,7 +192,7 @@ def main():
     elif args.queryResult:
         result_manager.query_result(glob, args.queryResult)
     # Remove result and exit
-    elif args.removeResult:
+    elif args.delResult:
         result_manager.remove_result(glob)
     elif args.version:
         glob.lib.misc.print_version()

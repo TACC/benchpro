@@ -17,6 +17,9 @@ class settings(object):
     success     = '\033[0;32mSUCCESS: \033[0m'
     note        = '\033[0;34mNOTE: \033[0m'
 
+    bold        = '\033[1m'
+    end         = '\033[0m'
+
     # Create logging obj
     log = None
 
@@ -27,7 +30,10 @@ class settings(object):
     compiler = {}
     suite    = {}
 
-    dep_list = {}
+    # list of depency jobs
+    any_dep_list = []
+    ok_dep_list = []
+
     overload_dict = {}
     quiet_build =  False 
     prev_pid = 0

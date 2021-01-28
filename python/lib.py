@@ -278,7 +278,7 @@ class init(object):
     # If build job is running, add dependency str
     def get_build_job_dependency(self, jobid):
         if not self.glob.lib.sched.check_job_complete(jobid):
-            self.glob.dep_list.append(jobid)
+            self.glob.ok_dep_list.append(jobid)
 
     # Check if host can run mpiexec
     def check_mpi_allowed(self):
@@ -336,7 +336,7 @@ class init(object):
                     except:
                         exception.error_and_quit(self.glob.log, "datatype mismatch for '" + overload_key +"', expected=" + str(datatype) + ", provided=" + str(type(overload_key)))
 
-                print("Overloading " + overload_key + ": '" + str(old) + "' -> '" + str(param_dict[overload_key]) + "'" )
+                print(self.glob.bold + "Overloading " + overload_key + ": '" + str(old) + "' -> '" + str(param_dict[overload_key]) + "'" + self.glob.end)
                 # Remove key from overload dict
                 self.glob.overload_dict.pop(overload_key)
 

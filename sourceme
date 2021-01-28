@@ -8,7 +8,7 @@ alias cdb='cd $BENCHTOOL'
 
 # Check root script ownership
 if [ $(stat -c %U $BENCHTOOL/resources/hw_utils/lshw ) != 'root' ]; then
-    echo "WARNING: please run 'sudo resources/hw_utils/change_permissions.sh' if you plan to collect hardware stats."
+    echo "WARNING: please run 'sudo resources/scripts/change_permissions.sh' if you plan to collect hardware stats."
 fi
 
 # Set TACC_SCRATCH var
