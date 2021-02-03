@@ -180,6 +180,10 @@ def init(glob_obj):
     # Init loggers
     glob.log = logger.start_logging("BUILD", glob.stg['build_log_file'] + "_" + glob.time_str + ".log", glob)
 
+
+    # Get list of avail cfgs
+    glob.lib.set_build_cfg_list()
+
     # Overload settings.ini with cmd line args
     glob.lib.overload_params(glob.stg)
 

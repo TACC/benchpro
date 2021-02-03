@@ -601,3 +601,32 @@ class init(object):
         app_id = hashlib.sha1()
         app_id.update(str(time.time()).encode('utf-8'))
         return app_id.hexdigest()[:10]
+
+
+
+    # Parse all build cfg files into list
+    def get_cfg_list(self, path):
+
+        cfg_list = []
+
+        # Get common cfgs
+        cfg_files = gb.glob(os.path.join(path, "*.cfg"))
+        
+        # Get system specific cfgs
+        if os.path.isdir(os.path.join(path,self.glob.sys_env)):
+            cfg_files += gb.glob(os.path.join(path, self.glob.sys_env, "*.cfg"))
+
+        # Construct
+        for cfg in cfg_files:
+            cfg_list.append(self.glob.lib.cfg.read_file(cfg))
+    
+        return cfg_list
+    
+    # Set a list of build cfg file contents in glob
+    def set_build_cfg_list(self):
+        self.glob.build_cfgs =  self.get_cfg_list(os.path.join(self.glob.stg['config_path'],self.glob.stg['build_cfg_dir']))
+
+    # Set a list of bench cfg file contents in glob
+    def set_bench_cfg_list(self):
+        self.glob.bench_cfgs = self.get_cfg_list(os.path.join(self.glob.stg['config_path'],self.glob.stg['bench_cfg_dir']))
+

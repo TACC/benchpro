@@ -34,6 +34,12 @@ class settings(object):
     any_dep_list = []
     ok_dep_list = []
 
+
+    # Cfg lists
+    build_cfgs = []
+    bench_cfgs = [] 
+
+
     overload_dict = {}
     quiet_build =  False 
     prev_pid = 0

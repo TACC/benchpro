@@ -358,6 +358,9 @@ def init(glob):
     # Start logger
     glob.log = logger.start_logging("RUN", glob.stg['bench_log_file'] + "_" + glob.time_str + ".log", glob)
 
+    # Get list of avail cfgs
+    glob.lib.set_bench_cfg_list()
+
     # Check for new results
     glob.lib.msg.new_results()
 

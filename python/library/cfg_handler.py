@@ -124,9 +124,57 @@ class init(object):
 
         else:
             exception.error_and_quit(self.glob.log, "input file containing '" + ", ".join(cfg_name) + "' not found.")
+       
+
+
+
+
+
+    # Find matching config file given search criteria
+    def find_cfg(self, search_list, avail_cfgs):
+    
+        # Convert strings to list
+        if isinstance(search_list, str):
+            search_list = [search_list]
+
         
+        matching_cfgs = []
+
+        # Iter over all avail cfg files
+        for cfg in avail_cfgs:
+
+            # Get all values from cfg sections
+            search_fields = []
+            for sec in cfg.keys():
+                for key in cfg[sec].keys():
+                    search_fields.append(cfg[sec][key])
+
+            # Iter over all search terms
+            match = True
+            for term in search_list: 
+                if not term in search_fields:
+                    match = False
+
+            # If match, add to list
+            if match:
+                matching_cfgs.append(cfg)
+
+
+        if not matching_cfgs:
+            exception.error_and_quit(self.glob.log, "no matching config file found matching search criteria '" + ", ".join(search_list) + "'")
+
+        elif len(matching_cfgs) == 1:
+            return matching_cfgs[0]
+
+        else:
+            exception.error_and_quit(self.glob.log, "multiple config files found matching search criteria '" + ", ".join(search_list) + "':")
+            for cfg in matching_cfgs:
+                print("    " + self.glob.lib.rel_path(cfg))
+
+
+
     # Parse cfg file into dict
-    def read_cfg_file(self, cfg_file):
+    def read_file(self, cfg_file):
         cfg_parser = cp.ConfigParser()
         cfg_parser.optionxform=str
         cfg_parser.read(cfg_file)
@@ -135,7 +183,7 @@ class init(object):
         cfg_dict = {}
         cfg_dict['metadata'] ={}
 
-        cfg_dict['metadata']['cfg_label'] = cfg_file.split(self.glob.stg['sl'])[-1].split(".")[0]
+        cfg_dict['metadata']['cfg_label'] = ".".join(cfg_file.split(self.glob.stg['sl'])[-1].split(".")[:-1])
         cfg_dict['metadata']['cfg_file']  = cfg_file
 
         # Read sections into dict 
@@ -239,7 +287,7 @@ class init(object):
 
         # Parse architecture defaults config file 
         arch_file = self.check_file('arch', self.glob.stg['config_path'] + self.glob.stg['sl'] + self.glob.stg['arch_cfg_file'])
-        arch_dict = self.read_cfg_file(arch_file)
+        arch_dict = self.read_file(arch_file)
 
         # Get core count for system
         try:
@@ -451,33 +499,43 @@ class init(object):
     
     # Read input param config and test 
     def ingest(self, cfg_type, cfg_search):
-    
+
+
         # Check input file exists
-        cfg_file = self.check_file(cfg_type, cfg_search)
+        #cfg_file = self.check_file(cfg_type, cfg_search)
     
         # Parse input fo;e
-        cfg_dict = self.read_cfg_file(cfg_file)
+        #cfg_dict = self.read_file(cfg_file)
     
         # Process and store build cfg 
         if cfg_type == 'build':
+
+            cfg_dict = self.find_cfg(cfg_search, self.glob.build_cfgs)
             self.glob.log.debug("Starting build cfg processing.")
             self.process_build_cfg(cfg_dict)
             self.glob.code = cfg_dict
     
         # Process and store bench cfg 
         elif cfg_type == 'bench':
+            print(self.glob.bench_cfgs)
+            cfg_dict = self.find_cfg(cfg_search, self.glob.bench_cfgs)
             self.glob.log.debug("Starting bench cfg processing.")
             self.process_bench_cfg(cfg_dict)
             self.glob.code = cfg_dict
     
         # Process and store sched cfg 
         elif cfg_type == 'sched':
+
+            cfg_file = self.check_file(cfg_type, cfg_search)
+            cfg_dict = self.read_file(cfg_file)
             self.glob.log.debug("Starting sched cfg processing.")
             self.process_sched_cfg(cfg_dict)
             self.glob.sched = cfg_dict
     
         # Process and store compiler cfg 
         elif cfg_type == 'compiler':
+            cfg_file = self.check_file(cfg_type, cfg_search)
+            cfg_dict = self.read_file(cfg_file)
             self.glob.compiler = cfg_dict
     
     
