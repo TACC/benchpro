@@ -32,7 +32,7 @@ echo "OMP_NUM_THREADS           $OMP_NUM_THREADS"
 echo "CUDA_VISIBLE_DEVICES      $CUDA_VISIBLE_DEVICES"
 
 mkdir -p ${working_path}
-cp -r ${install_path} ${working_path}/run
+cp -r $SPECFEM3D_GLOBE_DIR ${working_path}/run
 cd ${working_path}/run
 
 BASEMPIDIR=`grep ^LOCAL_PATH DATA/Par_file | cut -d = -f 2 `
