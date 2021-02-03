@@ -1,4 +1,7 @@
 export build_label=<<<build_label>>>
+export c_flags=<<<c_flags>>>
+export fc_flags=<<<fc_flags>>>
+export cxx_flags=<<<cxx_flags>>>
 
 tar -xf ${benchmark_repo}/specfem3d_globe_v${version}.tar.gz -C ${build_path}/
 tar -xf ${benchmark_repo}/specfem3d_globe_${build_label}.tar.gz -C ${build_path}/ 
@@ -58,15 +61,15 @@ cp $datadir/DATA/Par_file DATA/Par_file
 
 # Build CUDA + MPI
 if [ ! -z ${mpi} ] && [ ! -z ${cuda} ]; then
-  echo "y" | ./configure --with-cuda=cuda5 CUDA_LIB=$TACC_CUDA_DIR/lib64 CUDA_INC=$TACC_CUDA_DIR/include ${config_mpi} ${config_comp}
+  echo "y" | ./configure --with-cuda=cuda5 CUDA_LIB=$TACC_CUDA_DIR/lib64 CUDA_INC=$TACC_CUDA_DIR/include ${config_mpi} ${config_comp} CFLAGS="${c_flags}" FCFLAGS="${fc_flags}" CXXFLAGS="${cxx_flags}"
   make clean
   make all -j${threads}
 elif [ ! -z ${mpi} ]; then
-  echo "y" | ./configure ${config_mpi} ${config_comp}
+  echo "y" | ./configure ${config_mpi} ${config_comp} "${c_flags}" "${fc_flags}" "${cxx_flags}"
   make clean
   make all -j${threads}
 else
-  echo "y" | ./configure ${config_comp}
+  echo "y" | ./configure ${config_comp} "${c_flags}" "${fc_flags}" "${cxx_flags}"
   make clean
   make all -j${threads}
 fi
