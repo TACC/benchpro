@@ -14,9 +14,9 @@ class init(object):
         self.glob = glob
 
     # Get list of files matching search
-    def find_matching_files(self, search_dict):
+    def find_matching_files(self, search_list):
         file_list = []
-        for search in search_dict:
+        for search in search_list:
             file_list += gb.glob(os.path.join(self.glob.basedir, search))
         return file_list
 
@@ -35,7 +35,7 @@ class init(object):
     def clean_temp_files(self):
         print("Cleaning up temp files...")
         # Search space for tmp files
-        search_dict = [ "*.out*",
+        search_list = [ "*.out*",
                         "*.err*",
                         "*.log",
                         "tmp.*",
@@ -43,7 +43,7 @@ class init(object):
                         "*.csv",
                         ".outputs"]
 
-        file_list = self.find_matching_files(search_dict)
+        file_list = self.find_matching_files(search_list)
 
         if file_list:
             print("Found the following files to delete:")
@@ -80,10 +80,10 @@ class init(object):
         if code_str == 'all':
             remove_list = self.glob.lib.get_installed()
         else:
-            search_dict = {}
-            for code_elem in code_str.split(self.glob.stg['sl']):
-                search_dict[code_elem] = code_elem
-            remove_list.append(self.glob.lib.check_if_installed(search_dict))
+            search_list = code_str.split(self.glob.stg['sl'])
+            tmp = self.glob.lib.check_if_installed(search_list)
+            if tmp:
+                remove_list.append(tmp)
 
         for app in remove_list:
             # If not installed
@@ -140,19 +140,19 @@ class init(object):
     # Print build report of installed application
     def query_app(self, app_label):
 
-        search_dict = {}
+        search_list = {}
         
         # Disect search string into search dict
         for search_elem in app_label.split("/"):
-            search_dict[search_elem] = search_elem
+            search_list += search_elem
         
-        app_dir = self.glob.lib.check_if_installed(search_dict)
+        app_dir = self.glob.lib.check_if_installed(search_list)
 
         if not app_dir:
             print("Application '"+app_label+"' is not installed.")
             sys.exit(1)
 
-        app_path = os.path.join(self.glob.stg['build_path'], self.glob.lib.check_if_installed(search_dict))
+        app_path = os.path.join(self.glob.stg['build_path'], self.glob.lib.check_if_installed(search_list))
         build_report = os.path.join(app_path, self.glob.stg['build_report_file'])
         install_path = os.path.join(app_path, self.glob.stg['install_subdir'])
 

@@ -437,9 +437,10 @@ class init(object):
 
         #Ensure every val that is set in search dict is found in code path
         for search in search_list:
-            if search and not search in code_path_elems:
+            if search and not any(search in x for x in code_path_elems):
                 # Otherwise not code does not match requirements
                 match = False
+
         return match
 
     # Check if the requirements in bench.cfg need a built code 
