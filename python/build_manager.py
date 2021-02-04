@@ -61,15 +61,12 @@ def get_build_dep(job_limit):
 #
 # code_label can be string or list of strings, this is handled in cfg_handler
 #
-def build_code(code_label):
+def build_code(input_dict):
 
-    if isinstance(glob.args.build, str):
-        print("Starting build process for application with search criteria:  '" + code_label +"'")
-    else:
-        print("Starting build process for application with search criteria:  '" + "', '".join([i for i in code_label if i]) + "'")
+    print("Starting build process for application with search criteria:  '" + "', '".join([i + "=" + input_dict[i] for i in input_dict.keys() if i]) + "'")
 
     # Parse config input files
-    glob.lib.cfg.ingest('build',    code_label)
+    glob.lib.cfg.ingest('build',    input_dict)
     glob.lib.cfg.ingest('compiler', glob.stg['compile_cfg_file'])
 
     # If build dir already exists, skip this build
@@ -208,10 +205,9 @@ def init(glob_obj):
 
         # User build input (can be ':' delimited)
         else:
-            code_list = glob.args.build.split(":")
-            for code_label in code_list:
-                build_code(code_label)
-                glob.lib.msg.prt_brk()
+            input_dict = glob.lib.parse_build_str(glob.args.build)
+            build_code(input_dict)
+            glob.lib.msg.prt_brk()
 
 
     # ----------------- IF CODE LABEL IS A DICT (FROM BENCHER) --------------------------

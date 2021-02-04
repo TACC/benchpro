@@ -37,7 +37,7 @@ def check_validatation(val_file):
         print()
         sys.exit(1)
 
-# Generate dict fom coma-delimited params
+# Generate dict fom colon-delimited params
 def get_var_overload_dict(vars_str):
     overload_dict = {} 
     if vars_str:

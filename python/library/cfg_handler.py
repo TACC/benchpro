@@ -126,52 +126,43 @@ class init(object):
             exception.error_and_quit(self.glob.log, "input file containing '" + ", ".join(cfg_name) + "' not found.")
        
 
-
-
-
-
     # Find matching config file given search criteria
-    def find_cfg(self, search_list, avail_cfgs):
+    def find_cfg(self, search_dict, avail_cfgs):
     
-        # Convert strings to list
-        if isinstance(search_list, str):
-            search_list = [search_list]
-
-        
         matching_cfgs = []
 
         # Iter over all avail cfg files
         for cfg in avail_cfgs:
 
-            # Get all values from cfg sections
-            search_fields = []
-            for sec in cfg.keys():
-                for key in cfg[sec].keys():
-                    search_fields.append(cfg[sec][key])
-
             # Iter over all search terms
             match = True
-            for term in search_list: 
-                if not term in search_fields:
-                    match = False
+            for key in search_dict.keys():
 
+                # For each section of cfg    
+                for sec in cfg.keys():
+                    # If key is in cfg section
+                    if key in cfg[sec].keys():
+                        # If value set in cfg 
+                        if cfg[sec][key]:
+                            # If not equal to search, not a match
+                            if not search_dict[key] == cfg[sec][key]:
+                                match = False
+                    
             # If match, add to list
             if match:
                 matching_cfgs.append(cfg)
 
 
         if not matching_cfgs:
-            exception.error_and_quit(self.glob.log, "no matching config file found matching search criteria '" + ", ".join(search_list) + "'")
+            exception.error_and_quit(self.glob.log, "no matching config file found matching search criteria '" + ", ".join([key + " = " + search_dict[key] for key in search_dict.keys()]) + "'")
 
         elif len(matching_cfgs) == 1:
             return matching_cfgs[0]
 
         else:
-            exception.error_and_quit(self.glob.log, "multiple config files found matching search criteria '" + ", ".join(search_list) + "':")
+            exception.error_and_quit(self.glob.log, "multiple config files found matching search criteria '" + ", ".join([key + " = " + search_dict[key] for key in search_dict.keys()]) + "':")
             for cfg in matching_cfgs:
                 print("    " + self.glob.lib.rel_path(cfg))
-
-
 
     # Parse cfg file into dict
     def read_file(self, cfg_file):
@@ -498,7 +489,7 @@ class init(object):
             self.glob.log.debug("Set threads = " + cfg_dict['sched']['threads'])
     
     # Read input param config and test 
-    def ingest(self, cfg_type, cfg_search):
+    def ingest(self, cfg_type, search_dict):
 
 
         # Check input file exists
@@ -510,15 +501,14 @@ class init(object):
         # Process and store build cfg 
         if cfg_type == 'build':
 
-            cfg_dict = self.find_cfg(cfg_search, self.glob.build_cfgs)
+            cfg_dict = self.find_cfg(search_dict, self.glob.build_cfgs)
             self.glob.log.debug("Starting build cfg processing.")
             self.process_build_cfg(cfg_dict)
             self.glob.code = cfg_dict
     
         # Process and store bench cfg 
         elif cfg_type == 'bench':
-            print(self.glob.bench_cfgs)
-            cfg_dict = self.find_cfg(cfg_search, self.glob.bench_cfgs)
+            cfg_dict = self.find_cfg(search_dict, self.glob.bench_cfgs)
             self.glob.log.debug("Starting bench cfg processing.")
             self.process_bench_cfg(cfg_dict)
             self.glob.code = cfg_dict
@@ -526,7 +516,7 @@ class init(object):
         # Process and store sched cfg 
         elif cfg_type == 'sched':
 
-            cfg_file = self.check_file(cfg_type, cfg_search)
+            cfg_file = self.check_file(cfg_type, search_dict)
             cfg_dict = self.read_file(cfg_file)
             self.glob.log.debug("Starting sched cfg processing.")
             self.process_sched_cfg(cfg_dict)
@@ -534,7 +524,7 @@ class init(object):
     
         # Process and store compiler cfg 
         elif cfg_type == 'compiler':
-            cfg_file = self.check_file(cfg_type, cfg_search)
+            cfg_file = self.check_file(cfg_type, search_dict)
             cfg_dict = self.read_file(cfg_file)
             self.glob.compiler = cfg_dict
     

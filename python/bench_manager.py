@@ -19,14 +19,14 @@ def check_ranks_per_gpu(ranks, gpus):
         exception.print_warning(log, "MPI ranks per node ("+ranks+") does equal GPUs per node (" + gpus + ")")    
 
 # Get code info
-def get_code_info(input_label, search_list):
+def get_code_info(input_label, search_dict):
 
     # Check if code is installed
-    glob.code['metadata']['code_path'] = glob.lib.check_if_installed(search_list)
+    glob.code['metadata']['code_path'] = glob.lib.check_if_installed(search_dict)
 
     # If application is not installed, check if cfg file is available to build
     if not glob.code['metadata']['code_path']:
-        exception.print_warning(glob.log, "No installed application meeting benchmark requirements: '" + "', '".join([i for i in search_list if i]) + "'") 
+        exception.print_warning(glob.log, "No installed application meeting benchmark requirements: '" + "', '".join([i + "=" + search_dict[i] for i in search_dict.keys() if i]) + "'") 
         print("Attempting to build now...")
         print()
 
@@ -37,7 +37,7 @@ def get_code_info(input_label, search_list):
 
         #print("GLOB", glob.code['']['system']) 
 
-        glob.args.build = search_list[0:-1]
+        glob.args.build = search_dict
         glob.quiet_build = True
         build_manager.init(copy.deepcopy(glob))
 
@@ -45,7 +45,7 @@ def get_code_info(input_label, search_list):
             glob.code['metadata']['build_running'] = False
         else:
             glob.code['metadata']['build_running'] = True
-        glob.code['metadata']['code_path'] = glob.lib.check_if_installed(search_list)
+        glob.code['metadata']['code_path'] = glob.lib.check_if_installed(search_dict)
 
     # Code is built
     else:
@@ -241,7 +241,7 @@ def start_task():
     glob.lib.write_to_outputs("bench", glob.code['metadata']['working_dir'])
 
 # Main function to check for installed application, setup benchmark and run it
-def run_bench(input_label, glob_copy):
+def run_bench(input_dict, glob_copy):
 
     global glob
     glob = glob_copy
@@ -250,18 +250,21 @@ def run_bench(input_label, glob_copy):
     glob.any_dep_list = []
     glob.ok_dep_list = []
 
+    print("Starting benchmark with criteria '" + ", ".join([i + "=" + input_dict[i] for i in input_dict]) + "'")
+
     # Get benchmark params from cfg file
-    glob.lib.cfg.ingest('bench', input_label)
+    glob.lib.cfg.ingest('bench', input_dict)
+
 
     # Get application search list for this benchmark
-    search_list = list(glob.code['requirements'].values())
+    search_dict = glob.code['requirements']
 
     print()
     print("Found matching benchmark config file:")
     print(">  " + glob.lib.rel_path(glob.code['metadata']['cfg_file'])) 
 
-    if glob.lib.needs_code(search_list):
-        get_code_info(input_label, search_list)
+    if glob.lib.needs_code(search_dict):
+        get_code_info(input_dict, search_dict)
 
         # Directory to add to MODULEPATH
         glob.code['metadata']['base_mod'] = glob.stg['module_path']
@@ -378,7 +381,7 @@ def init(glob):
                                      "' in settings.ini. Available suites: " + ', '.join(glob.suite.keys()))
     # User input - list of benchmarks
     else:
-        input_list = glob.args.bench.split(":")
+        input_list = glob.args.bench.split("|")
 
     # Run benchmark on list of inputs
     for inp in input_list:
@@ -387,5 +390,5 @@ def init(glob):
         glob_copy = copy.deepcopy(glob)
 
         # Start benchmark session and collect number of runs
-        glob.counter = run_bench(inp, glob_copy)
+        glob.counter = run_bench(glob.lib.parse_bench_str(inp), glob_copy)
 

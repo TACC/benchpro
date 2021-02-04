@@ -452,13 +452,13 @@ class init(object):
             return True
 
     # Check if search_list returns unique installed application
-    def check_if_installed(self, search_list):
+    def check_if_installed(self, search_dict):
 
         # Get list of installed applications
         installed_list = self.get_installed()
 
         # For each installed code
-        results = [app for app in installed_list if self.search_with_list(search_list, app)]
+        results = [app for app in installed_list if self.search_with_list(list(search_dict.values()), app)]
 
         # Unique result
         if len(results) == 1:
@@ -629,4 +629,31 @@ class init(object):
     # Set a list of bench cfg file contents in glob
     def set_bench_cfg_list(self):
         self.glob.bench_cfgs = self.get_cfg_list(os.path.join(self.glob.stg['config_path'],self.glob.stg['bench_cfg_dir']))
+
+    # Convert cmdline string into a dict
+    def parse_input_str(self, input_str, default):
+
+        # Handle plain application label : --build lammps
+        if not "=" in input_str:
+            return {default: input_str}
+
+        input_dict = {}
+
+        # Split by colon delimiter
+        for keyval in input_str.split(":"):
+
+            if not "=" in keyval:
+            # Convert to dict
+                exception.error_and_quit(glob.log, "invalid input format detected: " + input_str)
+
+            # Add keyval to dict
+            input_dict[keyval.split("=")[0]] = keyval.split("=")[1]
+
+        return input_dict
+
+    def parse_build_str(self, input_str):
+        return self.parse_input_str(input_str, "code")
+
+    def parse_bench_str(self, input_str):
+        return self.parse_input_str(input_str, "dataset")
 
