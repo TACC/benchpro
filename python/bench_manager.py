@@ -139,14 +139,14 @@ def gen_bench_script():
 
     print()
     print(glob.bold + "Task " + str(glob.counter) \
-            + ": " + glob.code['config']['label'] + " : " + str(glob.code['runtime']['nodes']) + " nodes, " + str(glob.code['runtime']['threads']) + " threads, " + \
+            + ": " + glob.code['config']['bench_label'] + " : " + str(glob.code['runtime']['nodes']) + " nodes, " + str(glob.code['runtime']['threads']) + " threads, " + \
             str(glob.code['runtime']['ranks_per_node']) + " ranks per node" + gpu_print_str + glob.end)
 
     glob.counter += 1
 
     # Working Dir
     glob.code['metadata']['working_dir'] =  glob.system['sys_env'] + "_" + \
-                                            glob.code['config']['label'] + "_" + \
+                                            glob.code['config']['bench_label'] + "_" + \
                                             glob.time_str + "_" + str(glob.code['runtime']['nodes']).zfill(3) + "N_" + \
                                             str(glob.code['runtime']['ranks_per_node']).zfill(2) + "R_" + \
                                             str(glob.code['runtime']['threads']).zfill(2) + "T" + \
@@ -292,8 +292,8 @@ def run_bench(input_dict, glob_copy):
             exception.error_and_quit(glob.log, "MPI execution is not allowed on this host!")
 
     # Use code name for label if not set
-    if not glob.code['config']['label']:
-        glob.code['config']['label'] = glob.code['requirements']['code']
+    if not glob.code['config']['bench_label']:
+        glob.code['config']['bench_label'] = glob.code['requirements']['code']
 
     # Print inputs to log
     glob.lib.send_inputs_to_log('Bencher')

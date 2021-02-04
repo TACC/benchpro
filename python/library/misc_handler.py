@@ -80,8 +80,8 @@ class init(object):
         if code_str == 'all':
             remove_list = self.glob.lib.get_installed()
         else:
-            search_list = code_str.split(self.glob.stg['sl'])
-            tmp = self.glob.lib.check_if_installed(search_list)
+            search_dict = {i: i for i in code_str.split(self.glob.stg['sl'])}
+            tmp = self.glob.lib.check_if_installed(search_dict)
             if tmp:
                 remove_list.append(tmp)
 

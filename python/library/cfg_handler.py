@@ -147,10 +147,15 @@ class init(object):
                             # If not equal to search, not a match
                             if not search_dict[key] == cfg[sec][key]:
                                 match = False
-                    
+                        # Overload key with search term
+                        else:
+                            cfg[sec][key] = search_dict[key]
+
             # If match, add to list
             if match:
                 matching_cfgs.append(cfg)
+
+  
 
 
         if not matching_cfgs:
@@ -356,7 +361,7 @@ class init(object):
 
         if not 'code'               in cfg_dict['requirements'].keys():  cfg_dict['requirements']['code']    = ""
         if not 'version'            in cfg_dict['requirements'].keys():  cfg_dict['requirements']['version'] = ""
-        if not 'label'              in cfg_dict['requirements'].keys():  cfg_dict['requirements']['label']   = ""
+        if not 'build_label'        in cfg_dict['requirements'].keys():  cfg_dict['requirements']['label']   = ""
         if not 'system'             in cfg_dict['requirements'].keys():  cfg_dict['requirements']['system']  = ""
 
         if not 'ranks_per_node'     in cfg_dict['runtime'].keys():  cfg_dict['runtime']['ranks_per_node']    = 0
@@ -365,7 +370,7 @@ class init(object):
         if not 'hostlist'           in cfg_dict['runtime'].keys():  cfg_dict['runtime']['hostlist']          = ""
 
         if not 'exe'                in cfg_dict['config'].keys():    cfg_dict['config']['exe']               = ""
-        if not 'label'              in cfg_dict['config'].keys():    cfg_dict['config']['label']             = ""
+        if not 'bench_label'        in cfg_dict['config'].keys():    cfg_dict['config']['label']             = ""
         if not 'template'           in cfg_dict['config'].keys():    cfg_dict['config']['template']          = ""
         if not 'collect_hw_stats'   in cfg_dict['config'].keys():    cfg_dict['config']['collect_hw_stats']  = False
         if not 'gpus'               in cfg_dict['config'].keys():    cfg_dict['config']['gpus']              = 0

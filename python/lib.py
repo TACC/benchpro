@@ -430,13 +430,13 @@ class init(object):
         return search_list
 
     # Search code_path with values in search_list
-    def search_with_list(self, search_list, code_path):
+    def search_with_dict(self, search_dict, code_path):
         match = True
         # Break code path by /
         code_path_elems = code_path.split(self.glob.stg['sl'])
 
         #Ensure every val that is set in search dict is found in code path
-        for search in search_list:
+        for search in search_dict.values():
             if search and not any(search in x for x in code_path_elems):
                 # Otherwise not code does not match requirements
                 match = False
@@ -458,7 +458,7 @@ class init(object):
         installed_list = self.get_installed()
 
         # For each installed code
-        results = [app for app in installed_list if self.search_with_list(list(search_dict.values()), app)]
+        results = [code_path for code_path in installed_list if self.search_with_dict(search_dict, code_path)]
 
         # Unique result
         if len(results) == 1:

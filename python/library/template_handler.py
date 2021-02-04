@@ -201,7 +201,7 @@ class init(object):
         # Template files
 
         # Temp job script 
-        self.glob.tmp_script = "tmp." + self.glob.code['config']['label']  + "-bench." + self.glob.stg['bench_mode'] 
+        self.glob.tmp_script = "tmp." + self.glob.code['config']['bench_label']  + "-bench." + self.glob.stg['bench_mode'] 
     
         # Scheduler template file
         if self.glob.stg['bench_mode'] == "sched":
@@ -211,7 +211,7 @@ class init(object):
         if self.glob.code['config']['template']:
             self.glob.code['template'] = self.glob.code['config']['template']
         else:
-            self.glob.code['template'] = self.glob.code['config']['label']
+            self.glob.code['template'] = self.glob.code['config']['bench_label']
 
         matches = gb.glob(os.path.join(self.glob.stg['template_path'], self.glob.stg['bench_tmpl_dir'], "*" + self.glob.code['template'] + "*"))
         matches.sort()
@@ -226,7 +226,7 @@ class init(object):
         else:
             self.glob.code['template'] = matches[0]
 
-        self.glob.code['metadata']['job_script'] = self.glob.code['config']['label'] + "-bench." + self.glob.stg['bench_mode']
+        self.glob.code['metadata']['job_script'] = self.glob.code['config']['bench_label'] + "-bench." + self.glob.stg['bench_mode']
 
 
     def generate_bench_script(self):
