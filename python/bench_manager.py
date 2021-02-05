@@ -21,6 +21,9 @@ def check_ranks_per_gpu(ranks, gpus):
 # Get code info
 def get_code_info(input_label, search_dict):
 
+    # Evaluate any expressions in the requirements section
+    glob.lib.math.eval_dict(glob.code['requirements'])
+
     # Check if code is installed
     glob.code['metadata']['code_path'] = glob.lib.check_if_installed(search_dict)
 

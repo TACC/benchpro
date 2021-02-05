@@ -140,19 +140,19 @@ class init(object):
     # Print build report of installed application
     def query_app(self, app_label):
 
-        search_list = {}
+        search_dict = {}
         
         # Disect search string into search dict
         for search_elem in app_label.split("/"):
-            search_list += search_elem
+            search_dict[search_elem] =  search_elem
         
-        app_dir = self.glob.lib.check_if_installed(search_list)
+        app_dir = self.glob.lib.check_if_installed(search_dict)
 
         if not app_dir:
             print("Application '"+app_label+"' is not installed.")
             sys.exit(1)
 
-        app_path = os.path.join(self.glob.stg['build_path'], self.glob.lib.check_if_installed(search_list))
+        app_path = os.path.join(self.glob.stg['build_path'], self.glob.lib.check_if_installed(search_dict))
         build_report = os.path.join(app_path, self.glob.stg['build_report_file'])
         install_path = os.path.join(app_path, self.glob.stg['install_subdir'])
 

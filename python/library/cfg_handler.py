@@ -127,27 +127,27 @@ class init(object):
        
 
     # Find matching config file given search criteria
-    def find_cfg(self, search_dict, avail_cfgs):
+    def find_cfg(self, search_dict, avail_cfgs, blanks_are_wild):
     
         matching_cfgs = []
-
         # Iter over all avail cfg files
         for cfg in avail_cfgs:
-
             # Iter over all search terms
             match = True
             for key in search_dict.keys():
-
                 # For each section of cfg    
                 for sec in cfg.keys():
-                    # If key is in cfg section
+                    # If key is in cfg section and we can match to blank values
                     if key in cfg[sec].keys():
                         # If value set in cfg 
                         if cfg[sec][key]:
                             # If not equal to search, not a match
                             if not search_dict[key] == cfg[sec][key]:
                                 match = False
-                        # Overload key with search term
+                        # Blank_are_wild = False, not a match
+                        elif not blanks_are_wild:
+                            match = False
+                        # Blanks_are_wild = True, update value in dict
                         else:
                             cfg[sec][key] = search_dict[key]
 
@@ -155,19 +155,17 @@ class init(object):
             if match:
                 matching_cfgs.append(cfg)
 
-  
-
-
         if not matching_cfgs:
-            exception.error_and_quit(self.glob.log, "no matching config file found matching search criteria '" + ", ".join([key + " = " + search_dict[key] for key in search_dict.keys()]) + "'")
+            exception.error_and_quit(self.glob.log, "no matching config file found matching search criteria '" + ", ".join([key + "=" + search_dict[key] for key in search_dict.keys()]) + "'")
 
         elif len(matching_cfgs) == 1:
             return matching_cfgs[0]
 
         else:
-            exception.error_and_quit(self.glob.log, "multiple config files found matching search criteria '" + ", ".join([key + " = " + search_dict[key] for key in search_dict.keys()]) + "':")
+
             for cfg in matching_cfgs:
-                print("    " + self.glob.lib.rel_path(cfg))
+                print("    " + cfg['metadata']['cfg_label'])
+            exception.error_and_quit(self.glob.log, "multiple config files found matching search criteria '" + ", ".join([key + "=" + search_dict[key] for key in search_dict.keys()]) + "'")
 
     # Parse cfg file into dict
     def read_file(self, cfg_file):
@@ -506,14 +504,14 @@ class init(object):
         # Process and store build cfg 
         if cfg_type == 'build':
 
-            cfg_dict = self.find_cfg(search_dict, self.glob.build_cfgs)
+            cfg_dict = self.find_cfg(search_dict, self.glob.build_cfgs, True)
             self.glob.log.debug("Starting build cfg processing.")
             self.process_build_cfg(cfg_dict)
             self.glob.code = cfg_dict
     
         # Process and store bench cfg 
         elif cfg_type == 'bench':
-            cfg_dict = self.find_cfg(search_dict, self.glob.bench_cfgs)
+            cfg_dict = self.find_cfg(search_dict, self.glob.bench_cfgs, False)
             self.glob.log.debug("Starting bench cfg processing.")
             self.process_bench_cfg(cfg_dict)
             self.glob.code = cfg_dict

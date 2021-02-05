@@ -1,5 +1,4 @@
 export build_label=<<<build_label>>>
-export nchunks=<<<nchunks>>>
 export c_flags=<<<c_flags>>>
 export fc_flags=<<<fc_flags>>>
 export cxx_flags=<<<cxx_flags>>>
@@ -62,7 +61,10 @@ cp $datadir/DATA/Par_file DATA/Par_file
 
 # Modify the Parfile with benchmark MPI settings
 
-ranks=`echo ${build_label} | cut -d '=' -f 2`
+# Read NCHUNKS from Par_file
+nchunks=`sed -n -e '/^NCHUNKS/p' DATA/Par_file | cut -d '=' -f 2`
+
+ranks=`echo ${build_label} | cut -d '-' -f 2`
 
 echo "RANKS     = ${ranks}"
 echo "NCHUNKS   = ${nchunks}"
