@@ -470,7 +470,7 @@ class init(object):
             if self.glob.stg['build_if_missing']:
                 return False
             else:
-                print("No installed applications match your selection criteria: ", search_list)
+                print("No installed applications match your selection criteria: ", ", ".join([search_dict[key] for key in search_dict]))
                 print("And 'build_if_missing'=False in settings.ini")
                 print("Currently installed applications:")
                 for code in installed_list:
@@ -480,7 +480,7 @@ class init(object):
         # Multiple results
         elif len(results) > 1:
 
-            print("Multiple installed applications match your selection critera: ", search_list)
+            print("Multiple installed applications match your selection critera: ", ", ".join([search_dict[key] for key in search_dict]))
             for code in results:
                 print("  ->" + code)
             print("Please be more specific.")
