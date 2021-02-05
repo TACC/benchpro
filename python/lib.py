@@ -430,16 +430,17 @@ class init(object):
         return search_list
 
     # Search code_path with values in search_list
-    def search_with_list(self, search_list, code_path):
+    def search_with_dict(self, search_dict, code_path):
         match = True
         # Break code path by /
         code_path_elems = code_path.split(self.glob.stg['sl'])
 
         #Ensure every val that is set in search dict is found in code path
-        for search in search_list:
-            if search and not search in code_path_elems:
+        for search in search_dict.values():
+            if search and not any(search in x for x in code_path_elems):
                 # Otherwise not code does not match requirements
                 match = False
+
         return match
 
     # Check if the requirements in bench.cfg need a built code 
@@ -451,13 +452,13 @@ class init(object):
             return True
 
     # Check if search_list returns unique installed application
-    def check_if_installed(self, search_list):
+    def check_if_installed(self, search_dict):
 
         # Get list of installed applications
         installed_list = self.get_installed()
 
         # For each installed code
-        results = [app for app in installed_list if self.search_with_list(search_list, app)]
+        results = [code_path for code_path in installed_list if self.search_with_dict(search_dict, code_path)]
 
         # Unique result
         if len(results) == 1:
@@ -469,7 +470,7 @@ class init(object):
             if self.glob.stg['build_if_missing']:
                 return False
             else:
-                print("No installed applications match your selection criteria: ", search_list)
+                print("No installed applications match your selection criteria: ", ", ".join([search_dict[key] for key in search_dict]))
                 print("And 'build_if_missing'=False in settings.ini")
                 print("Currently installed applications:")
                 for code in installed_list:
@@ -479,7 +480,7 @@ class init(object):
         # Multiple results
         elif len(results) > 1:
 
-            print("Multiple installed applications match your selection critera: ", search_list)
+            print("Multiple installed applications match your selection critera: ", ", ".join([search_dict[key] for key in search_dict]))
             for code in results:
                 print("  ->" + code)
             print("Please be more specific.")
@@ -600,3 +601,59 @@ class init(object):
         app_id = hashlib.sha1()
         app_id.update(str(time.time()).encode('utf-8'))
         return app_id.hexdigest()[:10]
+
+
+
+    # Parse all build cfg files into list
+    def get_cfg_list(self, path):
+
+        cfg_list = []
+
+        # Get common cfgs
+        cfg_files = gb.glob(os.path.join(path, "*.cfg"))
+        
+        # Get system specific cfgs
+        if os.path.isdir(os.path.join(path,self.glob.sys_env)):
+            cfg_files += gb.glob(os.path.join(path, self.glob.sys_env, "*.cfg"))
+
+        # Construct
+        for cfg in cfg_files:
+            cfg_list.append(self.glob.lib.cfg.read_file(cfg))
+    
+        return cfg_list
+    
+    # Set a list of build cfg file contents in glob
+    def set_build_cfg_list(self):
+        self.glob.build_cfgs =  self.get_cfg_list(os.path.join(self.glob.stg['config_path'],self.glob.stg['build_cfg_dir']))
+
+    # Set a list of bench cfg file contents in glob
+    def set_bench_cfg_list(self):
+        self.glob.bench_cfgs = self.get_cfg_list(os.path.join(self.glob.stg['config_path'],self.glob.stg['bench_cfg_dir']))
+
+    # Convert cmdline string into a dict
+    def parse_input_str(self, input_str, default):
+
+        # Handle plain application label : --build lammps
+        if not "=" in input_str:
+            return {default: input_str}
+
+        input_dict = {}
+
+        # Split by colon delimiter
+        for keyval in input_str.split(":"):
+
+            if not "=" in keyval:
+            # Convert to dict
+                exception.error_and_quit(glob.log, "invalid input format detected: " + input_str)
+
+            # Add keyval to dict
+            input_dict[keyval.split("=")[0]] = keyval.split("=")[1]
+
+        return input_dict
+
+    def parse_build_str(self, input_str):
+        return self.parse_input_str(input_str, "code")
+
+    def parse_bench_str(self, input_str):
+        return self.parse_input_str(input_str, "dataset")
+

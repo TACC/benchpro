@@ -124,9 +124,51 @@ class init(object):
 
         else:
             exception.error_and_quit(self.glob.log, "input file containing '" + ", ".join(cfg_name) + "' not found.")
-        
+       
+
+    # Find matching config file given search criteria
+    def find_cfg(self, search_dict, avail_cfgs, blanks_are_wild):
+    
+        matching_cfgs = []
+        # Iter over all avail cfg files
+        for cfg in avail_cfgs:
+            # Iter over all search terms
+            match = True
+            for key in search_dict.keys():
+                # For each section of cfg    
+                for sec in cfg.keys():
+                    # If key is in cfg section and we can match to blank values
+                    if key in cfg[sec].keys():
+                        # If value set in cfg 
+                        if cfg[sec][key]:
+                            # If not equal to search, not a match
+                            if not search_dict[key] == cfg[sec][key]:
+                                match = False
+                        # Blank_are_wild = False, not a match
+                        elif not blanks_are_wild:
+                            match = False
+                        # Blanks_are_wild = True, update value in dict
+                        else:
+                            cfg[sec][key] = search_dict[key]
+
+            # If match, add to list
+            if match:
+                matching_cfgs.append(cfg)
+
+        if not matching_cfgs:
+            exception.error_and_quit(self.glob.log, "no matching config file found matching search criteria '" + ", ".join([key + "=" + search_dict[key] for key in search_dict.keys()]) + "'")
+
+        elif len(matching_cfgs) == 1:
+            return matching_cfgs[0]
+
+        else:
+
+            for cfg in matching_cfgs:
+                print("    " + cfg['metadata']['cfg_label'])
+            exception.error_and_quit(self.glob.log, "multiple config files found matching search criteria '" + ", ".join([key + "=" + search_dict[key] for key in search_dict.keys()]) + "'")
+
     # Parse cfg file into dict
-    def read_cfg_file(self, cfg_file):
+    def read_file(self, cfg_file):
         cfg_parser = cp.ConfigParser()
         cfg_parser.optionxform=str
         cfg_parser.read(cfg_file)
@@ -135,7 +177,7 @@ class init(object):
         cfg_dict = {}
         cfg_dict['metadata'] ={}
 
-        cfg_dict['metadata']['cfg_label'] = cfg_file.split(self.glob.stg['sl'])[-1].split(".")[0]
+        cfg_dict['metadata']['cfg_label'] = ".".join(cfg_file.split(self.glob.stg['sl'])[-1].split(".")[:-1])
         cfg_dict['metadata']['cfg_file']  = cfg_file
 
         # Read sections into dict 
@@ -239,7 +281,7 @@ class init(object):
 
         # Parse architecture defaults config file 
         arch_file = self.check_file('arch', self.glob.stg['config_path'] + self.glob.stg['sl'] + self.glob.stg['arch_cfg_file'])
-        arch_dict = self.read_cfg_file(arch_file)
+        arch_dict = self.read_file(arch_file)
 
         # Get core count for system
         try:
@@ -317,7 +359,7 @@ class init(object):
 
         if not 'code'               in cfg_dict['requirements'].keys():  cfg_dict['requirements']['code']    = ""
         if not 'version'            in cfg_dict['requirements'].keys():  cfg_dict['requirements']['version'] = ""
-        if not 'label'              in cfg_dict['requirements'].keys():  cfg_dict['requirements']['label']   = ""
+        if not 'build_label'        in cfg_dict['requirements'].keys():  cfg_dict['requirements']['label']   = ""
         if not 'system'             in cfg_dict['requirements'].keys():  cfg_dict['requirements']['system']  = ""
 
         if not 'ranks_per_node'     in cfg_dict['runtime'].keys():  cfg_dict['runtime']['ranks_per_node']    = 0
@@ -326,7 +368,7 @@ class init(object):
         if not 'hostlist'           in cfg_dict['runtime'].keys():  cfg_dict['runtime']['hostlist']          = ""
 
         if not 'exe'                in cfg_dict['config'].keys():    cfg_dict['config']['exe']               = ""
-        if not 'label'              in cfg_dict['config'].keys():    cfg_dict['config']['label']             = ""
+        if not 'bench_label'        in cfg_dict['config'].keys():    cfg_dict['config']['label']             = ""
         if not 'template'           in cfg_dict['config'].keys():    cfg_dict['config']['template']          = ""
         if not 'collect_hw_stats'   in cfg_dict['config'].keys():    cfg_dict['config']['collect_hw_stats']  = False
         if not 'gpus'               in cfg_dict['config'].keys():    cfg_dict['config']['gpus']              = 0
@@ -450,34 +492,43 @@ class init(object):
             self.glob.log.debug("Set threads = " + cfg_dict['sched']['threads'])
     
     # Read input param config and test 
-    def ingest(self, cfg_type, cfg_search):
-    
+    def ingest(self, cfg_type, search_dict):
+
+
         # Check input file exists
-        cfg_file = self.check_file(cfg_type, cfg_search)
+        #cfg_file = self.check_file(cfg_type, cfg_search)
     
         # Parse input fo;e
-        cfg_dict = self.read_cfg_file(cfg_file)
+        #cfg_dict = self.read_file(cfg_file)
     
         # Process and store build cfg 
         if cfg_type == 'build':
+
+            cfg_dict = self.find_cfg(search_dict, self.glob.build_cfgs, True)
             self.glob.log.debug("Starting build cfg processing.")
             self.process_build_cfg(cfg_dict)
             self.glob.code = cfg_dict
     
         # Process and store bench cfg 
         elif cfg_type == 'bench':
+            cfg_dict = self.find_cfg(search_dict, self.glob.bench_cfgs, False)
             self.glob.log.debug("Starting bench cfg processing.")
             self.process_bench_cfg(cfg_dict)
             self.glob.code = cfg_dict
     
         # Process and store sched cfg 
         elif cfg_type == 'sched':
+
+            cfg_file = self.check_file(cfg_type, search_dict)
+            cfg_dict = self.read_file(cfg_file)
             self.glob.log.debug("Starting sched cfg processing.")
             self.process_sched_cfg(cfg_dict)
             self.glob.sched = cfg_dict
     
         # Process and store compiler cfg 
         elif cfg_type == 'compiler':
+            cfg_file = self.check_file(cfg_type, search_dict)
+            cfg_dict = self.read_file(cfg_file)
             self.glob.compiler = cfg_dict
     
     
