@@ -8,6 +8,7 @@ __pycache__/
 
 # Distribution / packaging
 hw_reporting/hw_report*
+auth/*
 .Python
 build/*
 !build/modulefiles/builder.lua
