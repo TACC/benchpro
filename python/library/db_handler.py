@@ -8,10 +8,6 @@ try:
 except ImportError:
     pass
 
-# Local Imports
-import exception
-import logger
-
 class init(object):
     def __init__(self, glob):
         self.glob = glob
@@ -29,8 +25,7 @@ class init(object):
                             )
 
         except Exception as err:
-            print ("psycopg2 connect() ERROR:", err)
-            sys.exit(1)
+            self.glob.lib.msg.error(["psycopg2 connect() ERROR: ", err])
 
         self.cur = self.conn.cursor()
 
@@ -48,8 +43,7 @@ class init(object):
             self.cur.execute(statement)
             rows = self.cur.fetchall()
         except psycopg2.Error as e:
-            print(e)
-            sys.exit(1)
+            self.glob.lib.msg.error(e)
 
         self.disconnect()
 
@@ -64,8 +58,7 @@ class init(object):
             self.cur.execute(statement)
             self.conn.commit()
         except psycopg2.Error as e:
-            print(e)
-            sys.exit(1)
+            self.glob.lib.msg.error(e)
 
         self.disconnect()
 
@@ -91,17 +84,17 @@ class init(object):
         insert_dict = self.glob.lib.report.read(report_file)['build']
 
         if insert_dict['jobid'] == "dry_run":
-            print("Application build job was a dry run, skipping database presence check...")
+            self.glob.lib.msg.low("Application build job was a dry run, skipping database presence check...")
             return
 
         # Error if key is missing
         if not 'app_id' in insert_dict.keys():
-            exception.error_and_quit(self.glob.log, "key 'app_id' not present in report " + self.glob.lib.rel_path(report_file))
+            self.glob.lib.msg.error("key 'app_id' not present in report " + self.glob.lib.rel_path(report_file))
 
 
         # Do nothing if application is already capture to db
         if self.application_captured(insert_dict['app_id']):
-            print("Application present in database.")
+            self.glob.lib.msg.low("Application present in database.")
             return
 
         # Get key-value pairs from dict
@@ -111,7 +104,7 @@ class init(object):
         # Insert statement
         statement = "INSERT INTO " + self.glob.stg['app_table'] + " (" + keys + ") VALUES (" + vals + ");" 
         self.exec_insert(statement)
-        print("Inserted new application instance '" + insert_dict['code'] + "' with app_id '" +\
+        self.glob.lib.msg.low("Inserted new application instance '" + insert_dict['code'] + "' with app_id '" +\
                     insert_dict['app_id'] + "' into database")
 
 

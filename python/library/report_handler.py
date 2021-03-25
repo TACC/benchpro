@@ -6,9 +6,6 @@ import os
 import shutil as su
 import sys
 
-# Local Imports
-import exception
-
 class init(object):
     def __init__(self, glob):
             self.glob = glob
@@ -29,7 +26,7 @@ class init(object):
                 report_file = os.path.join(report_file, self.glob.stg['bench_report_file'])
             # Else error
             else:
-                exception.print_warning(self.glob.log, "Report file '" + report_file  + "' not found. Skipping.")
+                self.glob.lib.msg.warning("Report file '" + report_file  + "' not found. Skipping.")
                 return False
 
         report_parser    = cp.ConfigParser()
@@ -86,7 +83,7 @@ class init(object):
                         "nodes          = "+ self.glob.code['runtime']['nodes'],
                         "ranks          = "+ self.glob.code['runtime']['ranks_per_node'],
                         "threads        = "+ self.glob.code['runtime']['threads'],
-                        "gpus           = "+ str(self.glob.code['config']['gpus']),
+                        "gpus           = "+ self.glob.code['runtime']['gpus'],
                         "dataset        = "+ self.glob.code['config']['dataset'],
                         "start_time     = "+ str(datetime.now()),
                         "job_script     = "+ self.glob.code['metadata']['job_script'],
@@ -106,11 +103,23 @@ class init(object):
         # Write content to file
         self.write(content, os.path.join(self.glob.code['metadata']['working_path'],self.glob.stg['bench_report_file']))
 
-    # Return jobid from provided report file
-    def result_jobid(self, report_file):
-        report_path = os.path.join(self.glob.stg['pending_path'], report_file, self.glob.stg['bench_report_file'])
+    # Return jobid value from provided report directory
+    def get_jobid(self, job_type, report_file):
+
+        report_path = os.path.join(self.glob.stg['build_path'], report_file, self.glob.stg['build_report_file'])
+        if job_type == "bench":
+            report_path = os.path.join(self.glob.stg['pending_path'], report_file, self.glob.stg['bench_report_file'])
+
         if os.path.isfile(report_path):
-            return self.read(report_path)['bench']['jobid']
+            return self.read(report_path)[job_type]['jobid']
+        return False
+
+    # Return the binary executable value from provided build path
+    def build_exe(self, build_path):
+        report_path = os.path.join(self.glob.stg['build_path'], build_path, self.glob.stg['build_report_file'])
+
+        if os.path.isfile(report_path):
+            return self.read(report_path)['build']['exe_file']
         return False
 
     # Confirm required values are in report

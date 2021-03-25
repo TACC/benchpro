@@ -1,6 +1,6 @@
 
 export   working_path=<<<working_path>>>
-export benchmark_repo=<<<benchmark_repo>>>
+export local_repo=<<<local_repo>>>
 export       mpi_exec=<<<mpi_exec>>>
 export            exe=<<<exe>>>
 export        dataset=<<<dataset>>>
@@ -16,7 +16,7 @@ ml ${app_module}
 ml
 
 mkdir -p ${working_path}
-tar -xf ${benchmark_repo}/${dataset}.tar.gz -C ${working_path}
+tar -xf ${local_repo}/${dataset}.tar.gz -C ${working_path}
 cd ${working_path}/${dataset}
 
 sed -i "/electron_maxstep/c\    electron_maxstep = ${electron_maxstep}" ausurf.in

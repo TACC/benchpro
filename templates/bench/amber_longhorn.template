@@ -1,7 +1,7 @@
 
 export   working_path=<<<working_path>>>
 export    output_file=<<<output_file>>>
-export benchmark_repo=<<<benchmark_repo>>>
+export local_repo=<<<local_repo>>>
 export       mpi_exec=<<<mpi_exec>>>
 
 export        dataset=<<<dataset>>>
@@ -60,7 +60,7 @@ echo "EXE     ${exe}"
 echo "INPUT   ${input}"
 
 mkdir -p ${working_path}
-tar -xf ${benchmark_repo}/${dataset}.tgz -C ${working_path}
+tar -xf ${local_repo}/${dataset}.tgz -C ${working_path}
 cd ${working_path}/${dataset}
 
 ${mpi_exec} ${exe}  -O  \

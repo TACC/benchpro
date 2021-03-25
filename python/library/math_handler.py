@@ -2,9 +2,6 @@
 import re
 import sys
 
-# Local Imports
-import exception
-
 class init(object):
     def __init__(self, glob):
         self.glob = glob
@@ -22,7 +19,7 @@ class init(object):
         try:
             return int(eval(expr.replace("\\", "")))
         except:
-            exception.error_and_quit(self.glob.log, "failed to evaulate artimatic expression '" + expr + "'")
+            self.glob.lib.msg.error("failed to evaulate artimatic expression '" + expr + "'")
 
     # Find matching key in dict and return value, or return False 
     def replace_var(self, var, search_dict):
@@ -37,12 +34,12 @@ class init(object):
     def look_for_replacement(self, var):
 
         # For each dict in list
-        for search_dict in [self.glob.code['runtime'], self.glob.code['config'], self.glob.system]:
+        for search_dict in [self.glob.code['requirements'], self.glob.code['runtime'], self.glob.code['config'], self.glob.system]:
             # Look for key in dict
             matched, new_val = self.replace_var(var, search_dict)
             if matched:
                 return new_val
-        exception.error_and_quit(self.glob.log, "Unable to resolve variable '" + var + "' in config file")
+        self.glob.lib.msg.error("Unable to resolve variable '" + var + "' in config file")
 
 
     # Get left hand side of expr, in form ['misc', [op]]
@@ -66,7 +63,7 @@ class init(object):
                return [op, int_op]
 
         except:
-            exception.error_and_quit(self.glob.log, "Unable to evaluate operand '" + str(op) + "'")
+            self.glob.lib.msg.error("Unable to evaluate operand '" + str(op) + "'")
 
     def eval_rhs(self, op):
         try:
@@ -82,7 +79,7 @@ class init(object):
                 return [int_op, op]
 
         except:
-            exception.error_and_quit(self.glob.log, "Unable to evaluate operand '" + str(op) + "'")
+            self.glob.lib.msg.error("Unable to evaluate operand '" + str(op) + "'")
 
     # Find operator, lhs, rhs then do math
     def handle_operator(self, dict_value):

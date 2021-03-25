@@ -72,28 +72,12 @@ class init(object):
         else:
             self.prune_tree(parent_path)
 
-    # Delete application and module matching path provided
-    def remove_app(self):
-        code_str = self.glob.args.delApp
- 
-        remove_list = []
-        if code_str == 'all':
-            remove_list = self.glob.lib.get_installed()
-        else:
-            search_dict = {i: i for i in code_str.split(self.glob.stg['sl'])}
-            tmp = self.glob.lib.check_if_installed(search_dict)
-            if tmp:
-                remove_list.append(tmp)
-
-        for app in remove_list:
-            # If not installed
-            if not app:
-                print(self.glob.error + "'" + code_str  + "' is not installed.")
-                break
-
+    # Delete app path and associated module
+    def delete_app_path(self, path):
+        
             # Get module dir from app dir, by adding 'modulefiles' prefix and stripping [version] suffix
-            mod_dir = os.path.join(self.glob.stg['module_path'],  self.glob.stg['sl'].join(app.split(self.glob.stg['sl'])[:-1]))
-            app_dir = os.path.join(self.glob.stg['build_path'], app)
+            mod_dir = os.path.join(self.glob.stg['module_path'],  self.glob.stg['sl'].join(path.split(self.glob.stg['sl'])[:-1]))
+            app_dir = os.path.join(self.glob.stg['build_path'], path)
 
             print("Found application installed in:")
             print(">  " + self.glob.lib.rel_path(app_dir))
@@ -123,6 +107,33 @@ class init(object):
                 print(">  " + self.glob.lib.rel_path(mod_dir))
                 print("Skipping")
 
+    # Delete application and module matching path provided
+    def remove_app(self):
+        input_list = self.glob.args.delApp
+ 
+        remove_list = []
+        # If 'all' provided, add all installed apps to list to remove
+        if input_list[0] == 'all':
+            print("Deleting all installed applications")
+            remove_list = self.glob.lib.get_installed()
+
+            for app in remove_list:
+                self.delete_app_path(app)
+
+        # Else check each input is installed then add to list
+        else:
+            # Accept space delimited list of apps
+            for app in input_list:
+                # Create search dict for each code string 
+                search_dict = {i: i for i in app.split(self.glob.stg['sl'])}
+                # If installed, add to remove list
+                tmp = self.glob.lib.check_if_installed(search_dict)
+                if tmp:
+                    self.delete_app_path(tmp)        
+
+                else:
+                    print("No installed application matching search term '" + app + "'")
+
     # Display local shells to assist with determining if local job is still busy
     def print_local_shells(self):
 
@@ -132,7 +143,7 @@ class init(object):
                                     check=True, capture_output=True, universal_newlines=True)
 
         except subprocess.CalledProcessError as e:
-            exception.error_and_quit("Failed to run 'ps -aux'")
+            self.glob.lib.msg.error("Failed to run 'ps -aux'")
 
         for line in cmd.stdout.split("\n"):
             print(" " + line)
@@ -179,53 +190,138 @@ class init(object):
                 self.print_local_shells()
             # Sched build
             else:
-                complete = self.glob.lib.sched.check_job_complete(jobid)
+                done = self.glob.lib.sched.check_job_complete(jobid)
 
-                if complete:
-                    print("Build job " + jobid + " state: " + complete)
+                gap = max(len(exe) + 9, 20)
+
+                if done:
+                    if done == "COMPLETED":
+                        print(("Job " + jobid + " status: ").ljust(gap) + "\033[0;32m" + done + "\033[0m")
+
+                        # If complete, Look for exe
+                        exe_search = self.glob.lib.find_exact(exe, install_path)
+                        if exe_search:
+                            print(("File "+exe+": ").ljust(gap) + "\033[0;32mFOUND\033[0m")
+                        else:
+                            print(("File "+exe+": ").ljust(gap) + ")\033[0;31mMISSING\033[0m")
+
+
+                    else:
+                        print(("Job " + jobid + " status: ").ljust(gap) + "\033[0;31m" + done + "\033[0m")
                 else:
-                    print("Build job " + jobid + " for '" + app_label + "' is still running.")
+                    print("Job " + jobid + " for '" + app_label + "' is still running...")
 
-            # Look for exe 
-            exe_search = self.glob.lib.find_exact(exe, install_path)
-            if exe_search:
-                print("Executable found: " + self.glob.lib.rel_path(exe_search))
+    # Get usable string of application status
+    def get_status_str(self, app):
+
+        # Get Jobid from report file and check if status = COMPLETED
+        jobid = self.glob.lib.report.get_jobid("build", app)
+        if jobid == "dry_run":
+            return '\033[1;33mDRYRUN\033[0m'
+            
+        elif self.glob.lib.sched.check_job_complete(jobid) == "COMPLETED":
+            exe = self.glob.lib.report.build_exe(app)
+            if exe:
+                if self.glob.lib.find_exact(exe, os.path.join(self.glob.stg['build_path'],app)):
+                    return '\033[0;32mEXE FOUND\033[0m'
+
             else:
-                print("WARNING: executable '" + exe + "' not found in application directory.")
+                return '\033[0;31mEXE NOT FOUND\033[0m'
+
+        return '\033[1;33mJOB NOT COMPLETE\033[0m'
 
 
-    # Print currently installed apps, used together with 'remove'
+    # Print currently installed apps as well as their exe status
     def show_installed(self):
-        print("Currently installed applications:")
-        print("---------------------------------")
-        for app in self.glob.lib.get_installed():
-            print("  " + os.path.join(self.glob.lib.rel_path(self.glob.stg['build_path']), app))
+        print("Installed applications:")
+
+        # Get list of installed application paths
+        installed_list = self.glob.lib.get_installed()
+
+        split_list = [["SYSTEM", "ARCH", "COMPILER", "MPI", "CODE", "VERSION", "LABEL", "STATUS"]]
+        # Split by FS delimiter
+        for app in installed_list:
+            split_list.append(app.split(self.glob.stg['sl']) + [self.get_status_str(app)])
+
+        elems = len(split_list[0])
+        lengths = [0] * elems
+
+        # Get max length of each table column (for spacing)
+        for i in range(elems):
+            for app in split_list:
+                if len(app[i]) > lengths[i]:
+                    lengths[i] = len(app[i])
+
+        # Buffer each column 3 chars
+        lengths = [i + 3 for i in lengths]
+
+        # Print table
+        print(self.glob.bold + split_list[0][0].ljust(lengths[0]) + "| " +
+            split_list[0][1].ljust(lengths[1]) + "| " +
+            split_list[0][2].ljust(lengths[2]) + "| " +
+            split_list[0][3].ljust(lengths[3]) + "| " +
+            split_list[0][4].ljust(lengths[4]) + "| " +
+            split_list[0][5].ljust(lengths[5]) + "| " +
+            split_list[0][6].ljust(lengths[6]) + "| " +
+            split_list[0][7].ljust(lengths[7]) + self.glob.end)
+
+        for app in split_list[1:]:
+            print(app[0].ljust(lengths[0]) + "| " +
+                    app[1].ljust(lengths[1]) + "| " +
+                    app[2].ljust(lengths[2]) + "| " +
+                    app[3].ljust(lengths[3]) + "| " +
+                    app[4].ljust(lengths[4]) + "| " +
+                    app[5].ljust(lengths[5]) + "| " +
+                    app[6].ljust(lengths[6]) + "| " +
+                    app[7].ljust(lengths[7]))
+
+
+    # Get run string for given config file
+    def get_cmd_string(self, keys, config_dict):
+        cmd_str = []
+        for sect, key in keys:
+            if config_dict[sect][key]:
+                cmd_str.append(key+"="+config_dict[sect][key])
+        return ":".join(cmd_str)
+
 
     # Print list of code strings
-    def print_codes(self, code_list):
-        code_list.sort()
-        for code in code_list:
-            code = code.split('/')[-1]
-            if "_build" in code:
-                print("    " + code[:-10])
+    def print_config(self, atype, config_list):
+        config_list.sort()
+
+        fnames = [config.split('/')[-1] for config in config_list]
+        
+        for config in config_list:
+            contents = self.glob.lib.cfg.read_file(config)
+
+            column = 30
+
+            if atype == "application":
+                print("| " + contents['metadata']['cfg_label'].ljust(column) + "| -b " + self.get_cmd_string([['general', 'code'], ['general', 'version'], ['general', 'system']], contents))
+
             else:
-                print("    " + code[:-4])
+                print("| " + contents['metadata']['cfg_label'].ljust(column) + "| -B " + self.get_cmd_string([['requirements', 'code'], ['requirements', 'version'], ['config', 'dataset']], contents))
+
 
     # Print applications that can be installed from available cfg files
     def print_avail_type(self, atype, search_path):
-        print("Available " + atype + " profiles:")
-        print("---------------------------------")
+        print(self.glob.bold + "Available " + atype + " profiles:" + self.glob.end)
+        print("------------------------------------------------------------")
         print(self.glob.lib.rel_path(search_path) + ":")
+        print("------------------------------------------------------------")
+        print("| Config file".ljust(32) + "| Run with")
         # Scan config/build
         app_dir = search_path + self.glob.stg['sl']
-        self.print_codes(gb.glob(app_dir + "*.cfg"))
+        self.print_config(atype, gb.glob(app_dir + "*.cfg"))
 
         # Scan config/build/[system]
         app_dir = app_dir + self.glob.sys_env + self.glob.stg['sl']
         if os.path.isdir(app_dir):
+            print("------------------------------------------------------------")
             print(self.glob.lib.rel_path(os.path.join(search_path, self.glob.sys_env)) + ":")
-            self.print_codes(gb.glob(app_dir + "*.cfg"))
-        print()
+            print("------------------------------------------------------------")
+            print("| Config file".ljust(32) + "| Run with")
+            self.print_config(atype, gb.glob(app_dir + "*.cfg"))
 
     # Print available code/bench/suite depending on user input
     def show_available(self):
@@ -233,15 +329,20 @@ class init(object):
             search_path = os.path.join(self.glob.stg['config_basedir'], self.glob.stg['build_cfg_dir'])
             self.print_avail_type("application", search_path)
 
+        print()
+        print()
+
         if self.glob.args.avail in ['bench', 'all']:
             search_path = os.path.join(self.glob.stg['config_basedir'], self.glob.stg['bench_cfg_dir'])
             self.print_avail_type("benchmark", search_path)
 
         if self.glob.args.avail in ['suite', 'all']:
+            print()
             print("Available benchmark suites:")
-            print("---------------------------------")
+            print("------------------------------------------------------------")
+            print("Label".ljust(32) + "| Contents")
             for key in self.glob.suite:
-                print ("  " + key)
+                print ("  " + key.ljust(30) + "| "+ self.glob.suite[key])
 
         if self.glob.args.avail not in ['code', 'bench', 'suite', 'all']:
             print("Invalid input '"+self.glob.args.avail+"'")
@@ -252,16 +353,17 @@ class init(object):
 
     # Print default params from settings.ini
     def print_setup(self):
-        print("Default benchtool options in settings.ini:")
         print()
+        print("Benchtool defaults:")
         [self.print_setting(key) for key in ['dry_run', \
+                                            'debug', \
                                             'exit_on_missing', \
                                             'overwrite', \
                                             'build_mode', \
                                             'build_if_missing', \
                                             'bench_mode',\
                                             'check_modules']]
-        print("")
+        print()
         # Print scheduler defaults for this system if available
         self.glob.system = self.glob.lib.get_system_vars(self.glob.sys_env)
         if self.glob.system:
@@ -269,8 +371,9 @@ class init(object):
             sched_cfg = self.glob.lib.get_sched_cfg()
             try:
                 with open(os.path.join(self.glob.stg['config_path'], self.glob.stg['sched_cfg_dir'], sched_cfg)) as f:
-                    print("Scheduler settings for " + self.glob.sys_env + ":")
-                    print(f.read())
+                    print("Scheduler defaults for " + self.glob.sys_env + ":")
+                    for line in f.readlines():
+                        print("  " + line.strip())
 
             except:
                 print("Unable to read " + sched_cfg)
@@ -278,9 +381,10 @@ class init(object):
         else:
             print("No default scheduler settings found for system " + self.glob.sys_env + ".")
             print() 
-
-        print("Overload with '--overload [SETTING1=ARG]:[SETTING2=ARG]'")
-        print("")
+    
+        print()
+        print("Overload with '-o [SETTING1=ARG] [SETTING2=ARG]'")
+        print()
 
     # Print command line history file
     def print_history(self):

@@ -37,7 +37,7 @@ echo     "--bench         $?"
 benchtool --last           > /dev/null
 echo     "--last          $?"
 
-output=$(benchtool --listResults | tail -n 3 | head -n 1)
+output=$(benchtool --listResults pending | tail -n 3 | head -n 1)
 benchtool --queryResult $output > /dev/null
 echo     "--queryResult   $?"
 

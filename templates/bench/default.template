@@ -5,7 +5,7 @@ echo "User:     ${USER}"
 echo "Hostlist: ${SLURM_NODELIST}"
 
 export   working_path=<<<working_path>>>
-export benchmark_repo=<<<benchmark_repo>>>
+export local_repo=<<<local_repo>>>
 export            exe=<<<exe>>>
 export    output_file=<<<output_file>>>
 export       mpi_exec=<<<mpi_exec>>>

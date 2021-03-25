@@ -6,9 +6,6 @@ import re
 import subprocess
 import sys
 
-# Local Imports
-import exception
-
 class init(object):
     def __init__(self, glob):
         self.glob = glob
@@ -38,7 +35,7 @@ class init(object):
                     for match in matches:
                         print("  " + match.split('/')[-1])
             
-                    exception.error_and_quit(self.glob.log, "please provide a unique input config.")
+                    self.glob.lib.msg.error("please provide a unique input config.")
 
         return None
 
@@ -120,12 +117,11 @@ class init(object):
         if cfg_type:
             self.glob.lib.misc.print_avail_type(cfg_type, os.path.join(self.glob.stg['config_path'], cfg_type))
 
-            exception.error_and_quit(self.glob.log, "config file containing '" + ", ".join(cfg_name) + "' not found.")
+            self.glob.lib.msg.error("config file containing '" + ", ".join(cfg_name) + "' not found.")
 
         else:
-            exception.error_and_quit(self.glob.log, "input file containing '" + ", ".join(cfg_name) + "' not found.")
+            self.glob.lib.msg.error("input file containing '" + ", ".join(cfg_name) + "' not found.")
        
-
     # Find matching config file given search criteria
     def find_cfg(self, search_dict, avail_cfgs, blanks_are_wild):
     
@@ -134,29 +130,34 @@ class init(object):
         for cfg in avail_cfgs:
             # Iter over all search terms
             match = True
+            found = False
             for key in search_dict.keys():
                 # For each section of cfg    
                 for sec in cfg.keys():
                     # If key is in cfg section and we can match to blank values
                     if key in cfg[sec].keys():
-                        # If value set in cfg 
-                        if cfg[sec][key]:
-                            # If not equal to search, not a match
-                            if not search_dict[key] == cfg[sec][key]:
-                                match = False
-                        # Blank_are_wild = False, not a match
-                        elif not blanks_are_wild:
+                        found = True
+                        # 1: both set but not equal = NO MATCH
+                        if search_dict[key] and cfg[sec][key] and not search_dict[key] == cfg[sec][key]:
                             match = False
-                        # Blanks_are_wild = True, update value in dict
-                        else:
-                            cfg[sec][key] = search_dict[key]
+                        # 2: if search dict contains value missing in cfg
+                        elif search_dict[key] and not cfg[sec][key]:
+                            # allow blank wildcards
+                            if blanks_are_wild:
+                                cfg[sec][key] = search_dict[key]
+                            else:
+                                match = False
+
+                        # 3: if cfg contains value missing in search dict and wildcards not allowed
+                        elif cfg[sec][key] and not search_dict[key] and not blanks_are_wild:
+                            match = False
 
             # If match, add to list
-            if match:
+            if match and found:
                 matching_cfgs.append(cfg)
 
         if not matching_cfgs:
-            exception.error_and_quit(self.glob.log, "no matching config file found matching search criteria '" + ", ".join([key + "=" + search_dict[key] for key in search_dict.keys()]) + "'")
+            self.glob.lib.msg.error("No config file found matching search criteria '" + ",".join([key + "=" + search_dict[key] for key in search_dict.keys()]) + "'")
 
         elif len(matching_cfgs) == 1:
             return matching_cfgs[0]
@@ -165,7 +166,7 @@ class init(object):
 
             for cfg in matching_cfgs:
                 print("    " + cfg['metadata']['cfg_label'])
-            exception.error_and_quit(self.glob.log, "multiple config files found matching search criteria '" + ", ".join([key + "=" + search_dict[key] for key in search_dict.keys()]) + "'")
+            self.glob.lib.msg.error("Multiple config files found matching search criteria '" + ",".join([key + "=" + search_dict[key] for key in search_dict.keys()]) + "'")
 
     # Parse cfg file into dict
     def read_file(self, cfg_file):
@@ -189,18 +190,18 @@ class init(object):
     # Error if section heading missing in cfg file
     def check_dict_section(self, cfg_file, cfg_dict, section):
         if not section in cfg_dict:
-            exception.error_and_quit(self.glob.log, "["+section+"] section heading required in " + self.glob.lib.rel_path(cfg_file) + \
+            self.glob.lib.msg.error("["+section+"] section heading required in " + self.glob.lib.rel_path(cfg_file) + \
                                     ". Consult the documentation.")
 
     # Error if value missing in cfg file
     def check_dict_key(self, cfg_file, cfg_dict, section, key):
         # If key not found 
         if not key in cfg_dict[section]:
-            exception.error_and_quit(self.glob.log, "'" + key + "' value must be present in section [" + section + \
+            self.glob.lib.msg.error("'" + key + "' value must be present in section [" + section + \
                                     "] in " + self.glob.lib.rel_path(cfg_file) + ". Consult the documentation.")
         # If key not set
         if not cfg_dict[section][key]:
-            exception.error_and_quit(self.glob.log, "'" + key + "' value must be non-null in section [" + section + \
+            self.glob.lib.msg.error("'" + key + "' value must be non-null in section [" + section + \
                                     "] in " + self.glob.lib.rel_path(cfg_file) + ". Consult the documentation.")
 
     # Convert strings to correct dtype if detected
@@ -221,7 +222,6 @@ class init(object):
 
     # Check build config file and add required fields
     def process_build_cfg(self, cfg_dict):
-
         # Check for missing essential parameters 
         self.check_dict_section(cfg_dict['metadata']['cfg_file'], cfg_dict, 'general')
         self.check_dict_key(    cfg_dict['metadata']['cfg_file'], cfg_dict, 'general', 'code')
@@ -245,6 +245,7 @@ class init(object):
         if not 'build_label'      in cfg_dict['config'].keys():    cfg_dict['config']['build_label']      = ""
         if not 'bin_dir'          in cfg_dict['config'].keys():    cfg_dict['config']['bin_dir']          = ""
         if not 'collect_hw_stats' in cfg_dict['config'].keys():    cfg_dict['config']['collect_hw_stats'] = False
+        if not 'script_additions' in cfg_dict['config'].keys():    cfg_dict['config']['script_additions'] = ""
 
         # Convert dtypes
         self.get_val_types(cfg_dict)
@@ -253,7 +254,7 @@ class init(object):
         cfg_dict['config']['compiler_type'] = re.sub("\d", "", cfg_dict['modules']['compiler'].split('/')[0])
 
         # Path to application's data directory
-        cfg_dict['config']['benchmark_repo'] = self.glob.stg['benchmark_repo']
+        cfg_dict['config']['local_repo'] = self.glob.stg['local_repo']
 
         self.glob.lib.overload_params(cfg_dict)
 
@@ -263,15 +264,23 @@ class init(object):
             self.glob.log.debug("WARNING: getting system label from $TACC_SYSTEM: " + self.glob.sys_env)
             cfg_dict['general']['system'] = self.glob.sys_env
             if not cfg_dict['general']['system']:
-                exception.error_and_quit(self.glob.log, "$TACC_SYSTEM not set, unable to continue. Please define 'system' in " + \
+                self.glob.lib.msg.error("$TACC_SYSTEM not set, unable to continue. Please define 'system' in " + \
                                         self.glob.lib.rel_path(cfg_dict['metadata']['cfg_file']))
 
         # Set system variables from system.cfg
         self.glob.system = self.glob.lib.get_system_vars(cfg_dict['general']['system'])
 
+        # Confirm additions file exists if set
+        if cfg_dict['config']['script_additions']:
+            if not os.path.isfile(os.path.join(self.glob.stg['template_path'], cfg_dict['config']['script_additions'])):
+                self.glob.lib.msg.error("Build script additions file '" + cfg_dict['config']['script_additions'] + "' not found in " + self.glob.lib.rel_path(self.glob.stg['template_path']))
+
+            else:
+                cfg_dict['config']['script_additions'] = os.path.join(self.glob.stg['template_path'], cfg_dict['config']['script_additions'])
+        
         # Check that system settings were successfully parserd from file
         if not self.glob.system:
-            exception.error_and_quit(self.glob.log, "Failed to read system profile '"+ cfg_dict['requirements']['system'] +"' in " + \
+            self.glob.lib.msg.error("Failed to read system profile '"+ cfg_dict['requirements']['system'] +"' in " + \
                                         self.glob.lib.rel_path(os.path.join(self.glob.stg['config_basedir'], self.glob.stg['system_cfg_file'])) + \
                                         "\nPlease add this system profile.")
 
@@ -289,7 +298,7 @@ class init(object):
             self.glob.log.debug("Core count for " + cfg_dict['general']['system'] + " = " + cfg_dict['config']['cores'])
 
         except:
-            exception.error_and_quit(self.glob.log, "system profile '" + cfg_dict['general']['system'] + \
+            self.glob.lib.msg.error("system profile '" + cfg_dict['general']['system'] + \
                                     "' missing in " + self.glob.lib.rel_path(system_file))
 
         # If arch requested = 'system', get default arch for this system
@@ -300,7 +309,7 @@ class init(object):
 
         # If using custom opt_flags, must provide build_label
         if cfg_dict['config']['opt_flags'] and not cfg_dict['config']['build_label']:
-            exception.error_and_quit(self.glob.log, "if building with custom optimization flags, please define a " + \
+            self.glob.lib.msg.error("if building with custom optimization flags, please define a " + \
                                     "'build_label in [build] section of " + self.glob.lib.rel_path(cfg_dict['metadata']['cfg_file']))
 
         # Get default optimization flags based on system arch
@@ -308,7 +317,7 @@ class init(object):
             try:
                 cfg_dict['config']['opt_flags'] = arch_dict[cfg_dict['config']['arch']][cfg_dict['config']['compiler_type']]
             except:
-                exception.print_warning(self.glob.log, "Unable to determine default optimization flags for '" + \
+                self.glob.lib.msg.warning("Unable to determine default optimization flags for '" + \
                                         cfg_dict['config']['compiler_type'] + "' compiler " + \
                                         "on arch '" + cfg_dict['config']['arch'] + "'")
 
@@ -342,7 +351,6 @@ class init(object):
 
     # Check bench config file and add required fields
     def process_bench_cfg(self, cfg_dict):
-
         # Check for missing essential parameters
         self.check_dict_section(cfg_dict['metadata']['cfg_file'], cfg_dict, 'runtime')
         self.check_dict_key(    cfg_dict['metadata']['cfg_file'], cfg_dict, 'runtime', 'nodes')
@@ -364,6 +372,7 @@ class init(object):
 
         if not 'ranks_per_node'     in cfg_dict['runtime'].keys():  cfg_dict['runtime']['ranks_per_node']    = 0
         if not 'max_running_jobs'   in cfg_dict['runtime'].keys():  cfg_dict['runtime']['max_running_jobs']  = 10
+        if not 'gpus'               in cfg_dict['runtime'].keys():  cfg_dict['runtime']['gpus']              = 0
         if not 'hostfile'           in cfg_dict['runtime'].keys():  cfg_dict['runtime']['hostfile']          = ""
         if not 'hostlist'           in cfg_dict['runtime'].keys():  cfg_dict['runtime']['hostlist']          = ""
 
@@ -371,7 +380,7 @@ class init(object):
         if not 'bench_label'        in cfg_dict['config'].keys():    cfg_dict['config']['label']             = ""
         if not 'template'           in cfg_dict['config'].keys():    cfg_dict['config']['template']          = ""
         if not 'collect_hw_stats'   in cfg_dict['config'].keys():    cfg_dict['config']['collect_hw_stats']  = False
-        if not 'gpus'               in cfg_dict['config'].keys():    cfg_dict['config']['gpus']              = 0
+        if not 'script_additions'   in cfg_dict['config'].keys():    cfg_dict['config']['script_additions']  = ""
 
         if not 'description'        in cfg_dict['result'].keys():   cfg_dict['result']['description']        = ""
         if not 'output_file'        in cfg_dict['result'].keys():   cfg_dict['result']['output_file']        = ""
@@ -382,6 +391,9 @@ class init(object):
         # Overload params from cmdline
         self.glob.lib.overload_params(cfg_dict)
 
+        # Path to data directory
+        cfg_dict['config']['local_repo'] = self.glob.stg['local_repo']
+
         # If system not specified for bench requirements, add current system
         if not cfg_dict['requirements']['system']:
             cfg_dict['requirements']['system'] = self.glob.sys_env
@@ -391,7 +403,7 @@ class init(object):
     
         # Check that system settings were successfully parserd from file
         if not self.glob.system:
-            exception.error_and_quit(self.glob.log, "Failed to read system profile '"+ cfg_dict['requirements']['system'] +"' in " + \
+            self.glob.lib.msg.error("Failed to read system profile '"+ cfg_dict['requirements']['system'] +"' in " + \
                                         self.glob.lib.rel_path(os.path.join(self.glob.stg['config_basedir'], self.glob.stg['system_cfg_file'])) + \
                                         "\nPlease add this system profile.")
 
@@ -399,29 +411,37 @@ class init(object):
         if not cfg_dict['runtime']['ranks_per_node']:
             cfg_dict['runtime']['ranks_per_node'] = self.glob.system['cores_per_node']
 
+        # Confirm additions file exists if set
+        if cfg_dict['config']['script_additions']:
+            if not os.path.isfile(os.path.join(self.glob.stg['template_path'], cfg_dict['config']['script_additions'])):
+                self.glob.lib.msg.error("Benchmark script additions file '" + cfg_dict['config']['script_additions'] + "' not found in " + self.glob.lib.rel_path(self.glob.stg['template_path']))
+
+            else:
+                cfg_dict['config']['script_additions'] = os.path.join(self.glob.stg['template_path'], cfg_dict['config']['script_additions'])
+
         # Expression method
         if cfg_dict['result']['method'] == "expr":
             if not 'expr' in cfg_dict['result']:
-                exception.error_and_quit(self.glob.log, "if using 'expr' result validation method, 'expr'" + \
+                self.glob.lib.msg.error("if using 'expr' result validation method, 'expr'" + \
                                 " key is required in [result] section of " + self.glob.lib.rel_path(cfg_dict['metadata']['cfg_file']))
         # Script method
         elif cfg_dict['result']['method'] == "script":
             if not 'script' in cfg_dict['result']:
-                exception.error_and_quit(self.glob.log, "if using 'script' result validation method, 'script'" + \
+                self.glob.lib.msg.error("if using 'script' result validation method, 'script'" + \
                                 " key is required in [result] section of " + self.glob.lib.rel_path(cfg_dict['metadata']['cfg_file']))
         # 'method' not == 'expr' or 'script'
         else:
-            exception.error_and_quit(self.glob.log, "'method' key in [result] section of " + \
+            self.glob.lib.msg.error("'method' key in [result] section of " + \
                                 cfg_dict['metadata']['cfg_file'] + "must be either expr or script." )
-
-        # If benchmark uses GPUs, delimit any lists
-        if cfg_dict['config']['gpus']:
-            cfg_dict['config']['gpus']          = str(cfg_dict['config']['gpus']).split(",")
 
         # Handle comma-delimited lists
         cfg_dict['runtime']['nodes']            = str(cfg_dict['runtime']['nodes']).split(",")
         cfg_dict['runtime']['threads']          = str(cfg_dict['runtime']['threads']).split(",")
         cfg_dict['runtime']['ranks_per_node']   = str(cfg_dict['runtime']['ranks_per_node']).split(",")
+        cfg_dict['runtime']['gpus']             = str(cfg_dict['runtime']['gpus']).split(",")
+
+
+        print("THESE ARE RUNTIME",  cfg_dict['runtime'])
 
         # num threads must equal num ranks
         if not len(cfg_dict['runtime']['threads']) == len(cfg_dict['runtime']['ranks_per_node']):
@@ -430,24 +450,24 @@ class init(object):
             elif len(cfg_dict['runtime']['ranks_per_node']) == 1:
                 cfg_dict['runtime']['ranks_per_node'] = [cfg_dict['runtime']['ranks_per_node'][0]] * len(cfg_dict['runtime']['threads'])
             else:
-                exception.error_and_quit(self.glob.log, "input mismatch: 'threads' and 'ranks_per_node' lists must be of equal length in " + \
+                self.glob.lib.msg.error("input mismatch: 'threads' and 'ranks_per_node' lists must be of equal length in " + \
                                     self.glob.lib.rel_path(cfg_dict['metadata']['cfg_file']))
     
         # Require label if code not set
         if not cfg_dict['requirements']['code'] and not cfg_dict['config']['label']:
-            exception.error_and_quit(self.glob.log, "if 'code' is not set, provide 'label' in " + \
+            self.glob.lib.msg.error("if 'code' is not set, provide 'label' in " + \
                                     self.glob.lib.rel_path(cfg_dict['metadata']['cfg_file']))
     
         #Check bench_mode in set correctly
         if self.glob.stg['bench_mode'] not in  ["sched", "local"]:
-            exception.error_and_quit(self.glob.log, "Unsupported benchmark execution mode found: '"+glob.stg['bench_mode']+ \
+            self.glob.lib.msg.error("Unsupported benchmark execution mode found: '"+glob.stg['bench_mode']+ \
                                     "' in settings.ini, please specify 'sched' or 'local'.")
     
         # Check for hostfile/hostlist if exec_mode is local (mpirun)
         if self.glob.stg['bench_mode'] == "local":
             # Both hostfile and hostlist is set?
             if cfg_dict['runtime']['hostfile'] and cfg_dict['runtime']['hostlist']:
-                exception.error_and_quit(self.glob.log, "both 'hostlist' and 'hostfile' set in " + \
+                self.glob.lib.msg.error("both 'hostlist' and 'hostfile' set in " + \
                                         self.glob.lib.rel_path(cfg_dict['metadata']['cfg_file']) + ", please provide only one.")
     
             # Define --hostfile args
@@ -461,7 +481,7 @@ class init(object):
     
             # Error if neither is set
             else:
-                exception.error_and_quit(self.glob.log, "if using 'bench_mode=local' in settings.ini, " + \
+                self.glob.lib.msg.error("if using 'bench_mode=local' in settings.ini, " + \
                                         "provide either a 'hostfile' or 'hostlist' under [runtime] in " + \
                                         self.glob.lib.rel_path(cfg_dict['metadata']['cfg_file']))
     
@@ -471,7 +491,6 @@ class init(object):
     
     # Check sched config file and add required fields
     def process_sched_cfg(self, cfg_dict):
-    
         # Check for missing essential parameters
         self.check_dict_section(cfg_dict['metadata']['cfg_file'], cfg_dict, 'sched')
         self.check_dict_key(    cfg_dict['metadata']['cfg_file'], cfg_dict, 'sched', 'type')
@@ -494,16 +513,8 @@ class init(object):
     # Read input param config and test 
     def ingest(self, cfg_type, search_dict):
 
-
-        # Check input file exists
-        #cfg_file = self.check_file(cfg_type, cfg_search)
-    
-        # Parse input fo;e
-        #cfg_dict = self.read_file(cfg_file)
-    
         # Process and store build cfg 
         if cfg_type == 'build':
-
             cfg_dict = self.find_cfg(search_dict, self.glob.build_cfgs, True)
             self.glob.log.debug("Starting build cfg processing.")
             self.process_build_cfg(cfg_dict)
@@ -518,7 +529,6 @@ class init(object):
     
         # Process and store sched cfg 
         elif cfg_type == 'sched':
-
             cfg_file = self.check_file(cfg_type, search_dict)
             cfg_dict = self.read_file(cfg_file)
             self.glob.log.debug("Starting sched cfg processing.")

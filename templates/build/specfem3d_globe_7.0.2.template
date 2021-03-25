@@ -3,8 +3,8 @@ export c_flags=<<<c_flags>>>
 export fc_flags=<<<fc_flags>>>
 export cxx_flags=<<<cxx_flags>>>
 
-tar -xf ${benchmark_repo}/specfem3d_globe_v${version}.tar.gz -C ${build_path}/
-tar -xf ${benchmark_repo}/specfem3d_globe_generalized_dataset.tgz -C ${build_path}/ 
+tar -xf ${local_repo}/specfem3d_globe_v${version}.tar.gz -C ${build_path}/
+tar -xf ${local_repo}/specfem3d_globe_generalized_dataset.tgz -C ${build_path}/ 
 
 builddir=${build_path}/specfem3d_globe-${version}
 datadir=${build_path}/specfem3d_globe_generalized_dataset

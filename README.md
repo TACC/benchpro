@@ -171,7 +171,7 @@ This file must be located in `config/build`, preferably with the naming scheme `
 This template file is used to gerenate a contextualized build script which will executed to compile the application.
 Variables are defined with `<<<[param]>>>` syntax and populated with the variables defined in the config file above.
 If a `<<<[param]>>>` in the build template in not successfully populated and `exit_on_missing=True` in settings.ini, an expection will be raised.
-You are able to make use of the `benchmark_repo` variable defined in `settings.ini` to store and use files locally. 
+You are able to make use of the `local_repo` variable defined in `settings.ini` to store and use files locally. 
 This file must be located in `templates/build`, with the naming scheme `[code]_[version].template` 
 
 ### 3. Module template file (optional)
@@ -204,7 +204,7 @@ This file must be located in `config/bench`, preferably with the naming scheme `
 ### 2. Benchmark template file  
 
 As with the build template. The benchmark template file is populated with the parameters defined in the config file above. This file should include setup of the dataset, any required pre-processing or domain decomposition steps if required, and the appropriate mpi_exec command.
-You are able to make use of the `benchmark_repo` variable defined in `settings.ini` to copy local files. 
+You are able to make use of the `local_repo` variable defined in `settings.ini` to copy local files. 
 
 This file must be located in `templates/bench`, with the naming scheme `[code]_[bench].template`. 
 
@@ -342,7 +342,7 @@ Global settings are defined in the file `settings.ini`
 | **[bencher]**     |                               |                                                                                   |
 | bench_mode        | sched                         | Accepts 'sched' or 'local', benchmarks run via sched job or local shell.          |
 | build_if_missing  | True                          | If application needed for benchmark is not currently installed, install it.       |
-| benchmark_repo    | /scratch/06280/mcawood/benchmark_repo  | Directory containing benchmark datasets.                                 |
+| local_repo    | /scratch/06280/mcawood/local_repo  | Directory containing benchmark datasets.                                 |
 | bench_basedir     | ./results                     | Top directory containing bechmark runs.                                           |
 | bench_log_file    | bench                         | Label for run log.                                                                |
 | bench_report_file | bench_report.txt              | Benchmark report file.                                                            |

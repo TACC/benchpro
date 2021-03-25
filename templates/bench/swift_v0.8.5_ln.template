@@ -1,6 +1,6 @@
 
 export   working_path=<<<working_path>>>
-export benchmark_repo=<<<benchmark_repo>>>
+export local_repo=<<<local_repo>>>
 export       mpi_exec=<<<mpi_exec>>>
 export            exe=<<<exe>>>
 export        dataset=<<<dataset>>>
@@ -22,7 +22,7 @@ mkdir -p ${working_path}/${dataset}
 
 cd ${working_path}/${dataset}
 
-ln -s ${benchmark_repo}/PMillennium-1536/* .
+ln -s ${local_repo}/PMillennium-1536/* .
 
 ${mpi_exec} ${exe} -n ${steps} ${run_args} --threads=${threads} --pin ${yml}
 

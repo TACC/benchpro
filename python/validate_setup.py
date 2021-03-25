@@ -95,6 +95,7 @@ def check_file_perm(filename, perm):
         print(bcolors.PASS, filename, "permissions set")
     else:
         print(bcolors.FAIL, filename, "not found.")
+        exit(1)
 
 # Confirm SSH connection is successful
 def check_ssh_connect(host, user, key):
@@ -140,8 +141,8 @@ def check_setup(glob_obj):
     check_write_priv(base_dir)
 
     # Check paths
-    confirm_path_exists([glob.stg['log_path'], glob.stg['build_path'], glob.stg['bench_path'], glob.stg['pending_path'], glob.stg['captured_path'], glob.stg['failed_path']])
-    ensure_path_exists([glob.stg['benchmark_repo'], glob.stg['config_path'], glob.stg['template_path']])
+    confirm_path_exists([glob.stg['log_path'], glob.stg['build_path'], glob.stg['bench_path'], glob.stg['pending_path'], glob.stg['captured_path'], glob.stg['failed_path'], glob.stg['ssh_key_dir']])
+    ensure_path_exists([glob.stg['local_repo'], glob.stg['config_path'], glob.stg['template_path']])
 
     # Check exe
     check_exe(['benchtool', 'sinfo', 'sacct'])
@@ -150,7 +151,7 @@ def check_setup(glob_obj):
     check_file_perm(os.path.join(glob.stg['ssh_key_dir'], glob.stg['ssh_key'] ), 0o600)
 
     # Check db host access
-    check_ssh_connect(glob.stg['db_host'], glob.stg['ssh_user'], os.path.join(base_dir, "auth", glob.stg['ssh_key']))
+    check_ssh_connect(glob.stg['db_host'], glob.stg['ssh_user'], os.path.join(base_dir, glob.stg['ssh_key_dir'], glob.stg['ssh_key']))
 
     # Check db access
     if db:

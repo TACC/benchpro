@@ -3,9 +3,6 @@ import os
 import shutil as su
 import sys
 
-# Local Imports
-import exception
-
 class init(object):
     def __init__(self, glob):
         self.glob = glob
@@ -17,12 +14,13 @@ class init(object):
         if os.path.isfile(os.path.join(mod_path, mod_file)):
 
             if self.glob.stg['overwrite']:
-                exception.print_warning(self.glob.log, "deleting old module in " + self.glob.lib.rel_path(mod_path) + " because 'overwrite=True' in settings.ini")
+                self.glob.lib.msg.warning("Deleting old module in " + self.glob.lib.rel_path(mod_path) + 
+                                                " because 'overwrite=True' in settings.ini")
                 su.rmtree(mod_path)
                 os.makedirs(mod_path)
 
             else:
-                exception.error_and_quit(self.glob.log, "Module path already exists.")
+                self.glob.lib.msg.error("Module path already exists.")
     
     # Copy template to target dir
     def copy_mod_template(self, module_template):
@@ -93,7 +91,8 @@ class init(object):
 
         # Use generic module template if not found for this application
         if not os.path.isfile(module_template):
-            exception.print_warning(self.glob.log, "Module template '" + template_filename + "' not found, generating a generic module.")
+            self.glob.lib.msg.low([self.glob.warning, 
+                                "Module template '" + template_filename + "' not found, generating a generic module."])
             module_template = os.path.join(self.glob.stg['template_path'], self.glob.stg['build_tmpl_dir'], "generic.module")
 
         self.glob.log.debug("Using module template file: " + module_template)

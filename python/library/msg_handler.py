@@ -1,23 +1,90 @@
 
+# System imports
+import copy
+import sys
+
 class init(object):
     def __init__(self, glob):
         self.glob = glob
+    
+    # Convert strings to lists
+    def listify(self, message):
+        if not isinstance(message, list):
+            return [message]
+        return message
+
+    # Log and print to stdout
+    def log_and_print(self, message, priority):
+        message = self.listify(message)
+
+        # Log and print if priority
+        for line in message:
+            self.glob.log.debug(line)
+            if self.glob.stg['debug'] or priority: 
+                print(line)
+
+        # Print line break for multiple 
+        if len(message) > 1 and (self.glob.stg['debug'] or priority):
+            print()
+
+    # High priority message, nonconditional
+    def high(self, message):
+        self.log_and_print(message, True)   
+
+    # Low priority message, conditional on debug=True
+    def low(self, message):
+        self.log_and_print(message, False)            
+
+    # Print message to log and stdout then continue
+    def warning(self, message):
+        self.log_and_print([self.glob.warning] + self.listify(message), True)
+
+    # Print message to log and stdout then quit
+    def error(self, message):
+        message = self.listify(message)
+
+        self.log_and_print(["", 
+                            ""] + 
+                            [self.glob.error] + 
+                            self.listify(message) +
+                            ["Check log for details."],
+                            True)
+
+        # Clean tmp files
+        if self.glob.stg['clean_on_fail']:
+            self.log_and_print("Cleaning up tmp files...", True)
+            self.glob.lib.files.remove_tmp_files()
+
+        self.log_and_print(["Quitting", ""], True)
+
+        sys.exit(1)
+
+    # Print heading text in bold
+    def heading(self, message):
+        message = self.listify(message)
+
+        message[0] = self.glob.bold + message[0]
+        message[-1] = message[-1] + self.glob.end
+
+        self.log_and_print(message, True)
+
+    # Print section break
+    def brk(self):
+        print("---------------------------")
+        print()
+
 
     # Get list of uncaptured results and print note to user
     def new_results(self):
-        print("Checking for uncaptured results...")
+        self.log_and_print(["Checking for uncaptured results..."], False)
         # Uncaptured results + job complete
         pending_results = self.glob.lib.get_completed_results(self.glob.lib.get_pending_results(), True)
         if pending_results:
-            print(self.glob.note)
-            print("There are " + str(len(pending_results)) + " uncaptured results found in " + self.glob.lib.rel_path(self.glob.stg['pending_path']))
-            print("Run 'benchtool --capture' to send to database.")
+            self.log_and_print([self.glob.note,
+                                "There are " + str(len(pending_results)) + " uncaptured results found in " + 
+                                self.glob.lib.rel_path(self.glob.stg['pending_path']),
+                                "Run 'benchtool --capture' to send to database."], False)
         else:
-            print("No new results found.")
+            self.log_and_print(["No new results found.",
+                                ""], False)
 
-        print()
-
-
-    def prt_brk(self):
-        print("---------------------------")
-        print()
