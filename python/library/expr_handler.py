@@ -34,7 +34,7 @@ class init(object):
     def look_for_replacement(self, var):
 
         # For each dict in list
-        for search_dict in [self.glob.code['requirements'], self.glob.code['runtime'], self.glob.code['config'], self.glob.system]:
+        for search_dict in [self.glob.config['requirements'], self.glob.config['runtime'], self.glob.config['config'], self.glob.system]:
             # Look for key in dict
             matched, new_val = self.replace_var(var, search_dict)
             if matched:

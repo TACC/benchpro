@@ -83,6 +83,12 @@ class init(object):
         # Get application profile from bench_report
         insert_dict = self.glob.lib.report.read(report_file)['build']
 
+        # Abort if no application needed
+        if not insert_dict:
+            self.glob.lib.msg.low("This benchmark has no application dependency, skipping database presence check...")
+            return
+
+        # Abort if dry_run
         if insert_dict['jobid'] == "dry_run":
             self.glob.lib.msg.low("Application build job was a dry run, skipping database presence check...")
             return
@@ -103,6 +109,7 @@ class init(object):
 
         # Insert statement
         statement = "INSERT INTO " + self.glob.stg['app_table'] + " (" + keys + ") VALUES (" + vals + ");" 
+
         self.exec_insert(statement)
         self.glob.lib.msg.low("Inserted new application instance '" + insert_dict['code'] + "' with app_id '" +\
                     insert_dict['app_id'] + "' into database")

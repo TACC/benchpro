@@ -39,9 +39,8 @@ echo "EXE                       ${exe}"
 echo "INPUT                     ${input}"
 echo "OMP_NUM_THREADS           $OMP_NUM_THREADS"
 echo "CUDA_VISIBLE_DEVICES      $CUDA_VISIBLE_DEVICES"
-mkdir -p ${working_path}
-tar -xf ${local_repo}/${dataset}.tgz -C ${working_path}
-cd ${working_path}/${dataset}
+
+tar -xf ${local_repo}/${dataset}.tgz && cd ${dataset}
 
 ${mpi_exec} ${exe}  -O  \
                     -i ${input} \

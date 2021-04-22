@@ -167,55 +167,58 @@ class init(object):
         build_report = os.path.join(app_path, self.glob.stg['build_report_file'])
         install_path = os.path.join(app_path, self.glob.stg['install_subdir'])
 
-        exe = None
-        jobid = None
+        # Read contents of build report file
+        report = self.glob.lib.report.read(build_report)
+
+        if not report: 
+            sys.exit(1)
+
         print("Build report for application '"+app_label+"'")
         print("-------------------------------------------")
-        with open(build_report, 'r') as report:
-            content = report.read()
-            print(content)
-            for line in content.split("\n"):
-                if line[0:3] == "exe":
-                    exe = line.split('=')[1].strip()
-                elif line[0:5] == "jobid":
-                    jobid = line.split('=')[1].strip()
+
+        # Print contents of report file 
+        for sec in report:
+            print("["+sec+"]")
+            for key in report[sec]:
+                print(key.ljust(15) + "= " + report[sec][key])
 
         # Dry_run - do nothing
-        if jobid == "dry_run":
+        if report['build']['jobid']  == "dry_run":
             print("Build job was dry_run. Skipping executable check")
     
         else:
             # Local build        
-            if jobid == "local":
+            if report['build']['jobid'] == "local":
                 self.print_local_shells()
             # Sched build
             else:
-                done = self.glob.lib.sched.check_job_complete(jobid)
+                done = self.glob.lib.sched.check_job_complete(report['build']['jobid'])
 
-                gap = max(len(exe) + 9, 20)
+                gap = max(len(report['build']['exe_file']) + 9, 20)
 
                 if done:
                     if done == "COMPLETED":
-                        print(("Job " + jobid + " status: ").ljust(gap) + "\033[0;32m" + done + "\033[0m")
+                        print(("Job " + report['build']['jobid'] + " status: ").ljust(gap) + "\033[0;32m" + done + "\033[0m")
 
                         # If complete, Look for exe
-                        exe_search = self.glob.lib.find_exact(exe, install_path)
+                        exe_search = self.glob.lib.find_exact(report['build']['exe_file'], install_path)
                         if exe_search:
-                            print(("File "+exe+": ").ljust(gap) + "\033[0;32mFOUND\033[0m")
+                            print(("File "+report['build']['exe_file']+": ").ljust(gap) + "\033[0;32mFOUND\033[0m")
                         else:
-                            print(("File "+exe+": ").ljust(gap) + ")\033[0;31mMISSING\033[0m")
+                            print(("File "+report['build']['exe_file']+": ").ljust(gap) + ")\033[0;31mMISSING\033[0m")
 
 
                     else:
-                        print(("Job " + jobid + " status: ").ljust(gap) + "\033[0;31m" + done + "\033[0m")
+                        print(("Job " + report['build']['jobid'] + " status: ").ljust(gap) + "\033[0;31m" + done + "\033[0m")
                 else:
-                    print("Job " + jobid + " for '" + app_label + "' is still running...")
+                    print("Job " + report['build']['jobid'] + " for '" + app_label + "' is still running...")
 
     # Get usable string of application status
     def get_status_str(self, app):
 
         # Get Jobid from report file and check if status = COMPLETED
         jobid = self.glob.lib.report.get_jobid("build", app)
+
         if jobid == "dry_run":
             return '\033[1;33mDRYRUN\033[0m'
             
@@ -238,10 +241,12 @@ class init(object):
         # Get list of installed application paths
         installed_list = self.glob.lib.get_installed()
 
-        split_list = [["SYSTEM", "ARCH", "COMPILER", "MPI", "CODE", "VERSION", "LABEL", "STATUS"]]
-        # Split by FS delimiter
+        
+        split_list = [["SYSTEM", "ARCH", "COMPILER", "MPI", "CODE", "VERSION", "LABEL"]]
+
+        # Split app path into catagories and add status 
         for app in installed_list:
-            split_list.append(app.split(self.glob.stg['sl']) + [self.get_status_str(app)])
+            split_list.append(app.split(self.glob.stg['sl']) + [app])
 
         elems = len(split_list[0])
         lengths = [0] * elems
@@ -263,7 +268,7 @@ class init(object):
             split_list[0][4].ljust(lengths[4]) + "| " +
             split_list[0][5].ljust(lengths[5]) + "| " +
             split_list[0][6].ljust(lengths[6]) + "| " +
-            split_list[0][7].ljust(lengths[7]) + self.glob.end)
+            "STATUS" + self.glob.end)
 
         for app in split_list[1:]:
             print(app[0].ljust(lengths[0]) + "| " +
@@ -273,15 +278,21 @@ class init(object):
                     app[4].ljust(lengths[4]) + "| " +
                     app[5].ljust(lengths[5]) + "| " +
                     app[6].ljust(lengths[6]) + "| " +
-                    app[7].ljust(lengths[7]))
+                    self.get_status_str(app[7]))
 
 
     # Get run string for given config file
     def get_cmd_string(self, keys, config_dict):
         cmd_str = []
+        # For each section-key pair in input list
         for sect, key in keys:
-            if config_dict[sect][key]:
-                cmd_str.append(key+"="+config_dict[sect][key])
+            # If section present
+            if sect in config_dict:     
+                # If key present
+                if key in config_dict[sect]:
+                    # If value set
+                    if config_dict[sect][key]:
+                        cmd_str.append(key+"="+config_dict[sect][key])
         return ":".join(cmd_str)
 
 
@@ -300,7 +311,7 @@ class init(object):
                 print("| " + contents['metadata']['cfg_label'].ljust(column) + "| -b " + self.get_cmd_string([['general', 'code'], ['general', 'version'], ['general', 'system']], contents))
 
             else:
-                print("| " + contents['metadata']['cfg_label'].ljust(column) + "| -B " + self.get_cmd_string([['requirements', 'code'], ['requirements', 'version'], ['config', 'dataset']], contents))
+                print("| " + contents['metadata']['cfg_label'].ljust(column) + "| -B " + self.get_cmd_string([['requirements', 'code'], ['requirements', 'version'], ['requirements', 'build_label'], ['config', 'dataset']], contents))
 
 
     # Print applications that can be installed from available cfg files

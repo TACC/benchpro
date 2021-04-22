@@ -14,7 +14,7 @@ glob = None
 
 # Check if an existing installation exists
 def check_for_previous_install():
-    install_path = glob.code['metadata']['working_path']
+    install_path = glob.config['metadata']['working_path']
 
     # If existing installation is found
     if os.path.isdir(install_path):
@@ -75,15 +75,15 @@ def build_code(input_dict, glob_copy):
 
     glob.lib.msg.low(["", 
                     "Found matching application config file:",
-                    ">  " + glob.lib.rel_path(glob.code['metadata']['cfg_file'])])
+                    ">  " + glob.lib.rel_path(glob.config['metadata']['cfg_file'])])
 
     # Get sched config dict if exec_mode=sched, otherwise set default threads for local build
     if glob.stg['build_mode'] == "sched":
         # If sched config file not specified, use system default
-        if not glob.code['general']['sched_cfg']:
-            glob.code['general']['sched_cfg'] = glob.lib.get_sched_cfg()
+        if not glob.config['general']['sched_cfg']:
+            glob.config['general']['sched_cfg'] = glob.lib.get_sched_cfg()
         # Ingest sched config from file
-        glob.lib.cfg.ingest('sched', glob.code['general']['sched_cfg'])
+        glob.lib.cfg.ingest('sched', glob.config['general']['sched_cfg'])
 
         # Low priority stdout message
         glob.lib.msg.low(["Using scheduler config file:",
@@ -109,19 +109,19 @@ def build_code(input_dict, glob_copy):
     # ================== COPY INSTALLATION FILES ===================================
 
     # Make build path and move tmp build script file
-    glob.lib.create_dir(glob.code['metadata']['working_path'])
-    glob.lib.install(glob.code['metadata']['working_path'], glob.tmp_script, None)
+    glob.lib.create_dir(glob.config['metadata']['working_path'])
+    glob.lib.install(glob.config['metadata']['working_path'], glob.tmp_script, None)
 
     # Make module path and move tmp module file
     glob.lib.create_dir(mod_path)
     glob.lib.install(mod_path, mod_file, None)
 
     # Copy code and sched cfg & template files to build dir
-    provenance_path = os.path.join(glob.code['metadata']['working_path'], "build_files")
+    provenance_path = os.path.join(glob.config['metadata']['working_path'], "build_files")
     glob.lib.create_dir(provenance_path)
 
-    glob.lib.install(provenance_path, glob.code['metadata']['cfg_file'], "build.cfg")
-    glob.lib.install(provenance_path, glob.code['template'], "build.template")
+    glob.lib.install(provenance_path, glob.config['metadata']['cfg_file'], "build.cfg")
+    glob.lib.install(provenance_path, glob.config['template'], "build.template")
 
     # Copy sched config file if building via sched
     if glob.stg['build_mode'] == "sched":
@@ -137,7 +137,7 @@ def build_code(input_dict, glob_copy):
 # If dry_run
     if glob.stg['dry_run']:
         glob.lib.msg.low(["This was a dryrun, skipping build step. Script created at:",
-                        ">  " + glob.lib.rel_path(os.path.join(glob.code['metadata']['working_path'], glob.tmp_script[4:]))])
+                        ">  " + glob.lib.rel_path(os.path.join(glob.config['metadata']['working_path'], glob.script_file))])
         glob.jobid = "dry_run"
 
     else:
@@ -158,11 +158,11 @@ def build_code(input_dict, glob_copy):
         # Or start local shell
         else:
             output_file = "bash.stdout"
-            glob.lib.start_local_shell(glob.code['metadata']['working_path'], glob.tmp_script[4:], output_file)
+            glob.lib.start_local_shell(glob.config['metadata']['working_path'], glob.tmp_script[4:], output_file)
             glob.jobid = "local"
 
         glob.lib.msg.low(["Output file:",
-                        ">  " + glob.lib.rel_path(os.path.join(glob.code['metadata']['working_path'], output_file))])
+                        ">  " + glob.lib.rel_path(os.path.join(glob.config['metadata']['working_path'], output_file))])
 
     # Generate build report
     glob.lib.report.build()

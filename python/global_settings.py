@@ -25,7 +25,8 @@ class settings(object):
 
     # Global variable dicts
     stg      = {}
-    code     = {}
+    build    = {}
+    config   = {}
     sched    = {}
     compiler = {}
     suite    = {}

@@ -19,7 +19,8 @@ class init(object):
 
         # Log and print if priority
         for line in message:
-            self.glob.log.debug(line)
+            if self.glob.log:
+                self.glob.log.debug(line)
             if self.glob.stg['debug'] or priority: 
                 print(line)
 
@@ -66,7 +67,7 @@ class init(object):
         message[0] = self.glob.bold + message[0]
         message[-1] = message[-1] + self.glob.end
 
-        self.log_and_print(message, True)
+        self.log_and_print([""] + message, True)
 
     # Print section break
     def brk(self):

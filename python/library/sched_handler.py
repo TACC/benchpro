@@ -138,7 +138,7 @@ class init(object):
     # Submit script to scheduler
     def submit(self):
 
-        script_path = os.path.join(self.glob.code['metadata']['working_path'], self.glob.tmp_script[4:])
+        script_path = os.path.join(self.glob.config['metadata']['working_path'], self.glob.script_file)
         self.glob.lib.msg.low(["Job script:",
                                 ">  " + self.glob.lib.rel_path(script_path),
                                 "",
@@ -168,9 +168,9 @@ class init(object):
 
         self.glob.lib.msg.low([stdout,
                                 "Job " + jobid + " stdout:",
-                                ">  "+ self.glob.lib.rel_path(os.path.join(self.glob.code['metadata']['working_path'], jobid + ".out")),
+                                ">  "+ self.glob.lib.rel_path(os.path.join(self.glob.config['metadata']['working_path'], jobid + ".out")),
                                 "Job " + jobid + " stderr:",
-                                ">  "+ self.glob.lib.rel_path(os.path.join(self.glob.code['metadata']['working_path'], jobid + ".err"))])
+                                ">  "+ self.glob.lib.rel_path(os.path.join(self.glob.config['metadata']['working_path'], jobid + ".err"))])
 
         self.glob.log.debug(stdout)
         self.glob.log.debug(stderr)

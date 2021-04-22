@@ -1,15 +1,9 @@
-export   working_path=<<<working_path>>>
-export       mpi_exec=<<<mpi_exec>>>
-export        HPL_EXE=<<<exe>>>
 
-export       NODES=<<<nodes>>> 
-export          NB=<<<nb>>>
-export GB_PER_NODE=<<<gb_per_node>>>
-
-ml <<<compiler>>>
+export       NODES=${nodes}
+export     HPL_EXE=${exe}
+ml ${compiler}
 ml
 
-mkdir -p ${working_path} && cd ${working_path}
 cp -r ${MKLROOT}/benchmarks/mp_linpack/* .
 
 # Check file exists
@@ -68,9 +62,6 @@ sed -i "12s/.*/${Q}    Qs/"  HPL.dat
 
 # Start HPL
 
-echo -n "This run was done on: "
-date 
-
 echo "HPL.dat: "
 cat HPL.dat
 echo "Binary name: "
@@ -80,6 +71,4 @@ env
 
 ${mpi_exec} ./runme_intel64_prv "$@"
 
-echo -n "Done:"
-date
 

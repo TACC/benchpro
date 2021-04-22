@@ -1,27 +1,7 @@
-export   working_path=<<<working_path>>>
-export local_repo=<<<local_repo>>>
-export       mpi_exec=<<<mpi_exec>>>
-export            exe=<<<exe>>>
-export            dataset=<<<dataset>>>
-export    base_module=<<<base_mod>>>
-export     app_module=<<<app_mod>>>
 
-export            version=<<<version>>>
-export            endTime=<<<endTime>>>
-export      writeInterval=<<<writeInterval>>>
+source $OPENFOAM_DIR/OpenFOAM-*/etc/bashrc
 
-export OMP_NUM_THREADS=<<<threads>>>
-
-ml use $base_module
-ml $app_module
-ml
-
-source $OPENFOAM_DIR/OpenFOAM-${version}/etc/bashrc
-
-mkdir -p ${working_path}
-tar -xf ${local_repo}/${dataset}.tgz -C ${working_path} 
-cd ${working_path}/${dataset}
-
+tar -xf ${local_repo}/${dataset}.tgz && cd ${dataset}
 
 numberOfSubdomains=$SLURM_NTASKS
 

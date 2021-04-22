@@ -244,7 +244,7 @@ class init(object):
         if not 'opt_flags'        in cfg_dict['config'].keys():    cfg_dict['config']['opt_flags']        = ""  
         if not 'build_label'      in cfg_dict['config'].keys():    cfg_dict['config']['build_label']      = ""
         if not 'bin_dir'          in cfg_dict['config'].keys():    cfg_dict['config']['bin_dir']          = ""
-        if not 'collect_hw_stats' in cfg_dict['config'].keys():    cfg_dict['config']['collect_hw_stats'] = False
+        if not 'collect_stats' in cfg_dict['config'].keys():    cfg_dict['config']['collect_stats'] = False
         if not 'script_additions' in cfg_dict['config'].keys():    cfg_dict['config']['script_additions'] = ""
 
         # Convert dtypes
@@ -354,10 +354,8 @@ class init(object):
         # Check for missing essential parameters
         self.check_dict_section(cfg_dict['metadata']['cfg_file'], cfg_dict, 'runtime')
         self.check_dict_key(    cfg_dict['metadata']['cfg_file'], cfg_dict, 'runtime', 'nodes')
-        self.check_dict_key(    cfg_dict['metadata']['cfg_file'], cfg_dict, 'runtime', 'threads')
 
         self.check_dict_section(cfg_dict['metadata']['cfg_file'], cfg_dict, 'config')
-        self.check_dict_key(    cfg_dict['metadata']['cfg_file'], cfg_dict, 'config', 'dataset')
 
         self.check_dict_section(cfg_dict['metadata']['cfg_file'], cfg_dict, 'result')
         self.check_dict_key(    cfg_dict['metadata']['cfg_file'], cfg_dict, 'result', 'method')
@@ -365,25 +363,27 @@ class init(object):
 
         # Instantiate missing optional parameters
 
-        if not 'code'               in cfg_dict['requirements'].keys():  cfg_dict['requirements']['code']    = ""
-        if not 'version'            in cfg_dict['requirements'].keys():  cfg_dict['requirements']['version'] = ""
-        if not 'build_label'        in cfg_dict['requirements'].keys():  cfg_dict['requirements']['label']   = ""
-        if not 'system'             in cfg_dict['requirements'].keys():  cfg_dict['requirements']['system']  = ""
+        if not 'code'               in cfg_dict['requirements'].keys():  cfg_dict['requirements']['code']       = ""
+        if not 'version'            in cfg_dict['requirements'].keys():  cfg_dict['requirements']['version']    = ""
+        if not 'build_label'        in cfg_dict['requirements'].keys():  cfg_dict['requirements']['build_label']= ""
+        if not 'system'             in cfg_dict['requirements'].keys():  cfg_dict['requirements']['system']     = ""
 
-        if not 'ranks_per_node'     in cfg_dict['runtime'].keys():  cfg_dict['runtime']['ranks_per_node']    = 0
-        if not 'max_running_jobs'   in cfg_dict['runtime'].keys():  cfg_dict['runtime']['max_running_jobs']  = 10
-        if not 'gpus'               in cfg_dict['runtime'].keys():  cfg_dict['runtime']['gpus']              = 0
-        if not 'hostfile'           in cfg_dict['runtime'].keys():  cfg_dict['runtime']['hostfile']          = ""
-        if not 'hostlist'           in cfg_dict['runtime'].keys():  cfg_dict['runtime']['hostlist']          = ""
+        if not 'threads'            in cfg_dict['runtime'].keys():  cfg_dict['runtime']['threads']              = 1
+        if not 'ranks_per_node'     in cfg_dict['runtime'].keys():  cfg_dict['runtime']['ranks_per_node']       = 0
+        if not 'max_running_jobs'   in cfg_dict['runtime'].keys():  cfg_dict['runtime']['max_running_jobs']     = 10
+        if not 'gpus'               in cfg_dict['runtime'].keys():  cfg_dict['runtime']['gpus']                 = 0
+        if not 'hostfile'           in cfg_dict['runtime'].keys():  cfg_dict['runtime']['hostfile']             = ""
+        if not 'hostlist'           in cfg_dict['runtime'].keys():  cfg_dict['runtime']['hostlist']             = ""
 
-        if not 'exe'                in cfg_dict['config'].keys():    cfg_dict['config']['exe']               = ""
-        if not 'bench_label'        in cfg_dict['config'].keys():    cfg_dict['config']['label']             = ""
-        if not 'template'           in cfg_dict['config'].keys():    cfg_dict['config']['template']          = ""
-        if not 'collect_hw_stats'   in cfg_dict['config'].keys():    cfg_dict['config']['collect_hw_stats']  = False
-        if not 'script_additions'   in cfg_dict['config'].keys():    cfg_dict['config']['script_additions']  = ""
+        if not 'dataset'            in cfg_dict['config'].keys():    cfg_dict['config']['dataset']              = ""
+        if not 'exe'                in cfg_dict['config'].keys():    cfg_dict['config']['exe']                  = ""
+        if not 'bench_label'        in cfg_dict['config'].keys():    cfg_dict['config']['bench_label']          = ""
+        if not 'template'           in cfg_dict['config'].keys():    cfg_dict['config']['template']             = ""
+        if not 'collect_stats'      in cfg_dict['config'].keys():    cfg_dict['config']['collect_stats']        = False
+        if not 'script_additions'   in cfg_dict['config'].keys():    cfg_dict['config']['script_additions']     = ""
 
-        if not 'description'        in cfg_dict['result'].keys():   cfg_dict['result']['description']        = ""
-        if not 'output_file'        in cfg_dict['result'].keys():   cfg_dict['result']['output_file']        = ""
+        if not 'description'        in cfg_dict['result'].keys():   cfg_dict['result']['description']           = ""
+        if not 'output_file'        in cfg_dict['result'].keys():   cfg_dict['result']['output_file']           = ""
 
         # Convert cfg keys to correct datatype
         self.get_val_types(cfg_dict)
@@ -397,7 +397,7 @@ class init(object):
         # If system not specified for bench requirements, add current system
         if not cfg_dict['requirements']['system']:
             cfg_dict['requirements']['system'] = self.glob.sys_env
-    
+
         # Set system variables from system.cfg
         self.glob.system = self.glob.lib.get_system_vars(cfg_dict['requirements']['system'])
     
@@ -440,9 +440,6 @@ class init(object):
         cfg_dict['runtime']['ranks_per_node']   = str(cfg_dict['runtime']['ranks_per_node']).split(",")
         cfg_dict['runtime']['gpus']             = str(cfg_dict['runtime']['gpus']).split(",")
 
-
-        print("THESE ARE RUNTIME",  cfg_dict['runtime'])
-
         # num threads must equal num ranks
         if not len(cfg_dict['runtime']['threads']) == len(cfg_dict['runtime']['ranks_per_node']):
             if len(cfg_dict['runtime']['threads']) == 1:
@@ -454,7 +451,7 @@ class init(object):
                                     self.glob.lib.rel_path(cfg_dict['metadata']['cfg_file']))
     
         # Require label if code not set
-        if not cfg_dict['requirements']['code'] and not cfg_dict['config']['label']:
+        if not cfg_dict['requirements']['code'] and not cfg_dict['config']['bench_label']:
             self.glob.lib.msg.error("if 'code' is not set, provide 'label' in " + \
                                     self.glob.lib.rel_path(cfg_dict['metadata']['cfg_file']))
     
@@ -518,14 +515,14 @@ class init(object):
             cfg_dict = self.find_cfg(search_dict, self.glob.build_cfgs, True)
             self.glob.log.debug("Starting build cfg processing.")
             self.process_build_cfg(cfg_dict)
-            self.glob.code = cfg_dict
+            self.glob.config = cfg_dict
     
         # Process and store bench cfg 
         elif cfg_type == 'bench':
             cfg_dict = self.find_cfg(search_dict, self.glob.bench_cfgs, False)
             self.glob.log.debug("Starting bench cfg processing.")
             self.process_bench_cfg(cfg_dict)
-            self.glob.code = cfg_dict
+            self.glob.config = cfg_dict
     
         # Process and store sched cfg 
         elif cfg_type == 'sched':

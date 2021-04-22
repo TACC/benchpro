@@ -15,9 +15,9 @@ import time
 # Local Imports
 import library.cfg_handler as cfg_handler
 import library.db_handler as db_handler
+import library.expr_handler as expr_handler
 import library.file_handler as file_handler
 import library.misc_handler as misc_handler
-import library.math_handler as math_handler
 import library.module_handler as module_handler
 import library.msg_handler as msg_handler
 import library.report_handler as report_handler
@@ -32,9 +32,9 @@ class init(object):
         # Init all sub-libraries
         self.cfg      = cfg_handler.init(self.glob)
         self.db       = db_handler.init(self.glob)
+        self.expr     = expr_handler.init(self.glob)
         self.files    = file_handler.init(self.glob)
         self.misc     = misc_handler.init(self.glob)
-        self.math     = math_handler.init(self.glob)
         self.module   = module_handler.init(self.glob)
         self.msg      = msg_handler.init(self.glob)
         self.report   = report_handler.init(self.glob)
@@ -218,7 +218,7 @@ class init(object):
     # Log cfg contents
     def send_inputs_to_log(self, label):
         # List of global dicts containing input data
-        cfg_list = [self.glob.code, self.glob.sched, self.glob.compiler]
+        cfg_list = [self.glob.config, self.glob.sched, self.glob.compiler]
 
         self.glob.log.debug(label + " started with the following inputs:")
         self.glob.log.debug("======================================")
@@ -447,12 +447,18 @@ class init(object):
         return match
 
     # Check if the requirements in bench.cfg need a built code 
-    def needs_code(self, search_list):
-        # Check if all search_list values are empty
-        if not search_list:
-            return False
-        else:
+    def needs_code(self, search_dict):
+
+        # Check if all search_list values are empty (system is always set)
+        num_requirements = 0
+        for key in search_dict:
+            if search_dict[key]:
+                num_requirements += 1
+
+        if num_requirements > 1:
             return True
+
+        return False
 
     # Check if search_list returns unique installed application
     def check_if_installed(self, search_dict):
@@ -546,7 +552,7 @@ class init(object):
 
     # Replace SLURM variables in ouput files
     def check_for_slurm_vars(self):
-        self.glob.code['result']['output_file'] = self.glob.code['result']['output_file'].replace("$SLURM_JOBID", self.glob.jobid) 
+        self.glob.config['result']['output_file'] = self.glob.config['result']['output_file'].replace("$SLURM_JOBID", self.glob.jobid) 
 
     # Write operation to file
     def write_to_outputs(self, op, label):
