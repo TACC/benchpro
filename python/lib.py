@@ -13,11 +13,11 @@ import sys
 import time
 
 # Local Imports
-import exception
 import library.cfg_handler as cfg_handler
 import library.db_handler as db_handler
+import library.expr_handler as expr_handler
+import library.file_handler as file_handler
 import library.misc_handler as misc_handler
-import library.math_handler as math_handler
 import library.module_handler as module_handler
 import library.msg_handler as msg_handler
 import library.report_handler as report_handler
@@ -32,8 +32,9 @@ class init(object):
         # Init all sub-libraries
         self.cfg      = cfg_handler.init(self.glob)
         self.db       = db_handler.init(self.glob)
+        self.expr     = expr_handler.init(self.glob)
+        self.files    = file_handler.init(self.glob)
         self.misc     = misc_handler.init(self.glob)
-        self.math     = math_handler.init(self.glob)
         self.module   = module_handler.init(self.glob)
         self.msg      = msg_handler.init(self.glob)
         self.report   = report_handler.init(self.glob)
@@ -90,7 +91,7 @@ class init(object):
             cmd = subprocess.run(cmd_prefix +"ml -t -d av  2>&1", shell=True,
                                 check=True, capture_output=True, universal_newlines=True)
         except:
-            exception.error_and_quit(self.glob.log, "unable to execute 'ml -t -d av'")
+            self.glob.lib.msg.error("unable to execute 'ml -t -d av'")
         # Return list of default modules
         return cmd.stdout.split("\n")
 
@@ -103,7 +104,7 @@ class init(object):
                 if line.startswith(module):
                     return line
             else:
-                exception.error_and_quit(self.glob.log, "failed to process module '" + module + "'")
+                self.glob.lib.msg.error("failed to process module '" + module + "'")
 
         else:
             return module
@@ -128,7 +129,7 @@ class init(object):
                                         check=True, capture_output=True, universal_newlines=True)
 
                 except subprocess.CalledProcessError as e:
-                    exception.error_and_quit(self.glob.log, module + " module '" + module_dict[module] \
+                    self.glob.lib.msg.error(module + " module '" + module_dict[module] \
                                                             + "' not available on this system")
 
                 # Update module with full label
@@ -146,11 +147,10 @@ class init(object):
     def check_exe(self, exe, code_path):
         exe_search = self.find_exact(exe, code_path)
         if exe_search:
-            print("Application executable found at:")
-            print(">  " + self.rel_path(exe_search))
-            print()
+            self.glob.lib.msg.low(["Application executable found at:",
+                            ">  " + self.rel_path(exe_search)])
         else:
-            exception.error_and_quit(self.glob.log, "failed to locate application executable '" + exe + "'in " + self.rel_path(code_path))
+            self.glob.lib.msg.error("failed to locate application executable '" + exe + "'in " + self.rel_path(code_path))
 
     # Get a list of sub-directories, called by 'search_tree'
     def get_subdirs(self, base):
@@ -205,7 +205,7 @@ class init(object):
         if search_list:
             for result in copy.deepcopy(search_list):
                 # Get jobid and check it is comeplete, if so append to return list and remove from provided list
-                jobid = self.glob.lib.report.result_jobid(result)
+                jobid = self.glob.lib.report.get_jobid("bench", result)
                 if jobid:
                     state = self.glob.lib.sched.check_job_complete(jobid)
                     if (state and is_complete) or (not state and not is_complete):
@@ -218,7 +218,7 @@ class init(object):
     # Log cfg contents
     def send_inputs_to_log(self, label):
         # List of global dicts containing input data
-        cfg_list = [self.glob.code, self.glob.sched, self.glob.compiler]
+        cfg_list = [self.glob.config, self.glob.sched, self.glob.compiler]
 
         self.glob.log.debug(label + " started with the following inputs:")
         self.glob.log.debug("======================================")
@@ -239,11 +239,13 @@ class init(object):
         if len(unfilled_keys) > 0:
             # Conitue regardless
             if not self.glob.stg['exit_on_missing']:
-                exception.print_warning(self.glob.log, "Missing parameters were found in '" + template_file + "' template file:" + ", ".join(unfilled_keys))
-                exception.print_warning(self.glob.log, "'exit_on_missing=False' in settings.ini so continuing anyway...")
+                self.glob.lib.msg.warning("Missing parameters were found in '" + self.glob.lib.rel_path(template_file) + "':" + ", ".join(unfilled_keys))
+                self.glob.lib.msg.warning("'exit_on_missing=False' in settings.ini so continuing anyway...")
             # Error and exit
             else:
-                exception.error_and_quit(self.glob.log, "Missing parameters were found after populating '" + template_file + "' template file and exit_on_missing=True in settings.ini: " + ' '.join(unfilled_keys))
+               # Write file to disk 
+                self.glob.lib.write_list_to_file(template_obj, self.glob.tmp_script)
+                self.glob.lib.msg.error("Missing parameters were found after populating '" + self.glob.lib.rel_path(template_file) + "' and exit_on_missing=True in settings.ini: " + ' '.join(unfilled_keys))
         else:
             self.glob.log.debug("All build parameters were filled, continuing")
 
@@ -253,27 +255,29 @@ class init(object):
             try:
                 os.makedirs(path)
             except:
-                exception.error_and_quit(
-                    self.glob.log, "Failed to create directory " + path)
+                self.glob.lib.msg.error(
+                    "Failed to create directory " + path)
 
     # Copy tmp files to directory
     def install(self, path, obj, new_obj_name):
+
         # Get file name
         if not new_obj_name:
             new_obj_name = obj
-            if self.glob.stg['sl'] in obj:
-                new_obj_name = obj.split(self.glob.stg['sl'])[-1]
+            if self.glob.stg['sl'] in new_obj_name:
+                new_obj_name = new_obj_name.split(self.glob.stg['sl'])[-1]
+
             # Strip tmp prefix from file for new filename
-            if 'tmp.' in obj:
-                new_obj_name = obj[4:]
+            if 'tmp.' in new_obj_name:
+                new_obj_name = new_obj_name[4:]
     
         try:
             su.copyfile(obj, path + self.glob.stg['sl'] + new_obj_name)
             self.glob.log.debug("Copied file " + obj + " into " + path)
         except IOError as e:
-            print(e)
-            exception.error_and_quit(
-                self.glob.log, "Failed to move " + obj + " to " + path + self.glob.stg['sl'] + new_obj_name)
+            self.glob.lib.msg.high(e)
+            self.glob.lib.msg.error(
+                "Failed to move " + obj + " to " + path + self.glob.stg['sl'] + new_obj_name)
 
     # If build job is running, add dependency str
     def get_build_job_dependency(self, jobid):
@@ -287,7 +291,7 @@ class init(object):
             no_mpi_hosts = self.glob.stg['mpi_blacklist'].split(',')
 
         except:
-            exception.error_and_quit(self.glob.log, "unable to read list of MPI banned nodes (mpi_blacklist) in settings.ini")
+            self.glob.lib.msg.error("unable to read list of MPI banned nodes (mpi_blacklist) in settings.ini")
         # If hostname contains any of the blacklisted terms, return False
         if any(x in self.glob.hostname for x in no_mpi_hosts):
             return False
@@ -299,7 +303,7 @@ class init(object):
 
         script_path = os.path.join(working_dir, script_file)
 
-        print("Starting script: " + self.rel_path(script_path))
+        self.glob.lib.msg.low("Starting script: " + self.rel_path(script_path))
 
         try:
             with open(os.path.join(working_dir, output_dir), 'w') as fp:
@@ -307,10 +311,9 @@ class init(object):
                 self.glob.prev_pid = cmd.pid
 
         except:
-            exception.error_and_quit(self.glob.log,"failed to start build script in local shell.")
+            self.glob.lib.msg.error("failed to start build script in local shell.")
 
-        print("Script started on local machine.")
-
+        self.glob.lib.msg.low("Script started on local machine.")
 
     # Overload dict keys with overload key
     def overload(self, overload_key, param_dict):
@@ -334,9 +337,9 @@ class init(object):
                         elif datatype is bool:
                             param_dict[overload_key] = self.glob.overload_dict[overload_key] == 'True'
                     except:
-                        exception.error_and_quit(self.glob.log, "datatype mismatch for '" + overload_key +"', expected=" + str(datatype) + ", provided=" + str(type(overload_key)))
+                        self.glob.lib.msg.error("datatype mismatch for '" + overload_key +"', expected=" + str(datatype) + ", provided=" + str(type(overload_key)))
 
-                print(self.glob.bold + "Overloading " + overload_key + ": '" + str(old) + "' -> '" + str(param_dict[overload_key]) + "'" + self.glob.end)
+                self.glob.lib.msg.high("Overloading " + overload_key + ": '" + str(old) + "' -> '" + str(param_dict[overload_key]) + "'")
                 # Remove key from overload dict
                 self.glob.overload_dict.pop(overload_key)
 
@@ -353,10 +356,10 @@ class init(object):
     # Print warning if cmd line params dict not empty
     def check_for_unused_overloads(self):
         if len(self.glob.overload_dict):
-            print("The following --overload argument does not match existing params:")
+            self.glob.lib.msg.high("The following --overload argument does not match existing params:")
             for key in self.glob.overload_dict:
-                print("  " + key + "=" + self.glob.overload_dict[key])
-            exception.error_and_quit(self.glob.log, "Invalid input arguments.")
+                self.glob.lib.msg.high("  " + key + "=" + self.glob.overload_dict[key])
+            self.glob.lib.msg.error("Invalid input arguments.")
 
     # Write module to file
     def write_list_to_file(self, list_obj, output_file):
@@ -376,7 +379,7 @@ class init(object):
         elif cfg_type == "bench":
             type_dir = self.glob.stg['bench_cfg_dir']
         else:
-            exception.error_and_quit(self.glob.log, "unknown cfg type '"+cfg_type+"'. get_list_of_cfgs() accepts either 'build' or 'bench'.")
+            self.glob.lib.msg.error("unknown cfg type '"+cfg_type+"'. get_list_of_cfgs() accepts either 'build' or 'bench'.")
 
         search_path = os.path.join(self.glob.stg['config_path'], type_dir)
         # Get list of cfg files in dir
@@ -412,7 +415,7 @@ class init(object):
 
         # Print avail and exit
         self.print_avail_cfgs(avail_cfgs)
-        exception.error_and_quit(self.glob.log, "input cfg file matching '" + input_label + "' not found.")
+        self.glob.lib.msg.error("input cfg file matching '" + input_label + "' not found.")
 
     # returns dict of search fields to locate installed application, from bench cfg file
     def get_search_list(self, cfg_file):
@@ -425,7 +428,7 @@ class init(object):
 
         except Exception as err:
             print(err)
-            exception.error_and_quit(self.glob.log, "failed to read [requirements] section of cfg file " + cfg_file)
+            self.glob.lib.msg.error("failed to read [requirements] section of cfg file " + cfg_file)
         
         return search_list
 
@@ -444,12 +447,18 @@ class init(object):
         return match
 
     # Check if the requirements in bench.cfg need a built code 
-    def needs_code(self, search_list):
-        # Check if all search_list values are empty
-        if not search_list:
-            return False
-        else:
+    def needs_code(self, search_dict):
+
+        # Check if all search_list values are empty (system is always set)
+        num_requirements = 0
+        for key in search_dict:
+            if search_dict[key]:
+                num_requirements += 1
+
+        if num_requirements > 1:
             return True
+
+        return False
 
     # Check if search_list returns unique installed application
     def check_if_installed(self, search_dict):
@@ -470,21 +479,13 @@ class init(object):
             if self.glob.stg['build_if_missing']:
                 return False
             else:
-                print("No installed applications match your selection criteria: ", ", ".join([search_dict[key] for key in search_dict]))
-                print("And 'build_if_missing'=False in settings.ini")
-                print("Currently installed applications:")
-                for code in installed_list:
-                    print(" " + code)
-                sys.exit(1)
+                self.glob.lib.msg.error(["No installed applications match your selection criteria: ", ", ".join([search_dict[key] for key in search_dict]),
+                                "And 'build_if_missing'=False in settings.ini",
+                                "Currently installed applications:"] + installed_list)
 
         # Multiple results
         elif len(results) > 1:
-
-            print("Multiple installed applications match your selection critera: ", ", ".join([search_dict[key] for key in search_dict]))
-            for code in results:
-                print("  ->" + code)
-            print("Please be more specific.")
-            sys.exit(1)
+            self.glob.lib.msg.error(["Multiple installed applications match your selection critera: ", ", ".join([key+"="+search_dict[key] for key in search_dict if search_dict[key]])] + results + ["Please be more specific."])
 
     # Read every build config file and construct a list with format [[cfg_file, code, version, build_label],...]
     def get_avail_codes(self):
@@ -505,7 +506,7 @@ class init(object):
 
             except Exception as err:
                 print(err)
-                exception.error_and_quit(self.glob.log, "failed to read [requirements] section of cfg file " + cfg_file)
+                self.glob.lib.msg.error("failed to read [requirements] section of cfg file " + cfg_file)
         
         # Return list
         return avail_list
@@ -527,14 +528,10 @@ class init(object):
             return results[0]
 
         elif len(results) == 0:
-            print("No application profile available which meet your search criteria:", search_list)
-            sys.exit(1)
+            self.glob.lib.msg.error(["No application profile available which meets your search criteria:"] + search_list)
 
         elif len(results) > 1:
-            print("There are multiple applications available which meet your search criteria:")
-            for result in results:
-                print("  " + self.rel_path(result))
-            sys.exit(1)
+            self.glob.lib.msg.error(["There are multiple applications available which meet your search criteria:"] + [self.rel_path(result) for result in results])
 
     # Get the process PID for the build
     def get_build_pid(self):
@@ -545,17 +542,17 @@ class init(object):
                                     check=True, capture_output=True, universal_newlines=True)
 
         except subprocess.CalledProcessError as e:
-            exception.error_and_quit("Failed to run 'ps -aux'")
+            self.glob.lib.msg.error("Failed to run 'ps -aux'")
 
         pid = cmd.stdout.split("\n")[0].split(" ")[2]
         if not pid:
-            exception.error_and_quit(self.glob.log, "Could not determine PID for build script. ps -aux gave: '" + cmd.stdout + "'")
+            self.glob.lib.msg.error("Could not determine PID for build script. ps -aux gave: '" + cmd.stdout + "'")
 
         return pid
 
     # Replace SLURM variables in ouput files
     def check_for_slurm_vars(self):
-        self.glob.code['result']['output_file'] = self.glob.code['result']['output_file'].replace("$SLURM_JOBID", self.glob.jobid) 
+        self.glob.config['result']['output_file'] = self.glob.config['result']['output_file'].replace("$SLURM_JOBID", self.glob.jobid) 
 
     # Write operation to file
     def write_to_outputs(self, op, label):
@@ -644,7 +641,7 @@ class init(object):
 
             if not "=" in keyval:
             # Convert to dict
-                exception.error_and_quit(glob.log, "invalid input format detected: " + input_str)
+                self.glob.lib.msg.error("invalid input format detected: " + input_str)
 
             # Add keyval to dict
             input_dict[keyval.split("=")[0]] = keyval.split("=")[1]
@@ -657,3 +654,8 @@ class init(object):
     def parse_bench_str(self, input_str):
         return self.parse_input_str(input_str, "dataset")
 
+    # Check if path exists, if so append .dup
+    def check_dup_path(self, path):
+        if os.path.isdir(path):
+            return self.check_dup_path(path + ".dup")
+        return path

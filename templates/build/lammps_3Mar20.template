@@ -1,4 +1,4 @@
-tar -xf ${benchmark_repo}/lammps-${version}.tgz -C ${build_path}
+tar -xf ${local_repo}/lammps-${version}.tgz -C ${build_path}
 
 cd ${build_path}/lammps-${version}/src
 

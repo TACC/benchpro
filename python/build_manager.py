@@ -8,36 +8,35 @@ import sys
 import time
 
 # Local Imports
-import exception
 import logger
 
 glob = None
 
 # Check if an existing installation exists
 def check_for_previous_install():
-    install_path = glob.code['metadata']['working_path']
+    install_path = glob.config['metadata']['working_path']
+
     # If existing installation is found
     if os.path.isdir(install_path):
         # Delete if overwrite=True
         if glob.stg['overwrite']:
-            glob.log.debug("WARNING: It seems this app is already installed. Deleting old build in " +
-                         install_path + " because 'overwrite=True' in settings.ini")
 
-            print()
-            print("WARNING: Application directory already exists and 'overwrite=True' in settings.ini")
-            print("\033[0;31mDeleting in 5 seconds...\033[0m")
-            print()
+            glob.lib.msg.warning(["It seems this app is already installed. Deleting old build in " +
+                         glob.lib.rel_path(install_path) + " because 'overwrite=True' in settings.ini",
+                         "\033[0;31mDeleting in 5 seconds...\033[0m"])
 
             time.sleep(glob.stg['timeout'])
-            print("No going back now...")
+            glob.lib.msg.high("No going back now...")
 
             su.rmtree(install_path)
             # Installation not found (after delete)
             return False
         # Else warn and skip build
         else:
-            exception.print_warning(glob.log, "It seems this app is already installed in " + glob.lib.rel_path(install_path) +
-                                     ".\nThe install directory already exists and 'overwrite=False' in settings.ini. Skipping build.")
+            glob.lib.msg.warning("Application already installed.") 
+            glob.lib.msg.low(["Install path: " + glob.lib.rel_path(install_path),
+                            "The install directory already exists and 'overwrite=False' in settings.ini"])
+            glob.lib.msg.high("Skipping build.")
             return True
     # Installation not found
     else:
@@ -58,12 +57,13 @@ def get_build_dep(job_limit):
         glob.any_dep_list.append(str(running_jobids[len(running_jobids)-job_limit]))
 
 # Main method for generating and submitting build script
-#
-# code_label can be string or list of strings, this is handled in cfg_handler
-#
-def build_code(input_dict):
+def build_code(input_dict, glob_copy):
 
-    print("Starting build process for application with search criteria:  '" + "', '".join([i + "=" + input_dict[i] for i in input_dict.keys() if i]) + "'")
+    # Use copy of glob for this build
+    global glob
+    glob = glob_copy
+
+    glob.lib.msg.heading("Building application:  '" + ",".join([i + "=" + input_dict[i] for i in input_dict.keys() if i]) + "'")
 
     # Parse config input files
     glob.lib.cfg.ingest('build',    input_dict)
@@ -73,24 +73,25 @@ def build_code(input_dict):
     if check_for_previous_install():
         return
 
-    print()
-    print("Found matching application config file:")
-    print(">  " + glob.lib.rel_path(glob.code['metadata']['cfg_file']))
-    print()
+    glob.lib.msg.low(["", 
+                    "Found matching application config file:",
+                    ">  " + glob.lib.rel_path(glob.config['metadata']['cfg_file'])])
 
-    # Get sched config dict if exec_mode=sched, otherwise set threads 
+    # Get sched config dict if exec_mode=sched, otherwise set default threads for local build
     if glob.stg['build_mode'] == "sched":
-        if not glob.code['general']['sched_cfg']:
-            glob.code['general']['sched_cfg'] = glob.lib.get_sched_cfg()
-        glob.lib.cfg.ingest('sched', glob.code['general']['sched_cfg'])
-        print("Using scheduler config file:")
-        print(">  " + glob.lib.rel_path(glob.sched['metadata']['cfg_file']))
-        print()
+        # If sched config file not specified, use system default
+        if not glob.config['general']['sched_cfg']:
+            glob.config['general']['sched_cfg'] = glob.lib.get_sched_cfg()
+        # Ingest sched config from file
+        glob.lib.cfg.ingest('sched', glob.config['general']['sched_cfg'])
+
+        # Low priority stdout message
+        glob.lib.msg.low(["Using scheduler config file:",
+                        ">  " + glob.lib.rel_path(glob.sched['metadata']['cfg_file'])])
     else:
         glob.sched = {'sched': {'threads':8}}
 
-    # Check for empty overload params
-
+    # Check for unused overload params (unless run from bench_manager)
     if not glob.quiet_build:
         glob.lib.check_for_unused_overloads()
 
@@ -102,42 +103,41 @@ def build_code(input_dict):
     # Generate build script
     glob.lib.template.generate_build_script()
 
-    # Generate module in temp location
+    # Generate module file
     mod_path, mod_file = glob.lib.module.make_mod()
 
     # ================== COPY INSTALLATION FILES ===================================
 
     # Make build path and move tmp build script file
-    glob.lib.create_dir(glob.code['metadata']['working_path'])
-    glob.lib.install(glob.code['metadata']['working_path'], glob.tmp_script, None)
+    glob.lib.create_dir(glob.config['metadata']['working_path'])
+    glob.lib.install(glob.config['metadata']['working_path'], glob.tmp_script, None)
 
     # Make module path and move tmp module file
     glob.lib.create_dir(mod_path)
     glob.lib.install(mod_path, mod_file, None)
 
     # Copy code and sched cfg & template files to build dir
-    provenance_path = os.path.join(glob.code['metadata']['working_path'], "build_files")
+    provenance_path = os.path.join(glob.config['metadata']['working_path'], "build_files")
     glob.lib.create_dir(provenance_path)
 
-    glob.lib.install(provenance_path, glob.code['metadata']['cfg_file'], "build.cfg")
-    glob.lib.install(provenance_path, glob.code['template'], "build.template")
+    glob.lib.install(provenance_path, glob.config['metadata']['cfg_file'], "build.cfg")
+    glob.lib.install(provenance_path, glob.config['template'], "build.template")
 
     # Copy sched config file if building via sched
     if glob.stg['build_mode'] == "sched":
         glob.lib.install(provenance_path, glob.sched['metadata']['cfg_file'], None)
-        glob.lib.install(provenance_path, glob.sched['template'], None)
 
     # Clean up tmp files
-    exception.remove_tmp_files(glob.log)
+    glob.lib.files.remove_tmp_files()
 
-    print(glob.success)
+    glob.lib.msg.high(glob.success)
 
     output_file = ""
 
-    # If dry_run
+# If dry_run
     if glob.stg['dry_run']:
-        print("This was a dryrun, skipping build step. Script created at:")
-        print(">  " + glob.lib.rel_path(os.path.join(glob.code['metadata']['working_path'], glob.tmp_script[4:])))
+        glob.lib.msg.low(["This was a dryrun, skipping build step. Script created at:",
+                        ">  " + glob.lib.rel_path(os.path.join(glob.config['metadata']['working_path'], glob.script_file))])
         glob.jobid = "dry_run"
 
     else:
@@ -147,7 +147,7 @@ def build_code(input_dict):
             try:
                 job_limit = int(glob.stg['max_build_jobs'])
             except:
-                exception.error_and_quit(glob.log, "'max_build_jobs in settings.ini is not an integer")
+                glob.lib.msg.error("'max_build_jobs in settings.ini is not an integer")
 
             get_build_dep(job_limit)
 
@@ -158,25 +158,21 @@ def build_code(input_dict):
         # Or start local shell
         else:
             output_file = "bash.stdout"
-            glob.lib.start_local_shell(glob.code['metadata']['working_path'], glob.tmp_script[4:], output_file)
+            glob.lib.start_local_shell(glob.config['metadata']['working_path'], glob.tmp_script[4:], output_file)
             glob.jobid = "local"
 
-        print("Output file:")
-        print(">  " + glob.lib.rel_path(os.path.join(glob.code['metadata']['working_path'], output_file)))
+        glob.lib.msg.low(["Output file:",
+                        ">  " + glob.lib.rel_path(os.path.join(glob.config['metadata']['working_path'], output_file))])
 
     # Generate build report
     glob.lib.report.build()
+    glob.lib.msg.high("Done.") 
 
 # Setup contants and get build label
-def init(glob_obj):
+def init(glob):
 
-    # Get global settings obj
-    global glob
-    glob = glob_obj
-
-    # Init loggers
-    glob.log = logger.start_logging("BUILD", glob.stg['build_log_file'] + "_" + glob.time_str + ".log", glob)
-
+    # Init logger
+    logger.start_logging("BUILD", glob.stg['build_log_file'] + "_" + glob.time_str + ".log", glob)
 
     # Get list of avail cfgs
     glob.lib.set_build_cfg_list()
@@ -190,29 +186,25 @@ def init(glob_obj):
 
     #Check build_mode in set correctly
     if glob.stg['build_mode'] not in  ['sched', 'local']:
-        exception.error_and_quit(glob.log, "Unsupported build execution mode found: '"+glob.stg['bench_mode']+"' in settings.ini, please specify 'sched' or 'local'.")
+        glob.lib.msg.error(["Unsupported build execution mode found: '"+glob.stg['bench_mode']+"' in settings.ini",
+                                    "Please specify 'sched' or 'local'."])
 
-    # ----------------- IF CODE LABEL IS A STRING (FROM USER INPUT) --------------------------
-    if isinstance(glob.args.build, str):
+    # ----------------- IF CODE LABEL IS A LIST (FROM USER INPUT) --------------------------
+    if isinstance(glob.args.build, list):
 
-        # Either build codes in suite or user label
-        if glob.args.build in glob.suite.keys():
-            code_label_list = glob.stg[glob.args.build].split(',')
-            print("Building application suite '" + glob.args.build + "': " + glob.stg[glob.args.build])
-            for code_label in code_label_list:
-                build_code(code_label)
-                glob.lib.msg.prt_brk()
+        build_list  = glob.args.build
+        # If user input is a suite - get string from settings.ini
+        if glob.args.build[0] in glob.suite.keys():
 
-        # User build input (can be ':' delimited)
-        else:
-            input_dict = glob.lib.parse_build_str(glob.args.build)
-            build_code(input_dict)
-            glob.lib.msg.prt_brk()
-
+            build_list = glob.stg[glob.args.build[0]].split(" ")
+            glob.lib.msg.heading(["Building suite '" + glob.args.build[0] + "': " + ", ".join(build_list), ""])
+           
+        # User build input (can be ' ' delimited)
+        for build_str in build_list:
+            build_code(glob.lib.parse_build_str(build_str), copy.deepcopy(glob))
+            glob.lib.msg.brk()
 
     # ----------------- IF CODE LABEL IS A DICT (FROM BENCHER) --------------------------
     else:
-        build_code(glob.args.build)
-
-
-    print()
+        build_code(glob.args.build, copy.deepcopy(glob))
+        

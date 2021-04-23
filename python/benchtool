@@ -8,20 +8,19 @@ import sys
 from timeit import default_timer as timer
 
 # Local Imports
-#try:
-import bench_manager
-import build_manager
-import global_settings
-import splash
-import result_manager
-import validate_setup as validate
+try:
+    import bench_manager
+    import build_manager
+    import global_settings
+    import result_manager
+    import validate_setup as validate
 
 # Catch import exception
-#except ImportError as e:
-#    print("You had an import error, you might be using Python2 ?")
-#    print("Please setup your environment with 'source sourceme'")
-#    print(e)
-#    sys.exit(1)
+except ImportError as e:
+    print("You had an import error, you might be using Python2?")
+    print("Please setup your environment with 'source sourceme'")
+    print(e)
+    sys.exit(1)
 
 # Confirm BENCHTOOL is set in environment
 def check_env(var):
@@ -38,11 +37,10 @@ def check_validatation(val_file):
         sys.exit(1)
 
 # Generate dict fom colon-delimited params
-def get_var_overload_dict(vars_str):
+def get_var_overload_dict(vars_list):
     overload_dict = {} 
-    if vars_str:
-        settings_list = vars_str.split(':')
-        for setting in settings_list:
+    if vars_list:
+        for setting in vars_list:
             pair = setting.split('=')
             # Test key-value pair
             if not len(pair) == 2:
@@ -65,39 +63,39 @@ def main():
         description='This is a benchmarking tool to automate the installation of applications, \
                     execution of benchmarks and collection of results.')
 
-    cmd_parser.add_argument("--build", default=False,
-                            type=str, help="Name of the code config file to build, run --avail to check.")
+    cmd_parser.add_argument("-b", "--build", default=False, nargs='+',
+                            type=str, help="Name of the code config file to build, run --avail to check. Accepts space delimited list.")
     cmd_parser.add_argument("--sched", default="system",
                             type=str, help="Name of the scheduler config file, will use system default otherwise.")
 
-    cmd_parser.add_argument("--bench", default=False,
-                            type=str, help="Name of benchmark config file to bench, run --avail to check.")
+    cmd_parser.add_argument("-B", "--bench", default=False, nargs='+',
+                            type=str, help="Name of benchmark config file to bench, run --avail to check. Accepts space delimited list.")
 
-    cmd_parser.add_argument("--capture", default=False, action='store_true',
+    cmd_parser.add_argument("-C", "--capture", default=False, action='store_true',
                             help="Send results to database.")
-    cmd_parser.add_argument("--listResults", nargs='?', const="all", type=str,
+    cmd_parser.add_argument("-lr", "--listResults", nargs='?', const="all", type=str,
                             help="Provide summary of benchmarks results. Default is 'all', also takes 'pending', 'complete', 'captured' or \
                                     'failed'")
-    cmd_parser.add_argument("--delResult", default=False,
-                            help="Deletes benchmark result from local directory, takes benchmark label, 'captured', \
+    cmd_parser.add_argument("-dr", "--delResult", default=False, nargs='+',
+                            help="Deletes benchmark result from local directory, takes space delimited benchmark label, 'captured', \
                                     'failed' or 'all'")
     
-    cmd_parser.add_argument("--clean", default=False, action='store_true',
+    cmd_parser.add_argument("-c", "--clean", default=False, action='store_true',
                             help="Cleanup temp and log files.")
-    cmd_parser.add_argument("--listApps", default=False, action='store_true',
+    cmd_parser.add_argument("-la", "--listApps", default=False, action='store_true',
                             help="Show all installed applications.")
-    cmd_parser.add_argument("--avail", nargs='?', const="all", type=str,
+    cmd_parser.add_argument("-a", "--avail", nargs='?', const="all", type=str,
                             help="Show all available application profiles. Default is 'all', also accepts 'code', 'bench' or 'suite'.")
 
-    cmd_parser.add_argument("--setup", default=False, action='store_true',
+    cmd_parser.add_argument("-s", "--setup", default=False, action='store_true',
                             help="Print default options for current system.")
 
-    cmd_parser.add_argument("--delApp", default=False,
-                            help="Remove an installed application.")
+    cmd_parser.add_argument("-da", "--delApp", default=False, nargs='+',
+                            help="Remove an installed application. Accepts space delimited list.")
 
-    cmd_parser.add_argument("--queryApp", default=False,
+    cmd_parser.add_argument("-qa", "--queryApp", default=False,
                             help="Query build report of an installed application.")
-    cmd_parser.add_argument("--queryResult", default=False,
+    cmd_parser.add_argument("-qr", "--queryResult", default=False,
                             help="Query a local benchmark result for config info.")
     cmd_parser.add_argument("--dbResult", nargs='?', const="all", type=str,
                             help="Query database for benchmark results. Default is 'all'. Also accepts colon-delimited list \
@@ -110,15 +108,15 @@ def main():
     cmd_parser.add_argument("--history", default=False, action='store_true',
                                 help="Print benchtool input history.")
 
-    cmd_parser.add_argument("--last", nargs='?', const=1, type=int,
+    cmd_parser.add_argument("-L", "--last", nargs='?', const=1, type=int,
                                 help="Print query from last build or bench task.")
 
-    cmd_parser.add_argument("--overload", default=False,
-                            help="Override any setting read from cfg files. Accepts colon-delimited list of assignments.")
-    cmd_parser.add_argument("--validate", default=False, action='store_true',
+    cmd_parser.add_argument("-o", "--overload", default=False, nargs='+',
+                            help="Override any setting read from cfg files. Accepts space delimited list of assignments.")
+    cmd_parser.add_argument("-V", "--validate", default=False, action='store_true',
                             help="Run installation validator.")
 
-    cmd_parser.add_argument("--version", default=False, action='store_true',
+    cmd_parser.add_argument("-v", "--version", default=False, action='store_true',
                             help="Print version info.")
 
     args = cmd_parser.parse_args()
@@ -148,15 +146,12 @@ def main():
 
     # Start builder
     if args.build:
-        splash.print_splash(glob)
         build_manager.init(glob)
     # Start bencher
     elif args.bench:
-        splash.print_splash(glob)
         bench_manager.init(glob)
     # Start capture
     elif args.capture:
-        splash.print_splash(glob)
         result_manager.capture_result(glob)
     # Cleanup and exit
     elif args.clean:

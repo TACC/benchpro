@@ -1,24 +1,4 @@
-
-export   working_path=<<<working_path>>>
-export benchmark_repo=<<<benchmark_repo>>>
-export       mpi_exec=<<<mpi_exec>>>
-export            exe=<<<exe>>>
-export        dataset=<<<dataset>>>
-export    base_module=<<<base_mod>>>
-export     app_module=<<<app_mod>>>
-
-export        run_hours=<<<run_hours>>>
-export interval_seconds=<<<interval_seconds>>>
-
-export OMP_NUM_THREADS=<<<threads>>>
-
-ml use ${base_module}
-ml ${app_module}
-ml
-
-mkdir -p ${working_path}
-tar -xf ${benchmark_repo}/${dataset}.tgz -C ${working_path}
-cd ${working_path}/${dataset}
+tar -xf ${local_repo}/${dataset}.tgz && cd ${dataset}
 
 sed -i "/run_hours/c\ run_hours                           = ${run_hours}" namelist.input
 sed -i "/interval_seconds/c\ interval_seconds                    = ${interval_seconds}" namelist.input

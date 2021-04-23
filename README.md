@@ -67,6 +67,7 @@ benchtool --queryApp lammps
 
 In this example, parameters in `config/build/lammps_3Mar20.cfg` were used to populate the build template `templates/build/lammps_3Mar20.template` which was submitted to the scheduler.
 You can review the populated job script located in the `build_prefix` directory and named `lammps-build.sched`. Parameters for the scheduler job, system architecure, compile time optimizations and a module file were automatically generated.  
+For each application that is build, a 'build_report' is generated in order to preserve metadata about the application. This build report is referenced whenever the application is used to run a benchmark, and also when this application is captured to the database. You can manually examine this report in the application build directory.
 
 ### Run a Benchmark
 
@@ -94,6 +95,7 @@ benchtool --last
 ```
 
 In this example, parameters in `config/bench/lammps_ljmelt.cfg` were used to populate the template `templates/bench/lammps.template`
+Much like the build process, a 'bench_report' was generated to store metadata associated with this benchmark run. It is stored in the benchmark result direcotry and will be used in the next step to capture the result to the database.
 
 ### Capture Benchmark Result
 
@@ -124,7 +126,6 @@ benchtool --dbApp [APPID]
 ```
 benchtool --delResult captured
 ```
-
 
 ### Web frontend
 
@@ -157,20 +158,20 @@ benchtool requires two input files to build an application: a config file contai
 
 ### 1. Build config file
 
-A full detailed list of config file fields is provided below. A config file is seperated into the following sections:
- - `[general]` where information about the application is specified. `module_use` can be provided to add a nonstandard path to MODULEPATH. By default benchtool will attempt to match this config file with its corresponsing template file. You can overwrite this default filename by adding the `template` field. 
- - `[modules]` where `compiler` and `mpi` required, while more modules can be provided. Every module must be available on the local machine. 
- - `[config]` where variables used in the build template script can be added.
+A full detailed list of config file fields are provided at the bottom of this README. A config file is seperated into the following sections:
+ - `[general]` where information about the application is specified. `module_use` can be provided to add a nonstandard path to MODULEPATH. By default benchtool will attempt to match this config file with its corresponsing template file. You can overwrite this default filename by adding the `template` field to this section. 
+ - `[modules]` where `compiler` and `mpi` are required, while more modules can be specified if needed. Every module must be available on the local machine, if you are cross compiling to another platform (e.g. to frontera-rtx) and require system modules not present on the current node, you can set `check_modules=False` in settings.ini to bypass this check. 
+ - `[config]`  where variables used in the build template script can be added.
 
 You can define as many additional parameters as needed for your application. Eg: additional modules, build options, etc. All parameters `[param]` defined here will be used to fill `<<<[param]>>>` variables of the same name in the template file, thus consistent naming is important.
-This file must be located in `config/build`, preferably with the naming scheme `[code]_[version]_build.cfg`. 
+This file must be located in `config/build`, preferably with the naming scheme `[code]_[version].cfg`. 
 
 ### 2. Build template file
 
-This template file is used to gerenate a contextualized build script script which will compile the application.
+This template file is used to gerenate a contextualized build script which will executed to compile the application.
 Variables are defined with `<<<[param]>>>` syntax and populated with the variables defined in the config file above.
 If a `<<<[param]>>>` in the build template in not successfully populated and `exit_on_missing=True` in settings.ini, an expection will be raised.
-You are able to make use of the `benchmark_repo` variable defined in `settings.ini` to store and use files locally. 
+You are able to make use of the `local_repo` variable defined in `settings.ini` to store and use files locally. 
 This file must be located in `templates/build`, with the naming scheme `[code]_[version].template` 
 
 ### 3. Module template file (optional)
@@ -203,7 +204,7 @@ This file must be located in `config/bench`, preferably with the naming scheme `
 ### 2. Benchmark template file  
 
 As with the build template. The benchmark template file is populated with the parameters defined in the config file above. This file should include setup of the dataset, any required pre-processing or domain decomposition steps if required, and the appropriate mpi_exec command.
-You are able to make use of the `benchmark_repo` variable defined in `settings.ini` to copy local files. 
+You are able to make use of the `local_repo` variable defined in `settings.ini` to copy local files. 
 
 This file must be located in `templates/bench`, with the naming scheme `[code]_[bench].template`. 
 
@@ -341,7 +342,7 @@ Global settings are defined in the file `settings.ini`
 | **[bencher]**     |                               |                                                                                   |
 | bench_mode        | sched                         | Accepts 'sched' or 'local', benchmarks run via sched job or local shell.          |
 | build_if_missing  | True                          | If application needed for benchmark is not currently installed, install it.       |
-| benchmark_repo    | /scratch/06280/mcawood/benchmark_repo  | Directory containing benchmark datasets.                                 |
+| local_repo    | /scratch/06280/mcawood/local_repo  | Directory containing benchmark datasets.                                 |
 | bench_basedir     | ./results                     | Top directory containing bechmark runs.                                           |
 | bench_log_file    | bench                         | Label for run log.                                                                |
 | bench_report_file | bench_report.txt              | Benchmark report file.                                                            |

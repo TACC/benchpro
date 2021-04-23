@@ -12,10 +12,10 @@ import lib
 class settings(object):
 
     # Coloured text
-    warning     = '\033[1;33mWARNING: \033[0m'
-    error       = '\033[0;31mERROR: \033[0m'
-    success     = '\033[0;32mSUCCESS: \033[0m'
-    note        = '\033[0;34mNOTE: \033[0m'
+    warning     = '\033[1;33mWARNING \033[0m'
+    error       = '\033[0;31mERROR \033[0m'
+    success     = '\033[0;32mSUCCESS \033[0m'
+    note        = '\033[0;34mNOTE \033[0m'
 
     bold        = '\033[1m'
     end         = '\033[0m'
@@ -25,10 +25,13 @@ class settings(object):
 
     # Global variable dicts
     stg      = {}
-    code     = {}
+    build    = {}
+    config   = {}
     sched    = {}
     compiler = {}
     suite    = {}
+
+    task     = {} 
 
     # list of depency jobs
     any_dep_list = []

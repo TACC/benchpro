@@ -1,4 +1,4 @@
-tar -xf ${benchmark_repo}/swiftsim-${version}.tgz -C ${build_path}
+tar -xf ${local_repo}/swiftsim-${version}.tgz -C ${build_path}
 cd ${build_path}/swiftsim-${version}
 
 TACC_PARMETIS_DIR=""

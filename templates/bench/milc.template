@@ -1,18 +1,4 @@
-export   working_path=<<<working_path>>>
-export benchmark_repo=<<<benchmark_repo>>>
-export       mpi_exec=<<<mpi_exec>>>
-export            exe=<<<exe>>>
-export        dataset=<<<dataset>>>
-export    base_module=<<<base_mod>>>
-export     app_module=<<<app_mod>>>
-
-ml use ${base_module}
-ml ${app_module}
-ml
-
-mkdir -p ${working_path}
-tar -xf ${benchmark_repo}/milc_${dataset}.tgz -C ${working_path}
-cd ${working_path}/milc_${dataset}
+tar -xf ${local_repo}/milc_${dataset}.tgz && cd milc_${dataset}
 
 IFS='x'
 read -a dim <<< "$dataset"
@@ -140,4 +126,4 @@ error_for_propagator 1e-8
 rel_error_for_propagator 0
 $reload_cmd
 forget
-EOI > milc_${dataset}.$SLURM_JOBID
+EOI > ${output_file}

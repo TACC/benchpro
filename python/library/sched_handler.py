@@ -4,22 +4,20 @@ import sys
 import subprocess
 import time
 
-# Local Imports
-import exception
-
 class init(object):
     def __init__(self, glob):
             self.glob = glob
 
     # Run schduler related command 
     def slurm_exec(self, cmd_line):
+
         try:
             cmd = subprocess.run(cmd_line, shell=True, check=True, \
                                     capture_output=True, universal_newlines=True)
 
         # If command failed
         except subprocess.CalledProcessError as e:
-            print(e)
+            self.glob.lib.msg.high(e)
             return False, "", ""
 
         # If command succeeded
@@ -133,57 +131,49 @@ class init(object):
             dep += "--dependency=afterok:" + ":".join([str(x) for x in self.glob.ok_dep_list]) + " " 
 
         if dep:
-            print("Job dependency string: " + dep)
+            self.glob.lib.msg.low("Job dependency string: " + dep)
 
         return dep
 
     # Submit script to scheduler
     def submit(self):
 
-            script_path = os.path.join(self.glob.code['metadata']['working_path'], self.glob.tmp_script[4:])
-            print("Job script:")
-            print(">  " + self.glob.lib.rel_path(script_path))
-            print()
-            print("Submitting to scheduler...")
-            self.glob.log.debug("Submitting " + script_path + " to scheduler...")
+        script_path = os.path.join(self.glob.config['metadata']['working_path'], self.glob.script_file)
+        self.glob.lib.msg.low(["Job script:",
+                                ">  " + self.glob.lib.rel_path(script_path),
+                                "",
+                                "Submitting to scheduler..."])
 
+        success, stdout, stderr = self.slurm_exec("sbatch " + self.get_dep_str() + script_path)
 
-            success, stdout, stderr = self.slurm_exec("sbatch " + self.get_dep_str() + script_path)
+        if not success:
+            self.glob.lib.msg.error("failed to submit job to scheduler")
 
-            if not success:
-                exception.error_and_quit(self.glob.log, "failed to submit job to scheduler")
+        self.glob.log.debug(stdout)
+        self.glob.log.debug(stderr)
 
-            self.glob.log.debug(stdout)
-            self.glob.log.debug(stderr)
+        jobid = None
+        jobid_line = "Submitted batch job"
+        
+        # Find job ID
+        for line in stdout.splitlines():
+            if jobid_line in line:
+                jobid = line.split(" ")[-1]
 
-            jobid = None
-            jobid_line = "Submitted batch job"
-
-            # Find job ID
-            for line in stdout.splitlines():
-                if jobid_line in line:
-                    jobid = line.split(" ")[-1]
-
-            # Wait for slurm to generate jobid
-            time.sleep(self.glob.stg['timeout'])
+        # Wait for slurm to generate jobid
+        time.sleep(self.glob.stg['timeout'])
             
+        # Get job in queue
+        success, stdout, stderr = self.slurm_exec("squeue -a --job " + jobid)
 
-            # Get job in queue
-            success, stdout, stderr = self.slurm_exec("squeue -a --job " + jobid)
+        self.glob.lib.msg.low([stdout,
+                                "Job " + jobid + " stdout:",
+                                ">  "+ self.glob.lib.rel_path(os.path.join(self.glob.config['metadata']['working_path'], jobid + ".out")),
+                                "Job " + jobid + " stderr:",
+                                ">  "+ self.glob.lib.rel_path(os.path.join(self.glob.config['metadata']['working_path'], jobid + ".err"))])
 
-            print(stdout)
+        self.glob.log.debug(stdout)
+        self.glob.log.debug(stderr)
 
-
-            print()
-            print("Job " + jobid + " stdout:")
-            print(">  "+ self.glob.lib.rel_path(os.path.join(self.glob.code['metadata']['working_path'], jobid + ".out")))
-
-            print("Job " + jobid + " stderr:")
-            print(">  "+ self.glob.lib.rel_path(os.path.join(self.glob.code['metadata']['working_path'], jobid + ".err")))
-            print()
-
-            self.glob.log.debug(stdout)
-            self.glob.log.debug(stderr)
-
-            # Store jobid in shared global object
-            self.glob.jobid = jobid
+        # Store jobid in shared global object
+        self.glob.jobid = jobid

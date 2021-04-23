@@ -1,8 +1,8 @@
 export       mpilabel=<<<mpilabel>>>
 export      complabel=<<<complabel>>>
 
-tar -xf ${benchmark_repo}/OpenFOAM-${version}.tgz -C ${install_path}
-tar -xf ${benchmark_repo}/ThirdParty-${version}.tgz -C ${install_path}
+tar -xf ${local_repo}/OpenFOAM-${version}.tgz -C ${install_path}
+tar -xf ${local_repo}/ThirdParty-${version}.tgz -C ${install_path}
 
 cd ${install_path}/OpenFOAM-${version}
 
