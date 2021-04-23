@@ -29,7 +29,7 @@ git clone https://github.com/TACC/benchtool.git
 ```
 NOTE: some of the hardware info collection scripts require root priviledges, you can either run the permissions script below, or live with the warning.
 ```
-sudo hw_utils/change_permissions.sh
+sudo resources/scripts/change_permissions.sh
 source sourceme
 benchtool --validate
 ```
