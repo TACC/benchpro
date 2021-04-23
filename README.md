@@ -1,6 +1,6 @@
 # bench-framework
 This is a framework to automate and standardize application compilation, benchmarking and result collection on large scale HPC systems.
-Currently there are 7 application profiles available for debugging and testing:
+Currently there are the following application profiles available for debugging and testing:
    - AMBER 20
    - LAMMPS 3Mar20
    - OpenFOAM v2006
@@ -8,6 +8,11 @@ Currently there are 7 application profiles available for debugging and testing:
    - SWIFTsim 0.8.5
    - WRF 4.2
    - MILC 7.8.1
+
+As well as these synthetic benchmarks:
+   - HPL
+   - HPCG
+   - STREAM
 
 In addition there are new applications being added.
 
@@ -20,8 +25,7 @@ The following steps will walk you through the basic usage of benchtool and shoul
 1 Download, setup enivronment and validate benchtool: 
 
 ```
-git clone https://gitlab.tacc.utexas.edu/mcawood/bench-framework
-cd bench-framework
+git clone https://github.com/TACC/benchtool.git
 ```
 NOTE: some of the hardware info collection scripts require root priviledges, you can either run the permissions script below, or live with the warning.
 ```
