@@ -56,11 +56,17 @@ class init(object):
                     "module_use     = "+ self.glob.config['general']['module_use'],
                     "modules        = "+ ", ".join(self.glob.config['modules'].values()),
                     "opt_flags      = "+ self.glob.config['config']['opt_flags'],
+                    "bin_dir        = "+ self.glob.config['config']['bin_dir'],
                     "exe_file       = "+ self.glob.config['config']['exe'],
                     "build_prefix   = "+ self.glob.config['metadata']['working_path'],
                     "build_date     = "+ str(datetime.now()),
-                    "jobid          = "+ self.glob.jobid,
-                    "app_id         = "+ self.glob.lib.get_application_id()
+                    "script         = "+ self.glob.script_file,
+                    "exec_mode      = "+ self.glob.stg['build_mode'],
+                    "task_id        = "+ str(self.glob.task_id),
+                    "app_id         = "+ self.glob.lib.get_application_id(),
+                    "stdout         = "+ self.glob.config['config']['stdout'],
+                    "stderr         = "+ self.glob.config['config']['stderr']
+
                   ]
 
         # Write content to file
@@ -81,21 +87,19 @@ class init(object):
         content.extend (["[bench]", 
                         "bench_prefix   = "+ self.glob.config['metadata']['working_path'],
                         "system         = "+ self.glob.system['sys_env'],
-                        "launch node    = "+ self.glob.hostname,
+                        "launch_node    = "+ self.glob.hostname,
                         "nodes          = "+ self.glob.config['runtime']['nodes'],
                         "ranks          = "+ self.glob.config['runtime']['ranks_per_node'],
                         "threads        = "+ self.glob.config['runtime']['threads'],
                         "gpus           = "+ self.glob.config['runtime']['gpus'],
                         "dataset        = "+ self.glob.config['config']['dataset'],
                         "start_time     = "+ str(datetime.now()),
-                        "job_script     = "+ self.glob.config['metadata']['job_script'],
-                        "jobid          = "+ self.glob.jobid
+                        "script         = "+ self.glob.config['metadata']['job_script'],
+                        "exec_mode      = "+ self.glob.stg['bench_mode'],
+                        "task_id        = "+ str(self.glob.task_id),
+                        "stdout         = "+ self.glob.config['config']['stdout'],
+                        "stderr         = "+ self.glob.config['config']['stderr']
                         ])
-
-        # Add stdout/err for sched jobs
-        if not self.glob.jobid == "dry_run":
-            content.append("stdout         = "+ self.glob.jobid+".out")
-            content.append("stderr         = "+ self.glob.jobid+".err")
 
         # Add result details from cfg file
         content.append("[result]")
@@ -105,15 +109,31 @@ class init(object):
         # Write content to file
         self.write(content, os.path.join(self.glob.config['metadata']['working_path'],self.glob.stg['bench_report_file']))
 
-    # Return jobid value from provided report directory
-    def get_jobid(self, job_type, report_file):
+    # Return sched/local/dry_run from report file
+    def get_exec_mode(self, job_type, report_file):
 
+        # Path to job report file
+        report_path = os.path.join(self.glob.stg['build_path'], report_file, self.glob.stg['build_report_file'])
+
+        if job_type == "bench":
+            # Path to bench report file
+            report_path = os.path.join(self.glob.stg['pending_path'], report_file, self.glob.stg['bench_report_file'])
+
+        # Get exec_mode from report file
+        return self.read(report_path)[job_type]['exec_mode']
+
+    # Return task_id value from provided report directory
+    def get_task_id(self, job_type, report_file):
+
+        # Path to job report file
         report_path = os.path.join(self.glob.stg['build_path'], report_file, self.glob.stg['build_report_file'])
         if job_type == "bench":
+            # Path to bench report file
             report_path = os.path.join(self.glob.stg['pending_path'], report_file, self.glob.stg['bench_report_file'])
 
         if os.path.isfile(report_path):
-            return self.read(report_path)[job_type]['jobid']
+            return self.read(report_path)[job_type]['task_id']
+
         return False
 
     # Return the binary executable value from provided build path
@@ -121,12 +141,7 @@ class init(object):
         report_path = os.path.join(self.glob.stg['build_path'], build_path, self.glob.stg['build_report_file'])
 
         if os.path.isfile(report_path):
-            return self.read(report_path)['build']['exe_file']
-        return False
-
-    # Confirm required values are in report
-    def test_report(self):
-        print()
-
+            return self.read(report_path)['build']['bin_dir'], self.read(report_path)['build']['exe_file']
+        return False, False
 
 

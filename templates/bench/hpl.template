@@ -1,8 +1,6 @@
 
 export       NODES=${nodes}
 export     HPL_EXE=${exe}
-ml ${compiler}
-ml
 
 cp -r ${MKLROOT}/benchmarks/mp_linpack/* .
 

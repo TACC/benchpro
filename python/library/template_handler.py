@@ -113,7 +113,7 @@ class init(object):
     # Add dependency to build process (if building locally)
     def add_process_dep(self, template_obj):
 
-        self.glob.log.debug("Adding dependency to benchmark script, waiting for PID: " + self.glob.prev_pid)
+        self.glob.lib.msg.low("Adding dependency to benchmark script, waiting for PID: " + self.glob.prev_pid)
 
         dep_file = os.path.join(self.glob.stg['template_path'], self.glob.stg['pid_dep_file'])
         if os.path.isfile(dep_file):
@@ -163,7 +163,7 @@ class init(object):
         # Get compiler cmds for gcc/intel/pgi, otherwise compiler type is unknown
         known_compiler_type = True
         try:
-            self.glob.compiler['common'].update(self.glob.compiler[self.glob.config['config']['compiler_type']])
+            self.glob.compiler['common'] = self.glob.compiler[self.glob.config['config']['compiler_type']]
             self.glob.compiler['template'] = self.glob.lib.find_exact(self.glob.stg['compile_tmpl_file'], self.glob.stg['template_path'])
         except:
             known_compiler_type = False
@@ -207,7 +207,8 @@ class init(object):
                                                 self.glob.config['modules'], \
                                                 self.glob.config['config'], \
                                                 self.glob.sched['sched'], \
-                                                self.glob.compiler['common']], \
+                                                self.glob.compiler['common'], \
+                                                self.glob.system], \
                                                 template_obj)
 
         # Test for missing parameters
@@ -263,11 +264,12 @@ class init(object):
     # Sets the mpi_exec string for schduler or local exec modes
     def set_mpi_exec_str(self):
 
+        # Set total ranks for schduler\
+        self.glob.config['runtime']['ranks'] = int(self.glob.config['runtime']['ranks_per_node'])*int(self.glob.config['runtime']['nodes'])
+
         # Standard ibrun call
         if self.glob.stg['bench_mode'] == "sched":
             self.glob.config['runtime']['mpi_exec'] = self.glob.stg['sched_mpi'] + " "
-            # Set total ranks for schduler
-            self.glob.config['runtime']['ranks'] = int(self.glob.config['runtime']['ranks_per_node'])*int(self.glob.config['runtime']['nodes'])
 
         # MPI exec for local host
         elif self.glob.stg['bench_mode'] == "local":
@@ -282,7 +284,7 @@ class init(object):
         # Get template file contents
         template = self.read_template(self.glob.config['template']) 
 
-        self.glob.lib.expr.eval_dict(self.glob.config['runtime'])
+        #self.glob.lib.expr.eval_dict(self.glob.config['runtime'])
 
         # Add start time line
         template_obj.append("echo \"START `date +\"%Y\"-%m-%dT%T` `date +\"%s\"`\" \n")
@@ -338,7 +340,8 @@ class init(object):
                                              self.glob.config['config'], \
                                              self.glob.config['result'], \
                                              self.glob.sched['sched'], \
-                                             self.glob.config['requirements']], \
+                                             self.glob.config['requirements'], \
+                                             self.glob.system], \
                                              template_obj)
     
         else:
@@ -346,7 +349,8 @@ class init(object):
                                             self.glob.config['runtime'], \
                                             self.glob.config['config'], \
                                             self.glob.config['result'], \
-                                            self.glob.config['requirements']], \
+                                            self.glob.config['requirements'], \
+                                            self.glob.system], \
                                             template_obj)
 
         self.glob.lib.msg.low("Validating template...")

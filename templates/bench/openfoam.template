@@ -3,13 +3,14 @@ source $OPENFOAM_DIR/OpenFOAM-*/etc/bashrc
 
 tar -xf ${local_repo}/${dataset}.tgz && cd ${dataset}
 
-numberOfSubdomains=$SLURM_NTASKS
+numberOfSubdomains=$(( nodes * ranks ))
 
 sed -i "/endTime/c\endTime         ${endTime};" system/controlDict
 sed -i "/writeInterval/c\writeInterval   ${writeInterval};" system/controlDict
 sed -i "/numberOfSubdomains/c\numberOfSubdomains ${numberOfSubdomains};" system/decomposeParDict
 
-decomposePar -force > decompose.out
+blockMesh | tee  log.blockMesh
+decomposePar -force | tee log.decomposePar
 
-${mpi_exec} ${exe} -parallel 
+${mpi_exec} ${exe} -parallel | tee log.icoFoam
 

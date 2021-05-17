@@ -130,7 +130,13 @@ class settings(object):
         self.read_settings() 
 
         # Get system label
-        self.sys_env = str(os.getenv(self.stg['system_env'].strip('$')))
+        self.sys_env = self.stg['system_env']
+
+        # If envvar, grab it
+        if self.stg['system_env'][0] == "$":
+            self.sys_env = str(os.getenv(self.stg['system_env'].strip('$')))
+
+        # Check its set
         if not self.sys_env:
             print("ERROR: " + self.stg['system_env'] + " not set.")
             exit(2)

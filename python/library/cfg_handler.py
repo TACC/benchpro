@@ -126,6 +126,7 @@ class init(object):
     def find_cfg(self, search_dict, avail_cfgs, blanks_are_wild):
     
         matching_cfgs = []
+
         # Iter over all avail cfg files
         for cfg in avail_cfgs:
             # Iter over all search terms
@@ -220,6 +221,12 @@ class init(object):
                     elif cfg_dict[sect][key].isdigit():
                         cfg_dict[sect][key] =  int(cfg_dict[sect][key])
 
+    # Accept a 'sched' section in build/bench config file to overload sched settings like runtime
+    def add_sched_overloads(self, cfg_dict):
+        if 'sched' in cfg_dict:
+            for key in cfg_dict['sched']:
+                self.glob.overload_dict[key] = cfg_dict['sched'][key]
+
     # Check build config file and add required fields
     def process_build_cfg(self, cfg_dict):
         # Check for missing essential parameters 
@@ -286,7 +293,7 @@ class init(object):
 
         # Check requested modules exist, and if so, result full module names
         if self.glob.stg['check_modules']:
-            self.glob.lib.check_module_exists(cfg_dict['modules'], cfg_dict['general']['module_use'])
+            self.glob.lib.module.check_exists(cfg_dict['modules'], cfg_dict['general']['module_use'])
 
         # Parse architecture defaults config file 
         arch_file = self.check_file('arch', self.glob.stg['config_path'] + self.glob.stg['sl'] + self.glob.stg['arch_cfg_file'])
@@ -330,8 +337,8 @@ class init(object):
             cfg_dict['metadata']['working_path'] = os.path.join(self.glob.stg['build_path'], \
                                                                 cfg_dict['general']['system'], \
                                                                 cfg_dict['config']['arch'],\
-                                                                self.glob.lib.get_module_label(cfg_dict['modules']['compiler']), \
-                                                                self.glob.lib.get_module_label(cfg_dict['modules']['mpi']), \
+                                                                self.glob.lib.module.get_label(cfg_dict['modules']['compiler']), \
+                                                                self.glob.lib.module.get_label(cfg_dict['modules']['mpi']), \
                                                                 cfg_dict['general']['code'], str(cfg_dict['general']['version']), \
                                                                 cfg_dict['config']['build_label'])
 
@@ -348,6 +355,13 @@ class init(object):
 
         # Set sched nodes to 1 for build jobs
         cfg_dict['config']['nodes'] = 1
+
+        #Set stdout and stderr
+        cfg_dict['config']['stdout'] = "build.out"
+        cfg_dict['config']['stderr'] = "build.err"
+
+        # Add sched params to overload dict
+        self.add_sched_overloads(cfg_dict)
 
     # Check bench config file and add required fields
     def process_bench_cfg(self, cfg_dict):
@@ -368,7 +382,7 @@ class init(object):
         if not 'build_label'        in cfg_dict['requirements'].keys():  cfg_dict['requirements']['build_label']= ""
         if not 'system'             in cfg_dict['requirements'].keys():  cfg_dict['requirements']['system']     = ""
 
-        if not 'threads'            in cfg_dict['runtime'].keys():  cfg_dict['runtime']['threads']              = 1
+        if not 'threads'            in cfg_dict['runtime'].keys():  cfg_dict['runtime']['threads']              = 0
         if not 'ranks_per_node'     in cfg_dict['runtime'].keys():  cfg_dict['runtime']['ranks_per_node']       = 0
         if not 'max_running_jobs'   in cfg_dict['runtime'].keys():  cfg_dict['runtime']['max_running_jobs']     = 10
         if not 'gpus'               in cfg_dict['runtime'].keys():  cfg_dict['runtime']['gpus']                 = 0
@@ -434,6 +448,11 @@ class init(object):
             self.glob.lib.msg.error("'method' key in [result] section of " + \
                                 cfg_dict['metadata']['cfg_file'] + "must be either expr or script." )
 
+
+        # If threads not set, make equal to number of cores per socket
+        if not cfg_dict['runtime']['threads']:
+            cfg_dict['runtime']['threads'] = self.glob.system['cores_per_socket']
+
         # Handle comma-delimited lists
         cfg_dict['runtime']['nodes']            = str(cfg_dict['runtime']['nodes']).split(",")
         cfg_dict['runtime']['threads']          = str(cfg_dict['runtime']['threads']).split(",")
@@ -485,7 +504,18 @@ class init(object):
         # Deal with empty values
         if not cfg_dict['runtime']['max_running_jobs']:
             cfg_dict['runtime']['max_running_jobs'] = 10
-    
+
+        #Set stdout and stderr
+        cfg_dict['config']['stdout'] = "bench.out"
+        cfg_dict['config']['stderr'] = "bench.err"
+
+        # Set result output file to stdout if not set in cfg file
+        if not cfg_dict['result']['output_file']:
+            cfg_dict['result']['output_file'] = cfg_dict['config']['stdout']
+
+        # Add sched params to overload dict
+        self.add_sched_overloads(cfg_dict)
+
     # Check sched config file and add required fields
     def process_sched_cfg(self, cfg_dict):
         # Check for missing essential parameters

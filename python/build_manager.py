@@ -50,11 +50,11 @@ def get_build_dep(job_limit):
     glob.ok_dep_list = []
 
     # Get queued/running build jobs
-    running_jobids = glob.lib.sched.get_active_jobids('_build')
+    running_task_ids = glob.lib.sched.get_active_jobids('_build')
 
     # Create dependency on apropriate running job 
-    if len(running_jobids) >= job_limit:
-        glob.any_dep_list.append(str(running_jobids[len(running_jobids)-job_limit]))
+    if len(running_task_ids) >= job_limit:
+        glob.any_dep_list.append(str(running_task_ids[len(running_task_ids)-job_limit]))
 
 # Main method for generating and submitting build script
 def build_code(input_dict, glob_copy):
@@ -132,13 +132,11 @@ def build_code(input_dict, glob_copy):
 
     glob.lib.msg.high(glob.success)
 
-    output_file = ""
-
 # If dry_run
     if glob.stg['dry_run']:
         glob.lib.msg.low(["This was a dryrun, skipping build step. Script created at:",
                         ">  " + glob.lib.rel_path(os.path.join(glob.config['metadata']['working_path'], glob.script_file))])
-        glob.jobid = "dry_run"
+        glob.task_id = "dry_run"
 
     else:
         # Submit job to sched
@@ -153,16 +151,15 @@ def build_code(input_dict, glob_copy):
 
             # Submit build script to scheduler
             glob.lib.sched.submit()
-            output_file = glob.jobid + ".out"
 
         # Or start local shell
         else:
-            output_file = "bash.stdout"
-            glob.lib.start_local_shell(glob.config['metadata']['working_path'], glob.tmp_script[4:], output_file)
-            glob.jobid = "local"
+            glob.lib.proc.start_local_shell()
+            #Store PID for report
+            glob.task_id = glob.prev_pid
 
         glob.lib.msg.low(["Output file:",
-                        ">  " + glob.lib.rel_path(os.path.join(glob.config['metadata']['working_path'], output_file))])
+                        ">  " + glob.lib.rel_path(os.path.join(glob.config['metadata']['working_path'], glob.config['config']['stdout']))])
 
     # Generate build report
     glob.lib.report.build()
