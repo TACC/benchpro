@@ -707,16 +707,16 @@ def remove_result(glob_obj):
 
     # Remove unique result matching input str
     else:
-        results = get_matching_results(glob.stg['pending_path'], glob.args.delResult) +\
-                  get_matching_results(glob.stg['captured_path'], glob.args.delResult) +\
-                  get_matching_results(glob.stg['failed_path'], glob.args.delResult)
+        results = get_matching_results(glob.stg['pending_path'], glob.args.delResult[0]) +\
+                  get_matching_results(glob.stg['captured_path'], glob.args.delResult[0]) +\
+                  get_matching_results(glob.stg['failed_path'], glob.args.delResult[0])
         if results:
             print("Found " + str(len(results)) + " matching results: ")
             for res in results:
                 print("  " + res.split(glob.stg['sl'])[-1])
             delete_results(results)
         else:
-            print("No results found matching '" + glob.args.delResult + "'")
+            print("No results found matching '" + glob.args.delResult[0] + "'")
 
 
 # Print app info from table

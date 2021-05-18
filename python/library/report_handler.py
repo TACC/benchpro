@@ -120,7 +120,11 @@ class init(object):
             report_path = os.path.join(self.glob.stg['pending_path'], report_file, self.glob.stg['bench_report_file'])
 
         # Get exec_mode from report file
-        return self.read(report_path)[job_type]['exec_mode']
+        report = self.read(report_path)
+        if report:
+            return report[job_type]['exec_mode']
+        else:
+            self.glob.lib.msg.error("Unable to read report file " + self.glob.lib.rel_path(report_path))
 
     # Return task_id value from provided report directory
     def get_task_id(self, job_type, report_file):

@@ -183,8 +183,4 @@ class init(object):
         # Store jobid in shared global object
         self.glob.task_id = jobid
 
-        # Set stdout and stderr filenames
-        self.glob.config['result']['stdout'] = jobid+".out"
-        self.glob.config['result']['stderr'] = jobid+".err"
-
 

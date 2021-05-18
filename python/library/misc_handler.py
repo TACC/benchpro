@@ -211,14 +211,27 @@ class init(object):
     # Get usable string of application status
     def get_status_str(self, app):
 
+
+        # Get execution mode (sched or local) from application report file
+        exec_mode = self.glob.lib.report.get_exec_mode("build", app)
+
+        # Handle dry run applications
+        if exec_mode == "dry_run":
+            return '\033[1;33mDRYRUN\033[0m'
+
         # Get Jobid from report file and check if status = COMPLETED
         task_id = self.glob.lib.report.get_task_id("build", app)
 
-        # Handle dry run applications
-        if task_id == "dry_run":
-            return '\033[1;33mDRYRUN\033[0m'
- 
-        status = self.glob.lib.sched.get_job_status(task_id)
+        status = None
+        if exec_mode == "sched":
+            status = self.glob.lib.sched.get_job_status(task_id)
+
+        elif exec_mode == "local":
+            # Check if PID is running
+            if self.glob.lib.proc.pid_running(task_id):
+                return "\033[1;33mPID STILL RUNNING\033[0m'"
+            else:
+                status = "COMPLETED"
 
         # Complete state
         if status == "COMPLETED":
