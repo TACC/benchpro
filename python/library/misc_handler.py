@@ -229,7 +229,7 @@ class init(object):
         elif exec_mode == "local":
             # Check if PID is running
             if self.glob.lib.proc.pid_running(task_id):
-                return "\033[1;33mPID STILL RUNNING\033[0m'"
+                return "\033[1;33mPID STILL RUNNING\033[0m"
             else:
                 status = "COMPLETED"
 

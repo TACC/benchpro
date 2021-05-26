@@ -63,6 +63,10 @@ def build_code(input_dict, glob_copy):
     global glob
     glob = glob_copy
 
+    
+    print(glob)
+    print("dict", hex(id(glob.overload_dict)))
+
     glob.lib.msg.heading("Building application:  '" + ",".join([i + "=" + input_dict[i] for i in input_dict.keys() if i]) + "'")
 
     # Parse config input files
@@ -71,6 +75,7 @@ def build_code(input_dict, glob_copy):
 
     # If build dir already exists, skip this build
     if check_for_previous_install():
+        print("end", glob)
         return
 
     glob.lib.msg.low(["", 
@@ -183,7 +188,7 @@ def init(glob):
 
     #Check build_mode in set correctly
     if glob.stg['build_mode'] not in  ['sched', 'local']:
-        glob.lib.msg.error(["Unsupported build execution mode found: '"+glob.stg['bench_mode']+"' in settings.ini",
+        glob.lib.msg.error(["Unsupported build execution mode found: '" + glob.stg['bench_mode']+"' in settings.ini",
                                     "Please specify 'sched' or 'local'."])
 
     # ----------------- IF CODE LABEL IS A LIST (FROM USER INPUT) --------------------------
@@ -195,13 +200,28 @@ def init(glob):
 
             build_list = glob.stg[glob.args.build[0]].split(" ")
             glob.lib.msg.heading(["Building suite '" + glob.args.build[0] + "': " + ", ".join(build_list), ""])
-           
+
+
         # User build input (can be ' ' delimited)
         for build_str in build_list:
-            build_code(glob.lib.parse_build_str(build_str), copy.deepcopy(glob))
+            print("*",glob.overload_dict)
+
+            # Get a copy of the global object for use in this benchmark session
+            glob_copy = copy.deepcopy(glob)
+
+
+            glob_copy.overload_dict = copy.deepcopy(glob.overload_dict)
+
+            print(build_str, glob_copy)
+
+            build_code(glob.lib.parse_build_str(build_str), glob_copy)
             glob.lib.msg.brk()
 
     # ----------------- IF CODE LABEL IS A DICT (FROM BENCHER) --------------------------
     else:
-        build_code(glob.args.build, copy.deepcopy(glob))
+        # Get a copy of the global object for use in this benchmark session
+        glob_copy = copy.deepcopy(glob)
+
+        # Start build
+        build_code(glob.args.build, glob_copy)
         
