@@ -89,7 +89,7 @@ class init(object):
             return
 
         # Abort if dry_run
-        if insert_dict['jobid'] == "dry_run":
+        if insert_dict['task_id'] == "dry_run":
             self.glob.lib.msg.low("Application build job was a dry run, skipping database presence check...")
             return
 

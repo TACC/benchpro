@@ -50,11 +50,11 @@ def get_build_dep(job_limit):
     glob.ok_dep_list = []
 
     # Get queued/running build jobs
-    running_jobids = glob.lib.sched.get_active_jobids('_build')
+    running_task_ids = glob.lib.sched.get_active_jobids('_build')
 
     # Create dependency on apropriate running job 
-    if len(running_jobids) >= job_limit:
-        glob.any_dep_list.append(str(running_jobids[len(running_jobids)-job_limit]))
+    if len(running_task_ids) >= job_limit:
+        glob.any_dep_list.append(str(running_task_ids[len(running_task_ids)-job_limit]))
 
 # Main method for generating and submitting build script
 def build_code(input_dict, glob_copy):
@@ -62,6 +62,10 @@ def build_code(input_dict, glob_copy):
     # Use copy of glob for this build
     global glob
     glob = glob_copy
+
+    
+    print(glob)
+    print("dict", hex(id(glob.overload_dict)))
 
     glob.lib.msg.heading("Building application:  '" + ",".join([i + "=" + input_dict[i] for i in input_dict.keys() if i]) + "'")
 
@@ -71,6 +75,7 @@ def build_code(input_dict, glob_copy):
 
     # If build dir already exists, skip this build
     if check_for_previous_install():
+        print("end", glob)
         return
 
     glob.lib.msg.low(["", 
@@ -132,13 +137,11 @@ def build_code(input_dict, glob_copy):
 
     glob.lib.msg.high(glob.success)
 
-    output_file = ""
-
 # If dry_run
     if glob.stg['dry_run']:
         glob.lib.msg.low(["This was a dryrun, skipping build step. Script created at:",
                         ">  " + glob.lib.rel_path(os.path.join(glob.config['metadata']['working_path'], glob.script_file))])
-        glob.jobid = "dry_run"
+        glob.task_id = "dry_run"
 
     else:
         # Submit job to sched
@@ -153,16 +156,15 @@ def build_code(input_dict, glob_copy):
 
             # Submit build script to scheduler
             glob.lib.sched.submit()
-            output_file = glob.jobid + ".out"
 
         # Or start local shell
         else:
-            output_file = "bash.stdout"
-            glob.lib.start_local_shell(glob.config['metadata']['working_path'], glob.tmp_script[4:], output_file)
-            glob.jobid = "local"
+            glob.lib.proc.start_local_shell()
+            #Store PID for report
+            glob.task_id = glob.prev_pid
 
         glob.lib.msg.low(["Output file:",
-                        ">  " + glob.lib.rel_path(os.path.join(glob.config['metadata']['working_path'], output_file))])
+                        ">  " + glob.lib.rel_path(os.path.join(glob.config['metadata']['working_path'], glob.config['config']['stdout']))])
 
     # Generate build report
     glob.lib.report.build()
@@ -186,7 +188,7 @@ def init(glob):
 
     #Check build_mode in set correctly
     if glob.stg['build_mode'] not in  ['sched', 'local']:
-        glob.lib.msg.error(["Unsupported build execution mode found: '"+glob.stg['bench_mode']+"' in settings.ini",
+        glob.lib.msg.error(["Unsupported build execution mode found: '" + glob.stg['bench_mode']+"' in settings.ini",
                                     "Please specify 'sched' or 'local'."])
 
     # ----------------- IF CODE LABEL IS A LIST (FROM USER INPUT) --------------------------
@@ -198,13 +200,28 @@ def init(glob):
 
             build_list = glob.stg[glob.args.build[0]].split(" ")
             glob.lib.msg.heading(["Building suite '" + glob.args.build[0] + "': " + ", ".join(build_list), ""])
-           
+
+
         # User build input (can be ' ' delimited)
         for build_str in build_list:
-            build_code(glob.lib.parse_build_str(build_str), copy.deepcopy(glob))
+            print("*",glob.overload_dict)
+
+            # Get a copy of the global object for use in this benchmark session
+            glob_copy = copy.deepcopy(glob)
+
+
+            glob_copy.overload_dict = copy.deepcopy(glob.overload_dict)
+
+            print(build_str, glob_copy)
+
+            build_code(glob.lib.parse_build_str(build_str), glob_copy)
             glob.lib.msg.brk()
 
     # ----------------- IF CODE LABEL IS A DICT (FROM BENCHER) --------------------------
     else:
-        build_code(glob.args.build, copy.deepcopy(glob))
+        # Get a copy of the global object for use in this benchmark session
+        glob_copy = copy.deepcopy(glob)
+
+        # Start build
+        build_code(glob.args.build, glob_copy)
         

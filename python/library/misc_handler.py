@@ -66,7 +66,7 @@ class init(object):
         parent_dir  = path_elems[-2]
 
         # If parent dir is root ('build' or 'modulefile') or if it contains more than this subdir, delete this subdir
-        if (parent_dir == self.glob.stg['build_basedir']) or  (parent_dir == self.glob.stg['module_basedir']) or (len(gb.glob(parent_path+self.glob.stg['sl']+"*")) > 1):
+        if (parent_dir == self.glob.stg['build_basedir']) or  (parent_dir == self.glob.stg['module_basedir']) or (len(gb.glob(os.path.join(parent_path,"*"))) > 1):
             su.rmtree(path)
         # Else resurse with parent
         else:
@@ -110,7 +110,7 @@ class init(object):
     # Delete application and module matching path provided
     def remove_app(self):
         input_list = self.glob.args.delApp
- 
+
         remove_list = []
         # If 'all' provided, add all installed apps to list to remove
         if input_list[0] == 'all':
@@ -134,20 +134,6 @@ class init(object):
                 else:
                     print("No installed application matching search term '" + app + "'")
 
-    # Display local shells to assist with determining if local job is still busy
-    def print_local_shells(self):
-
-        print("Running bash shells:")
-        try:
-            cmd = subprocess.run("ps -aux | grep " + self.glob.user + " | grep bash | grep bench", shell=True,
-                                    check=True, capture_output=True, universal_newlines=True)
-
-        except subprocess.CalledProcessError as e:
-            self.glob.lib.msg.error("Failed to run 'ps -aux'")
-
-        for line in cmd.stdout.split("\n"):
-            print(" " + line)
-
     # Print build report of installed application
     def query_app(self, app_label):
 
@@ -168,71 +154,96 @@ class init(object):
         install_path = os.path.join(app_path, self.glob.stg['install_subdir'])
 
         # Read contents of build report file
-        report = self.glob.lib.report.read(build_report)
+        report_dict = self.glob.lib.report.read(build_report)
 
-        if not report: 
+        if not report_dict: 
+            print("Failed to read " + self.glob.lib.rel_path(build_report))
             sys.exit(1)
 
         print("Build report for application '"+app_label+"'")
         print("-------------------------------------------")
 
         # Print contents of report file 
-        for sec in report:
+        for sec in report_dict:
             print("["+sec+"]")
-            for key in report[sec]:
-                print(key.ljust(15) + "= " + report[sec][key])
+            for key in report_dict[sec]:
+                print(key.ljust(15) + "= " + report_dict[sec][key])
+
+        print("-------------------------------------------")
+        print()
+
+        status = ""
+        gap = max(len(report_dict['build']['exe_file']) + 9, 20)
 
         # Dry_run - do nothing
-        if report['build']['jobid']  == "dry_run":
+        if report_dict['build']['task_id']  == "dry_run":
             print("Build job was dry_run. Skipping executable check")
     
         else:
             # Local build        
-            if report['build']['jobid'] == "local":
-                self.print_local_shells()
+            if report_dict['build']['exec_mode'] == "local":
+
+                running = self.glob.lib.proc.pid_running(report_dict['build']['task_id'])
+                
+                if running:
+                    print("Local build PID still running:")
+                    self.glob.lib.proc.print_local_pid(report_dict['build']['task_id'])
+
+                else:
+                    status = "COMPLETED"
+
             # Sched build
             else:
-                done = self.glob.lib.sched.check_job_complete(report['build']['jobid'])
+                status = self.glob.lib.sched.get_job_status(report_dict['build']['task_id'])
 
-                gap = max(len(report['build']['exe_file']) + 9, 20)
+                if not status == "COMPLETED":
+                    print(("Job " + report_dict['build']['task_id'] + " status: ").ljust(gap) + "\033[0;31m" + status + "\033[0m")
 
-                if done:
-                    if done == "COMPLETED":
-                        print(("Job " + report['build']['jobid'] + " status: ").ljust(gap) + "\033[0;32m" + done + "\033[0m")
+            # If complete, Look for exe
+            if status == "COMPLETED":
+                print(("Build job status: ").ljust(gap) + "\033[0;32m" + status + "\033[0m")
 
-                        # If complete, Look for exe
-                        exe_search = self.glob.lib.find_exact(report['build']['exe_file'], install_path)
-                        if exe_search:
-                            print(("File "+report['build']['exe_file']+": ").ljust(gap) + "\033[0;32mFOUND\033[0m")
-                        else:
-                            print(("File "+report['build']['exe_file']+": ").ljust(gap) + ")\033[0;31mMISSING\033[0m")
-
-
-                    else:
-                        print(("Job " + report['build']['jobid'] + " status: ").ljust(gap) + "\033[0;31m" + done + "\033[0m")
+                if self.glob.lib.files.exe_exists(report_dict['build']['exe_file'], os.path.join(install_path, report_dict['build']['bin_dir'])):
+                    print(("File "+report_dict['build']['exe_file']+": ").ljust(gap) + "\033[0;32mFOUND\033[0m")
                 else:
-                    print("Job " + report['build']['jobid'] + " for '" + app_label + "' is still running...")
+                    print(("File "+report_dict['build']['exe_file']+": ").ljust(gap) + ")\033[0;31mMISSING\033[0m")
 
     # Get usable string of application status
     def get_status_str(self, app):
 
-        # Get Jobid from report file and check if status = COMPLETED
-        jobid = self.glob.lib.report.get_jobid("build", app)
 
-        if jobid == "dry_run":
+        # Get execution mode (sched or local) from application report file
+        exec_mode = self.glob.lib.report.get_exec_mode("build", app)
+
+        # Handle dry run applications
+        if exec_mode == "dry_run":
             return '\033[1;33mDRYRUN\033[0m'
-            
-        elif self.glob.lib.sched.check_job_complete(jobid) == "COMPLETED":
-            exe = self.glob.lib.report.build_exe(app)
+
+        # Get Jobid from report file and check if status = COMPLETED
+        task_id = self.glob.lib.report.get_task_id("build", app)
+
+        status = None
+        if exec_mode == "sched":
+            status = self.glob.lib.sched.get_job_status(task_id)
+
+        elif exec_mode == "local":
+            # Check if PID is running
+            if self.glob.lib.proc.pid_running(task_id):
+                return "\033[1;33mPID STILL RUNNING\033[0m"
+            else:
+                status = "COMPLETED"
+
+        # Complete state
+        if status == "COMPLETED":
+
+            bin_dir, exe = self.glob.lib.report.build_exe(app)
             if exe:
-                if self.glob.lib.find_exact(exe, os.path.join(self.glob.stg['build_path'],app)):
+                if self.glob.lib.files.exe_exists(exe, os.path.join(self.glob.stg['build_path'], app, self.glob.stg['install_subdir'], bin_dir)):
                     return '\033[0;32mEXE FOUND\033[0m'
 
-            else:
-                return '\033[0;31mEXE NOT FOUND\033[0m'
+            return '\033[0;31mEXE NOT FOUND\033[0m'
 
-        return '\033[1;33mJOB NOT COMPLETE\033[0m'
-
+        return '\033[1;33mJOB '+status+'\033[0m'
 
     # Print currently installed apps as well as their exe status
     def show_installed(self):

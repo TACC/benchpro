@@ -17,5 +17,10 @@ class init(object):
                 except:
                     self.glob.log.debug("Failed to remove tmp file ", f)
 
+    # Confirm application exe is available
+    def exe_exists(self, exe, code_path):
 
-
+        if self.glob.lib.find_exact(exe, code_path):
+            return True
+        else:
+            return False

@@ -6,7 +6,7 @@ if [ -z "$1" ]; then
 
 fi
 
-result_str=$(grep 'PWSCF        :' $1 | cut -d ' ' -f 23)
+result_str=$(grep 'PWSCF        :' $1 | rev | cut -d 'W' -f 2 | cut -d 'U' -f 1 | rev )
 mins=$(echo $result_str | cut -d 'm' -f 1)
 secs=$(echo $result_str | cut -d 'm' -f 2 | cut -d 's' -f 1)
 

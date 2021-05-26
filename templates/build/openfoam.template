@@ -6,9 +6,13 @@ tar -xf ${local_repo}/ThirdParty-${version}.tgz -C ${install_path}
 
 cd ${install_path}/OpenFOAM-${version}
 
+# Modify bashrc
 sed -i "/projectDir=/c\projectDir=${install_path}\/OpenFOAM-${version}" etc/bashrc
 sed -i "/export WM_MPLIB=SYSTEMOPENMPI/c\export WM_MPLIB=${mpilabel}" etc/bashrc
 sed -i "/export WM_COMPILER=Gcc/c\export WM_COMPILER=${complabel}" etc/bashrc
+
+# Modify C++ compiler
+sed -i "/CC          =/c\CC          = ${MPICC} -std=c++11" wmake/rules/General/Icc/c++
 
 export WM_NCOMPPROCS=${threads}
 

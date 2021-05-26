@@ -25,6 +25,15 @@ class init(object):
 
     # Return job status for job ID
     def get_job_status(self, jobid):
+
+            # Assume dry run jobs are complete
+            if jobid == "dry_run":
+                return "COMPLETED"
+
+            # Local jobs
+            if "local" in jobid:
+                return "COMPLETED"
+
             # Query Slurm accounting with job ID
             success, stdout, stderr = self.slurm_exec("sacct -j " + jobid + " --format State")
     
@@ -36,10 +45,6 @@ class init(object):
 
     # Check that job ID is not running
     def check_job_complete(self, jobid):
-
-        # Handle dry runs
-        if jobid == "dry_run":
-            return "COMPLETED"
 
         # Strip out bad chars from job state
         state = self.get_job_status(jobid)
@@ -167,13 +172,15 @@ class init(object):
         success, stdout, stderr = self.slurm_exec("squeue -a --job " + jobid)
 
         self.glob.lib.msg.low([stdout,
-                                "Job " + jobid + " stdout:",
-                                ">  "+ self.glob.lib.rel_path(os.path.join(self.glob.config['metadata']['working_path'], jobid + ".out")),
-                                "Job " + jobid + " stderr:",
-                                ">  "+ self.glob.lib.rel_path(os.path.join(self.glob.config['metadata']['working_path'], jobid + ".err"))])
+                    "Job " + jobid + " stdout:",
+                    ">  "+ self.glob.lib.rel_path(os.path.join(self.glob.config['metadata']['working_path'], jobid + ".out")),
+                    "Job " + jobid + " stderr:",
+                    ">  "+ self.glob.lib.rel_path(os.path.join(self.glob.config['metadata']['working_path'], jobid + ".err"))])
 
         self.glob.log.debug(stdout)
         self.glob.log.debug(stderr)
 
         # Store jobid in shared global object
-        self.glob.jobid = jobid
+        self.glob.task_id = jobid
+
+

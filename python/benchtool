@@ -22,41 +22,6 @@ except ImportError as e:
     print(e)
     sys.exit(1)
 
-# Confirm BENCHTOOL is set in environment
-def check_env(var):
-    if not os.getenv(var.strip('$')):
-        print(var + " variable not set, please run 'source sourceme'")
-        sys.exit(1)
-
-# Confirm installation has been validated
-def check_validatation(val_file):
-    if not os.path.isfile(val_file):
-        print("Please validate benchtool setup before use with:")
-        print("    benchtool --validate")
-        print()
-        sys.exit(1)
-
-# Generate dict fom colon-delimited params
-def get_var_overload_dict(vars_list):
-    overload_dict = {} 
-    if vars_list:
-        for setting in vars_list:
-            pair = setting.split('=')
-            # Test key-value pair
-            if not len(pair) == 2:
-                print("Invalid overload key-value pair detected: ", setting)
-                sys.exit(1)
-            overload_dict[pair[0]] = pair[1]
-
-    return overload_dict
-
-# Write command line to history file
-def write_cmd_history(glob):
-    if not glob.args.history:
-        history_file = os.path.join(glob.basedir, ".history")
-        with open(history_file, "a") as hist: 
-            hist.write(sys.argv[0].split("/")[-1] + " " + " ".join(sys.argv[1:]) + "\n")
-
 def main():
     # Parse cmdline args
     cmd_parser = argparse.ArgumentParser(
@@ -128,7 +93,7 @@ def main():
     glob.args = args
 
     # Confirm environment is configured
-    check_env(glob.stg['topdir_env_var'])
+    glob.lib.check_env()
 
     # Run validator script
     if args.validate:
@@ -136,13 +101,13 @@ def main():
         sys.exit(0)
 
     # Check validate
-    check_validatation(os.path.join(glob.basedir, ".validated"))
+    glob.lib.check_validatation(os.path.join(glob.basedir, ".validated"))
 
     # Write cmd to history file
-    write_cmd_history(glob)
+    glob.lib.write_cmd_history(sys.argv)
 
     # Get overload dict
-    glob.overload_dict = get_var_overload_dict(args.overload)
+    glob.lib.set_var_overload_dict(args.overload)
 
     # Start builder
     if args.build:

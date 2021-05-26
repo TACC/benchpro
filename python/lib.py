@@ -20,6 +20,7 @@ import library.file_handler as file_handler
 import library.misc_handler as misc_handler
 import library.module_handler as module_handler
 import library.msg_handler as msg_handler
+import library.process_handler as proc_handler
 import library.report_handler as report_handler
 import library.sched_handler as sched_handler
 import library.template_handler as template_handler
@@ -37,6 +38,7 @@ class init(object):
         self.misc     = misc_handler.init(self.glob)
         self.module   = module_handler.init(self.glob)
         self.msg      = msg_handler.init(self.glob)
+        self.proc     = proc_handler.init(self.glob)
         self.report   = report_handler.init(self.glob)
         self.sched    = sched_handler.init(self.glob)
         self.template = template_handler.init(self.glob)
@@ -84,74 +86,6 @@ class init(object):
     def file_owner(self, file_name):
         return pwd.getpwuid(os.stat(file_name).st_uid).pw_name
 
-    # Get list of default modules
-    def get_default_modules(self, cmd_prefix):
-        
-        try:
-            cmd = subprocess.run(cmd_prefix +"ml -t -d av  2>&1", shell=True,
-                                check=True, capture_output=True, universal_newlines=True)
-        except:
-            self.glob.lib.msg.error("unable to execute 'ml -t -d av'")
-        # Return list of default modules
-        return cmd.stdout.split("\n")
-
-    # Gets full module name of default module, eg: 'intel' -> 'intel/18.0.2'
-    def get_full_module_name(self, module, default_modules):
-
-        if not '/' in module:
-            # Get default module version from 
-            for line in default_modules:
-                if line.startswith(module):
-                    return line
-            else:
-                self.glob.lib.msg.error("failed to process module '" + module + "'")
-
-        else:
-            return module
-
-    # Check if module is available on the system
-    def check_module_exists(self, module_dict, module_use):
-
-        # Preload custom module path if needed
-        cmd_prefix = ""
-        if module_use:
-            cmd_prefix = "ml use " + module_use + "; "
-
-        # Get list of default system modules
-        default_modules = self.get_default_modules(cmd_prefix)
-
-        # Confirm defined modules exist on this system and extract full module name if necessary
-        for module in module_dict:
-            # If module is non Null
-            if module_dict[module]:
-                try:
-                    cmd = subprocess.run(cmd_prefix + "module spider " + module_dict[module], shell=True,
-                                        check=True, capture_output=True, universal_newlines=True)
-
-                except subprocess.CalledProcessError as e:
-                    self.glob.lib.msg.error(module + " module '" + module_dict[module] \
-                                                            + "' not available on this system")
-
-                # Update module with full label
-                module_dict[module] = self.get_full_module_name(module_dict[module], default_modules)
-
-    # Convert module name to usable directory name, Eg: intel/18.0.2 -> intel18
-    def get_module_label(self, module):
-        label = module
-        if module.count(self.glob.stg['sl']) > 0:
-            comp_ver = module.split(self.glob.stg['sl'])
-            label = comp_ver[0] + comp_ver[1].split(".")[0]
-        return label
-
-    # Confirm application exe is available
-    def check_exe(self, exe, code_path):
-        exe_search = self.find_exact(exe, code_path)
-        if exe_search:
-            self.glob.lib.msg.low(["Application executable found at:",
-                            ">  " + self.rel_path(exe_search)])
-        else:
-            self.glob.lib.msg.error("failed to locate application executable '" + exe + "'in " + self.rel_path(code_path))
-
     # Get a list of sub-directories, called by 'search_tree'
     def get_subdirs(self, base):
         return [name for name in os.listdir(base)
@@ -197,18 +131,37 @@ class init(object):
         failed.sort()
         return failed
 
-    # Return list of results meeting jobid status (True = complete, False = running)
-    def get_completed_results(self, search_list, is_complete):
+    # Return list of results meeting task_id status, look_for_complete: True = complete, False = running
+    def get_completed_results(self, search_list, look_for_complete):
         # List of results to return
         matching_results = []
+
         # For every result
         if search_list:
             for result in copy.deepcopy(search_list):
-                # Get jobid and check it is comeplete, if so append to return list and remove from provided list
-                jobid = self.glob.lib.report.get_jobid("bench", result)
-                if jobid:
-                    state = self.glob.lib.sched.check_job_complete(jobid)
-                    if (state and is_complete) or (not state and not is_complete):
+
+                # Get job type (sched/local/dry_run)
+                exec_mode = self.glob.lib.report.get_exec_mode("bench", result)
+                complete = False
+
+                # Sched exec type - get status from task_id
+                if exec_mode == "sched":
+                    # Get task_id and check it is comeplete, if so append to return list and remove from provided list
+                    task_id = self.glob.lib.report.get_task_id("bench", result)
+                    complete = self.glob.lib.sched.check_job_complete(task_id)
+                
+                # Local exec type - get status from PID
+                elif exec_mode == "local":
+                    pid = self.glob.lib.report.get_task_id("bench", result)
+                    # pid_running=False -> complete=True
+                    complete = not self.glob.lib.proc.pid_running(pid)
+
+
+                # Dry_run - skip to next result
+                else:
+                    continue
+
+                if (complete and look_for_complete) or (not complete and not look_for_complete):
                         matching_results.append(result)
                 search_list.remove(result)
 
@@ -280,9 +233,17 @@ class init(object):
                 "Failed to move " + obj + " to " + path + self.glob.stg['sl'] + new_obj_name)
 
     # If build job is running, add dependency str
-    def get_build_job_dependency(self, jobid):
-        if not self.glob.lib.sched.check_job_complete(jobid):
-            self.glob.ok_dep_list.append(jobid)
+    def get_build_job_dependency(self):
+
+        # Build job exec_mode=sched
+        if self.glob.build_report['exec_mode'] == "sched":
+            if not self.glob.lib.sched.check_job_complete(self.glob.build_report['task_id']):
+                self.glob.ok_dep_list.append(self.glob.build_report['task_id'])
+
+        # Build job exec_mode=local
+        elif self.glob.build_report['exec_mode'] == "local":
+            if self.glob.lib.proc.pid_running(self.glob.build_report['task_id']):
+                self.glob.prev_pid = self.glob.build_report['task_id']
 
     # Check if host can run mpiexec
     def check_mpi_allowed(self):
@@ -297,23 +258,6 @@ class init(object):
             return False
         else:
             return True
-
-    # Run script in shell
-    def start_local_shell(self, working_dir, script_file, output_dir):
-
-        script_path = os.path.join(working_dir, script_file)
-
-        self.glob.lib.msg.low("Starting script: " + self.rel_path(script_path))
-
-        try:
-            with open(os.path.join(working_dir, output_dir), 'w') as fp:
-                cmd = subprocess.Popen(['bash', script_path], stdout=fp, stderr=fp)
-                self.glob.prev_pid = cmd.pid
-
-        except:
-            self.glob.lib.msg.error("failed to start build script in local shell.")
-
-        self.glob.lib.msg.low("Script started on local machine.")
 
     # Overload dict keys with overload key
     def overload(self, overload_key, param_dict):
@@ -353,8 +297,24 @@ class init(object):
             else:
                 self.overload(overload_key, search_dict)
 
+
+    # Catch overload keys that are incompatible with local exec mode before checking for missed keys
+    def catch_incompatible_overloads(self):
+
+        # Runtime overload only works with sched exec_mode
+        bad_keys = ["runtime"]
+
+        for key in copy.deepcopy(self.glob.overload_dict):
+            if key in bad_keys:
+                self.glob.lib.msg.low("Ignoring bad overload key '" + key +  "' - incompatible with current exec_mode")
+                self.glob.overload_dict.pop(key)
+
     # Print warning if cmd line params dict not empty
     def check_for_unused_overloads(self):
+
+        # First check for overloads that 
+        self.catch_incompatible_overloads()
+
         if len(self.glob.overload_dict):
             self.glob.lib.msg.high("The following --overload argument does not match existing params:")
             for key in self.glob.overload_dict:
@@ -552,7 +512,7 @@ class init(object):
 
     # Replace SLURM variables in ouput files
     def check_for_slurm_vars(self):
-        self.glob.config['result']['output_file'] = self.glob.config['result']['output_file'].replace("$SLURM_JOBID", self.glob.jobid) 
+        self.glob.config['result']['output_file'] = self.glob.config['result']['output_file'].replace("$SLURM_JOBID", self.glob.task_id) 
 
     # Write operation to file
     def write_to_outputs(self, op, label):
@@ -582,9 +542,11 @@ class init(object):
         system_parser.read(cfg_file)
 
         try:
-            system_dict['cores']          = system_parser[system]['cores']
-            system_dict['cores_per_node'] = system_parser[system]['cores']
-            system_dict['default_arch']   = system_parser[system]['default_arch']
+            system_dict['sockets']              = system_parser[system]['sockets']
+            system_dict['cores']                = system_parser[system]['cores']
+            system_dict['cores_per_socket']     = int(int(system_dict['cores']) / int(system_dict['sockets']))
+            system_dict['cores_per_node']       = system_parser[system]['cores']
+            system_dict['default_arch']         = system_parser[system]['default_arch']
             # Set system default sched cfg if available
             if 'default_sched' in system_parser[system]:
                 system_dict['default_sched'] = system_parser[system]['default_sched']
@@ -659,3 +621,36 @@ class init(object):
         if os.path.isdir(path):
             return self.check_dup_path(path + ".dup")
         return path
+
+    # Confirm BENCHTOOL is set in environment
+    def check_env(self):
+        if not os.getenv(self.glob.stg['topdir_env_var'].strip('$')):
+            print(self.glob.stg['topdir_env_var'] + " variable not set, please run 'source sourceme'")
+            sys.exit(1)
+
+    # Confirm installation has been validated
+    def check_validatation(self, val_file):
+        if not os.path.isfile(val_file):
+            print("Please validate benchtool setup before use with:")
+            print("    benchtool --validate")
+            print()
+            sys.exit(1)
+
+    # Generate dict fom colon-delimited params
+    def set_var_overload_dict(self, vars_list):
+        if vars_list:
+            for setting in vars_list:
+                pair = setting.split('=')
+                # Test key-value pair
+                if not len(pair) == 2:
+                    print("Invalid overload key-value pair detected: ", setting)
+                    sys.exit(1)
+                self.glob.overload_dict[pair[0]] = pair[1]
+
+    # Write command line to history file
+    def write_cmd_history(self, args):
+        if not self.glob.args.history:
+            history_file = os.path.join(self.glob.basedir, ".history")
+            with open(history_file, "a") as hist:
+                hist.write(args[0].split("/")[-1] + " " + " ".join(args[1:]) + "\n")
+

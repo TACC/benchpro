@@ -44,28 +44,37 @@ def capture_complete(result_path):
 
 # Create .capture-failed file in result dir
 def capture_failed(result_path):
-    glob.log.debug("Failed to capture result in " + result_path)
     glob.lib.msg.high("Failed to capture result in " + glob.lib.rel_path(result_path))
     # Move failed result to subdir if 'move_failed_result' is set
     if glob.stg['move_failed_result']:
         move_to_archive(result_path, glob.stg['failed_path'])
 
+def capture_skipped(result_path):
+    glob.lib.msg.low("Skipping this dryrun result in " + glob.lib.rel_path(result_path))
+    if glob.stg['move_failed_result']:
+        move_to_archive(result_path, glob.stg['failed_path'])
+
 # Function to test if benchmark produced valid result
 def validate_result(result_path):
+
     # Get dict of report file contents
     glob.report_dict = glob.lib.report.read(result_path)
     if not glob.report_dict:
         glob.lib.msg.low("Unable to read benchmark report file in " + glob.lib.rel_path(result_path))
-        return False, None
+        return "failed", None
 
     # Get output file path
     glob.output_path = glob.lib.find_exact(glob.report_dict['result']['output_file'], result_path)
+
+    # Deal with dry_run 
+    if glob.report_dict['bench']['task_id'] == "dry_run":
+        return "skipped", None
 
     # Test for benchmark output file
     if not glob.output_path:
         glob.lib.msg.warning("Result file " + glob.report_dict['result']['output_file'] + " not found in " + \
                                 glob.lib.rel_path(result_path) + ". It seems the benchmark failed to run.\nWas dry_run=True?")
-        return False, None
+        return "failed", None
 
     glob.log.debug("Looking for valid result in " + glob.output_path)
 
@@ -88,14 +97,14 @@ def validate_result(result_path):
             glob.lib.msg.warning("Using '" + glob.report_dict['result']['expr'] + "' on file " + \
                                     glob.lib.rel_path(glob.output_path) + \
                                     " failed to find a valid a result. Skipping." )
-            return False, None
+            return "failed", None
 
     # Run scipt collection
     elif glob.report_dict['result']['method'] == 'script':
         result_script = os.path.join(glob.stg['script_path'], glob.stg['result_scripts_dir'], glob.report_dict['result']['script'])
         if not os.path.exists(result_script):
             glob.lib.msg.warning("Result collection script not found in "+ glob.lib.rel_path(result_script))
-            return False, None
+            return "failed", None
 
         # Run validation script on output file
         try:
@@ -110,7 +119,7 @@ def validate_result(result_path):
             glob.lib.msg.warning("Running script '" + glob.lib.rel_path(result_script) + "' on file " + \
                                             glob.lib.rel_path(glob.output_path) + \
                                             " failed to find a valid a result." )
-            return False, None
+            return "failed", None
             
      # Cast to float
     try:
@@ -118,12 +127,12 @@ def validate_result(result_path):
     except:
         glob.lib.msg.warning("result extracted from " + glob.lib.rel_path(glob.output_path) + " is not a float: '" + \
                                 result_str + "'")
-        return False, None
+        return "failed", None
 
     # Check float non-zero
     if not result:
         glob.lib.msg.warning("result extracted from " + glob.lib.rel_path(glob.output_path) + " is '0.0'.")
-        return False, None
+        return "failed", None
 
     glob.log.debug("Successfully found result '" + str(result) + " " + glob.report_dict['result']['unit'] + " for result " + \
                     glob.lib.rel_path(result_path))
@@ -190,24 +199,24 @@ def get_insert_dict(result_path, result, unit):
     
     # Get JOBID in order to get NODELIST from sacct
     try:
-        jobid = glob.report_dict['bench']['jobid']
+        task_id = glob.report_dict['bench']['task_id']
     except:
         glob.lib.msg.low(e)
-        glob.lib.msg.warning("Failed to read key 'jobid' in " + glob.lib.rel_path(bench_report) + ". Skipping.")
+        glob.lib.msg.warning("Failed to read key 'task_id' in " + glob.lib.rel_path(bench_report) + ". Skipping.")
         return False
   
     elapsed_time = None
     end_time = None
     submit_time = get_required_key('bench', 'start_time')
     # Handle local exec
-    if jobid == "local":
-        jobid = "0"
+    if task_id == "local":
+        task_id = "0"
 
     # Get elapsed and end time from output file
     elapsed_time = get_elapsed_time()
     end_time = get_end_time()
 
-    nodelist = glob.lib.sched.get_nodelist(jobid)
+    nodelist = glob.lib.sched.get_nodelist(task_id)
 
     insert_dict = {}
    
@@ -218,8 +227,9 @@ def get_insert_dict(result_path, result, unit):
     insert_dict['end_time']         = end_time
     insert_dict['capture_time']     = datetime.now()
     insert_dict['description']      = get_optional_key('bench', 'description')
-    insert_dict['jobid']            = jobid
-    insert_dict['job_status']       = glob.lib.sched.get_job_status(jobid)
+    insert_dict['exec_mode']       = get_required_key('bench', 'exec_mode')
+    insert_dict['task_id']          = task_id
+    insert_dict['job_status']       = glob.lib.sched.get_job_status(task_id)
     insert_dict['nodelist']         = ", ".join(nodelist)
     insert_dict['nodes']            = get_required_key('bench', 'nodes')
     insert_dict['ranks']            = get_required_key('bench', 'ranks')
@@ -228,7 +238,7 @@ def get_insert_dict(result_path, result, unit):
     insert_dict['dataset']          = get_required_key('bench', 'dataset')
     insert_dict['result']           = str(result)
     insert_dict['result_unit']      = unit
-    insert_dict['resource_path']    = os.path.join(glob.user, insert_dict['system'], insert_dict['jobid'])
+    insert_dict['resource_path']    = os.path.join(glob.user, insert_dict['system'], insert_dict['task_id'])
     insert_dict['app_id']           = get_optional_key('build', 'app_id')
 
 
@@ -381,8 +391,12 @@ def capture_result(glob_obj):
             result, unit = validate_result(glob.result_path)
 
             # If unable to get valid result, skipping this result
-            if not result:
+            if result == "failed":
                 capture_failed(glob.result_path)
+                continue
+            
+            if result == "skipped":
+                capture_skipped(glob.result_path)
                 continue
 
             glob.lib.msg.low("Result: " + str(result) + " " + unit)
@@ -407,7 +421,7 @@ def capture_result(glob_obj):
             capture_complete(glob.result_path)
             captured += 1
 
-        glob.lib.msg.high("Done. " + str(captured) + " results sucessfully captured")
+        glob.lib.msg.high(["", "Done. " + str(captured) + " results sucessfully captured"])
 
 # Test if search field is valid in results/models.py
 def test_search_field(field):
@@ -596,28 +610,43 @@ def query_result(glob_obj, result_label):
         glob.lib.msg.error(["Missing report file " + glob.lib.rel_path(bench_report),
                             "It seems something went wrong with --bench"])
 
-    jobid = ""
+    task_id = ""
     print("Benchmark report:")
-    print("----------------------------------------")    
-    with open(bench_report, 'r') as report:
-        content = report.read()
-        print(content)
-        for line in content.split("\n"):
-            if line[0:5] == "jobid":
-                jobid = line.split('=')[1].strip()
+    print("----------------------------------------")   
+
+    # Read report and print it
+    report_dict = glob.lib.report.read(bench_report)
+
+    for section in report_dict:
+        print("[" + section + "]")
+        for key in report_dict[section]:
+            print(key.ljust(20) + report_dict[section][key])
 
     print("----------------------------------------")
 
-    # If job complete extract result
-    if jobid == "dry_run":
+    # Handle dryrun
+    if report_dict['bench']['exec_mode'] == "dry_run":
         print("Dry_run - skipping result check.")
     
-    elif glob.lib.sched.check_job_complete(jobid):
+    complete = False
+    # Local exec mode
+    if report_dict['bench']['exec_mode'] == "local":
+        # Check PID is not running        
+        complete = not glob.lib.proc.pid_running(report_dict['bench']['task_id'])
+
+    # Sched exec mode
+    if report_dict['bench']['exec_mode'] == "sched":
+        # Check jobid is not running
+        complete = glob.lib.sched.check_job_complete(report_dict['bench']['task_id'])
+
+    # If task complete, extract result
+    if complete:
         result, unit = validate_result(result_path)
-        if result:
-            print("Result: " + str(result) + " " + unit)
+        if not result == "failed":
+            print("Result: " + str(result) + " " + str(unit))
+
     else: 
-        print("Job " + jobid + " still running.")
+        print("Job " + task_id + " still running.")
 
 # Print list of result directories
 def print_results(result_list):
@@ -678,16 +707,16 @@ def remove_result(glob_obj):
 
     # Remove unique result matching input str
     else:
-        results = get_matching_results(glob.stg['pending_path'], glob.args.delResult) +\
-                  get_matching_results(glob.stg['captured_path'], glob.args.delResult) +\
-                  get_matching_results(glob.stg['failed_path'], glob.args.delResult)
+        results = get_matching_results(glob.stg['pending_path'], glob.args.delResult[0]) +\
+                  get_matching_results(glob.stg['captured_path'], glob.args.delResult[0]) +\
+                  get_matching_results(glob.stg['failed_path'], glob.args.delResult[0])
         if results:
             print("Found " + str(len(results)) + " matching results: ")
             for res in results:
                 print("  " + res.split(glob.stg['sl'])[-1])
             delete_results(results)
         else:
-            print("No results found matching '" + glob.args.delResult + "'")
+            print("No results found matching '" + glob.args.delResult[0] + "'")
 
 
 # Print app info from table
