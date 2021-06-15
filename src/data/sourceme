@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# Update modules
+export BENCHTOOL=$(dirname "$(realpath $BASH_SOURCE)")
+
+BUILD="$SCRATCH/benchtool/build"
+ml use "$BUILD/modulefiles"
+ml benchtool
+alias cdb='cd $BENCHTOOL'
+
+## Check root script ownership
+#if [ $(stat -c %U $BENCHTOOL/resources/hw_utils/lshw ) != 'root' ]; then
+#    echo "WARNING: please run 'sudo resources/scripts/change_permissions.sh' if you plan to collect hardware stats."
+#fi
+
+# Set TACC_SCRATCH var
+case $TACC_SYSTEM in 
+    frontera)
+    export TACC_SCRATCH=/scratch1
+    ;;
+    stampede2 | ls5 | longhorn)
+    export TACC_SCRATCH=/scratch
+    ;;
+    *)
+    echo "Unknown \$TACC_SYSTEM variable"
+    ;;
+esac
