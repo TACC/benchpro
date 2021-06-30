@@ -1,6 +1,6 @@
 # bench-framework
 This is a framework to automate and standardize application compilation, benchmarking and result collection on large scale HPC systems.
-Currently there are 7 application profiles available for debugging and testing:
+There are several application profiles included with benchtool for debugging and testing:
    - AMBER 20
    - LAMMPS 3Mar20
    - OpenFOAM v2006
@@ -9,63 +9,84 @@ Currently there are 7 application profiles available for debugging and testing:
    - WRF 4.2
    - MILC 7.8.1
 
-In addition there are new applications being added.
+These application profiles have been created with the expectation that corresponding source code and datasets are available in the local repository directory.
+New applications are continuously being added.
 
 ## Getting Started
 
-The following steps will walk you through the basic usage of benchtool and should hopefully produce a small LAMMPS LJ-melt benchmark. Tested on Stampede2 and Frontera.
+The following steps will walk you through the basic usage of benchtool and should hopefully produce a small LAMMPS LJ-melt benchmark. Tested on Stampede2 and Frontera systems at TACC.
 
 ### Initial setup
 
-1 Download, setup enivronment and validate benchtool: 
+This setup guide will walk you through installing the benchtool Python module. This guide uses a virtual environment, though a system wide installation can be done with minimal change where appropriate. 
 
+
+1 Create virtual environment 
 ```
-git clone https://gitlab.tacc.utexas.edu/mcawood/bench-framework
-cd bench-framework
+virtualenv -p python3 ~/benchenv
+source ~/benchenv/bin/activate
 ```
-NOTE: some of the hardware info collection scripts require root priviledges, you can either run the permissions script below, or live with the warning.
+
+2 Download and install benchtool package: 
+```
+git clone https://github.com/TACC/benchtool.git
+cd benchtool
+git checkout origin/dev
+python3 setup.py install
+```
+
+NOTE: if installing this package as a user, some hardware collection functionality that requires root will be unavailable, you can either run the permissions script below, or live with the warning.
 ```
 sudo hw_utils/change_permissions.sh
-source sourceme
+```
+
+At this point the Python package is installed, now you will need to run the tool installation process for a specific user, which will copy configuration files and setup directory structures for your user. The default paths for this install process are stored in the file `src/data/install.ini` inside the package directory. You can pass a file to use to the install process which will overwrite values in this default file with the `--settings` argument.
+
+3 Install benchtool
+```
+benchtool --install [--settings FILE]
+```
+After the installation is complete a validation process will commense  to ensure that the system, environment and directory structure are correctly configured. This validation will likely fail if the SSH key required to access the benchmark result database is not located. Acquire and copy the key (be default `~/.benchtool/auth/`) and rerun the validation step.
+```
+cp [key] ~/.benchtool/auth/
 benchtool --validate
 ```
-This validation step will confirm that the system, environment and directory structure are correctly configured.
 
-2 Print help & version info:
+4 Print help & version info:
 ```
 benchtool --help
 benchtool --version
 ```
+This walkthrough will use the long format commandline arguments for clarity, however the short format will save you time - use the Help output to check these.
 
 ### Build an Application
 
-3 List all available applications and benchmarks with:
+5 List all available applications and benchmarks with:
 ```
 benchtool --avail
 ```
-4 Install the LAMMPS application (LAMMPS builds and runs quickly):
+6 Install the LAMMPS application (LAMMPS builds and runs quickly):
 ```
 benchtool --build lammps
 ```
-5 List applications currently installed:
+7 List applications currently installed:
 ```
 benchtool --listApps
 ```
 NOTE: By default `dry_run=True` in `settings.ini` so the LAMMPS build script was created but not submitted to the scheduler. You can now submit your LAMMPS build job manually, or
-6 Remove the dry_run build:
+8 Remove the dry_run build:
 ```
 benchtool --delApp lammps
 ```
-7 Overload the dry_run value in settings.ini and re-build with: 
+9 Overload the dry_run value in settings.ini and re-build with: 
 ```
-benchtool --install lammps --overload dry_run=False
+benchtool --build lammps --overload dry_run=False
 ```
-8 Check the details and status of your LAMMPS build with:
+10 Check the details and status of your LAMMPS build with:
 ```
 benchtool --queryApp lammps
 ```
-
-In this example, parameters in `config/build/lammps_3Mar20.cfg` were used to populate the build template `templates/build/lammps_3Mar20.template` which was submitted to the scheduler.
+In this example, parameters in `$BENCHTOOL/config/build/lammps_3Mar20.cfg` were used to populate the build template `$BENCHTOOL/templates/build/lammps_3Mar20.template` which was submitted to the scheduler.
 You can review the populated job script located in the `build_prefix` directory and named `lammps-build.sched`. Parameters for the scheduler job, system architecure, compile time optimizations and a module file were automatically generated.  
 For each application that is build, a 'build_report' is generated in order to preserve metadata about the application. This build report is referenced whenever the application is used to run a benchmark, and also when this application is captured to the database. You can manually examine this report in the application build directory.
 
@@ -74,7 +95,7 @@ For each application that is build, a 'build_report' is generated in order to pr
 We can now proceed with running a benchmark with our LAMMPS installation. There is no need to wait for the LAMMPS build job to complete, benchtool knows to check and create a job dependency as needed. In fact if `build_if_missing=True` in `settings.ini`, benchtool would have automatically detected LAMMPS was not installed and built it without us needing to do the steps above. 
 The process to run a benchmark is similar to building; a config file is used to populate a template script. 
 A benchmark run is specified with `--bench`. The argument may be a single benchmark label, or a benchmark 'suite' (i.e collection of benchmarks) defined in `settings.ini`. Once again you can check for available benchmarks with `--avail`.  
-1 Modify `settings.ini`
+1 Modify `$BENCHTOOL/settings.ini`
 ```
 dry_run = False
 ```
