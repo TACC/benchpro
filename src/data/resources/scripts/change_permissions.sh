@@ -5,6 +5,12 @@ then
     exit 1
 fi
 
+if [ -z "$BENCHTOOL" ]
+then
+    echo "\$BENCHTOOL not set, load benchtool module."
+    exit 1
+fi
+
 declare -a exe=("ibnetdiscover"
 		"lshw"
 		"lspci"
@@ -12,12 +18,15 @@ declare -a exe=("ibnetdiscover"
 		"TACC_HWP_set"
 				)
 
-path=$(dirname $(dirname "$(realpath $BASH_SOURCE)"))/hw_utils
+path=$BENCHTOOL/resources/hw_utils
 
 for i in "${exe[@]}"
 do
-  chown root.root ${path}/$i
-  chmod 4755 ${path}/$i
+  if [ -f "${path}/$i" ]
+  then
+    chown root.root ${path}/$i
+    chmod 4755 ${path}/$i
+  fi
 done
 
 echo "Done."

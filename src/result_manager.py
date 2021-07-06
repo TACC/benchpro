@@ -17,7 +17,7 @@ except ImportError:
     pass
 
 # Local Imports
-import src.logger
+import src.logger as logger
 
 glob = None
 

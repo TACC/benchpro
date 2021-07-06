@@ -94,7 +94,7 @@ class init(object):
     # Recursive function to scan app directory, called by 'get_installed'
     def search_tree(self, installed_list, app_dir, start_depth, current_depth, max_depth):
         for d in self.get_subdirs(app_dir):
-            if d != self.glob.stg['module_basedir']:
+            if d != self.glob.stg['module_dir']:
                 new_dir = os.path.join(app_dir, d)
                 # Once tree hits max search depth, append path to list
                 if current_depth == max_depth:
@@ -111,6 +111,7 @@ class init(object):
         installed_list = []
         self.search_tree(installed_list, app_dir, start, start, start + self.glob.stg['tree_depth'])
         installed_list.sort()
+
         return installed_list
 
     # Get results in ./results/pending
@@ -212,7 +213,7 @@ class init(object):
                     "Failed to create directory " + path)
 
     # Copy tmp files to directory
-    def install(self, path, obj, new_obj_name):
+    def install(self, path, obj, new_obj_name, clean):
 
         # Get file name
         if not new_obj_name:
@@ -225,12 +226,16 @@ class init(object):
                 new_obj_name = new_obj_name[4:]
     
         try:
-            su.copyfile(obj, path + self.glob.stg['sl'] + new_obj_name)
+            su.copyfile(obj, os.path.join(path, new_obj_name))
             self.glob.log.debug("Copied file " + obj + " into " + path)
         except IOError as e:
             self.glob.lib.msg.high(e)
             self.glob.lib.msg.error(
                 "Failed to move " + obj + " to " + path + self.glob.stg['sl'] + new_obj_name)
+
+        # Remove tmp files after copy
+        if clean:
+            os.remove(obj)
 
     # If build job is running, add dependency str
     def get_build_job_dependency(self):
@@ -622,12 +627,6 @@ class init(object):
             return self.check_dup_path(path + ".dup")
         return path
 
-    # Confirm BENCHTOOL is set in environment
-    def check_env(self):
-        if not os.getenv(self.glob.stg['topdir_env_var'].strip('$')):
-            print(self.glob.stg['topdir_env_var'] + " variable not set, please run 'source sourceme'")
-            sys.exit(1)
-
     # Generate dict fom colon-delimited params
     def set_var_overload_dict(self, vars_list):
         if vars_list:
@@ -641,7 +640,7 @@ class init(object):
 
     # Write command line to history file
     def write_cmd_history(self, args):
-        if not self.glob.args.history:
+        if not self.glob.args.history and not self.glob.args.last:
             history_file = os.path.join(self.glob.basedir, ".history")
             with open(history_file, "a") as hist:
                 hist.write(args[0].split("/")[-1] + " " + " ".join(args[1:]) + "\n")

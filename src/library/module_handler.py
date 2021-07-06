@@ -10,15 +10,18 @@ class init(object):
 
     # Get list of default modules
     def get_default(self, cmd_prefix):
-
+    
+        # Find default version of module 
         try:
             cmd = subprocess.run(cmd_prefix +"ml -t -d av  2>&1", shell=True,
                                 check=True, capture_output=True, universal_newlines=True)
         except subprocess.CalledProcessError as e:
             self.glob.lib.msg.error(["unable to execute 'ml -t -d av'", e])
 
+        defaults = cmd.stdout.split("\n")
+
         # Return list of default modules
-        return cmd.stdout.split("\n")
+        return defaults
 
     # Gets full module name of default module, eg: 'intel' -> 'intel/18.0.2'
     def get_full_name(self, module, default_modules):
@@ -38,9 +41,9 @@ class init(object):
     def check_exists(self, module_dict, module_use):
 
         # Preload custom module path if needed
-        cmd_prefix = ""
+        cmd_prefix = "ml " + module_dict['compiler'] + "; "
         if module_use:
-            cmd_prefix = "ml use " + module_use + "; "
+            cmd_prefix = "ml use " + module_use + "; " + cmd_prefix
 
         # Get list of default system modules
         default_modules = self.get_default(cmd_prefix)

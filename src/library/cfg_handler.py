@@ -288,7 +288,7 @@ class init(object):
         # Check that system settings were successfully parserd from file
         if not self.glob.system:
             self.glob.lib.msg.error("Failed to read system profile '"+ cfg_dict['requirements']['system'] +"' in " + \
-                                        self.glob.lib.rel_path(os.path.join(self.glob.stg['config_basedir'], self.glob.stg['system_cfg_file'])) + \
+                                        self.glob.lib.rel_path(os.path.join(self.glob.stg['config_path'], self.glob.stg['system_cfg_file'])) + \
                                         "\nPlease add this system profile.")
 
         # Check requested modules exist, and if so, result full module names
@@ -418,7 +418,7 @@ class init(object):
         # Check that system settings were successfully parserd from file
         if not self.glob.system:
             self.glob.lib.msg.error("Failed to read system profile '"+ cfg_dict['requirements']['system'] +"' in " + \
-                                        self.glob.lib.rel_path(os.path.join(self.glob.stg['config_basedir'], self.glob.stg['system_cfg_file'])) + \
+                                        self.glob.lib.rel_path(os.path.join(self.glob.stg['config_path'], self.glob.stg['system_cfg_file'])) + \
                                         "\nPlease add this system profile.")
 
         # Set default 1 rank per core, if not defined

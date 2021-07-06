@@ -63,10 +63,6 @@ def build_code(input_dict, glob_copy):
     global glob
     glob = glob_copy
 
-    
-    print(glob)
-    print("dict", hex(id(glob.overload_dict)))
-
     glob.lib.msg.heading("Building application:  '" + ",".join([i + "=" + input_dict[i] for i in input_dict.keys() if i]) + "'")
 
     # Parse config input files
@@ -75,7 +71,6 @@ def build_code(input_dict, glob_copy):
 
     # If build dir already exists, skip this build
     if check_for_previous_install():
-        print("end", glob)
         return
 
     glob.lib.msg.low(["", 
@@ -115,22 +110,22 @@ def build_code(input_dict, glob_copy):
 
     # Make build path and move tmp build script file
     glob.lib.create_dir(glob.config['metadata']['working_path'])
-    glob.lib.install(glob.config['metadata']['working_path'], glob.tmp_script, None)
+    glob.lib.install(glob.config['metadata']['working_path'], glob.tmp_script, None, True)
 
     # Make module path and move tmp module file
     glob.lib.create_dir(mod_path)
-    glob.lib.install(mod_path, mod_file, None)
+    glob.lib.install(mod_path, mod_file, None, True)
 
     # Copy code and sched cfg & template files to build dir
     provenance_path = os.path.join(glob.config['metadata']['working_path'], "build_files")
     glob.lib.create_dir(provenance_path)
 
-    glob.lib.install(provenance_path, glob.config['metadata']['cfg_file'], "build.cfg")
-    glob.lib.install(provenance_path, glob.config['template'], "build.template")
+    glob.lib.install(provenance_path, glob.config['metadata']['cfg_file'], "build.cfg", False)
+    glob.lib.install(provenance_path, glob.config['template'], "build.template", False)
 
     # Copy sched config file if building via sched
     if glob.stg['build_mode'] == "sched":
-        glob.lib.install(provenance_path, glob.sched['metadata']['cfg_file'], None)
+        glob.lib.install(provenance_path, glob.sched['metadata']['cfg_file'], None, False)
 
     # Clean up tmp files
     glob.lib.files.remove_tmp_files()
@@ -204,15 +199,12 @@ def init(glob):
 
         # User build input (can be ' ' delimited)
         for build_str in build_list:
-            print("*",glob.overload_dict)
 
             # Get a copy of the global object for use in this benchmark session
             glob_copy = copy.deepcopy(glob)
 
 
             glob_copy.overload_dict = copy.deepcopy(glob.overload_dict)
-
-            print(build_str, glob_copy)
 
             build_code(glob.lib.parse_build_str(build_str), glob_copy)
             glob.lib.msg.brk()

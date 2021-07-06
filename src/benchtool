@@ -30,7 +30,13 @@ def main():
                     execution of benchmarks and collection of results.')
 
     cmd_parser.add_argument("--install", default=False, action='store_true',
-                            help="Install project files using install.ini")
+                            help="Install user files, accepts [--settings [FILE], or will use path defaults in src/data/install.ini")
+
+    cmd_parser.add_argument("--uninstall", default=False, action='store_true',
+                            help="Uninstall user files, application and result directories.")
+
+    cmd_parser.add_argument("--settings", default=False,
+                            help="Provide .ini file with nonstandard install paths.")
 
     cmd_parser.add_argument("-b", "--build", default=False, nargs='+',
                             type=str, help="Name of the code config file to build, run --avail to check. Accepts space delimited list.")
@@ -90,23 +96,26 @@ def main():
 
     args = cmd_parser.parse_args()
 
-    # Installation directoy set by install script
-    basedir = os.path.expandvars("$BENCHTOOL")
-
-    # If installing local project files
+    # Install user project files
     if args.install:
-        installer.run()
+        installer.install(args.settings)
         sys.exit(0)
 
-    # Check installed
-    if not os.path.isfile(os.path.join(basedir, "settings.ini")):
-        print("Please run benchtool --install before continuing.")
-        print()
+    # Remove user project files
+    if args.uninstall:
+        installer.uninstall()
+        sys.exit(0)
+
+    # Installation directoy set by module
+    try:
+        basedir = os.environ['BENCHTOOL']
+    except:
+        print("$BENCHTOOL not set. Load benchtool module. Aborting!")
         sys.exit(1)
 
-    # Check validated
-    if not os.path.isfile(os.path.join(basedir, "settings.ini")):
-        print("Please run  benchtool --validate before continuing.")
+    # Check installed
+    if not os.path.isfile(os.path.join(basedir, ".installed")):
+        print("Please run benchtool --install before continuing.")
         print()
         sys.exit(1)
 
@@ -116,14 +125,17 @@ def main():
     # Add arg dict to global object
     glob.args = args
 
-    # Confirm environment is configured
-    glob.lib.check_env()
-
     # Run validator script
     if args.validate:
         validate.check_setup(glob)
         sys.exit(0)
 
+    # Check validated
+    if not os.path.isfile(os.path.join(basedir, ".validated")):
+        print("Please run  benchtool --validate before continuing.")
+        print()
+        sys.exit(1)
+    
     # Write cmd to history file
     glob.lib.write_cmd_history(sys.argv)
 

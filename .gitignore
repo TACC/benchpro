@@ -7,15 +7,10 @@ __pycache__/
 *.so
 
 # Distribution / packaging
-hw_reporting/hw_report*
-auth/*
 .Python
-build/*
-!build/modulefiles/builder.lua
 results/*
 .history
 .outputs
-.validated
 develop-eggs/
 dist/
 downloads/

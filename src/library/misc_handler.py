@@ -66,7 +66,7 @@ class init(object):
         parent_dir  = path_elems[-2]
 
         # If parent dir is root ('build' or 'modulefile') or if it contains more than this subdir, delete this subdir
-        if (parent_dir == self.glob.stg['build_dir']) or  (parent_dir == self.glob.stg['module_basedir']) or (len(gb.glob(os.path.join(parent_path,"*"))) > 1):
+        if (parent_dir == self.glob.stg['build_dir']) or  (parent_dir == self.glob.stg['module_path']) or (len(gb.glob(os.path.join(parent_path,"*"))) > 1):
             su.rmtree(path)
         # Else resurse with parent
         else:
@@ -124,8 +124,14 @@ class init(object):
         else:
             # Accept space delimited list of apps
             for app in input_list:
-                # Create search dict for each code string 
-                search_dict = {i: i for i in app.split(self.glob.stg['sl'])}
+                # Create search dict from search elements
+                search_dict = {}
+                for elem in app.split(":"):
+                    if not "=" in elem:
+                        search_dict['code'] = elem
+                    else:
+                        search_dict[elem.split("=")[0]] = elem.split("=")[1]
+
                 # If installed, add to remove list
                 tmp = self.glob.lib.check_if_installed(search_dict)
                 if tmp:
@@ -196,7 +202,9 @@ class init(object):
             else:
                 status = self.glob.lib.sched.get_job_status(report_dict['build']['task_id'])
 
-                if not status == "COMPLETED":
+                if status == "RUNNING":
+                    print(("Job " + report_dict['build']['task_id'] + " status: ").ljust(gap) + "\033[1;33m" + status + "\033[0m")
+                elif not status == "COMPLETED":
                     print(("Job " + report_dict['build']['task_id'] + " status: ").ljust(gap) + "\033[0;31m" + status + "\033[0m")
 
             # If complete, Look for exe
@@ -348,14 +356,14 @@ class init(object):
     # Print available code/bench/suite depending on user input
     def show_available(self):
         if self.glob.args.avail in ['code', 'all']:
-            search_path = os.path.join(self.glob.stg['config_basedir'], self.glob.stg['build_cfg_dir'])
+            search_path = os.path.join(self.glob.stg['config_path'], self.glob.stg['build_cfg_dir'])
             self.print_avail_type("application", search_path)
 
         print()
         print()
 
         if self.glob.args.avail in ['bench', 'all']:
-            search_path = os.path.join(self.glob.stg['config_basedir'], self.glob.stg['bench_cfg_dir'])
+            search_path = os.path.join(self.glob.stg['config_path'], self.glob.stg['bench_cfg_dir'])
             self.print_avail_type("benchmark", search_path)
 
         if self.glob.args.avail in ['suite', 'all']:
@@ -425,11 +433,11 @@ class init(object):
     # Return the last line of the .outputs file
     def get_last_output(self):
 
-        if not os.path.isfile(os.path.join(self.glob.basedir, ".outputs")):
+        if not os.path.isfile(os.path.join(self.glob.basedir, ".history")):
             print("No previous outputs found.")
             sys.exit(0)
 
-        with open(os.path.join(self.glob.basedir, ".outputs"), "r") as f:
+        with open(os.path.join(self.glob.basedir, ".history"), "r") as f:
             lines = f.readlines()
             if len(lines) == 0:
                 print("No previous outputs found.")    
@@ -442,15 +450,22 @@ class init(object):
     def print_last(self):
 
         # Get requested 
-        op, label = self.get_last_output().split(" ")       
+        last = self.get_last_output()
+        command = last.replace("benchtool ", "")
+        
+        op = command
+        label = ""
+        if len(command.split(" ")) > 1:
+            op = command.split(" ")[0]
+            label = command.split(" ")[1]
 
         # If last output was from build task
-        if op == "build":
+        if op == "--build" or op == "-b":
             self.query_app(label)
 
         # If last output was from bench task
-        elif op == "bench":
+        elif op == "bench" or op == "-B":
             result_manager.query_result(self.glob, label)
         else:
-            print("ERROR unknown option in .outputs file:", op)
+            print("benchtool", op, label)
 
