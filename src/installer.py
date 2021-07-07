@@ -197,7 +197,7 @@ def install(settings):
 def uninstall():
     print("\033[0;31m!!!DELETING ALL APPLICATIONS, RESULTS AND PROJECT DATA!!!\033[0m")
     print("Coninuing in 5 seconds...")
-    time.sleep(1)
+    time.sleep(5)
     check_env()
     read_ini(os.path.expandvars("$BENCHTOOL/settings.ini"))
     remove_dirs()
