@@ -35,21 +35,24 @@ git checkout origin/dev
 python3 setup.py install
 ```
 
-NOTE: if installing this package as a user, some hardware collection functionality that requires root will be unavailable, you can either run the permissions script below, or live with the warning.
-```
-sudo hw_utils/change_permissions.sh
-```
-
-At this point the Python package is installed, now you will need to run the tool installation process for a specific user, which will copy configuration files and setup directory structures for your user. The default paths for this install process are stored in the file `src/data/install.ini` inside the package directory. You can pass a file to use to the install process which will overwrite values in this default file with the `--settings` argument.
+At this point the Python package is installed, now you will need to run the tool's installation process for a specific user, which will copy configuration files and setup directory structures for your user. The default paths for this install process are stored in the file `src/data/install.ini` inside the package directory. You can pass a file to use to the install process which will overwrite values in this default file with the `--settings` argument.
 
 3 Install benchtool
 ```
 benchtool --install [--settings FILE]
 ```
-After the installation is complete a validation process will commense  to ensure that the system, environment and directory structure are correctly configured. This validation will likely fail if the SSH key required to access the benchmark result database is not located. Acquire and copy the key (be default `~/.benchtool/auth/`) and rerun the validation step.
+After the installation is complete, project files have been installed for your user and the benchtool module has been added to your ~/.bashrc file. Now refresh your environment and run the validation process which is required ensure that the system, environment and directory structure are correctly configured. This validation will likely fail as the SSH key required to access the benchmark result database is not present. Copy this key into the benchtool project (by default `~/.benchtool/auth/`) and rerun the validation step.
 ```
-cp [key] ~/.benchtool/auth/
+source ~/.bashrc
 benchtool --validate
+cp [key] $BENCHTOOL/auth/
+benchtool --validate
+```
+You should hopefully see that all validation checks report a green 'PASS', if so benchtool is ready to use.
+
+NOTE: some hardware statistics collection functionality provided by benchtool requires root access, you can either run the permissions script below, or live with the warning.
+```
+sudo -E $BENCHTOOL/resources/scripts/change_permissions.sh
 ```
 
 4 Print help & version info:
@@ -57,7 +60,7 @@ benchtool --validate
 benchtool --help
 benchtool --version
 ```
-This walkthrough will use the long format commandline arguments for clarity, however the short format will save you time - use the Help output to check these.
+This walkthrough will use the long format command-line arguments for clarity, however short format will save you time - use the Help output for clarification.
 
 ### Build an Application
 
