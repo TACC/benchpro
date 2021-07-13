@@ -6,6 +6,7 @@ import os
 import shutil as sh
 import subprocess
 import sys
+import time
 
 db = True
 try:
@@ -132,13 +133,15 @@ def check_setup(glob_obj):
     check_python_version()
 
     # Sys envs
-    base_env = glob.stg['topdir_env_var'].strip("$")
-    system_env = glob.stg['system_env'].strip("$")
-    check_env_vars([system_env, base_env, 'LMOD_VERSION'])
+    project_env = glob.stg['project_env_var'].strip("$")
+    app_env     = glob.stg['app_env_var'].strip("$")
+    result_env  = glob.stg['result_env_var'].strip("$")
+    system_env  = glob.stg['system_env'].strip("$")
+    check_env_vars([system_env, project_env, app_env, result_env, 'LMOD_VERSION'])
 
     # Check priv
-    base_dir = os.environ.get(base_env)
-    check_write_priv(base_dir)
+    project_dir = os.environ.get(project_env)
+    check_write_priv(project_dir)
 
     # Check paths
     confirm_path_exists([glob.stg['log_path'], glob.stg['build_path'], glob.stg['bench_path'], glob.stg['pending_path'], glob.stg['captured_path'], glob.stg['failed_path'], glob.stg['ssh_key_path']])
@@ -150,8 +153,10 @@ def check_setup(glob_obj):
     # Check permissions
     check_file_perm(os.path.join(glob.stg['ssh_key_path'], glob.stg['ssh_key'] ), 0o600)
 
+    time.sleep(1)
+
     # Check db host access
-    check_ssh_connect(glob.stg['db_host'], glob.stg['ssh_user'], os.path.join(base_dir, glob.stg['ssh_key_path'], glob.stg['ssh_key']))
+    check_ssh_connect(glob.stg['db_host'], glob.stg['ssh_user'], os.path.join(project_dir, glob.stg['ssh_key_path'], glob.stg['ssh_key']))
 
     # Check db access
     if db:

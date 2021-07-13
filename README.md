@@ -41,11 +41,9 @@ At this point the Python package is installed, now you will need to run the tool
 ```
 benchtool --install [--settings FILE]
 ```
-After the installation is complete, project files have been installed for your user and the benchtool module has been added to your ~/.bashrc file. Now refresh your environment and run the validation process which is required ensure that the system, environment and directory structure are correctly configured. This validation will likely fail as the SSH key required to access the benchmark result database is not present. Copy this key into the benchtool project (by default `~/.benchtool/auth/`) and rerun the validation step.
+After the installation is complete, project files have been installed for your user and the benchtool module has been added to your ~/.bashrc file. Now refresh your environment and run the validation process which is required ensure that the system, environment and directory structure are correctly configured. This validation may fail if the SSH key required to access the benchmark result database was not defined in the install.ini file. Copy this key into the benchtool project (by default `~/.benchtool/auth/`) and rerun the validation step if necessary.
 ```
 source ~/.bashrc
-benchtool --validate
-cp [key] $BENCHTOOL/auth/
 benchtool --validate
 ```
 You should hopefully see that all validation checks report a green 'PASS', if so benchtool is ready to use.

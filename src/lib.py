@@ -48,12 +48,18 @@ class init(object):
         # if empty str
         if not path:
             return None
-        # if absolute
+        # if in project path
         if self.glob.basedir in path:
-            return self.glob.stg['topdir_env_var'] + path.replace(self.glob.basedir, "")
-        # if not
-        else:
-            return path
+            return self.glob.stg['project_env_var'] + path.replace(self.glob.basedir, "")
+        # if in application path
+        elif self.glob.stg['build_path'] in path:
+            return self.glob.stg['app_env_var'] + path.replace(self.glob.stg['build_path'], "")
+        # if in result path
+        elif self.glob.stg['bench_path'] in path:
+            return self.glob.stg['result_env_var'] + path.replace(self.glob.stg['bench_path'], "")
+
+        # if not any of the above
+        return path
 
     # Find file in directory
     def find_exact(self, file_name, path):

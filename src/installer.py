@@ -10,10 +10,13 @@ import time
 # Package dir containing install files
 src_dir = os.path.join("/", *os.path.dirname(os.path.abspath(__file__)).split("/")[:-1], "src")
 path_dict = {}
+key_path = None
 
 # Read install param file
 def read_ini(settings):
-    
+   
+    global key_path
+
     # default install.ini file
     install_file = os.path.join(src_dir, "data", "install.ini")
 
@@ -39,6 +42,11 @@ def read_ini(settings):
             print("Input file '" + os.path.basename(install_file) + "' missing required key '" + key + "' in [paths]")
             sys.exit(1)
 
+    # Read SSH key location
+    if ini_parser.has_option('key','key'):
+        if ini_parser['key']['key']:
+            key_path = ini_parser['key']['key']
+
     # Parse install paths
     ini = dict(ini_parser.items('paths'))
     for path in list(ini.keys()):
@@ -53,7 +61,6 @@ def read_ini(settings):
 
 # Check that existing install isn't present
 def check_status():
-
     for path in list(path_dict.keys()):
         # Check if installed already
         if os.path.isdir(path_dict[path]):
@@ -70,7 +77,6 @@ def check_status():
 
 # Copy packge files to user directory
 def copy_files():
-
     # Files/dirs to install
     install_dict = {path_dict['install_dir']:  [".version",
                                                 "settings.ini",
@@ -123,24 +129,23 @@ def update_settings():
 
 # Update module
 def update_module():
-
     print("Updating module file...")
     mod_file = glob.glob(os.path.join(path_dict['build_dir'], "modulefiles", "benchtool", "*.lua"))
     # Update module file with project paths
     with fileinput.FileInput(mod_file, inplace=True) as fp:
         for line in fp:
-            if "local install_dir" in line:
-                print("local install_dir    = \"" + path_dict['install_dir'] + "\"", end = '\n')
-            elif "local build_dir" in line:
-                print("local build_dir      = \"" + path_dict['build_dir'] + "\"", end = '\n')
+            if "local project_dir" in line:
+                print("local project_dir    = \"" + path_dict['install_dir'] + "\"", end = '\n')
+            elif "local app_dir" in line:
+                print("local app_dir      = \"" + path_dict['build_dir'] + "\"", end = '\n')
+            elif "local result_dir" in line:
+                print("local result_dir      = \"" + path_dict['bench_dir'] + "\"", end = '\n' )
             else:
                 print(line, end ='')
 
 # Add benchtool in user .bashrc
 def update_bash():
-
     print("Updating .bashrc...")
-
     # Check its not in bash file already
     in_bash = False
     with open(os.path.expandvars("$HOME/.bashrc")) as fp:
@@ -154,6 +159,18 @@ def update_bash():
             fp.write("export MODULEPATH=$MODULEPATH:" + os.path.join(path_dict['build_dir'], "modulefiles") + "\n" )
             fp.write("ml benchtool")
 
+# Copy SSH key if its defined
+def copy_key():
+    print("Copying SSH key...")
+    if key_path:
+        try:
+            if os.path.isfile(key_path):
+                dest = os.path.join(path_dict['install_dir'], "auth")
+                os.makedirs(dest, exist_ok=True)
+                shutil.copy(key_path, os.path.join(dest, os.path.basename(key_path)))
+        except:
+            print("Unable to copy SSH key provided in install.ini")
+
 # Touch file to indicate successful install
 def success():
     open(os.path.join(path_dict['install_dir'], ".installed"),'w')
@@ -163,7 +180,7 @@ def ml():
 
 def check_env():
     try:
-        print("Project directory = " + os.environ["BENCHTOOL"])
+        print("Project directory = " + os.environ["BT_PROJECT"])
     except:
         print("Ensure benchtool module is loaded before uninstalling.")
         sys.exit(1)
@@ -184,6 +201,7 @@ def install(settings):
     update_settings()
     update_module()
     update_bash()
+    copy_key()
     success()
     ml()
 
@@ -199,5 +217,5 @@ def uninstall():
     print("Coninuing in 5 seconds...")
     time.sleep(5)
     check_env()
-    read_ini(os.path.expandvars("$BENCHTOOL/settings.ini"))
+    read_ini(os.path.expandvars("$BT_PROJECT/settings.ini"))
     remove_dirs()

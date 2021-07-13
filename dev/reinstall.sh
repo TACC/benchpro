@@ -18,9 +18,5 @@ python3 setup.py install
 benchtool --install
 benchtool --validate
 
-# Copy SSH key
-cp ~/scratch1/benchtool.old5/auth/id_rsa.bench_user $BENCHTOOL/auth/
-benchtool --validate
-
 # Check version
 benchtool --version

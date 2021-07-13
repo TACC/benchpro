@@ -121,7 +121,9 @@ class settings(object):
         self.stg['resource_path']     = self.resolve_path(self.stg['resource_dir'])
         
         # Derived variables
-        self.stg['top_env']             = self.stg['topdir_env_var'] + self.stg['sl']
+        self.stg['project_env']         = self.stg['project_env_var'] + self.stg['sl']
+        self.stg['app_env']             = self.stg['app_env_var'] + self.stg['sl']
+        self.stg['result_env']          = self.stg['result_env_var'] + self.stg['sl']
         self.stg['module_dir']          = "modulefiles"
         self.stg['log_path']            = os.path.join(self.basedir, self.stg['log_dir'])
         self.stg['pending_path']        = os.path.join(self.stg['bench_path'], self.stg['pending_subdir'])

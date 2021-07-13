@@ -25,6 +25,6 @@ def start_logging(log_label, log_file, glob):
     # Print info
     stdout = splash.get_splash(glob)
     glob.lib.msg.high(stdout + 
-                    ["  ->Log          : " + os.path.join(glob.stg['topdir_env_var'], glob.stg['log_dir'], log_file)]
+                    ["  ->Log          : " + os.path.join(glob.stg['project_env_var'], glob.stg['log_dir'], log_file)]
                     +["------------------------------------------------------------------"])
     

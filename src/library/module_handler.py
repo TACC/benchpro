@@ -95,12 +95,12 @@ class init(object):
         if self.glob.config['general']['module_use']:
 
             # Handle env vars in module path
-            if self.glob.config['general']['module_use'].startswith(self.glob.stg['topdir_env_var']):
+            if self.glob.config['general']['module_use'].startswith(self.glob.stg['project_env_var']):
 
-                topdir = self.glob.stg['topdir_env_var'].strip("$")
+                project = self.glob.stg['project_env_var'].strip("$")
 
-                mod_obj.append("local " + topdir + " = os.getenv(\"" + topdir + "\") or \"\"\n")
-                mod_obj.append("prepend_path(\"MODULEPATH\", pathJoin(" + topdir + ", \"" + self.glob.config['general']['module_use'][len(topdir)+2:] + "\"))\n")
+                mod_obj.append("local " + project + " = os.getenv(\"" + project + "\") or \"\"\n")
+                mod_obj.append("prepend_path(\"MODULEPATH\", pathJoin(" + project + ", \"" + self.glob.config['general']['module_use'][len(project)+2:] + "\"))\n")
 
             else:
                 mod_obj.append("prepend_path( \"MODULEPATH\" , \"" + self.glob.config['general']['module_use'] + "\") \n")
