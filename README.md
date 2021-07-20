@@ -120,7 +120,7 @@ benchtool --queryResult ljmelt
 benchtool --last
 ```
 
-In this example, parameters in `config/bench/lammps_ljmelt.cfg` were used to populate the template `templates/bench/lammps.template`
+In this example, parameters in `$BT_PROJECT/config/bench/lammps_ljmelt.cfg` were used to populate the template `$BT_PROJECT/templates/bench/lammps.template`
 Much like the build process, a 'bench_report' was generated to store metadata associated with this benchmark run. It is stored in the benchmark result direcotry and will be used in the next step to capture the result to the database.
 
 ### Capture Benchmark Result
@@ -190,24 +190,24 @@ A full detailed list of config file fields are provided at the bottom of this RE
  - `[config]`  where variables used in the build template script can be added.
 
 You can define as many additional parameters as needed for your application. Eg: additional modules, build options, etc. All parameters `[param]` defined here will be used to fill `<<<[param]>>>` variables of the same name in the template file, thus consistent naming is important.
-This file must be located in `config/build`, preferably with the naming scheme `[code]_[version].cfg`. 
+This file must be located in `$BT_PROJECT/config/build`, preferably with the naming scheme `[label].cfg`. 
 
 ### 2. Build template file
 
 This template file is used to gerenate a contextualized build script which will executed to compile the application.
 Variables are defined with `<<<[param]>>>` syntax and populated with the variables defined in the config file above.
 If a `<<<[param]>>>` in the build template in not successfully populated and `exit_on_missing=True` in settings.ini, an expection will be raised.
-You are able to make use of the `local_repo` variable defined in `settings.ini` to store and use files locally. 
-This file must be located in `templates/build`, with the naming scheme `[code]_[version].template` 
+You are able to make use of the `local_repo` variable defined in `$BT_PROJECT/settings.ini` to store and use files locally. 
+This file must be located in `$BT_PROJECT/templates/build`, with the naming scheme `[label].template` 
 
 ### 3. Module template file (optional)
 
 You can define your own .lua module template, otherwise a generic one will be created for you.
-This file must be located in `templates/build`, with the naming scheme `[code]_[version].module` 
+This file must be located in `$BT_PROJECT/templates/build`, with the naming scheme `[label].module` 
 
 The application added above would be built with the following command:
 ```
-benchtool --build [code]_[version]
+benchtool --build [code]
 ```
 Note: benchtool will attempt to match your application input to a unique config filename. The specificity of the input will depend on the number of similar config files.
 It may be helpful to build with `dry_run=True` initially to confirm the build script was generated as expected, before `--removing` and rebuilding with `dry_run=False` to compile.
@@ -225,18 +225,18 @@ A full detailed list of config file fields is provided below. A config file is s
  - `[result]` where result collection parameters are defined.
 
 Any additional parameters may be defined in order to setup the benchmark, i.e dataset label, problem size variables etc.
-This file must be located in `config/bench`, preferably with the naming scheme `[code]_[bench].cfg`.
+This file must be located in `$BT_PROJECT/config/bench`, preferably with the naming scheme `[label].cfg`.
 
 ### 2. Benchmark template file  
 
 As with the build template. The benchmark template file is populated with the parameters defined in the config file above. This file should include setup of the dataset, any required pre-processing or domain decomposition steps if required, and the appropriate mpi_exec command.
-You are able to make use of the `local_repo` variable defined in `settings.ini` to copy local files. 
+You are able to make use of the `local_repo` variable defined in `$BT_PROJECT/settings.ini` to copy local files. 
 
-This file must be located in `templates/bench`, with the naming scheme `[code]_[bench].template`. 
+This file must be located in `$BT_PROJECT/templates/bench`, with the naming scheme `[label].template`. 
 
 The benchmark added above would be run with the following command:
 ```
-benchtool --bench [code]_[bench]
+benchtool --bench [dataset]
 ```
 Note: benchtool will attempt to match your benchmark input to a unique config filename. The specificity of the input will depend on the number of similar config files.
 It may be helpful to build with `dry_run=True` initially to confirm the build script was generated as expected, before `--removing` and rebuilding with `dry_run=False` to launch the build job.
@@ -248,19 +248,19 @@ Benchtool supports a number of more advanced features which may be of use.
 ### Overloading parameters
 
 Useful for changing a setting for a onetime use. 
-Use `benchtool --defaults` to confirm important default params from settings.ini
+Use `benchtool --setup` to confirm important default params from $BT_PROJECT/settings.ini
 You can overload params from settings.ini and params from  your build/bench config file.
 Accepts colon delimited lists.
 Exception will be raised if overload param does not match existing key in settings.ini or config file.
 
 Example 1: overload dry_run and build locally rather than via sched:
 ```
-benchtool --build lammps --overload dry_run=False:build_mode=local
+benchtool --build lammps --overload dry_run=False build_mode=local
 ```
 
 Example 2: run LAMMPS benchmark with modified nodes, ranks and threads:
 ```
-bench --bench ljmelt --overload nodes=16:ranks_per_node=8:threads=6
+bench --bench ljmelt --overload nodes=16 ranks_per_node=8 threads=6
 ```
 
 ### Input list support
@@ -272,7 +272,7 @@ If the single thread and multiple ranks are specified, the same thread value wil
 
 Example 1: Run LAMMPS on 4, 8 and 16 nodes, first using 4 ranks per node with 8 threads each, and then 8 ranks per node using 4 threads each:
 ```
-benchtool --bench ljmelt --overload nodes=4,8,16:ranks_per_node=4,8:threads=8,4
+benchtool --bench ljmelt --overload nodes=4,8,16 ranks_per_node=4,8 threads=8,4
 ```
 From this example, the resulting set of runs would look like:
 ```
@@ -460,13 +460,12 @@ These config files contain parameters used to populate the benchmark template sc
 
 | Directory         | Purpse                                                    |
 |-------------------|-----------------------------------------------------------|
-| ./auth            | SSH keys.                                                 |
-| ./build           | Application build basedir.                                |
-| ./config          | config files containing template parameters.              |
-| ./dev             | Contains unit tests etc.                                  |
-| ./doc             | Contains Sphinx generated documentation. WIP              |
-| ./log             | Build, bench and catpure log files.                       |
-| ./python          | contains Python files and hardware collection bash script.| 
-| ./resources       | Contains useful content including modulefiles, hardware collection and result validation scripts.    |
-| ./results         | Benchmark result basedir.                                 |
-| ./templates       | job template files                                        |
+| $BT_PROJECT/auth            | SSH keys.                                                 |
+| $BT_APPS/build              | Application build basedir.                                |
+| $BT_PROJECT/config          | config files containing template parameters.              |
+| $BT_PROJECT/dev             | Contains unit tests etc.                                  |
+| $BT_PROJECT/doc             | Contains Sphinx generated documentation. WIP              |
+| $BT_PROJECT/log             | Build, bench and catpure log files.                       |
+| $BT_PROJECT/resources       | Contains useful content including modulefiles, hardware collection and result validation scripts.    |
+| $BT_RESULTS/results         | Benchmark result basedir.                                 |
+| $BT_PROJECT/templates       | job template files                                        |
