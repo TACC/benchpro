@@ -1,4 +1,4 @@
-# bench-framework
+# BenchTool
 This is a framework to automate and standardize application compilation, benchmarking and result collection on large scale HPC systems.
 There are several application profiles included with benchtool for debugging and testing:
 
