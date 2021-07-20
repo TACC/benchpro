@@ -77,12 +77,12 @@ class init(object):
         content = ['[build]']
 
         # Check if bench has application dependency
-        if self.glob.build:
+        if self.glob.build_report:
+
             # Copy contents of build report file
-            if os.path.isfile(self.glob.build['build_report']):
-                for key, value in self.read(self.glob.build['build_report'])['build'].items():
-                        content.append(key.ljust(15) + "= " + value)
-        
+            for key in self.glob.build_report:
+                content.append(key.ljust(15) + "= " + self.glob.build_report[key])
+
         # Construct content of bench report
         content.extend (["[bench]", 
                         "bench_prefix   = "+ self.glob.config['metadata']['working_path'],

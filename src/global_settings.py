@@ -25,7 +25,7 @@ class settings(object):
 
     # Global variable dicts
     stg      = {}
-    build    = {}
+    build_report    = None
     config   = {}
     sched    = {}
     compiler = {}
@@ -130,7 +130,6 @@ class settings(object):
         self.stg['captured_path']       = os.path.join(self.stg['bench_path'], self.stg['captured_subdir'])
         self.stg['failed_path']         = os.path.join(self.stg['bench_path'], self.stg['failed_subdir'])
         self.stg['module_path']         = os.path.join(self.stg['build_path'], self.stg['module_dir'])
-        self.stg['src_path']            = os.path.join(self.basedir, "python")
         self.stg['utils_path']          = os.path.join(self.stg['resource_path'], self.stg['hw_utils_subdir'])
         self.stg['script_path']         = os.path.join(self.stg['resource_path'], self.stg['script_subdir'])
 

@@ -103,6 +103,9 @@ class init(object):
             self.glob.lib.msg.low("Application present in database.")
             return
 
+        # Handle Null values
+        insert_dict = {k: " " if not v else v for k, v in insert_dict.items() }
+
         # Get key-value pairs from dict
         keys = ', '.join(insert_dict.keys())
         vals = ", ".join(["'" + str(v).replace("'", "").replace("\"", "") + "'" for v in insert_dict.values()])

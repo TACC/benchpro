@@ -84,8 +84,7 @@ def copy_files():
                                                 "README.md",
                                                 "config/",
                                                 "templates/",
-                                                "resources/",
-                                                "sourceme"],
+                                                "resources/"],
                     path_dict['build_dir']:   ["modulefiles/benchtool/"]
                     }
 
@@ -161,15 +160,21 @@ def update_bash():
 
 # Copy SSH key if its defined
 def copy_key():
-    print("Copying SSH key...")
+
+    global key_path
     if key_path:
+        print("Copying SSH key...")
         try:
             if os.path.isfile(key_path):
                 dest = os.path.join(path_dict['install_dir'], "auth")
                 os.makedirs(dest, exist_ok=True)
                 shutil.copy(key_path, os.path.join(dest, os.path.basename(key_path)))
+            else:
+                print("Provided key not found, skipping...")
         except:
             print("Unable to copy SSH key provided in install.ini")
+    else:
+        print("No key provided, skipping...")
 
 # Touch file to indicate successful install
 def success():

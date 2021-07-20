@@ -32,7 +32,7 @@ setup (
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.6',
     ],
-    scripts=['src/benchtool', 'src/collect_hw_info'],
+    scripts=['src/benchtool'],
 
 )
 

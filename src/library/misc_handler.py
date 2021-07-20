@@ -37,7 +37,7 @@ class init(object):
         # Search space for tmp files
         search_list = [ "*.out*",
                         "*.err*",
-                        "*.log",
+                        "log/*",
                         "tmp.*",
                         ".history",
                         "*.csv",
@@ -48,7 +48,7 @@ class init(object):
         if file_list:
             print("Found the following files to delete:")
             for f in file_list:
-                print(f)
+                print(self.glob.lib.rel_path(f))
 
             print("\033[0;31mDeleting in", self.glob.stg['timeout'], "seconds...\033[0m")
             time.sleep(self.glob.stg['timeout'])

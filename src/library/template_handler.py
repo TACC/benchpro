@@ -88,12 +88,12 @@ class init(object):
         if self.glob.config['config']['collect_stats']:
             if self.glob.lib.file_owner(os.path.join(self.glob.stg['utils_path'], "lshw")) == "root":
                 template_obj.append("\n# Provenance data collection script \n")
-                template_obj.append(os.path.join(self.glob.stg['src_path'], "collect_hw_info.sh") + " " + \
-                                    self.glob.stg['utils_path'] + " " + 
+                template_obj.append(os.path.join(self.glob.stg['script_path'], "collect_hw_info") + " " + \
+                                    self.glob.stg['utils_path'] + " " + \
                                     os.path.join(self.glob.config['metadata']['working_path'], "hw_report") + "\n")
             else:
                 self.glob.lib.msg.warning(["Requested hardware stats but script permissions not set",
-                                                "Run 'sudo -E $BT_PROJECT/resources/scripts/change_permissions.sh'"])
+                                                "Run 'sudo -E $BT_PROJECT/resources/scripts/change_permissions'"])
 
     # Add things to the bottom of the build script
     def build_epilog(self, template_obj):
