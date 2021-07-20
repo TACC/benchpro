@@ -1,13 +1,17 @@
 # bench-framework
 This is a framework to automate and standardize application compilation, benchmarking and result collection on large scale HPC systems.
 There are several application profiles included with benchtool for debugging and testing:
-   - AMBER 20
-   - LAMMPS 3Mar20
-   - OpenFOAM v2006
-   - Quantum Espresso 6.5
-   - SWIFTsim 0.8.5
-   - WRF 4.2
-   - MILC 7.8.1
+
+| Applications               | Synthetic Benchmarks     |
+|----------------------------|--------------------------|
+| AMBER 20                   | HPL                      |
+| LAMMPS 3Mar20              | HPCG.                    |
+| MILC 7.8.1                 | STREAM                   |
+| OpenFOAM v2006             | GPCNET                   |
+| Quantum Espresso 6.5       |                          |
+| SWIFTsim 0.8.5             |                          |
+| WRF 4.2                    |                          |
+| SpecFEM3D Globe            |                          |
 
 These application profiles have been created with the expectation that corresponding source code and datasets are available in the local repository directory.
 New applications are continuously being added.
