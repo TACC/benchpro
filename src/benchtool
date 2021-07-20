@@ -72,7 +72,7 @@ def main():
                             help="Query build report of an installed application.")
     cmd_parser.add_argument("-qr", "--queryResult", default=False,
                             help="Query a local benchmark result for config info.")
-    cmd_parser.add_argument("--dbResult", nargs='?', const="all", type=str,
+    cmd_parser.add_argument("--dbResult", nargs='+', default=False, type=str,
                             help="Query database for benchmark results. Default is 'all'. Also accepts colon-delimited list \
                                     of search criteria.")
     cmd_parser.add_argument("--dbApp", default=False, type=str, help="Provide application ID to print info report from database.")

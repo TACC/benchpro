@@ -438,13 +438,11 @@ def test_search_field(field):
 def parse_input_str(args):
 
     # No filter
-    if args == "all":
+    if not args:
         return ";"
     
-    input_list= args.split(':')
-
     select_str = ""
-    for option in input_list:
+    for option in args:
         search = option.split('=')
         if not len(search) == 2:
             glob.lib.msg.error("Invalid query key-value pair: " + option)   
