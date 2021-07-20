@@ -12,7 +12,7 @@ results/*
 .history
 .outputs
 develop-eggs/
-#build/
+build/
 dist/
 downloads/
 eggs/
