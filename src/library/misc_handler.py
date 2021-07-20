@@ -336,7 +336,7 @@ class init(object):
     # Print applications that can be installed from available cfg files
     def print_avail_type(self, atype, search_path):
         print(self.glob.bold + "Available " + atype + " profiles:" + self.glob.end)
-        print("------------------------------------------------------------")
+        print(self.glob.bold, "------------------------------------------------------------", self.glob.end)
         print(self.glob.lib.rel_path(search_path) + ":")
         print("------------------------------------------------------------")
         print("| Config file".ljust(32) + "| Run with")
@@ -368,8 +368,8 @@ class init(object):
 
         if self.glob.args.avail in ['suite', 'all']:
             print()
-            print("Available benchmark suites:")
-            print("------------------------------------------------------------")
+            print(self.glob.bold, "Available benchmark suites:", self.glob.end)
+            print(self.glob.bold, "------------------------------------------------------------", self.glob.end)
             print("Label".ljust(32) + "| Contents")
             for key in self.glob.suite:
                 print ("  " + key.ljust(30) + "| "+ self.glob.suite[key])

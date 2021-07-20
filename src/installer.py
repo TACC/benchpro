@@ -130,15 +130,18 @@ def update_settings():
 def update_module():
     print("Updating module file...")
     mod_file = glob.glob(os.path.join(path_dict['build_dir'], "modulefiles", "benchtool", "*.lua"))
+    version = os.path.basename(mod_file).split(".")[0]
     # Update module file with project paths
     with fileinput.FileInput(mod_file, inplace=True) as fp:
         for line in fp:
             if "local project_dir" in line:
-                print("local project_dir    = \"" + path_dict['install_dir'] + "\"", end = '\n')
+                print("local project_dir     = \"" + path_dict['install_dir'] + "\"", end = '\n')
             elif "local app_dir" in line:
-                print("local app_dir      = \"" + path_dict['build_dir'] + "\"", end = '\n')
+                print("local app_dir         = \"" + path_dict['build_dir'] + "\"", end = '\n')
             elif "local result_dir" in line:
                 print("local result_dir      = \"" + path_dict['bench_dir'] + "\"", end = '\n' )
+            elif "local version" in line:
+                print("local version         = \"" + version + "\"", end = '\n' )
             else:
                 print(line, end ='')
 

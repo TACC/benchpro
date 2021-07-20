@@ -23,7 +23,6 @@ setup (
     author = "Matthew Cawood",
     keywords = "benchmarks, complication, performance results",
     long_description = open('README.md').read(),
-    long_description_content_type = "text/markdown",
     license='MIT',
     url='https://github.com/TACC/benchtool',
     author_email = 'mcawood@tacc.utexas.edu',
