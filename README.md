@@ -5,13 +5,13 @@ There are several application profiles included with benchtool for debugging and
 | Applications               | Synthetic Benchmarks     |
 |----------------------------|--------------------------|
 | AMBER 20                   | HPL                      |
-| LAMMPS 3Mar20              | HPCG.                    |
+| LAMMPS 3Mar20              | HPCG                     |
 | MILC 7.8.1                 | STREAM                   |
-| OpenFOAM v2006             | GPCNET                   |
+| OpenFOAM v2012             | GPCNET                   |
 | Quantum Espresso 6.5       |                          |
-| SWIFTsim 0.8.5             |                          |
+| SWIFTsim 0.9.0             |                          |
 | WRF 4.2                    |                          |
-| SpecFEM3D Globe            |                          |
+| SpecFEM3D Globe 7.0.2      |                          |
 
 These application profiles have been created with the expectation that corresponding source code and datasets are available in the local repository directory.
 New applications are continuously being added.
