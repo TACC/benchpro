@@ -1,4 +1,4 @@
-# bench-framework
+# BenchTool
 This is a framework to automate and standardize application compilation, benchmarking and result collection on large scale HPC systems.
 There are several application profiles included with benchtool for debugging and testing:
 
@@ -31,7 +31,7 @@ virtualenv -p python3 ~/benchenv
 source ~/benchenv/bin/activate
 ```
 
-2 Download and install benchtool package: 
+2 Download and install BenchTool package: 
 ```
 git clone https://github.com/TACC/benchtool.git
 cd benchtool
@@ -41,18 +41,18 @@ python3 setup.py install
 
 At this point the Python package is installed, now you will need to run the tool's installation process for a specific user, which will copy configuration files and setup directory structures for your user. The default paths for this install process are stored in the file `src/data/install.ini` inside the package directory. You can pass a file to use to the install process which will overwrite values in this default file with the `--settings` argument.
 
-3 Install benchtool
+3 Install BenchTool
 ```
 benchtool --install [--settings FILE]
 ```
-After the installation is complete, project files have been installed for your user and the benchtool module has been added to your ~/.bashrc file. Now refresh your environment and run the validation process which is required ensure that the system, environment and directory structure are correctly configured. This validation may fail if the SSH key required to access the benchmark result database was not defined in the install.ini file. Copy this key into the benchtool project (by default `~/.benchtool/auth/`) and rerun the validation step if necessary.
+After the installation is complete, project files have been installed for your user and the BenchTool module has been added to your ~/.bashrc file. Now refresh your environment and run the validation process which is required ensure that the system, environment and directory structure are correctly configured. This validation may fail if the SSH key required to access the benchmark result database was not defined in the install.ini file. Copy this key into the BenchTool project (by default `~/.benchtool/auth/`) and rerun the validation step if necessary.
 ```
 source ~/.bashrc
 benchtool --validate
 ```
-You should hopefully see that all validation checks report a green 'PASS', if so benchtool is ready to use.
+You should hopefully see that all validation checks report a green 'PASS', if so BenchTool is ready to use.
 
-NOTE: some hardware statistics collection functionality provided by benchtool requires root access, you can either run the permissions script below, or live with the warning.
+NOTE: some hardware statistics collection functionality provided by BenchTool requires root access, you can either run the permissions script below, or live with the warning.
 ```
 sudo -E $BT_PROJECT/resources/scripts/change_permissions.sh
 ```
@@ -97,7 +97,7 @@ For each application that is build, a 'build_report' is generated in order to pr
 
 ### Run a Benchmark
 
-We can now proceed with running a benchmark with our LAMMPS installation. There is no need to wait for the LAMMPS build job to complete, benchtool knows to check and create a job dependency as needed. In fact if `build_if_missing=True` in `settings.ini`, benchtool would have automatically detected LAMMPS was not installed and built it without us needing to do the steps above. 
+We can now proceed with running a benchmark with our LAMMPS installation. There is no need to wait for the LAMMPS build job to complete, BenchTool knows to check and create a job dependency as needed. In fact if `build_if_missing=True` in `settings.ini`, BenchTool would have automatically detected LAMMPS was not installed and built it without us needing to do the steps above. 
 The process to run a benchmark is similar to building; a config file is used to populate a template script. 
 A benchmark run is specified with `--bench`. The argument may be a single benchmark label, or a benchmark 'suite' (i.e collection of benchmarks) defined in `settings.ini`. Once again you can check for available benchmarks with `--avail`.  
 1 Modify `$BT_PROJECT/settings.ini`
@@ -109,13 +109,13 @@ dry_run = False
 benchtool --bench ljmelt 
 ```
 We changed `settings.ini` so we don't need to use the `--overload` anymore. 
-It is important to note that benchtool will use the default scheduler parameters for your system from a file defined in `config/system.cfg`. You can overload individual parameters using `--overload`, or use another scheduler config file with the flag `--sched [FILENAME]`. 
+It is important to note that BenchTool will use the default scheduler parameters for your system from a file defined in `config/system.cfg`. You can overload individual parameters using `--overload`, or use another scheduler config file with the flag `--sched [FILENAME]`. 
 
 3 Check the benchmark report with:
 ```
 benchtool --queryResult ljmelt
 ```
-4 Because this LAMMPS LJ-Melt benchmark was the last benchtool job executed, a useful shortcut to check this report is:
+4 Because this LAMMPS LJ-Melt benchmark was the last BenchTool job executed, a useful shortcut to check this report is:
 ```
 benchtool --last
 ```
@@ -164,7 +164,7 @@ You can print the default values of several important parameters with:
 benchtool --setup
 ```
 
-It may be useful to review your previous benchtool commands, do this with:
+It may be useful to review your previous BenchTool commands, do this with:
 ```
 benchtool --history
 ```
@@ -180,12 +180,12 @@ benchtool --delApp all
 ```
 
 ## Adding a new Application
-benchtool requires two input files to build an application: a config file containing contextualization parameters, and a build template file which will be populated with these parameters and executed. 
+BenchTool requires two input files to build an application: a config file containing contextualization parameters, and a build template file which will be populated with these parameters and executed. 
 
 ### 1. Build config file
 
 A full detailed list of config file fields are provided at the bottom of this README. A config file is seperated into the following sections:
- - `[general]` where information about the application is specified. `module_use` can be provided to add a nonstandard path to MODULEPATH. By default benchtool will attempt to match this config file with its corresponsing template file. You can overwrite this default filename by adding the `template` field to this section. 
+ - `[general]` where information about the application is specified. `module_use` can be provided to add a nonstandard path to MODULEPATH. By default BenchTool will attempt to match this config file with its corresponsing template file. You can overwrite this default filename by adding the `template` field to this section. 
  - `[modules]` where `compiler` and `mpi` are required, while more modules can be specified if needed. Every module must be available on the local machine, if you are cross compiling to another platform (e.g. to frontera-rtx) and require system modules not present on the current node, you can set `check_modules=False` in settings.ini to bypass this check. 
  - `[config]`  where variables used in the build template script can be added.
 
@@ -209,7 +209,7 @@ The application added above would be built with the following command:
 ```
 benchtool --build [code]
 ```
-Note: benchtool will attempt to match your application input to a unique config filename. The specificity of the input will depend on the number of similar config files.
+Note: BenchTool will attempt to match your application input to a unique config filename. The specificity of the input will depend on the number of similar config files.
 It may be helpful to build with `dry_run=True` initially to confirm the build script was generated as expected, before `--removing` and rebuilding with `dry_run=False` to compile.
 
 ## Adding a new Benchmark
@@ -238,12 +238,12 @@ The benchmark added above would be run with the following command:
 ```
 benchtool --bench [dataset]
 ```
-Note: benchtool will attempt to match your benchmark input to a unique config filename. The specificity of the input will depend on the number of similar config files.
+Note: BenchTool will attempt to match your benchmark input to a unique config filename. The specificity of the input will depend on the number of similar config files.
 It may be helpful to build with `dry_run=True` initially to confirm the build script was generated as expected, before `--removing` and rebuilding with `dry_run=False` to launch the build job.
 
 ## Advanced Features
 
-Benchtool supports a number of more advanced features which may be of use.
+BenchTool supports a number of more advanced features which may be of use.
 
 ### Overloading parameters
 
@@ -341,7 +341,7 @@ Global settings are defined in the file `settings.ini`
 | sched_mpi         | ibrun                         | MPI launcher to use in job script                                                 |
 | local_mpi         | mpirun                        | MPI launcher to use on local machine                                              |
 | tree_depth        | 6                             | Determines depth of app installation tree                                         |
-| topdir_env_var    | $BT_PROJECT                   | benchtool's working directory environment variable (exported in from sourceme)    |
+| topdir_env_var    | $BT_PROJECT                   | BenchTool's working directory environment variable (exported in from sourceme)    |
 | log_dir           | ./log                         | Log file directory                                                                |
 | script_basedir    | ./scripts                     | Result validation and system check script directory                               |
 | ssh_key_dir       | ./auth                        | Directory containing SSH keys for server access                                   |
