@@ -66,7 +66,7 @@ class init(object):
         parent_dir  = path_elems[-2]
 
         # If parent dir is root ('build' or 'modulefile') or if it contains more than this subdir, delete this subdir
-        if (parent_dir == self.glob.stg['build_dir']) or  (parent_dir == self.glob.stg['module_path']) or (len(gb.glob(os.path.join(parent_path,"*"))) > 1):
+        if (parent_dir == self.glob.stg['build_dir']) or  (parent_dir == self.glob.stg['module_dir']) or (len(gb.glob(os.path.join(parent_path,"*"))) > 1):
             su.rmtree(path)
         # Else resurse with parent
         else:
