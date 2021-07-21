@@ -1,7 +1,5 @@
 #!/bin/bash
 
-source sourceme
-
 APP=lammps
 BENCH=ljmelt
 

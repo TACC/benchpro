@@ -1,0 +1,50 @@
+#!/bin/bash 
+
+util_dir=$1
+output_dir=$2
+
+if [ $(stat -c %U ${util_dir}/lshw) != 'root' ]; then
+    echo "Script permissions not set. Exiting."
+    exit 1
+fi
+
+if [ -z $1 ]
+then
+    echo "Provide output dir. Exiting"
+    exit 1
+fi
+
+mkdir -p ${output_dir}
+
+label=( "cpuid.all.raw" 
+        "cpuid.core0" 
+        "lshw" 
+        "TACC_HWP_set" 
+        "lspci" 
+        "rdmsr_all"
+        "rpm" 
+        "ml"
+        "lscpu"
+        ) 
+
+echo "%%% $BT_PROJECT"
+
+ml
+
+cmd=(   "${util_dir}/cpuid -r"
+        "${util_dir}/cpuid -1"
+        "${util_dir}/lshw"
+        "${util_dir}/TACC_HWP_set -v -s"
+        "${util_dir}/lspci -xxx"
+        "${util_dir}/rdmsr_all"
+        "rpm -qa"
+        "ml"
+        "lscpu"
+        )
+
+for ((i=0;i<${#label[@]};++i)); do
+    echo "Running ${label[i]}"
+    ${cmd[i]} &> ${output_dir}/${label[i]}
+done
+echo "Done."
+exit 0
