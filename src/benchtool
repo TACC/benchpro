@@ -62,7 +62,7 @@ def main():
     cmd_parser.add_argument("-a", "--avail", nargs='?', const="all", type=str,
                             help="Show all available application profiles. Default is 'all', also accepts 'code', 'bench' or 'suite'.")
 
-    cmd_parser.add_argument("-s", "--setup", default=False, action='store_true',
+    cmd_parser.add_argument("-d", "--defaults", default=False, action='store_true',
                             help="Print default options for current system.")
 
     cmd_parser.add_argument("-da", "--delApp", default=False, nargs='+',
@@ -157,9 +157,9 @@ def main():
     # Show installed and exit
     elif args.listApps:
         glob.lib.misc.show_installed()
-    # Print setup settings
-    elif args.setup:
-        glob.lib.misc.print_setup()
+    # Print defaults settings
+    elif args.defaults:
+        glob.lib.misc.print_defaults()
     # Show available and exit
     elif args.avail:
         glob.lib.misc.show_available()

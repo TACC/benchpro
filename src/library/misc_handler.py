@@ -382,7 +382,7 @@ class init(object):
         print("  " + key.ljust(18) + " = " + str(self.glob.stg[key]))
 
     # Print default params from settings.ini
-    def print_setup(self):
+    def print_defaults(self):
         print()
         print("Benchtool defaults:")
         [self.print_setting(key) for key in ['dry_run', \
@@ -403,11 +403,12 @@ class init(object):
                 with open(os.path.join(self.glob.stg['config_path'], self.glob.stg['sched_cfg_dir'], sched_cfg)) as f:
                     print("Scheduler defaults for " + self.glob.sys_env + ":")
                     for line in f.readlines():
-                        print("  " + line.strip())
+                        if "=" in line:
+                            print("  " + line.split("=")[0].strip().ljust(19) + "= " + line.split("=")[1].strip() )
 
-            except:
+            except Exception as err:
                 print("Unable to read " + sched_cfg)
-                print()
+                print(err)
         else:
             print("No default scheduler settings found for system " + self.glob.sys_env + ".")
             print() 

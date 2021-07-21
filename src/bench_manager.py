@@ -110,7 +110,7 @@ def gen_bench_script():
                                             glob.config['config']['bench_label'] + "_" + \
                                             glob.time_str + "_" + str(glob.config['runtime']['nodes']).zfill(3) + "N_" + \
                                             str(glob.config['runtime']['ranks_per_node']).zfill(2) + "R_" + \
-                                            str(glob.config['runtime']['threads']).zfill(2) + "T" + \
+                                            str(glob.config['runtime']['threads']).zfill(2) + "T_" + \
                                             gpu_path_str
 
     # Check if working dir path already exists

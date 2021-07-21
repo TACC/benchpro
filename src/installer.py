@@ -130,7 +130,7 @@ def update_settings():
 def update_module():
     print("Updating module file...")
     mod_file = glob.glob(os.path.join(path_dict['build_dir'], "modulefiles", "benchtool", "*.lua"))
-    version = os.path.basename(mod_file).split(".")[0]
+    version = os.path.basename(mod_file[0]).split(".")[0]
     # Update module file with project paths
     with fileinput.FileInput(mod_file, inplace=True) as fp:
         for line in fp:

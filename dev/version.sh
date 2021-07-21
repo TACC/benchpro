@@ -11,8 +11,12 @@ mv src/data/modulefiles/benchtool/*.lua src/data/modulefiles/benchtool/${1}.lua
 # Update version in settings.ini
 sed -i "/version =/c\version = ${1}" src/data/settings.ini
 
+
+# Update version in setup.py
+sed -i "/version=/c\    version=\'${1}\'," setup.py
+
 # Update version file
-echo "benchtool v${1}" > .version
-date >> .version
+echo "benchtool v${1}" > src/data/.version
+date >> src/data/.version
 
 echo "Version info updated."
