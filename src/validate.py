@@ -24,6 +24,7 @@ class bcolors:
     FAIL = '\033[91mFAIL:\033[0m'
     CREATE = '\033[94mCREATE:\033[0m'
     SET = '\033[94mSET:\033[0m'
+    WARN = '\033[1;33mWARNING \033[0m'
 
 # Check python version 
 def check_python_version():
@@ -95,18 +96,21 @@ def check_file_perm(filename, perm):
         os.chmod(filename, perm)
         print(bcolors.PASS, filename, "permissions set")
     else:
-        print(bcolors.FAIL, filename, "not found.")
-        exit(1)
+        print(bcolors.WARN, filename, "not found.")
 
 # Confirm SSH connection is successful
 def check_ssh_connect(host, user, key):
-    try:
-        expr = "ssh -i " + key +" " + user + "@" + host + " -t echo 'Client connection test'"
-        cmd = subprocess.run(expr, shell=True, check=True, capture_output=True, universal_newlines=True)
-        print(bcolors.PASS, "connected to", host)
+    if os.path.isfile(key):
+        try:
+            expr = "ssh -i " + key +" " + user + "@" + host + " -t echo 'Client connection test'"
+            cmd = subprocess.run(expr, shell=True, check=True, capture_output=True, universal_newlines=True)
+            print(bcolors.PASS, "connected to", host)
 
-    except subprocess.CalledProcessError as e:
-        print(bcolors.FAIL, "connected to", host)
+        except subprocess.CalledProcessError as e:
+            print(bcolors.WARN, "connected to", host)
+
+    else:
+        print(bcolors.WARN, "SSH key not found")
 
 def check_db_connect(glob):
     try:
@@ -117,8 +121,8 @@ def check_db_connect(glob):
             password =  glob.stg['db_passwd']
         )
     except Exception as err:
-        print (bcolors.FAIL, "connected to", glob.stg['db_name'])
-        sys.exit(1)
+        print (bcolors.WARN, "connected to", glob.stg['db_name'])
+        return
 
     print (bcolors.PASS, "connected to", glob.stg['db_name'])
 

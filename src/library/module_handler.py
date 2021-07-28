@@ -168,7 +168,7 @@ class init(object):
         mod_obj = self.populate_mod_template(mod_obj)
         # Test module template
         tmp_mod_file = "tmp." + mod_file
-        self.glob.lib.test_template(tmp_mod_file, mod_obj)
+        self.glob.lib.template.test_template(tmp_mod_file, mod_obj)
         # Write module template to file
         self.glob.lib.write_list_to_file(mod_obj, tmp_mod_file)
 

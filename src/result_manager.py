@@ -64,7 +64,7 @@ def validate_result(result_path):
         return "failed", None
 
     # Get output file path
-    glob.output_path = glob.lib.find_exact(glob.report_dict['result']['output_file'], result_path)
+    glob.output_path = glob.lib.files.find_exact(glob.report_dict['result']['output_file'], result_path)
 
     # Deal with dry_run 
     if glob.report_dict['bench']['task_id'] == "dry_run":

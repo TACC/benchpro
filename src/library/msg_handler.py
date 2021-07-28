@@ -102,7 +102,3 @@ class init(object):
             self.error("failed to locate application executable '" + exe + "'in " + self.glob.lib.rel_path(search_path))
 
 
-
-
-
-

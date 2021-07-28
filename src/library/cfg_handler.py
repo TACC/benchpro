@@ -10,6 +10,26 @@ class init(object):
     def __init__(self, glob):
         self.glob = glob
 
+    # Get list of config files by type
+    def get_list_of_cfgs(self, cfg_type):
+        # Get cfg subdir name from input
+        type_dir = ""
+        if cfg_type == "build":
+            type_dir = self.glob.stg['build_cfg_dir']
+        elif cfg_type == "bench":
+            type_dir = self.glob.stg['bench_cfg_dir']
+        else:
+            self.glob.lib.msg.error("unknown cfg type '"+cfg_type+"'. get_list_of_cfgs() accepts either 'build' or 'bench'.")
+
+        search_path = os.path.join(self.glob.stg['config_path'], type_dir)
+        # Get list of cfg files in dir
+        cfg_list = self.glob.lib.files.get_files_in_path(search_path)
+
+        # If system subdir exists, scan that too
+        if os.path.isdir(os.path.join(search_path,self.glob.system['sys_env'])):
+            cfg_list = cfg_list + self.glob.lib.files.get_files_in_path(os.path.join(search_path,self.glob.system['sys_env']))
+        return cfg_list
+
     # Search for unique cfg file in cfg dir
     def search_cfg_str(self, cfg_name, search_path):
 

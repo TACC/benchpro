@@ -37,14 +37,18 @@ fi
 # Add Ampere arch support
 sed -i '1255i\      sm80flags="-gencode arch=compute_80,code=sm_80"' AmberTools/src/configure2
 
+# Fix power compiler flags
+sed -i '1387i\          coptflags="$coptflags -mtune=native"' AmberTools/src/configure2
+sed -i '1388i\          foptflags="$foptflags -mtune=native"' AmberTools/src/configure2
+
 # Build serial
-echo "y" | ./configure -noX11 ${config_comp}
+echo "n" | ./configure -noX11 --skip-python -nofftw3 ${config_comp}
 source amber.sh
 make -j${threads} install
 
 # Build MPI
 if [ ! -z ${mpi} ]; then
-  echo "y" | ./configure -noX11 ${config_mpi} ${config_comp}
+  echo "n" | ./configure -noX11 --skip-python -nofftw3 ${config_mpi} ${config_comp}
   source amber.sh
   make -j${threads} install
 fi
@@ -52,7 +56,7 @@ fi
 # Build CUDA + MPI
 if [ ! -z ${mpi} ] && [ ! -z ${cuda} ]; then
   export CUDA_HOME=$TACC_CUDA_DIR
-  echo "y" | ./configure -noX11 -cuda ${config_mpi} ${config_comp}
+  echo "n" | ./configure -noX11 --skip-python -nofftw3 -cuda ${config_mpi} ${config_comp}
   source amber.sh
   make -j${threads} install
 fi
