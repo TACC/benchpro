@@ -88,8 +88,12 @@ def get_code_info(input_label, search_dict):
 def gen_bench_script():
 
     # Evaluate math in cfg dict -
-    glob.lib.expr.eval_dict(glob.config['config'])
-    glob.lib.expr.eval_dict(glob.config['runtime'])
+    for sect in ['config', 'runtime', 'files', 'result']:
+        glob.lib.expr.eval_dict(glob.config[sect])
+
+    # Update GPU default if arch=cuda
+    if glob.config['config']['arch'] == "cuda":
+        glob.config['runtime']['gpus'] = 1
 
     gpu_path_str = ""
     gpu_print_str = ""
@@ -97,7 +101,6 @@ def gen_bench_script():
     if glob.config['runtime']['gpus']:
         gpu_path_str = str(glob.config['runtime']['gpus']).zfill(2) + "G"
         gpu_print_str = ", on " + glob.config['runtime']['gpus'] + " GPUs."
-        
 
     glob.lib.msg.heading("Task " + str(glob.counter) \
             + ": " + glob.config['config']['bench_label'] + " : " + str(glob.config['runtime']['nodes']) + " nodes, " + str(glob.config['runtime']['threads']) + " threads, " + \
@@ -115,6 +118,8 @@ def gen_bench_script():
 
     # Check if working dir path already exists
     glob.config['metadata']['working_path'] = glob.lib.files.check_dup_path(os.path.join(glob.stg['pending_path'], glob.config['metadata']['working_dir']))
+    # Path to copy files to
+    glob.config['metadata']['dest_path']    = glob.config['metadata']['working_path']
 
     glob.lib.msg.low(["Benchmark working directory:",
                     ">  " + glob.lib.rel_path(glob.config['metadata']['working_path'])])
@@ -127,6 +132,9 @@ def start_task():
     # Make bench path and move tmp bench script file
     glob.lib.files.create_dir(glob.config['metadata']['working_path'])
     glob.lib.files.install(glob.config['metadata']['working_path'], glob.tmp_script, None, True)
+
+    # Copy input files
+    glob.lib.files.stage()
 
     # Copy bench cfg & template files to bench dir
     provenance_path = os.path.join(glob.config['metadata']['working_path'], "bench_files")
@@ -190,10 +198,6 @@ def start_task():
 
 
     #glob.lib.check_for_slurm_vars()
-
-
-    glob.lib.msg.low(["Output file:",
-                    ">  " + glob.lib.rel_path(os.path.join(glob.config['metadata']['working_path'], glob.config['result']['output_file']))])
 
     # Generate bench report
     glob.lib.report.bench()

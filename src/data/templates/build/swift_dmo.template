@@ -1,6 +1,6 @@
 git clone https://github.com/SWIFTSIM/swiftsim.git
-git checkout v${version}
 cd swiftsim
+git checkout v${version}
 
 TACC_PARMETIS_DIR="$TACC_PARMETIS_LIB"
 if [ $TACC_SYSTEM == "stampede2" ]; then

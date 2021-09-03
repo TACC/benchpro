@@ -22,7 +22,7 @@ def check_for_previous_install():
         if glob.stg['overwrite']:
 
             glob.lib.msg.warning(["It seems this app is already installed. Deleting old build in " +
-                         glob.lib.rel_path(install_path) + " because 'overwrite=True' in settings.ini",
+                         glob.lib.rel_path(install_path) + " because 'overwrite=True'",
                          "\033[0;31mDeleting in 5 seconds...\033[0m"])
 
             time.sleep(glob.stg['timeout'])
@@ -98,6 +98,9 @@ def build_code(input_dict, glob_copy):
     # Print inputs to log
     glob.lib.send_inputs_to_log('Builder')
 
+    # Stage input files
+    glob.lib.files.stage()
+
     #============== GENERATE BUILD & MODULE TEMPLATE  ======================================
 
     # Generate build script
@@ -157,9 +160,6 @@ def build_code(input_dict, glob_copy):
             glob.lib.proc.start_local_shell()
             #Store PID for report
             glob.task_id = glob.prev_pid
-
-        glob.lib.msg.low(["Output file:",
-                        ">  " + glob.lib.rel_path(os.path.join(glob.config['metadata']['working_path'], glob.config['config']['stdout']))])
 
     # Generate build report
     glob.lib.report.build()

@@ -37,16 +37,13 @@ class settings(object):
     any_dep_list = []
     ok_dep_list = []
 
-
     # Cfg lists
     build_cfgs = []
     bench_cfgs = [] 
 
-
     overload_dict = {}
     quiet_build =  False 
     prev_pid = 0
-
 
     # Context variables
     user                = str(os.getlogin())
@@ -56,7 +53,11 @@ class settings(object):
 
     # Set basic vars
     time_str            = datetime.now().strftime("%Y-%m-%dT%H-%M")
-    cwd                 = os.getcwd()
+    try:
+        cwd                 = os.getcwd()
+    except:
+        print("It seems your current working directory doesn't exist. Exitting.")
+        sys.exit(1)
 
     # Resolve relative paths and envvars in settings.ini
     def resolve_path(self, path):
@@ -119,7 +120,8 @@ class settings(object):
         self.stg['build_path']        = self.resolve_path(self.stg['build_dir'])
         self.stg['bench_path']        = self.resolve_path(self.stg['bench_dir'])
         self.stg['resource_path']     = self.resolve_path(self.stg['resource_dir'])
-        
+        self.stg['local_repo']        = self.resolve_path(self.stg['local_repo'])
+
         # Derived variables
         self.stg['project_env']         = self.stg['project_env_var'] + self.stg['sl']
         self.stg['app_env']             = self.stg['app_env_var'] + self.stg['sl']

@@ -5,6 +5,7 @@ import sys
 class init(object):
     def __init__(self, glob):
         self.glob = glob
+        self.search_dicts = []
 
     # Return True if operators are found in string
     def has_arithmatic(self, expr):
@@ -33,7 +34,7 @@ class init(object):
     # Look for key in multiple dicts, return value or error
     def look_for_replacement(self, var):
         # For each dict in list
-        for search_dict in [self.glob.config['requirements'], self.glob.config['runtime'], self.glob.config['config'], self.glob.system]:
+        for search_dict in self.search_dicts:
             # Look for key in dict
             matched, new_val = self.replace_var(var, search_dict)
             if matched:
@@ -52,6 +53,14 @@ class init(object):
 
     # Check dict for vars, resolve them and then evaluate for arithmatic
     def eval_dict(self, cfg_dict):
+
+        # Building application
+        if self.glob.args.build:
+            self.search_dicts = [self.glob.config['general'], self.glob.config['config'], self.glob.system]
+        # Running bench
+        else:
+            self.search_dicts = [self.glob.config['requirements'], self.glob.config['runtime'], self.glob.config['config'], self.glob.config['result'], self.glob.system]
+
         for key in cfg_dict:
             # Resolve variables
             cfg_dict[key] = self.resolve_vars(cfg_dict[key])

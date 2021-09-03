@@ -27,10 +27,6 @@ label=( "cpuid.all.raw"
         "lscpu"
         ) 
 
-echo "%%% $BT_PROJECT"
-
-ml
-
 cmd=(   "${util_dir}/cpuid -r"
         "${util_dir}/cpuid -1"
         "${util_dir}/lshw"

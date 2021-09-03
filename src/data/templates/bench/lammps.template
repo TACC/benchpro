@@ -1,2 +1,1 @@
-cp ${local_repo}/in.${dataset} . 
 ${mpi_exec} ${exe} -var x ${x} -var y ${y} -var z ${z} -var t ${t} < in.${dataset} >> ${output_file}

@@ -185,10 +185,12 @@ class init(object):
         success, stdout, stderr = self.slurm_exec("squeue -a --job " + jobid)
 
         self.glob.lib.msg.low([stdout,
-                    "Job " + jobid + " stdout:",
-                    ">  "+ self.glob.lib.rel_path(os.path.join(self.glob.config['metadata']['working_path'], jobid + ".out")),
-                    "Job " + jobid + " stderr:",
-                    ">  "+ self.glob.lib.rel_path(os.path.join(self.glob.config['metadata']['working_path'], jobid + ".err"))])
+                    "Job stdout:",
+                    ">  "+ self.glob.lib.rel_path(
+                        os.path.join(self.glob.config['metadata']['working_path'], self.glob.config['config']['stdout'])),
+                    "Job stderr:",
+                    ">  "+ self.glob.lib.rel_path(
+                        os.path.join(self.glob.config['metadata']['working_path'], self.glob.config['config']['stderr']))])
 
         self.glob.log.debug(stdout)
         self.glob.log.debug(stderr)

@@ -1,13 +1,9 @@
 # System Imports
 import configparser as cp
 import copy
-import datetime
 import glob as gb
 import hashlib
 import os
-import re
-import shutil as su
-import subprocess
 import sys
 import time
 
@@ -438,7 +434,7 @@ class init(object):
 
     # Parse input string for --bench
     def parse_bench_str(self, input_str):
-        return self.parse_input_str(input_str, "dataset")
+        return self.parse_input_str(input_str, "bench_label")
 
     # Write command line to history file
     def write_cmd_history(self, args):

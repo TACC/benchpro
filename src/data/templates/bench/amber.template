@@ -40,7 +40,7 @@ echo "INPUT                     ${input}"
 echo "OMP_NUM_THREADS           $OMP_NUM_THREADS"
 echo "CUDA_VISIBLE_DEVICES      $CUDA_VISIBLE_DEVICES"
 
-tar -xf ${local_repo}/${dataset}.tgz && cd ${dataset}
+cd ${dataset}
 
 ${mpi_exec} ${exe}  -O  \
                     -i ${input} \

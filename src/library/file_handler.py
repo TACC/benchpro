@@ -3,6 +3,8 @@ import glob as gb
 import os
 import pwd
 import shutil as su
+import tarfile
+import urllib.request
 
 class init(object):
     def __init__(self, glob):
@@ -33,10 +35,10 @@ class init(object):
         else:
             return None
 
-    # Confirm application exe is available
-    def exists(self, fileName, code_path):
+    # Confirm file exists
+    def exists(self, fileName, path):
 
-        if self.find_exact(fileName, code_path):
+        if self.find_exact(fileName, path):
             return True
         else:
             return False
@@ -113,9 +115,100 @@ class init(object):
         except IOError as e:
             self.glob.lib.msg.high(e)
             self.glob.lib.msg.error(
-                "Failed to move " + obj + " to " + path + self.glob.stg['sl'] + new_obj_name)
+                "Failed to move " + obj + " to " + os.path.join(path, new_obj_name))
 
         # Remove tmp files after copy
         if clean:
             os.remove(obj)
+
+    # Extract tar file list to working dir
+    def untar_files(self, file_list):
+        # Iterate over file list
+        for src in file_list:
+            # Check file existing in repo
+            if os.path.isfile(src):
+
+                # Stage files synchronously
+                if self.glob.stg['sync_staging']:
+                    self.glob.lib.msg.low("Extracting " + src + "...")
+                    # Extract to working dir
+                    tar = tarfile.open(src)
+                    tar.extractall(self.glob.config['metadata']['dest_path'])
+                    tar.close()
+
+            # File not found
+            else:
+                self.glob.lib.msg.error("Input file '" + src + "' not found in repo " + \
+                                        self.glob.lib.rel_path(self.glob.stg['local_repo']))
+
+    # Download URL
+    def wget_files(self, file_list):
+        for elem in file_list:
+            src = elem.strip()
+            dest = os.path.join(self.glob.config['metadata']['dest_path'], src.split("/")[-1])
+            try:
+                urllib.request.urlretrieve(src, dest)
+            except:
+                self.glob.lib.msg.error("Failed to download " + src)
+
+            # Check if file is compressed
+            if any(x in src for x in ['tar', 'tgz', 'bgz']):
+                self.untar_files([os.path.join(src,dest)])
+
+    # Copy file list to working dir
+    def cp_files(self, file_list):
+        for elem in file_list:
+            src = elem.strip()
+
+            # Check if directory
+            src_path = os.path.expandvars(src)
+            if not os.path.isfile(src_path) and not os.path.isdir(src_path):
+                src_path = os.path.join(self.glob.stg['local_repo'], src)
+
+            # Copy file
+            if os.path.isfile(src_path):
+                su.copy(src_path, self.glob.config['metadata']['dest_path'])
+
+            # Copy dir
+            elif os.path.isdir(src_path): 
+                dest = src_path.split(self.glob.stg['sl'])[-1]
+                su.copytree(src_path, os.path.join(self.glob.config['metadata']['dest_path'], dest))
+
+            else:
+                self.glob.lib.msg.error("Input file '" + src + "' not found in repo " + \
+                                        self.glob.lib.rel_path(self.glob.stg['local_repo']))
+
+
+    # Ensure input files exist
+    def stage(self):
+       
+        # Check section exists
+        if 'files' in self.glob.config.keys():
+
+            if self.glob.stg['sync_staging']:
+                self.glob.lib.msg.low("Staging input files...")
+                # Create build dir
+                self.create_dir(self.glob.config['metadata']['dest_path'])
+            else:
+                self.glob.lib.msg.low("Checking input files...")
+                self.glob.stage = {}
+
+            # Evaluate expressions
+            self.glob.lib.expr.eval_dict(self.glob.config['config'])
+            self.glob.lib.expr.eval_dict(self.glob.config['files'])
+
+            # Parse through supported file operations
+            for op in self.glob.config['files'].keys():
+                if op == 'tar':
+                    self.untar_files([os.path.join(self.glob.stg['local_repo'], x.strip()) for x in self.glob.config['files'][op].split(',')])
+
+                elif op == 'wget':
+                    self.wget_files(self.glob.config['files'][op].split(','))
+    
+                elif op == 'cp':
+                    self.cp_files(self.glob.config['files'][op].split(','))
+
+                else:
+                    self.glob.lib.msg.error(["Unsupported file stage operation selected: '" + op + "'.", 
+                                            "Supported operations = tar, wget, cp."])
 

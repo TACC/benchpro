@@ -1,2 +1,2 @@
-tar -xf ${local_repo}/${dataset}.tgz && cd ${dataset}
+cd ${dataset}
 ${mpi_exec} ${exe} -n ${steps} ${run_args} --threads=${threads} --pin ${yml}

@@ -1,7 +1,7 @@
 
 source $OPENFOAM_DIR/OpenFOAM-*/etc/bashrc
 
-tar -xf ${local_repo}/${dataset}.tgz && cd ${dataset}
+cd ${dataset}
 
 numberOfSubdomains=$(( nodes * ranks ))
 

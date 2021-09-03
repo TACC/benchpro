@@ -204,8 +204,11 @@ class init(object):
 
                 if status == "RUNNING":
                     print(("Job " + report_dict['build']['task_id'] + " status: ").ljust(gap) + "\033[1;33m" + status + "\033[0m")
+                    self.glob.lib.msg.print_file_tail(os.path.join(report_dict['build']['build_prefix'], report_dict['build']['stdout']))
+                # Job failed
                 elif not status == "COMPLETED":
                     print(("Job " + report_dict['build']['task_id'] + " status: ").ljust(gap) + "\033[0;31m" + status + "\033[0m")
+                    self.glob.lib.msg.print_file_tail(os.path.join(report_dict['build']['build_prefix'], report_dict['build']['stderr']))
 
             # If complete, Look for exe
             if status == "COMPLETED":
@@ -230,6 +233,10 @@ class init(object):
         # Get Jobid from report file and check if status = COMPLETED
         task_id = self.glob.lib.report.get_task_id("build", app)
 
+        if task_id == "dry_run":
+            return "\033[1;33mDRY RUN\033[0m"
+
+
         status = None
         if exec_mode == "sched":
             status = self.glob.lib.sched.get_job_status(task_id)
@@ -250,6 +257,10 @@ class init(object):
                     return '\033[0;32mEXE FOUND\033[0m'
 
             return '\033[0;31mEXE NOT FOUND\033[0m'
+
+        # Failed state
+        if status in ["FAILED", "TIMEOUT"]:
+            return '\033[0;31mJOB '+status+'\033[0m'
 
         return '\033[1;33mJOB '+status+'\033[0m'
 
@@ -330,7 +341,7 @@ class init(object):
                 print("| " + contents['metadata']['cfg_label'].ljust(column) + "| -b " + self.get_cmd_string([['general', 'code'], ['general', 'version'], ['general', 'system']], contents))
 
             else:
-                print("| " + contents['metadata']['cfg_label'].ljust(column) + "| -B " + self.get_cmd_string([['requirements', 'code'], ['requirements', 'version'], ['requirements', 'build_label'], ['config', 'dataset']], contents))
+                print("| " + contents['metadata']['cfg_label'].ljust(column) + "| -B " + self.get_cmd_string([['requirements', 'code'], ['requirements', 'version'], ['requirements', 'build_label'], ['config', 'bench_label']], contents))
 
 
     # Print applications that can be installed from available cfg files
@@ -392,7 +403,8 @@ class init(object):
                                             'build_mode', \
                                             'build_if_missing', \
                                             'bench_mode',\
-                                            'check_modules']]
+                                            'check_modules', \
+                                            'sync_staging']]
         print()
         # Print scheduler defaults for this system if available
         self.glob.system = self.glob.lib.get_system_vars(self.glob.sys_env)

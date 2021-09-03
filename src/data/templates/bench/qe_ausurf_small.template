@@ -1,4 +1,4 @@
-tar -xf ${local_repo}/${dataset}.tar.gz && cd ${dataset}
+cd ${dataset}
 
 sed -i "/electron_maxstep/c\    electron_maxstep = ${electron_maxstep}" ausurf.in
 

@@ -84,6 +84,35 @@ class init(object):
         template_obj.append("# Create working directory \n")
         template_obj.append("mkdir -p ${working_path} && cd ${working_path} \n")
 
+    # Get input files asynchronously
+    def stage_input_files(self, template_obj):
+        template_obj.append("\n")
+        for op in self.glob.config['files'].keys():
+
+            # Add tar lines to script
+            if op == "tar":
+                for elem in self.glob.config['files'][op].split(","):
+                    src = elem.strip()
+                    template_obj.append("tar -xf ${local_repo}/" + src + \
+                                        " -C . \n")
+                    
+            # Add copy lines to script
+            if op == "cp":
+                for elem in self.glob.config['files'][op].split(","):
+                    src = elem.strip()
+                    template_obj.append("cp -r ${local_repo}/" + src + \
+                                        " . \n")
+            # Add wget lines to script
+            if op == "wget":
+
+                for elem in self.glob.config['files'][op].split(","):
+                    src = elem.strip()
+                    template_obj.append("wget " + src + " -P . \n")
+
+                    # Check if download was an archive
+                    if any(x in src for x in ['tar', 'tgz', 'bgz']):
+                        template_obj.append("tar -xf " + src.split("/")[-1] + " -C ./ \n")
+
     # If the setting in enabled, add the provenance data collection script to the script
     def collect_stats(self, template_obj):
         if self.glob.config['config']['collect_stats']:
@@ -94,7 +123,7 @@ class init(object):
                                     os.path.join(self.glob.config['metadata']['working_path'], "hw_report") + "\n")
             else:
                 self.glob.lib.msg.warning(["Requested hardware stats but script permissions not set",
-                                                "Run 'sudo -E $BT_PROJECT/resources/scripts/change_permissions'"])
+                                                "Run 'sudo -E $BT_HOME/resources/scripts/change_permissions'"])
 
     # Add things to the bottom of the build script
     def build_epilog(self, template_obj):
@@ -216,7 +245,13 @@ class init(object):
         # Add standard lines to template
         self.add_standard_build_definitions(template_obj)
 
+        # Copy user portion of build template
         self.construct_template(template_obj, self.glob.compiler['template'])
+
+        # Stage files
+        if not self.glob.stg['sync_staging']:
+            self.stage_input_files(template_obj)
+
         self.construct_template(template_obj, self.glob.config['template'])
 
         self.build_epilog(template_obj)
@@ -346,6 +381,10 @@ class init(object):
             self.glob.lib.msg.low("Adding contents of '" + self.glob.lib.rel_path(self.glob.config['config']['script_additions']) + "' to benchmark script.")
             self.construct_template(template_obj, self.glob.config['config']['script_additions'])
             template_obj.append("\n")
+
+        # Stage files
+        if not self.glob.stg['sync_staging']:
+            self.stage_input_files(template_obj)
 
         # Add bench template to script
         template_obj = self.add_bench(template_obj)
