@@ -383,8 +383,8 @@ class init(object):
         cfg_dict['config']['nodes'] = 1
 
         #Set stdout and stderr
-        cfg_dict['config']['stdout'] = "build.out"
-        cfg_dict['config']['stderr'] = "build.err"
+        cfg_dict['config']['stdout'] = "stdout.log"
+        cfg_dict['config']['stderr'] = "stderr.log"
 
         # Add sched params to overload dict
         self.add_sched_overloads(cfg_dict)
@@ -533,8 +533,8 @@ class init(object):
             cfg_dict['runtime']['max_running_jobs'] = 10
 
         #Set stdout and stderr
-        cfg_dict['config']['stdout'] = "bench.out"
-        cfg_dict['config']['stderr'] = "bench.err"
+        cfg_dict['config']['stdout'] = "stdout.log"
+        cfg_dict['config']['stderr'] = "stderr.log"
 
         # Set result output file to stdout if not set in cfg file
         if not cfg_dict['result']['output_file']:

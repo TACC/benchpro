@@ -185,12 +185,11 @@ class init(object):
         # Check section exists
         if 'files' in self.glob.config.keys():
 
+            self.glob.lib.msg.low("Staging input files...")
             if self.glob.stg['sync_staging']:
-                self.glob.lib.msg.low("Staging input files...")
                 # Create build dir
                 self.create_dir(self.glob.config['metadata']['dest_path'])
             else:
-                self.glob.lib.msg.low("Checking input files...")
                 self.glob.stage = {}
 
             # Evaluate expressions

@@ -1,5 +1,4 @@
 
-date
 echo "JobID:    ${SLURM_JOB_ID}"
 echo "User:     ${USER}"
 echo "Hostlist: ${SLURM_NODELIST}"
@@ -10,6 +9,7 @@ export local_repo=<<<local_repo>>>
 export        version=<<<version>>>
 export      opt_flags=<<<opt_flags>>>
 export            exe=<<<exe>>>
+export    build_label=<<<build_label>>>
 export        threads=<<<threads>>>
 
 # Create application directories

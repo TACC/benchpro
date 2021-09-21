@@ -218,6 +218,7 @@ class init(object):
                     print(("File "+report_dict['build']['exe_file']+": ").ljust(gap) + "\033[0;32mFOUND\033[0m")
                 else:
                     print(("File "+report_dict['build']['exe_file']+": ").ljust(gap) + ")\033[0;31mMISSING\033[0m")
+                    self.glob.lib.msg.print_file_tail(os.path.join(report_dict['build']['build_prefix'], report_dict['build']['stderr']))
 
     # Get usable string of application status
     def get_status_str(self, app):
@@ -323,7 +324,7 @@ class init(object):
                     # If value set
                     if config_dict[sect][key]:
                         cmd_str.append(key+"="+config_dict[sect][key])
-        return ":".join(cmd_str)
+        return ",".join(cmd_str)
 
 
     # Print list of code strings
@@ -338,10 +339,14 @@ class init(object):
             column = 30
 
             if atype == "application":
-                print("| " + contents['metadata']['cfg_label'].ljust(column) + "| -b " + self.get_cmd_string([['general', 'code'], ['general', 'version'], ['general', 'system']], contents))
+                print("| " + contents['metadata']['cfg_label'].ljust(column) + "| -b " + \
+                        self.get_cmd_string([['general', 'code'], ['general', 'version'], ['general', 'system'], ['config', 'build_label']], \
+                        contents))
 
             else:
-                print("| " + contents['metadata']['cfg_label'].ljust(column) + "| -B " + self.get_cmd_string([['requirements', 'code'], ['requirements', 'version'], ['requirements', 'build_label'], ['config', 'bench_label']], contents))
+                print("| " + contents['metadata']['cfg_label'].ljust(column) + "| -B " + \
+                self.get_cmd_string([['requirements', 'code'], ['requirements', 'version'], ['requirements', 'build_label'], ['config', 'bench_label']], \
+                contents))
 
 
     # Print applications that can be installed from available cfg files

@@ -97,7 +97,7 @@ class init(object):
         exe_exists = self.glob.lib.files.exists(exe, search_path)
 
         if exe_exists:
-            self.low(["Application executable found at:",
+            self.low(["Application executable found in:",
                             ">  " + self.glob.lib.rel_path(search_path)])
         else:
             self.error("failed to locate application executable '" + exe + "'in " + self.glob.lib.rel_path(search_path))

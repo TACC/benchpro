@@ -416,8 +416,8 @@ class init(object):
 
         input_dict = {}
 
-        # Split by colon delimiter
-        for keyval in input_str.split(":"):
+        # Split by comma delimiter
+        for keyval in input_str.split(","):
 
             if not "=" in keyval:
             # Convert to dict

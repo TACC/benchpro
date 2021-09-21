@@ -27,9 +27,15 @@ class init(object):
 
     # Combines list of input templates to single script file
     def construct_template(self, template_obj, input_template):
-            # Copy input template file to temp obj
-            with open(input_template, 'r') as fd:
-                template_obj.extend(self.read_template(input_template))
+        # Copy input template file to temp obj
+        with open(input_template, 'r') as fd:
+            template_obj.extend(self.read_template(input_template))
+
+    # Add user defined section of template
+    def add_user_section(self, template_obj, input_template):
+        template_obj.append("#------USER SECTION------\n")
+        self.construct_template(template_obj, input_template)
+        template_obj.append("#------------------------\n")
 
     # Add sched reservation
     def add_reservation(self, template_obj):
@@ -188,7 +194,7 @@ class init(object):
     # Get template files required to constuct build script
     def set_build_files(self):
         # Temp build script
-        self.glob.script_file = self.glob.config['general']['code'] + "-build." + self.glob.stg['build_mode']
+        self.glob.script_file = "build.batch"
         self.glob.tmp_script = os.path.join(self.glob.basedir, "tmp." + self.glob.script_file)
 
         if self.glob.stg['build_mode'] == "sched":
@@ -229,7 +235,7 @@ class init(object):
         # Parse template file names
         self.set_build_files()
 
-        # Add scheduler directives if contructing job script
+        # Add scheduler directives if constructing job script
         if self.glob.stg['build_mode'] == "sched":
             # Get ranks from threads (?)
             self.glob.sched['sched']['ranks'] = 1
@@ -242,6 +248,9 @@ class init(object):
             # Add reservation line to SLURM params if set
             self.add_reservation(template_obj)
 
+        # Timestamp
+        template_obj.append("echo \"START `date +\"%Y\"-%m-%dT%T` `date +\"%s\"`\" \n")
+
         # Add standard lines to template
         self.add_standard_build_definitions(template_obj)
 
@@ -252,9 +261,12 @@ class init(object):
         if not self.glob.stg['sync_staging']:
             self.stage_input_files(template_obj)
 
-        self.construct_template(template_obj, self.glob.config['template'])
+        self.add_user_section(template_obj, self.glob.config['template'])
 
         self.build_epilog(template_obj)
+
+        # Timestamp
+        template_obj.append("echo \"END `date +\"%Y\"-%m-%dT%T` `date +\"%s\"`\" \n")
 
         # Populate template list with cfg dicts
         self.glob.lib.msg.low("Populating template...")
@@ -278,7 +290,7 @@ class init(object):
     # Get template files required to construct bench script
     def set_bench_files(self):
         # Temp job script 
-        self.glob.script_file = self.glob.config['config']['bench_label']  + "-bench." + self.glob.stg['bench_mode']
+        self.glob.script_file = "bench.batch"
         self.glob.tmp_script = os.path.join(self.glob.basedir, "tmp." + self.glob.script_file) 
     
         # Scheduler template file
@@ -340,13 +352,11 @@ class init(object):
         # Get template file contents
         template = self.read_template(self.glob.config['template']) 
 
-        #self.glob.lib.expr.eval_dict(self.glob.config['runtime'])
-
         # Add start time line
-        template_obj.append("echo \"START `date +\"%Y\"-%m-%dT%T` `date +\"%s\"`\" \n")
+        template_obj.append("#-------USER SECTION------\n")
         template_obj.extend(template)
         # Add end time line
-        template_obj.append("echo \"END `date +\"%Y\"-%m-%dT%T` `date +\"%s\"`\" \n")
+        template_obj.append("#-------------------------\n")
 
         return template_obj
 
@@ -371,7 +381,11 @@ class init(object):
         # If generate sched script
         if self.glob.stg['bench_mode'] == "sched":
             self.construct_template(template_obj, self.glob.sched['template'])
+            self.glob.sched['sched']['job_label'] = self.glob.config['config']['bench_label']
             self.add_reservation(template_obj)
+
+        # Timestamp
+        template_obj.append("echo \"START `date +\"%Y\"-%m-%dT%T` `date +\"%s\"`\" \n")
 
         # Add standard lines to script
         self.add_standard_bench_definitions(template_obj)
@@ -391,6 +405,9 @@ class init(object):
 
         # Add epilog to end of script
         self.bench_epilog(template_obj)
+
+        # Timestamp
+        template_obj.append("echo \"END `date +\"%Y\"-%m-%dT%T` `date +\"%s\"`\" \n")
 
         self.glob.lib.msg.low("Populating template...")
         # Take multiple config dicts and populate script template

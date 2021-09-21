@@ -82,7 +82,7 @@ def validate_result(result_path):
     if glob.report_dict['result']['method'] == 'expr':
 
         # replace <file> filename placeholder with value in glob_obj.cfg
-        glob.report_dict['result']['expr'] = glob.report_dict['result']['expr'].replace("{output_file}", glob.output_path)
+        glob.report_dict['result']['expr'] = glob.report_dict['result']['expr'].replace("[output_file]", glob.output_path)
 
         # Run validation expression on output file
         try:
@@ -116,6 +116,7 @@ def validate_result(result_path):
                             glob.report_dict['result']['unit'])
 
         except subprocess.CalledProcessError as e:
+            print(e)
             glob.lib.msg.warning("Running script '" + glob.lib.rel_path(result_script) + "' on file " + \
                                             glob.lib.rel_path(glob.output_path) + \
                                             " failed to find a valid a result." )

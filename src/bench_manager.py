@@ -124,6 +124,9 @@ def gen_bench_script():
     glob.lib.msg.low(["Benchmark working directory:",
                     ">  " + glob.lib.rel_path(glob.config['metadata']['working_path'])])
 
+    # Copy input files
+    glob.lib.files.stage()
+
     # Generate benchmark template
     glob.lib.template.generate_bench_script()
 
@@ -132,9 +135,6 @@ def start_task():
     # Make bench path and move tmp bench script file
     glob.lib.files.create_dir(glob.config['metadata']['working_path'])
     glob.lib.files.install(glob.config['metadata']['working_path'], glob.tmp_script, None, True)
-
-    # Copy input files
-    glob.lib.files.stage()
 
     # Copy bench cfg & template files to bench dir
     provenance_path = os.path.join(glob.config['metadata']['working_path'], "bench_files")

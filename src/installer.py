@@ -104,8 +104,8 @@ def install_files():
                                                 "README.md",
                                                 "config/",
                                                 "templates/",
-                                                "resources/"],
-                    path_dict['build_dir']:   ["modulefiles/benchtool/"]
+                                                "resources/"]
+#                    path_dict['build_dir']:   ["modulefiles/benchtool/"]
                     }
     copy_files(install_dict)
 
@@ -253,7 +253,7 @@ def install(settings):
     check_status()
     install_files()
     update_settings()
-    update_module()
+#    update_module()
     update_bash()
     copy_key()
     success()
