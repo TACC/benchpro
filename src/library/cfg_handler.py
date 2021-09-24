@@ -10,6 +10,26 @@ class init(object):
     def __init__(self, glob):
         self.glob = glob
 
+    # Get list of config files by type
+    def get_list_of_cfgs(self, cfg_type):
+        # Get cfg subdir name from input
+        type_dir = ""
+        if cfg_type == "build":
+            type_dir = self.glob.stg['build_cfg_dir']
+        elif cfg_type == "bench":
+            type_dir = self.glob.stg['bench_cfg_dir']
+        else:
+            self.glob.lib.msg.error("unknown cfg type '"+cfg_type+"'. get_list_of_cfgs() accepts either 'build' or 'bench'.")
+
+        search_path = os.path.join(self.glob.stg['config_path'], type_dir)
+        # Get list of cfg files in dir
+        cfg_list = self.glob.lib.files.get_files_in_path(search_path)
+
+        # If system subdir exists, scan that too
+        if os.path.isdir(os.path.join(search_path,self.glob.system['sys_env'])):
+            cfg_list = cfg_list + self.glob.lib.files.get_files_in_path(os.path.join(search_path,self.glob.system['sys_env']))
+        return cfg_list
+
     # Search for unique cfg file in cfg dir
     def search_cfg_str(self, cfg_name, search_path):
 
@@ -251,8 +271,11 @@ class init(object):
         if not 'opt_flags'        in cfg_dict['config'].keys():    cfg_dict['config']['opt_flags']        = ""  
         if not 'build_label'      in cfg_dict['config'].keys():    cfg_dict['config']['build_label']      = ""
         if not 'bin_dir'          in cfg_dict['config'].keys():    cfg_dict['config']['bin_dir']          = ""
-        if not 'collect_stats' in cfg_dict['config'].keys():    cfg_dict['config']['collect_stats'] = False
+        if not 'collect_stats'    in cfg_dict['config'].keys():    cfg_dict['config']['collect_stats']    = False
         if not 'script_additions' in cfg_dict['config'].keys():    cfg_dict['config']['script_additions'] = ""
+
+        # Add [files] section if missing
+        if not 'files'            in cfg_dict.keys():              cfg_dict['files'] = {}
 
         # Convert dtypes
         self.get_val_types(cfg_dict)
@@ -350,6 +373,9 @@ class init(object):
         cfg_dict['metadata']['build_path']   = os.path.join(cfg_dict['metadata']['working_path'], self.glob.stg['build_subdir'])
         cfg_dict['metadata']['install_path'] = os.path.join(cfg_dict['metadata']['working_path'], self.glob.stg['install_subdir'])
 
+        # Path to copy files to
+        cfg_dict['metadata']['dest_path']    = cfg_dict['metadata']['build_path']
+
         # Overload params from cmdline
         self.glob.lib.overload_params(cfg_dict)
 
@@ -357,8 +383,8 @@ class init(object):
         cfg_dict['config']['nodes'] = 1
 
         #Set stdout and stderr
-        cfg_dict['config']['stdout'] = "build.out"
-        cfg_dict['config']['stderr'] = "build.err"
+        cfg_dict['config']['stdout'] = "stdout.log"
+        cfg_dict['config']['stderr'] = "stderr.log"
 
         # Add sched params to overload dict
         self.add_sched_overloads(cfg_dict)
@@ -395,6 +421,7 @@ class init(object):
         if not 'template'           in cfg_dict['config'].keys():    cfg_dict['config']['template']             = ""
         if not 'collect_stats'      in cfg_dict['config'].keys():    cfg_dict['config']['collect_stats']        = False
         if not 'script_additions'   in cfg_dict['config'].keys():    cfg_dict['config']['script_additions']     = ""
+        if not 'arch'               in cfg_dict['config'].keys():    cfg_dict['config']['arch']                 = ""
 
         if not 'description'        in cfg_dict['result'].keys():   cfg_dict['result']['description']           = ""
         if not 'output_file'        in cfg_dict['result'].keys():   cfg_dict['result']['output_file']           = ""
@@ -506,8 +533,8 @@ class init(object):
             cfg_dict['runtime']['max_running_jobs'] = 10
 
         #Set stdout and stderr
-        cfg_dict['config']['stdout'] = "bench.out"
-        cfg_dict['config']['stderr'] = "bench.err"
+        cfg_dict['config']['stdout'] = "stdout.log"
+        cfg_dict['config']['stderr'] = "stderr.log"
 
         # Set result output file to stdout if not set in cfg file
         if not cfg_dict['result']['output_file']:

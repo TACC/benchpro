@@ -11,3 +11,5 @@ export           app_module=<<<app_mod>>>
 export              threads=<<<threads>>>
 export                ranks=<<<ranks_per_node>>>
 export                nodes=<<<nodes>>>
+export                 gpus=<<<gpus>>>
+

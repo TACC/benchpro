@@ -1,6 +1,7 @@
 
 # System imports
 import copy
+import os
 import sys
 
 class init(object):
@@ -96,13 +97,25 @@ class init(object):
         exe_exists = self.glob.lib.files.exists(exe, search_path)
 
         if exe_exists:
-            self.low(["Application executable found at:",
+            self.low(["Application executable found in:",
                             ">  " + self.glob.lib.rel_path(search_path)])
         else:
             self.error("failed to locate application executable '" + exe + "'in " + self.glob.lib.rel_path(search_path))
 
+    # Print last 20 lines of file
+    def print_file_tail(self, file_path):
 
+        # File exists
+        if not os.path.isfile(file_path):
+            self.glob.lib.msg.error("File not found: " + self.glob.lib.rel_path(file_path))
 
+        print()
+        print("==> " + self.glob.lib.rel_path(file_path) + " <==")
+        print("...")
 
+        # Print last 20 lines
+        with open(file_path, 'r') as fd:
+                lines = fd.readlines()
+                [print(x.strip()) for x in lines[max(-50, (len(lines)*-1)):]]
 
 

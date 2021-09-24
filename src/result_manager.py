@@ -64,7 +64,7 @@ def validate_result(result_path):
         return "failed", None
 
     # Get output file path
-    glob.output_path = glob.lib.find_exact(glob.report_dict['result']['output_file'], result_path)
+    glob.output_path = glob.lib.files.find_exact(glob.report_dict['result']['output_file'], result_path)
 
     # Deal with dry_run 
     if glob.report_dict['bench']['task_id'] == "dry_run":
@@ -82,7 +82,7 @@ def validate_result(result_path):
     if glob.report_dict['result']['method'] == 'expr':
 
         # replace <file> filename placeholder with value in glob_obj.cfg
-        glob.report_dict['result']['expr'] = glob.report_dict['result']['expr'].replace("{output_file}", glob.output_path)
+        glob.report_dict['result']['expr'] = glob.report_dict['result']['expr'].replace("[output_file]", glob.output_path)
 
         # Run validation expression on output file
         try:
@@ -116,6 +116,7 @@ def validate_result(result_path):
                             glob.report_dict['result']['unit'])
 
         except subprocess.CalledProcessError as e:
+            print(e)
             glob.lib.msg.warning("Running script '" + glob.lib.rel_path(result_script) + "' on file " + \
                                             glob.lib.rel_path(glob.output_path) + \
                                             " failed to find a valid a result." )
@@ -430,7 +431,7 @@ def test_search_field(field):
         return True
 
     else:
-        glob.lib.msg.error([field + "' is not a valid search field.", 
+        glob.lib.msg.error(["'" + field + "' is not a valid search field.", 
                             "Available fields:"] +
                             glob.model_fields)
 
@@ -438,11 +439,11 @@ def test_search_field(field):
 def parse_input_str(args):
 
     # No filter
-    if not args:
+    if not args or args == "all":
         return ";"
-    
+   
     select_str = ""
-    for option in args:
+    for option in args.split(":"):
         search = option.split('=')
         if not len(search) == 2:
             glob.lib.msg.error("Invalid query key-value pair: " + option)   
@@ -467,6 +468,9 @@ def query_db(glob_obj):
 
     glob.model_fields = glob.lib.db.get_table_fields(glob.stg['result_table'])
 
+
+    print("*", glob.args.dbResult)
+
     # Get sql query statement 
     search_str = "SELECT * FROM " + glob.stg['result_table'] + " " + parse_input_str(glob.args.dbResult)
 
@@ -476,7 +480,9 @@ def query_db(glob_obj):
     # If query produced results
     if query_results:
         print()
-        print("Using search " + search_str + " " + str(len(query_results)) + " results were found:")
+        print("Running query:")
+        print(search_str)
+        print(str(len(query_results)) + " results were found:")
         print()
         print("|"+  "USER".center(col_width[0]) +"|"+\
                     "SYSTEM".center(col_width[1]) +"|"+ \
@@ -623,28 +629,27 @@ def query_result(glob_obj, result_label):
     print("----------------------------------------")
 
     # Handle dryrun
-    if report_dict['bench']['exec_mode'] == "dry_run":
+    if report_dict['bench']['task_id'] == "dry_run":
         print("Dry_run - skipping result check.")
-    
-    complete = False
-    # Local exec mode
-    if report_dict['bench']['exec_mode'] == "local":
-        # Check PID is not running        
-        complete = not glob.lib.proc.pid_running(report_dict['bench']['task_id'])
+    else:
+        # Local exec mode
+        if report_dict['bench']['exec_mode'] == "local":
+            # Check PID is not running        
+            complete = not glob.lib.proc.pid_running(report_dict['bench']['task_id'])
 
-    # Sched exec mode
-    if report_dict['bench']['exec_mode'] == "sched":
-        # Check jobid is not running
-        complete = glob.lib.sched.check_job_complete(report_dict['bench']['task_id'])
+        # Sched exec mode
+        if report_dict['bench']['exec_mode'] == "sched":
+            # Check jobid is not running
+            complete = glob.lib.sched.check_job_complete(report_dict['bench']['task_id'])
 
-    # If task complete, extract result
-    if complete:
-        result, unit = validate_result(result_path)
-        if not result == "failed":
-            print("Result: " + str(result) + " " + str(unit))
+        # If task complete, extract result
+        if complete:
+            result, unit = validate_result(result_path)
+            if not result == "failed":
+                print("Result: " + str(result) + " " + str(unit))
 
-    else: 
-        print("Job " + task_id + " still running.")
+        else: 
+            print("Job " + task_id + " still running.")
 
 # Print list of result directories
 def print_results(result_list):

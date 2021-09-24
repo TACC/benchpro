@@ -22,7 +22,7 @@ def check_for_previous_install():
         if glob.stg['overwrite']:
 
             glob.lib.msg.warning(["It seems this app is already installed. Deleting old build in " +
-                         glob.lib.rel_path(install_path) + " because 'overwrite=True' in settings.ini",
+                         glob.lib.rel_path(install_path) + " because 'overwrite=True'",
                          "\033[0;31mDeleting in 5 seconds...\033[0m"])
 
             time.sleep(glob.stg['timeout'])
@@ -98,6 +98,9 @@ def build_code(input_dict, glob_copy):
     # Print inputs to log
     glob.lib.send_inputs_to_log('Builder')
 
+    # Stage input files
+    glob.lib.files.stage()
+
     #============== GENERATE BUILD & MODULE TEMPLATE  ======================================
 
     # Generate build script
@@ -109,23 +112,23 @@ def build_code(input_dict, glob_copy):
     # ================== COPY INSTALLATION FILES ===================================
 
     # Make build path and move tmp build script file
-    glob.lib.create_dir(glob.config['metadata']['working_path'])
-    glob.lib.install(glob.config['metadata']['working_path'], glob.tmp_script, None, True)
+    glob.lib.files.create_dir(glob.config['metadata']['working_path'])
+    glob.lib.files.install(glob.config['metadata']['working_path'], glob.tmp_script, None, True)
 
     # Make module path and move tmp module file
-    glob.lib.create_dir(mod_path)
-    glob.lib.install(mod_path, mod_file, None, True)
+    glob.lib.files.create_dir(mod_path)
+    glob.lib.files.install(mod_path, mod_file, None, True)
 
     # Copy code and sched cfg & template files to build dir
     provenance_path = os.path.join(glob.config['metadata']['working_path'], "build_files")
-    glob.lib.create_dir(provenance_path)
+    glob.lib.files.create_dir(provenance_path)
 
-    glob.lib.install(provenance_path, glob.config['metadata']['cfg_file'], "build.cfg", False)
-    glob.lib.install(provenance_path, glob.config['template'], "build.template", False)
+    glob.lib.files.install(provenance_path, glob.config['metadata']['cfg_file'], "build.cfg", False)
+    glob.lib.files.install(provenance_path, glob.config['template'], "build.template", False)
 
     # Copy sched config file if building via sched
     if glob.stg['build_mode'] == "sched":
-        glob.lib.install(provenance_path, glob.sched['metadata']['cfg_file'], None, False)
+        glob.lib.files.install(provenance_path, glob.sched['metadata']['cfg_file'], None, False)
 
     # Clean up tmp files
     glob.lib.files.remove_tmp_files()
@@ -157,9 +160,6 @@ def build_code(input_dict, glob_copy):
             glob.lib.proc.start_local_shell()
             #Store PID for report
             glob.task_id = glob.prev_pid
-
-        glob.lib.msg.low(["Output file:",
-                        ">  " + glob.lib.rel_path(os.path.join(glob.config['metadata']['working_path'], glob.config['config']['stdout']))])
 
     # Generate build report
     glob.lib.report.build()

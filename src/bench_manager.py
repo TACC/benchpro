@@ -58,7 +58,7 @@ def get_code_info(input_label, search_dict):
         glob.config['config']['exe'] = glob.build_report['exe_file']
 
     # Get build job depenency
-    glob.lib.get_build_job_dependency()
+    glob.lib.sched.get_build_job_dependency()
 
     # Build job running
     if glob.ok_dep_list:
@@ -88,8 +88,12 @@ def get_code_info(input_label, search_dict):
 def gen_bench_script():
 
     # Evaluate math in cfg dict -
-    glob.lib.expr.eval_dict(glob.config['config'])
-    glob.lib.expr.eval_dict(glob.config['runtime'])
+    for sect in ['config', 'runtime', 'files', 'result']:
+        glob.lib.expr.eval_dict(glob.config[sect])
+
+    # Update GPU default if arch=cuda
+    if glob.config['config']['arch'] == "cuda":
+        glob.config['runtime']['gpus'] = 1
 
     gpu_path_str = ""
     gpu_print_str = ""
@@ -97,7 +101,6 @@ def gen_bench_script():
     if glob.config['runtime']['gpus']:
         gpu_path_str = str(glob.config['runtime']['gpus']).zfill(2) + "G"
         gpu_print_str = ", on " + glob.config['runtime']['gpus'] + " GPUs."
-        
 
     glob.lib.msg.heading("Task " + str(glob.counter) \
             + ": " + glob.config['config']['bench_label'] + " : " + str(glob.config['runtime']['nodes']) + " nodes, " + str(glob.config['runtime']['threads']) + " threads, " + \
@@ -114,10 +117,15 @@ def gen_bench_script():
                                             gpu_path_str
 
     # Check if working dir path already exists
-    glob.config['metadata']['working_path'] = glob.lib.check_dup_path(os.path.join(glob.stg['pending_path'], glob.config['metadata']['working_dir']))
+    glob.config['metadata']['working_path'] = glob.lib.files.check_dup_path(os.path.join(glob.stg['pending_path'], glob.config['metadata']['working_dir']))
+    # Path to copy files to
+    glob.config['metadata']['dest_path']    = glob.config['metadata']['working_path']
 
     glob.lib.msg.low(["Benchmark working directory:",
                     ">  " + glob.lib.rel_path(glob.config['metadata']['working_path'])])
+
+    # Copy input files
+    glob.lib.files.stage()
 
     # Generate benchmark template
     glob.lib.template.generate_bench_script()
@@ -125,20 +133,20 @@ def gen_bench_script():
 # Execute the bench, locally or through sched
 def start_task():
     # Make bench path and move tmp bench script file
-    glob.lib.create_dir(glob.config['metadata']['working_path'])
-    glob.lib.install(glob.config['metadata']['working_path'], glob.tmp_script, None, True)
+    glob.lib.files.create_dir(glob.config['metadata']['working_path'])
+    glob.lib.files.install(glob.config['metadata']['working_path'], glob.tmp_script, None, True)
 
     # Copy bench cfg & template files to bench dir
     provenance_path = os.path.join(glob.config['metadata']['working_path'], "bench_files")
-    glob.lib.create_dir(provenance_path)
+    glob.lib.files.create_dir(provenance_path)
 
-    glob.lib.install(provenance_path, glob.config['metadata']['cfg_file'], "bench.cfg", False)
-    glob.lib.install(provenance_path, glob.config['template'], "bench.template", False)
+    glob.lib.files.install(provenance_path, glob.config['metadata']['cfg_file'], "bench.cfg", False)
+    glob.lib.files.install(provenance_path, glob.config['template'], "bench.template", False)
 
     # If bench_mode == sched
     if glob.stg['bench_mode'] == "sched":
-        glob.lib.install(provenance_path, glob.sched['metadata']['cfg_file'], None, False)
-        glob.lib.install(provenance_path, glob.sched_template, None, False)
+        glob.lib.files.install(provenance_path, glob.sched['metadata']['cfg_file'], None, False)
+        glob.lib.files.install(provenance_path, glob.sched_template, None, False)
 
     # Delete tmp job script
     glob.lib.files.remove_tmp_files()
@@ -191,10 +199,6 @@ def start_task():
 
     #glob.lib.check_for_slurm_vars()
 
-
-    glob.lib.msg.low(["Output file:",
-                    ">  " + glob.lib.rel_path(os.path.join(glob.config['metadata']['working_path'], glob.config['result']['output_file']))])
-
     # Generate bench report
     glob.lib.report.bench()
 
@@ -241,7 +245,7 @@ def run_bench(input_dict, glob_copy):
         # Get job label
         glob.sched['sched']['job_label'] = glob.config['config']['dataset']+"_bench"
 
-        glob.sched_template = glob.lib.find_exact(glob.sched['sched']['type'] + ".template", \
+        glob.sched_template = glob.lib.files.find_exact(glob.sched['sched']['type'] + ".template", \
                                             os.path.join(glob.stg['template_path'], glob.stg['sched_tmpl_dir']))
 
     # Check for empty overload params

@@ -1,3 +1,2 @@
-mkdir -p ${dataset} && cd ${dataset}
-ln -s ${local_repo}/PMillennium-1536/* .
+ln -s ${local_repo}/${dataset}/* .
 ${mpi_exec} ${exe} -n ${steps} ${run_args} --threads=${threads} --pin ${yml}

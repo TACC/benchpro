@@ -1,0 +1,13 @@
+
+cd ${dataset}
+
+if [ ${arch} == "cpu" ]; then
+    export LD_PRELOAD="`ls $TBBROOT/lib/intel64/gcc*/libtbbmalloc_proxy.so` $LD_PRELOAD"
+fi
+
+N_CORES=`grep processor /proc/cpuinfo | wc -l`
+NPPN=4
+NAFFIN=`echo $N_CORES $NPPN | awk '{p=($1-$2)/$2; c=$1-1; f=p+1; print "+ppn",p,"+commap ",0"-"c":"f,"+pemap 1-"c":"f"."p}'`
+
+${mpi_exec} ${exe} $NAFFIN ${config_file}
+

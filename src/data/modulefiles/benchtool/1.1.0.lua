@@ -14,10 +14,10 @@ local app_dir        =
 local result_dir     =
 local version        =
 
-set_alias("cbd", "cd $BT_PROJECT")
+set_alias("cbd", "cd $BT_HOME")
 
 setenv("BT_VERSION",  version)
-setenv("BT_PROJECT",  project_dir)
+setenv("BT_HOME",     project_dir)
 setenv("BT_APPS",     app_dir)
 setenv("BT_RESULTS",  result_dir)
 

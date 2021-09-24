@@ -66,7 +66,7 @@ class init(object):
         parent_dir  = path_elems[-2]
 
         # If parent dir is root ('build' or 'modulefile') or if it contains more than this subdir, delete this subdir
-        if (parent_dir == self.glob.stg['build_dir']) or  (parent_dir == self.glob.stg['module_path']) or (len(gb.glob(os.path.join(parent_path,"*"))) > 1):
+        if (parent_dir == self.glob.stg['build_dir']) or  (parent_dir == self.glob.stg['module_dir']) or (len(gb.glob(os.path.join(parent_path,"*"))) > 1):
             su.rmtree(path)
         # Else resurse with parent
         else:
@@ -126,7 +126,7 @@ class init(object):
             for app in input_list:
                 # Create search dict from search elements
                 search_dict = {}
-                for elem in app.split(":"):
+                for elem in app.split(","):
                     if not "=" in elem:
                         search_dict['code'] = elem
                     else:
@@ -144,10 +144,14 @@ class init(object):
     def query_app(self, app_label):
 
         search_dict = {}
-        
-        # Disect search string into search dict
-        for search_elem in app_label.split("/"):
-            search_dict[search_elem] =  search_elem
+       
+        if not "/" in app_label:
+            search_dict["code"] = app_label
+
+        else:
+            # Disect search string into search dict
+            for search_elem in app_label.split("/"):
+                search_dict[search_elem] =  search_elem
         
         app_dir = self.glob.lib.check_if_installed(search_dict)
 
@@ -204,8 +208,11 @@ class init(object):
 
                 if status == "RUNNING":
                     print(("Job " + report_dict['build']['task_id'] + " status: ").ljust(gap) + "\033[1;33m" + status + "\033[0m")
+                    self.glob.lib.msg.print_file_tail(os.path.join(report_dict['build']['build_prefix'], report_dict['build']['stdout']))
+                # Job failed
                 elif not status == "COMPLETED":
                     print(("Job " + report_dict['build']['task_id'] + " status: ").ljust(gap) + "\033[0;31m" + status + "\033[0m")
+                    self.glob.lib.msg.print_file_tail(os.path.join(report_dict['build']['build_prefix'], report_dict['build']['stderr']))
 
             # If complete, Look for exe
             if status == "COMPLETED":
@@ -215,6 +222,7 @@ class init(object):
                     print(("File "+report_dict['build']['exe_file']+": ").ljust(gap) + "\033[0;32mFOUND\033[0m")
                 else:
                     print(("File "+report_dict['build']['exe_file']+": ").ljust(gap) + ")\033[0;31mMISSING\033[0m")
+                    self.glob.lib.msg.print_file_tail(os.path.join(report_dict['build']['build_prefix'], report_dict['build']['stderr']))
 
     # Get usable string of application status
     def get_status_str(self, app):
@@ -229,6 +237,10 @@ class init(object):
 
         # Get Jobid from report file and check if status = COMPLETED
         task_id = self.glob.lib.report.get_task_id("build", app)
+
+        if task_id == "dry_run":
+            return "\033[1;33mDRY RUN\033[0m"
+
 
         status = None
         if exec_mode == "sched":
@@ -250,6 +262,10 @@ class init(object):
                     return '\033[0;32mEXE FOUND\033[0m'
 
             return '\033[0;31mEXE NOT FOUND\033[0m'
+
+        # Failed state
+        if status in ["FAILED", "TIMEOUT"]:
+            return '\033[0;31mJOB '+status+'\033[0m'
 
         return '\033[1;33mJOB '+status+'\033[0m'
 
@@ -312,7 +328,7 @@ class init(object):
                     # If value set
                     if config_dict[sect][key]:
                         cmd_str.append(key+"="+config_dict[sect][key])
-        return ":".join(cmd_str)
+        return ",".join(cmd_str)
 
 
     # Print list of code strings
@@ -327,10 +343,14 @@ class init(object):
             column = 30
 
             if atype == "application":
-                print("| " + contents['metadata']['cfg_label'].ljust(column) + "| -b " + self.get_cmd_string([['general', 'code'], ['general', 'version'], ['general', 'system']], contents))
+                print("| " + contents['metadata']['cfg_label'].ljust(column) + "| -b " + \
+                        self.get_cmd_string([['general', 'code'], ['general', 'version'], ['general', 'system'], ['config', 'build_label']], \
+                        contents))
 
             else:
-                print("| " + contents['metadata']['cfg_label'].ljust(column) + "| -B " + self.get_cmd_string([['requirements', 'code'], ['requirements', 'version'], ['requirements', 'build_label'], ['config', 'dataset']], contents))
+                print("| " + contents['metadata']['cfg_label'].ljust(column) + "| -B " + \
+                self.get_cmd_string([['requirements', 'code'], ['requirements', 'version'], ['requirements', 'build_label'], ['config', 'bench_label']], \
+                contents))
 
 
     # Print applications that can be installed from available cfg files
@@ -392,7 +412,8 @@ class init(object):
                                             'build_mode', \
                                             'build_if_missing', \
                                             'bench_mode',\
-                                            'check_modules']]
+                                            'check_modules', \
+                                            'sync_staging']]
         print()
         # Print scheduler defaults for this system if available
         self.glob.system = self.glob.lib.get_system_vars(self.glob.sys_env)

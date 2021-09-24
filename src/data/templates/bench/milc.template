@@ -1,4 +1,4 @@
-tar -xf ${local_repo}/milc_${dataset}.tgz && cd milc_${dataset}
+cd milc_${dataset}
 
 IFS='x'
 read -a dim <<< "$dataset"

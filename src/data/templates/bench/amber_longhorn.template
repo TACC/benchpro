@@ -40,7 +40,7 @@ echo "ARCH    ${arch}"
 echo "EXE     ${exe}"
 echo "INPUT   ${input}"
 
-tar -xf ${local_repo}/${dataset}.tgz && cd ${dataset}
+cd ${dataset}
 
 ${mpi_exec} ${exe}  -O  \
                     -i ${input} \

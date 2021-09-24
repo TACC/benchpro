@@ -2,7 +2,7 @@
 export       NODES=${nodes}
 export     HPL_EXE=${exe}
 
-cp -r ${MKLROOT}/benchmarks/mp_linpack/* .
+cd mp_linpack
 
 # Check file exists
 if [ ! -f "HPL.dat" ]; then

@@ -1,4 +1,4 @@
-tar -xf ${local_repo}/${dataset}.tgz && cd ${dataset}
+cd ${dataset}
 
 sed -i "/run_hours/c\ run_hours                           = ${run_hours}" namelist.input
 sed -i "/interval_seconds/c\ interval_seconds                    = ${interval_seconds}" namelist.input

@@ -2,6 +2,7 @@
 import copy
 import glob as gb
 import os
+import re
 import shutil as su
 import sys
 
@@ -26,9 +27,15 @@ class init(object):
 
     # Combines list of input templates to single script file
     def construct_template(self, template_obj, input_template):
-            # Copy input template file to temp obj
-            with open(input_template, 'r') as fd:
-                template_obj.extend(self.read_template(input_template))
+        # Copy input template file to temp obj
+        with open(input_template, 'r') as fd:
+            template_obj.extend(self.read_template(input_template))
+
+    # Add user defined section of template
+    def add_user_section(self, template_obj, input_template):
+        template_obj.append("#------USER SECTION------\n")
+        self.construct_template(template_obj, input_template)
+        template_obj.append("#------------------------\n")
 
     # Add sched reservation
     def add_reservation(self, template_obj):
@@ -83,17 +90,46 @@ class init(object):
         template_obj.append("# Create working directory \n")
         template_obj.append("mkdir -p ${working_path} && cd ${working_path} \n")
 
+    # Get input files asynchronously
+    def stage_input_files(self, template_obj):
+        template_obj.append("\n")
+        for op in self.glob.config['files'].keys():
+
+            # Add tar lines to script
+            if op == "tar":
+                for elem in self.glob.config['files'][op].split(","):
+                    src = elem.strip()
+                    template_obj.append("tar -xf ${local_repo}/" + src + \
+                                        " -C . \n")
+                    
+            # Add copy lines to script
+            if op == "cp":
+                for elem in self.glob.config['files'][op].split(","):
+                    src = elem.strip()
+                    template_obj.append("cp -r ${local_repo}/" + src + \
+                                        " . \n")
+            # Add wget lines to script
+            if op == "wget":
+
+                for elem in self.glob.config['files'][op].split(","):
+                    src = elem.strip()
+                    template_obj.append("wget " + src + " -P . \n")
+
+                    # Check if download was an archive
+                    if any(x in src for x in ['tar', 'tgz', 'bgz']):
+                        template_obj.append("tar -xf " + src.split("/")[-1] + " -C ./ \n")
+
     # If the setting in enabled, add the provenance data collection script to the script
     def collect_stats(self, template_obj):
         if self.glob.config['config']['collect_stats']:
-            if self.glob.lib.file_owner(os.path.join(self.glob.stg['utils_path'], "lshw")) == "root":
+            if self.glob.lib.files.file_owner(os.path.join(self.glob.stg['utils_path'], "lshw")) == "root":
                 template_obj.append("\n# Provenance data collection script \n")
                 template_obj.append(os.path.join(self.glob.stg['script_path'], "collect_hw_info") + " " + \
                                     self.glob.stg['utils_path'] + " " + \
                                     os.path.join(self.glob.config['metadata']['working_path'], "hw_report") + "\n")
             else:
                 self.glob.lib.msg.warning(["Requested hardware stats but script permissions not set",
-                                                "Run 'sudo -E $BT_PROJECT/resources/scripts/change_permissions'"])
+                                                "Run 'sudo -E $BT_HOME/resources/scripts/change_permissions'"])
 
     # Add things to the bottom of the build script
     def build_epilog(self, template_obj):
@@ -135,14 +171,34 @@ class init(object):
 
         return template_obj
 
+    # Check for unpopulated <<<keys>>> in template file
+    def test_template(self, template_file, template_obj):
+
+        key = "<<<.*>>>"
+        unfilled_keys = [re.search(key, line) for line in template_obj]
+        unfilled_keys = [match.group(0) for match in unfilled_keys if match]
+
+        if len(unfilled_keys) > 0:
+            # Conitue regardless
+            if not self.glob.stg['exit_on_missing']:
+                self.glob.lib.msg.warning("Missing parameters were found in '" + self.glob.lib.rel_path(template_file) + "':" + ", ".join(unfilled_keys))
+                self.glob.lib.msg.warning("'exit_on_missing=False' in settings.ini so continuing anyway...")
+            # Error and exit
+            else:
+               # Write file to disk
+                self.glob.lib.write_list_to_file(template_obj, self.glob.tmp_script)
+                self.glob.lib.msg.error("Missing parameters were found after populating '" + self.glob.lib.rel_path(template_file) + "' and exit_on_missing=True in settings.ini: " + ' '.join(unfilled_keys))
+        else:
+            self.glob.log.debug("All build parameters were filled, continuing")
+
     # Get template files required to constuct build script
     def set_build_files(self):
         # Temp build script
-        self.glob.script_file = self.glob.config['general']['code'] + "-build." + self.glob.stg['build_mode']
+        self.glob.script_file = "build.batch"
         self.glob.tmp_script = os.path.join(self.glob.basedir, "tmp." + self.glob.script_file)
 
         if self.glob.stg['build_mode'] == "sched":
-            self.glob.sched['template'] = self.glob.lib.find_exact(self.glob.sched['sched']['type'] + ".template", self.glob.stg['template_path'])
+            self.glob.sched['template'] = self.glob.lib.files.find_exact(self.glob.sched['sched']['type'] + ".template", self.glob.stg['template_path'])
 
         # Get application template file name from cfg, otherwise use cfg_label to look for it
         if self.glob.config['general']['template']:
@@ -151,7 +207,7 @@ class init(object):
             self.glob.config['template'] = self.glob.config['metadata']['cfg_label']
 
         # Search for application template file
-        build_template_search = self.glob.lib.find_partial(self.glob.config['template'], os.path.join(self.glob.stg['template_path'], self.glob.stg['build_tmpl_dir']))
+        build_template_search = self.glob.lib.files.find_partial(self.glob.config['template'], os.path.join(self.glob.stg['template_path'], self.glob.stg['build_tmpl_dir']))
 
         # Error if not found
         if not build_template_search:
@@ -164,7 +220,7 @@ class init(object):
         known_compiler_type = True
         try:
             self.glob.compiler['common'] = self.glob.compiler[self.glob.config['config']['compiler_type']]
-            self.glob.compiler['template'] = self.glob.lib.find_exact(self.glob.stg['compile_tmpl_file'], self.glob.stg['template_path'])
+            self.glob.compiler['template'] = self.glob.lib.files.find_exact(self.glob.stg['compile_tmpl_file'], self.glob.stg['template_path'])
         except:
             known_compiler_type = False
             self.glob.compiler['template'] = None
@@ -179,7 +235,7 @@ class init(object):
         # Parse template file names
         self.set_build_files()
 
-        # Add scheduler directives if contructing job script
+        # Add scheduler directives if constructing job script
         if self.glob.stg['build_mode'] == "sched":
             # Get ranks from threads (?)
             self.glob.sched['sched']['ranks'] = 1
@@ -192,13 +248,25 @@ class init(object):
             # Add reservation line to SLURM params if set
             self.add_reservation(template_obj)
 
+        # Timestamp
+        template_obj.append("echo \"START `date +\"%Y\"-%m-%dT%T` `date +\"%s\"`\" \n")
+
         # Add standard lines to template
         self.add_standard_build_definitions(template_obj)
 
+        # Copy user portion of build template
         self.construct_template(template_obj, self.glob.compiler['template'])
-        self.construct_template(template_obj, self.glob.config['template'])
+
+        # Stage files
+        if not self.glob.stg['sync_staging']:
+            self.stage_input_files(template_obj)
+
+        self.add_user_section(template_obj, self.glob.config['template'])
 
         self.build_epilog(template_obj)
+
+        # Timestamp
+        template_obj.append("echo \"END `date +\"%Y\"-%m-%dT%T` `date +\"%s\"`\" \n")
 
         # Populate template list with cfg dicts
         self.glob.lib.msg.low("Populating template...")
@@ -213,7 +281,7 @@ class init(object):
 
         # Test for missing parameters
         self.glob.lib.msg.low("Validating template...")
-        self.glob.lib.test_template(self.glob.tmp_script, template_obj)
+        self.test_template(self.glob.tmp_script, template_obj)
 
         # Write populated script to file
         self.glob.lib.msg.low(["Writing template... ", ""])
@@ -222,12 +290,12 @@ class init(object):
     # Get template files required to construct bench script
     def set_bench_files(self):
         # Temp job script 
-        self.glob.script_file = self.glob.config['config']['bench_label']  + "-bench." + self.glob.stg['bench_mode']
+        self.glob.script_file = "bench.batch"
         self.glob.tmp_script = os.path.join(self.glob.basedir, "tmp." + self.glob.script_file) 
     
         # Scheduler template file
         if self.glob.stg['bench_mode'] == "sched":
-            self.glob.sched['template'] = self.glob.lib.find_exact(self.glob.sched['sched']['type'] + ".template", os.path.join(self.glob.stg['template_path'], self.glob.stg['sched_tmpl_dir']))
+            self.glob.sched['template'] = self.glob.lib.files.find_exact(self.glob.sched['sched']['type'] + ".template", os.path.join(self.glob.stg['template_path'], self.glob.stg['sched_tmpl_dir']))
 
         # Set bench template to default, if set in bench.cfg: overload
         if self.glob.config['config']['template']:
@@ -284,13 +352,11 @@ class init(object):
         # Get template file contents
         template = self.read_template(self.glob.config['template']) 
 
-        #self.glob.lib.expr.eval_dict(self.glob.config['runtime'])
-
         # Add start time line
-        template_obj.append("echo \"START `date +\"%Y\"-%m-%dT%T` `date +\"%s\"`\" \n")
+        template_obj.append("#-------USER SECTION------\n")
         template_obj.extend(template)
         # Add end time line
-        template_obj.append("echo \"END `date +\"%Y\"-%m-%dT%T` `date +\"%s\"`\" \n")
+        template_obj.append("#-------------------------\n")
 
         return template_obj
 
@@ -315,7 +381,11 @@ class init(object):
         # If generate sched script
         if self.glob.stg['bench_mode'] == "sched":
             self.construct_template(template_obj, self.glob.sched['template'])
+            self.glob.sched['sched']['job_label'] = self.glob.config['config']['bench_label']
             self.add_reservation(template_obj)
+
+        # Timestamp
+        template_obj.append("echo \"START `date +\"%Y\"-%m-%dT%T` `date +\"%s\"`\" \n")
 
         # Add standard lines to script
         self.add_standard_bench_definitions(template_obj)
@@ -326,11 +396,18 @@ class init(object):
             self.construct_template(template_obj, self.glob.config['config']['script_additions'])
             template_obj.append("\n")
 
+        # Stage files
+        if not self.glob.stg['sync_staging']:
+            self.stage_input_files(template_obj)
+
         # Add bench template to script
         template_obj = self.add_bench(template_obj)
 
         # Add epilog to end of script
         self.bench_epilog(template_obj)
+
+        # Timestamp
+        template_obj.append("echo \"END `date +\"%Y\"-%m-%dT%T` `date +\"%s\"`\" \n")
 
         self.glob.lib.msg.low("Populating template...")
         # Take multiple config dicts and populate script template
@@ -355,7 +432,7 @@ class init(object):
 
         self.glob.lib.msg.low("Validating template...")
         # Test for missing parameters
-        self.glob.lib.test_template(self.glob.tmp_script, template_obj)
+        self.test_template(self.glob.tmp_script, template_obj)
 
         # Write populated script to file
         self.glob.lib.msg.low(["Writing template... ", ""])

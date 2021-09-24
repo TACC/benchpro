@@ -43,6 +43,19 @@ class init(object):
             
             return "UNKNOWN"
 
+    # If build job is running, add dependency str
+    def get_build_job_dependency(self):
+
+        # Build job exec_mode=sched
+        if self.glob.build_report['exec_mode'] == "sched":
+            if not self.glob.lib.sched.check_job_complete(self.glob.build_report['task_id']):
+                self.glob.ok_dep_list.append(self.glob.build_report['task_id'])
+
+        # Build job exec_mode=local
+        elif self.glob.build_report['exec_mode'] == "local":
+            if self.glob.lib.proc.pid_running(self.glob.build_report['task_id']):
+                self.glob.prev_pid = self.glob.build_report['task_id']
+
     # Check that job ID is not running
     def check_job_complete(self, jobid):
 
@@ -172,10 +185,12 @@ class init(object):
         success, stdout, stderr = self.slurm_exec("squeue -a --job " + jobid)
 
         self.glob.lib.msg.low([stdout,
-                    "Job " + jobid + " stdout:",
-                    ">  "+ self.glob.lib.rel_path(os.path.join(self.glob.config['metadata']['working_path'], jobid + ".out")),
-                    "Job " + jobid + " stderr:",
-                    ">  "+ self.glob.lib.rel_path(os.path.join(self.glob.config['metadata']['working_path'], jobid + ".err"))])
+                    "Job stdout:",
+                    ">  "+ self.glob.lib.rel_path(
+                        os.path.join(self.glob.config['metadata']['working_path'], self.glob.config['config']['stdout'])),
+                    "Job stderr:",
+                    ">  "+ self.glob.lib.rel_path(
+                        os.path.join(self.glob.config['metadata']['working_path'], self.glob.config['config']['stderr']))])
 
         self.glob.log.debug(stdout)
         self.glob.log.debug(stderr)

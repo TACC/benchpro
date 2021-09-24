@@ -1,7 +1,7 @@
 
-ARRAY_SIZE=<<<array_size>>>
+cd bin
 
-cp -r ${MKLROOT}/benchmarks/hpcg/bin/* .
+ARRAY_SIZE=<<<array_size>>>
 
 sed -i "3s/.*/${ARRAY_SIZE}/" hpcg.dat
 sed -i "4s/.*/300/" hpcg.dat

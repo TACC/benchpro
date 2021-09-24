@@ -1,14 +1,9 @@
 # System Imports
 import configparser as cp
 import copy
-import datetime
 import glob as gb
 import hashlib
 import os
-import pwd
-import re
-import shutil as su
-import subprocess
 import sys
 import time
 
@@ -61,80 +56,32 @@ class init(object):
         # if not any of the above
         return path
 
-    # Find file in directory
-    def find_exact(self, file_name, path):
-        # Check file doesn't exist already
-        if os.path.isfile(file_name):
-            return file_name
-    
-        # Search recursively for file
-        files = gb.glob(path+'/**/'+file_name, recursive = True)
-
-        if files:
-            return files[0]
-        else:
-            return None
-
-    # Find *file* in directory
-    def find_partial(self, file_name, path):
-        # Check file doesn't exist already
-        if os.path.isfile(file_name):
-            return file_name
-        # Search provided path for file
-        for root, dirs, files in os.walk(path):
-            match = next((s for s in files if file_name in s), None)
-            if match:
-                return os.path.join(root, match)
-        # File not found
-        return None
-
-    # Get owner of file
-    def file_owner(self, file_name):
-        return pwd.getpwuid(os.stat(file_name).st_uid).pw_name
-
-    # Get a list of sub-directories, called by 'search_tree'
-    def get_subdirs(self, base):
-        return [name for name in os.listdir(base)
-            if os.path.isdir(os.path.join(base, name))]
-
-    # Recursive function to scan app directory, called by 'get_installed'
-    def search_tree(self, installed_list, app_dir, start_depth, current_depth, max_depth):
-        for d in self.get_subdirs(app_dir):
-            if d != self.glob.stg['module_dir']:
-                new_dir = os.path.join(app_dir, d)
-                # Once tree hits max search depth, append path to list
-                if current_depth == max_depth:
-                    installed_list.append(self.glob.stg['sl'].join(new_dir.split(self.glob.stg['sl'])[start_depth + 1:]))
-                # Else continue to search tree 
-                else:
-                    self.search_tree(installed_list, new_dir, start_depth,current_depth + 1, max_depth)
-
     # Get list of installed apps
     def get_installed(self):
         app_dir = self.glob.stg['build_path']
         start = app_dir.count(self.glob.stg['sl'])
         # Send empty list to search function 
         installed_list = []
-        self.search_tree(installed_list, app_dir, start, start, start + self.glob.stg['tree_depth'])
+        self.files.search_tree(installed_list, app_dir, start, start, start + self.glob.stg['tree_depth'])
         installed_list.sort()
 
         return installed_list
 
     # Get results in ./results/pending
     def get_pending_results(self):
-        pending =  self.get_subdirs(self.glob.stg['pending_path'])
+        pending =  self.files.get_subdirs(self.glob.stg['pending_path'])
         pending.sort()
         return pending
 
     # Get results in ./results/captured
     def get_captured_results(self):
-        captured = self.get_subdirs(self.glob.stg['captured_path'])
+        captured = self.files.get_subdirs(self.glob.stg['captured_path'])
         captured.sort()
         return captured
 
     # Get results in ./results/failed
     def get_failed_results(self):
-        failed = self.get_subdirs(self.glob.stg['failed_path'])
+        failed = self.files.get_subdirs(self.glob.stg['failed_path'])
         failed.sort()
         return failed
 
@@ -148,20 +95,20 @@ class init(object):
             for result in copy.deepcopy(search_list):
 
                 # Get job type (sched/local/dry_run)
-                exec_mode = self.glob.lib.report.get_exec_mode("bench", result)
+                exec_mode = self.report.get_exec_mode("bench", result)
                 complete = False
 
                 # Sched exec type - get status from task_id
                 if exec_mode == "sched":
                     # Get task_id and check it is comeplete, if so append to return list and remove from provided list
-                    task_id = self.glob.lib.report.get_task_id("bench", result)
-                    complete = self.glob.lib.sched.check_job_complete(task_id)
+                    task_id = self.report.get_task_id("bench", result)
+                    complete = self.sched.check_job_complete(task_id)
                 
                 # Local exec type - get status from PID
                 elif exec_mode == "local":
-                    pid = self.glob.lib.report.get_task_id("bench", result)
+                    pid = self.report.get_task_id("bench", result)
                     # pid_running=False -> complete=True
-                    complete = not self.glob.lib.proc.pid_running(pid)
+                    complete = not self.proc.pid_running(pid)
 
 
                 # Dry_run - skip to next result
@@ -189,73 +136,6 @@ class init(object):
                     self.glob.log.debug("  " + str(line) + "=" + str(cfg[seg][line]))
         self.glob.log.debug("======================================")
 
-    # Check for unpopulated <<<keys>>> in template file
-    def test_template(self, template_file, template_obj):
-
-        key = "<<<.*>>>"
-        unfilled_keys = [re.search(key, line) for line in template_obj]
-        unfilled_keys = [match.group(0) for match in unfilled_keys if match]
-        
-        if len(unfilled_keys) > 0:
-            # Conitue regardless
-            if not self.glob.stg['exit_on_missing']:
-                self.glob.lib.msg.warning("Missing parameters were found in '" + self.glob.lib.rel_path(template_file) + "':" + ", ".join(unfilled_keys))
-                self.glob.lib.msg.warning("'exit_on_missing=False' in settings.ini so continuing anyway...")
-            # Error and exit
-            else:
-               # Write file to disk 
-                self.glob.lib.write_list_to_file(template_obj, self.glob.tmp_script)
-                self.glob.lib.msg.error("Missing parameters were found after populating '" + self.glob.lib.rel_path(template_file) + "' and exit_on_missing=True in settings.ini: " + ' '.join(unfilled_keys))
-        else:
-            self.glob.log.debug("All build parameters were filled, continuing")
-
-    # Create directories if needed
-    def create_dir(self, path):
-        if not os.path.exists(path):
-            try:
-                os.makedirs(path)
-            except:
-                self.glob.lib.msg.error(
-                    "Failed to create directory " + path)
-
-    # Copy tmp files to directory
-    def install(self, path, obj, new_obj_name, clean):
-
-        # Get file name
-        if not new_obj_name:
-            new_obj_name = obj
-            if self.glob.stg['sl'] in new_obj_name:
-                new_obj_name = new_obj_name.split(self.glob.stg['sl'])[-1]
-
-            # Strip tmp prefix from file for new filename
-            if 'tmp.' in new_obj_name:
-                new_obj_name = new_obj_name[4:]
-    
-        try:
-            su.copyfile(obj, os.path.join(path, new_obj_name))
-            self.glob.log.debug("Copied file " + obj + " into " + path)
-        except IOError as e:
-            self.glob.lib.msg.high(e)
-            self.glob.lib.msg.error(
-                "Failed to move " + obj + " to " + path + self.glob.stg['sl'] + new_obj_name)
-
-        # Remove tmp files after copy
-        if clean:
-            os.remove(obj)
-
-    # If build job is running, add dependency str
-    def get_build_job_dependency(self):
-
-        # Build job exec_mode=sched
-        if self.glob.build_report['exec_mode'] == "sched":
-            if not self.glob.lib.sched.check_job_complete(self.glob.build_report['task_id']):
-                self.glob.ok_dep_list.append(self.glob.build_report['task_id'])
-
-        # Build job exec_mode=local
-        elif self.glob.build_report['exec_mode'] == "local":
-            if self.glob.lib.proc.pid_running(self.glob.build_report['task_id']):
-                self.glob.prev_pid = self.glob.build_report['task_id']
-
     # Check if host can run mpiexec
     def check_mpi_allowed(self):
         # Get list of hostnames on which mpiexec is banned
@@ -263,7 +143,7 @@ class init(object):
             no_mpi_hosts = self.glob.stg['mpi_blacklist'].split(',')
 
         except:
-            self.glob.lib.msg.error("unable to read list of MPI banned nodes (mpi_blacklist) in settings.ini")
+            self.msg.error("unable to read list of MPI banned nodes (mpi_blacklist) in settings.ini")
         # If hostname contains any of the blacklisted terms, return False
         if any(x in self.glob.hostname for x in no_mpi_hosts):
             return False
@@ -292,9 +172,9 @@ class init(object):
                         elif datatype is bool:
                             param_dict[overload_key] = self.glob.overload_dict[overload_key] == 'True'
                     except:
-                        self.glob.lib.msg.error("datatype mismatch for '" + overload_key +"', expected=" + str(datatype) + ", provided=" + str(type(overload_key)))
+                        self.msg.error("datatype mismatch for '" + overload_key +"', expected=" + str(datatype) + ", provided=" + str(type(overload_key)))
 
-                self.glob.lib.msg.high("Overloading " + overload_key + ": '" + str(old) + "' -> '" + str(param_dict[overload_key]) + "'")
+                self.msg.high("Overloading " + overload_key + ": '" + str(old) + "' -> '" + str(param_dict[overload_key]) + "'")
                 # Remove key from overload dict
                 self.glob.overload_dict.pop(overload_key)
 
@@ -308,6 +188,16 @@ class init(object):
             else:
                 self.overload(overload_key, search_dict)
 
+    # Generate dict fom colon-delimited params
+    def set_var_overload_dict(self, vars_list):
+        if vars_list:
+            for setting in vars_list:
+                pair = setting.split('=')
+                # Test key-value pair
+                if not len(pair) == 2:
+                    print("Invalid overload key-value pair detected: ", setting)
+                    sys.exit(1)
+                self.glob.overload_dict[pair[0]] = pair[1]
 
     # Catch overload keys that are incompatible with local exec mode before checking for missed keys
     def catch_incompatible_overloads(self):
@@ -317,7 +207,7 @@ class init(object):
 
         for key in copy.deepcopy(self.glob.overload_dict):
             if key in bad_keys:
-                self.glob.lib.msg.low("Ignoring bad overload key '" + key +  "' - incompatible with current exec_mode")
+                self.msg.low("Ignoring bad overload key '" + key +  "' - incompatible with current exec_mode")
                 self.glob.overload_dict.pop(key)
 
     # Print warning if cmd line params dict not empty
@@ -327,81 +217,16 @@ class init(object):
         self.catch_incompatible_overloads()
 
         if len(self.glob.overload_dict):
-            self.glob.lib.msg.high("The following --overload argument does not match existing params:")
+            self.msg.high("The following --overload argument does not match existing params:")
             for key in self.glob.overload_dict:
-                self.glob.lib.msg.high("  " + key + "=" + self.glob.overload_dict[key])
-            self.glob.lib.msg.error("Invalid input arguments.")
+                self.msg.high("  " + key + "=" + self.glob.overload_dict[key])
+            self.msg.error("Invalid input arguments.")
 
     # Write module to file
     def write_list_to_file(self, list_obj, output_file):
         with open(output_file, "w") as f:
             for line in list_obj:
                 f.write(line)
-
-    # Get list of files in search path
-    def get_files_in_path(self, search_path):
-        return gb.glob(os.path.join(search_path, "*.cfg"))
-
-    def get_list_of_cfgs(self, cfg_type):
-        # Get cfg subdir name from input
-        type_dir = ""
-        if cfg_type == "build":
-            type_dir = self.glob.stg['build_cfg_dir']
-        elif cfg_type == "bench":
-            type_dir = self.glob.stg['bench_cfg_dir']
-        else:
-            self.glob.lib.msg.error("unknown cfg type '"+cfg_type+"'. get_list_of_cfgs() accepts either 'build' or 'bench'.")
-
-        search_path = os.path.join(self.glob.stg['config_path'], type_dir)
-        # Get list of cfg files in dir
-        cfg_list = self.get_files_in_path(search_path)
-
-        # If system subdir exists, scan that too
-        if os.path.isdir(os.path.join(search_path,self.glob.system['sys_env'])):
-            cfg_list = cfg_list + self.get_files_in_path(os.path.join(search_path,self.glob.system['sys_env']))
-        return cfg_list
-
-    # extract filename from absolute path
-    def get_filename_from_path(self, full_path):
-        return full_path.split(self.glob.stg['sl'])[-1]
-
-    # Print list of available cfg files
-    def print_avail_cfgs(self, avail_cfgs):
-        cfg_filenames = [self.get_filename_from_path(cfg) for cfg in avail_cfgs]
-        cfg_filenames.sort()
-        print("Available config files:")
-        for cfg in cfg_filenames:
-            print("  " + cfg)
-
-    # Check for unique bench config file
-    def get_cfg_file(self, input_label):
-
-        # Get list of available bench cfg files in config/bench
-        avail_cfgs = self.get_list_of_cfgs("bench")
-
-        # Check for file matching search 
-        for cfg_filename in avail_cfgs:
-            if input_label in cfg_filename:
-                return cfg_filename
-
-        # Print avail and exit
-        self.print_avail_cfgs(avail_cfgs)
-        self.glob.lib.msg.error("input cfg file matching '" + input_label + "' not found.")
-
-    # returns dict of search fields to locate installed application, from bench cfg file
-    def get_search_list(self, cfg_file):
-
-        cfg_parser = cp.ConfigParser()
-        try:
-            with open(cfg_file) as cfile:
-                cfg_parser.read_file(cfile)
-                search_list = cfg_parser.items('requirements').values()
-
-        except Exception as err:
-            print(err)
-            self.glob.lib.msg.error("failed to read [requirements] section of cfg file " + cfg_file)
-        
-        return search_list
 
     # Search code_path with values in search_list
     def search_with_dict(self, search_dict, code_path):
@@ -450,19 +275,19 @@ class init(object):
             if self.glob.stg['build_if_missing']:
                 return False
             else:
-                self.glob.lib.msg.error(["No installed applications match your selection criteria: ", ", ".join([search_dict[key] for key in search_dict]),
+                self.msg.error(["No installed applications match your selection criteria: ", ", ".join([search_dict[key] for key in search_dict]),
                                 "And 'build_if_missing'=False in settings.ini",
                                 "Currently installed applications:"] + installed_list)
 
         # Multiple results
         elif len(results) > 1:
-            self.glob.lib.msg.error(["Multiple installed applications match your selection critera: ", ", ".join([key+"="+search_dict[key] for key in search_dict if search_dict[key]])] + results + ["Please be more specific."])
+            self.msg.error(["Multiple installed applications match your selection critera: " + ", ".join([key+"="+search_dict[key] for key in search_dict if search_dict[key]])] + results + ["Please be more specific."])
 
     # Read every build config file and construct a list with format [[cfg_file, code, version, build_label],...]
     def get_avail_codes(self):
 
         # Get all application build config files
-        cfg_list = self.get_list_of_cfgs("build")
+        cfg_list = self.cfg.get_list_of_cfgs("build")
 
         avail_list = []
         for cfg_file in cfg_list:
@@ -477,7 +302,7 @@ class init(object):
 
             except Exception as err:
                 print(err)
-                self.glob.lib.msg.error("failed to read [requirements] section of cfg file " + cfg_file)
+                self.msg.error("failed to read [requirements] section of cfg file " + cfg_file)
         
         # Return list
         return avail_list
@@ -499,27 +324,11 @@ class init(object):
             return results[0]
 
         elif len(results) == 0:
-            self.glob.lib.msg.error(["No application profile available which meets your search criteria:"] + search_list)
+            self.msg.error(["No application profile available which meets your search criteria:"] + search_list)
 
         elif len(results) > 1:
-            self.glob.lib.msg.error(["There are multiple applications available which meet your search criteria:"] + [self.rel_path(result) for result in results])
+            self.msg.error(["There are multiple applications available which meet your search criteria:"] + [self.rel_path(result) for result in results])
 
-    # Get the process PID for the build
-    def get_build_pid(self):
-        print("Trying to get PID for build script")
-        time.sleep(5)
-        try:
-            cmd = subprocess.run("ps -aux | grep " + self.glob.user + " | grep bash | grep build", shell=True,
-                                    check=True, capture_output=True, universal_newlines=True)
-
-        except subprocess.CalledProcessError as e:
-            self.glob.lib.msg.error("Failed to run 'ps -aux'")
-
-        pid = cmd.stdout.split("\n")[0].split(" ")[2]
-        if not pid:
-            self.glob.lib.msg.error("Could not determine PID for build script. ps -aux gave: '" + cmd.stdout + "'")
-
-        return pid
 
     # Replace SLURM variables in ouput files
     def check_for_slurm_vars(self):
@@ -572,8 +381,6 @@ class init(object):
         app_id.update(str(time.time()).encode('utf-8'))
         return app_id.hexdigest()[:10]
 
-
-
     # Parse all build cfg files into list
     def get_cfg_list(self, path):
 
@@ -588,7 +395,7 @@ class init(object):
 
         # Construct
         for cfg in cfg_files:
-            cfg_list.append(self.glob.lib.cfg.read_file(cfg))
+            cfg_list.append(self.cfg.read_file(cfg))
     
         return cfg_list
     
@@ -609,40 +416,25 @@ class init(object):
 
         input_dict = {}
 
-        # Split by colon delimiter
-        for keyval in input_str.split(":"):
+        # Split by comma delimiter
+        for keyval in input_str.split(","):
 
             if not "=" in keyval:
             # Convert to dict
-                self.glob.lib.msg.error("invalid input format detected: " + input_str)
+                self.msg.error("invalid input format detected: " + input_str)
 
             # Add keyval to dict
             input_dict[keyval.split("=")[0]] = keyval.split("=")[1]
 
         return input_dict
 
+    # Parse input string for --build 
     def parse_build_str(self, input_str):
         return self.parse_input_str(input_str, "code")
 
+    # Parse input string for --bench
     def parse_bench_str(self, input_str):
-        return self.parse_input_str(input_str, "dataset")
-
-    # Check if path exists, if so append .dup
-    def check_dup_path(self, path):
-        if os.path.isdir(path):
-            return self.check_dup_path(path + ".dup")
-        return path
-
-    # Generate dict fom colon-delimited params
-    def set_var_overload_dict(self, vars_list):
-        if vars_list:
-            for setting in vars_list:
-                pair = setting.split('=')
-                # Test key-value pair
-                if not len(pair) == 2:
-                    print("Invalid overload key-value pair detected: ", setting)
-                    sys.exit(1)
-                self.glob.overload_dict[pair[0]] = pair[1]
+        return self.parse_input_str(input_str, "bench_label")
 
     # Write command line to history file
     def write_cmd_history(self, args):
