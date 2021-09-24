@@ -5,9 +5,11 @@ There are several application profiles included with benchtool for debugging and
 | Applications               | Synthetic Benchmarks     |
 |----------------------------|--------------------------|
 | AMBER 20                   | HPL                      |
-| LAMMPS 3Mar20              | HPCG                     |
-| MILC 7.8.1                 | STREAM                   |
-| OpenFOAM v2012             | GPCNET                   |
+| GROMACS 2020.2             | HPCG                     |
+| LAMMPS 3Mar20              | STREAM                   |
+| MILC 7.8.1                 | GPCNET                   |
+| NAMD 2.14                  |                          |
+| OpenFOAM v2012             |                          |
 | Quantum Espresso 6.5       |                          |
 | SWIFTsim 0.9.0             |                          |
 | WRF 4.2                    |                          |
