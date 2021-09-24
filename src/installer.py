@@ -254,7 +254,7 @@ def install(settings):
     install_files()
     update_settings()
 #    update_module()
-    update_bash()
+#    update_bash()
     copy_key()
     success()
     ml()
