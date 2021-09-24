@@ -126,7 +126,7 @@ class init(object):
             for app in input_list:
                 # Create search dict from search elements
                 search_dict = {}
-                for elem in app.split(":"):
+                for elem in app.split(","):
                     if not "=" in elem:
                         search_dict['code'] = elem
                     else:
@@ -144,10 +144,14 @@ class init(object):
     def query_app(self, app_label):
 
         search_dict = {}
-        
-        # Disect search string into search dict
-        for search_elem in app_label.split("/"):
-            search_dict[search_elem] =  search_elem
+       
+        if not "/" in app_label:
+            search_dict["code"] = app_label
+
+        else:
+            # Disect search string into search dict
+            for search_elem in app_label.split("/"):
+                search_dict[search_elem] =  search_elem
         
         app_dir = self.glob.lib.check_if_installed(search_dict)
 

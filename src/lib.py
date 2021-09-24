@@ -281,7 +281,7 @@ class init(object):
 
         # Multiple results
         elif len(results) > 1:
-            self.msg.error(["Multiple installed applications match your selection critera: ", ", ".join([key+"="+search_dict[key] for key in search_dict if search_dict[key]])] + results + ["Please be more specific."])
+            self.msg.error(["Multiple installed applications match your selection critera: " + ", ".join([key+"="+search_dict[key] for key in search_dict if search_dict[key]])] + results + ["Please be more specific."])
 
     # Read every build config file and construct a list with format [[cfg_file, code, version, build_label],...]
     def get_avail_codes(self):

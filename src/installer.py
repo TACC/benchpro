@@ -261,9 +261,6 @@ def install(settings):
 
     print()
     print("Done.")
-    print("Now run:")
-    print("source ~/.bashrc")
-    print("ml benchtool")
 
 # Run uninstaller
 def uninstall():

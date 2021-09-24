@@ -103,7 +103,7 @@ def main():
     # Install user project files
     if args.install:
         installer.install(args.settings)
-        sys.exit(0)
+        args.validate = True
 
     # Remove user project files
     if args.uninstall:
@@ -113,7 +113,7 @@ def main():
     # Recopy user files
     if args.update:
         installer.update()
-        sys.exit(0)
+        args.validate = True
 
     # Installation directoy set by module
     try:
