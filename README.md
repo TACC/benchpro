@@ -20,14 +20,18 @@ New applications are continuously being added.
 
 ## Getting Started
 
-The following steps will walk you through the basic usage of benchtool and should hopefully produce a small LAMMPS LJ-melt benchmark. Tested on Stampede2 and Frontera systems at TACC.
+The following steps will walk you through the basic usage of benchtool and produce a small LAMMPS LJ-melt benchmark. Tested on Stampede2 and Frontera systems at TACC. The initial site setup is not needed on TACC systems as the tool has already been deployed.
 
-### Initial setup
+### Initial site setup
 
-This setup guide will walk you through installing the benchtool Python module. This guide uses a virtual environment, though a system wide installation can be done with minimal change where appropriate. 
+This section will install the BenchTool python package for use on the system - this step is not necessary on TACC systems.
 
+1.b Load system Python3
+``` 
+ml python3
+```
 
-1 Create virtual environment 
+1.b OR: Create Python3 virtual environment 
 ```
 virtualenv -p python3 ~/benchenv
 source ~/benchenv/bin/activate
@@ -37,24 +41,31 @@ source ~/benchenv/bin/activate
 ```
 git clone https://github.com/TACC/benchtool.git
 cd benchtool
-git checkout origin/dev
 python3 setup.py install
 ```
 
 At this point the Python package is installed, now you will need to run the tool's installation process for a specific user, which will copy configuration files and setup directory structures for your user. The default paths for this install process are stored in the file `src/data/install.ini` inside the package directory. You can pass a file to use to the install process which will overwrite values in this default file with the `--settings` argument.
 
-3 Install BenchTool
+### Install BenchTool user files 
+
+In order to use BenchTool you need to install a local copy of the configuration and template files for your user account. This process also creates the directory structure required for building application and running benchmarks.
+
+1. Load the BenchTool module, this side loads the BenchTool Python package into the system Python3 and sets some environment variables.
+```
+module use /scratch1/hpc_tools/benchtool/modulefiles
+ml benchtool
+```
+2. Next run the install process, this installs files in $USER/.benchtool and creates directories in $SCRATCH/benchtool. An optional settings file can be provided to modify the default installation paths. An example of this file's format can be found in $BT_SITE/package/src/data/install.ini
 ```
 benchtool --install [--settings FILE]
 ```
-After the installation is complete, project files have been installed for your user and the BenchTool module has been added to your ~/.bashrc file. Now refresh your environment and run the validation process which is required ensure that the system, environment and directory structure are correctly configured. This validation may fail if the SSH key required to access the benchmark result database was not defined in the install.ini file. Copy this key into the BenchTool project (by default `~/.benchtool/auth/`) and rerun the validation step if necessary.
+Each time you install or update your local BenchTool installation you are required to run the validation process, which ensures that your system, environment and directory structure are correctly configured. 
 ```
-source ~/.bashrc
 benchtool --validate
 ```
-You should hopefully see that all validation checks report a green 'PASS', if so BenchTool is ready to use.
+You should see that all validation checks report a green 'PASS', if so BenchTool is ready to use.
 
-NOTE: some hardware statistics collection functionality provided by BenchTool requires root access, you can either run the permissions script below, or live with the warning.
+NOTE: some hardware statistics collection functionality provided by BenchTool requires root access, you can either run the permissions script below to privilege the scripts, or live with the runtime warning.
 ```
 sudo -E $BT_PROJECT/resources/scripts/change_permissions.sh
 ```
