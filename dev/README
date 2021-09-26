@@ -1,0 +1,14 @@
+# Produre for updating BenchTool Python site package
+
+1. Update version info
+```
+./dev/version.sh [x.x.x]
+```
+2. Install packages
+```
+./dev/install.sh
+```
+3. Clean up build files
+```
+./dev/clean.sh
+```

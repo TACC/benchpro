@@ -21,7 +21,7 @@ import src.logger as logger
 
 glob = None
 
-# Move benchmark directory from pending to captured/failed, once processed
+# Move benchmark directory from complete to captured/failed, once processed
 def move_to_archive(result_path, dest):
     if not os.path.isdir(result_path):
         glob.lib.msg.error("result directory '" + glob.lib.rel_path(result_path) + "' not found.")
@@ -371,12 +371,12 @@ def capture_result(glob_obj):
     # Start logger
     logger.start_logging("CAPTURE", glob.stg['results_log_file'] + "_" + glob.time_str + ".log", glob)
 
-    # Get list of results in ./results/pending with a COMPLETE job state
-    results = glob.lib.get_completed_results(glob.lib.get_pending_results(), True)
+    # Get list of results in $BT_RESULTS/complete with a COMPLETE job state
+    results = glob.lib.get_completed_results(glob.lib.get_complete_results(), True)
 
     # No outstanding results
     if not results:
-        glob.lib.msg.high("No new results found in " + glob.lib.rel_path(glob.stg['pending_path']))
+        glob.lib.msg.high("No new results found in " + glob.lib.rel_path(glob.stg['complete_path']))
 
     else:
         captured = 0
@@ -386,9 +386,9 @@ def capture_result(glob_obj):
         for result_dir in results:
             # Capture application profile for this result to db if not already present
 
-            glob.lib.db.capture_application(os.path.join(glob.stg['pending_path'], result_dir))
+            glob.lib.db.capture_application(os.path.join(glob.stg['complete_path'], result_dir))
 
-            glob.result_path = os.path.join(glob.stg['pending_path'], result_dir)
+            glob.result_path = os.path.join(glob.stg['complete_path'], result_dir)
             result, unit = validate_result(glob.result_path)
 
             # If unable to get valid result, skipping this result
@@ -527,14 +527,14 @@ def list_results(glob_obj):
     glob = glob_obj
 
     # Get list of all results
-    pending_list  = glob.lib.get_pending_results()
+    complete_list  = glob.lib.get_complete_results()
     captured_list = glob.lib.get_captured_results()
     failed_list   = glob.lib.get_failed_results()
 
     # Running results
     if glob.args.listResults == 'running' or glob.args.listResults == 'all':
         # Get list of running results
-        running = glob.lib.get_completed_results(copy.deepcopy(pending_list), False)
+        running = glob.lib.get_completed_results(copy.deepcopy(complete_list), False)
         if running:
             print("Found", len(running), "running benchmarks:")
             for result in running:
@@ -544,15 +544,15 @@ def list_results(glob_obj):
         print()
 
     # Completed results
-    if glob.args.listResults == 'pending' or glob.args.listResults == 'all':
-        # Get list of pending results
-        complete_list = glob.lib.get_completed_results(pending_list, True)
+    if glob.args.listResults == 'complete' or glob.args.listResults == 'all':
+        # Get list of complete results
+        complete_list = glob.lib.get_completed_results(complete_list, True)
         if complete_list:
-            print("Found", len(complete_list), "pending benchmark results:")
+            print("Found", len(complete_list), "complete benchmark results:")
             for result in complete_list:
                 print("  " + result)
         else:
-            print("No pending benchmark results found.")
+            print("No complete benchmark results found.")
         print()
 
     # Captured results
@@ -576,8 +576,8 @@ def list_results(glob_obj):
             print("No failed benchmark results found.")
         print()
 
-    if not glob.args.listResults in ['running', 'pending', 'captured', 'failed', 'all']:
-        print("Invalid input, provide 'running', 'pending', 'captured', 'failed' or 'all'.")
+    if not glob.args.listResults in ['running', 'complete', 'captured', 'failed', 'all']:
+        print("Invalid input, provide 'running', 'complete', 'captured', 'failed' or 'all'.")
 
 # Get list of result dirs matching search str
 def get_matching_results(result_path, result_str):
@@ -592,8 +592,8 @@ def query_result(glob_obj, result_label):
     # Start logger
     logger.start_logging("CAPTURE", glob.stg['results_log_file'] + "_" + glob.time_str + ".log", glob)
 
-    # Search ./results/pending ./results/captured and ./results/failed
-    matching_dirs = get_matching_results(glob.stg['pending_path'],  result_label) + \
+    # Search ./results/complete ./results/captured and ./results/failed
+    matching_dirs = get_matching_results(glob.stg['complete_path'],  result_label) + \
                     get_matching_results(glob.stg['captured_path'], result_label) + \
                     get_matching_results(glob.stg['failed_path'],   result_label)
 
@@ -607,7 +607,7 @@ def query_result(glob_obj, result_label):
                             sorted(["    " + x.split(glob.stg['sl'])[-1] for x in matching_dirs])+ \
                             [""])
 
-    result_path = os.path.join(glob.stg['pending_path'], matching_dirs[0])
+    result_path = os.path.join(glob.stg['complete_path'], matching_dirs[0])
     bench_report = os.path.join(result_path, "bench_report.txt")
 
     if not os.path.isfile(bench_report):
@@ -672,7 +672,7 @@ def remove_result(glob_obj):
     glob = glob_obj
 
     # Get list of all results
-    pending_list  = glob.lib.get_pending_results()
+    complete_list  = glob.lib.get_complete_results()
     captured_list = glob.lib.get_captured_results()
     failed_list   = glob.lib.get_failed_results()
 
@@ -697,12 +697,12 @@ def remove_result(glob_obj):
     # Remove all results in ./results dir
     elif glob.args.delResult[0] == 'all':
 
-        all_results = pending_list + captured_list + failed_list
+        all_results = complete_list + captured_list + failed_list
 
         if all_results:
             print("Found", len(all_results), " results:")
             print_results(all_results)
-            delete_results([os.path.join(glob.stg['pending_path'], x) for x in pending_list] +\
+            delete_results([os.path.join(glob.stg['complete_path'], x) for x in complete_list] +\
                             [os.path.join(glob.stg['captured_path'], x) for x in captured_list] +\
                             [os.path.join(glob.stg['failed_path'], x) for x in failed_list])
         else:
@@ -710,7 +710,7 @@ def remove_result(glob_obj):
 
     # Remove unique result matching input str
     else:
-        results = get_matching_results(glob.stg['pending_path'], glob.args.delResult[0]) +\
+        results = get_matching_results(glob.stg['complete_path'], glob.args.delResult[0]) +\
                   get_matching_results(glob.stg['captured_path'], glob.args.delResult[0]) +\
                   get_matching_results(glob.stg['failed_path'], glob.args.delResult[0])
         if results:

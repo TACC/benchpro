@@ -146,37 +146,44 @@ class init(object):
         for elem in file_list:
             src = elem.strip()
             dest = os.path.join(self.glob.config['metadata']['dest_path'], src.split("/")[-1])
-            try:
-                urllib.request.urlretrieve(src, dest)
-            except:
-                self.glob.lib.msg.error("Failed to download " + src)
 
-            # Check if file is compressed
-            if any(x in src for x in ['tar', 'tgz', 'bgz']):
-                self.untar_files([os.path.join(src,dest)])
+            if self.glob.stg['sync_staging']:
+                self.glob.lib.msg.low("Downloading " + src + "...")
+                try:
+                    urllib.request.urlretrieve(src, dest)
+                except:
+                    self.glob.lib.msg.error("Failed to download " + src)
+
+                # Check if file is compressed
+                if any(x in src for x in ['tar', 'tgz', 'bgz']):
+                    self.untar_files([os.path.join(src,dest)])
 
     # Copy file list to working dir
     def cp_files(self, file_list):
         for elem in file_list:
             src = elem.strip()
 
-            # Check if directory
+            # Absolute path or in local repo
             src_path = os.path.expandvars(src)
             if not os.path.isfile(src_path) and not os.path.isdir(src_path):
                 src_path = os.path.join(self.glob.stg['local_repo'], src)
 
-            # Copy file
-            if os.path.isfile(src_path):
-                su.copy(src_path, self.glob.config['metadata']['dest_path'])
-
-            # Copy dir
-            elif os.path.isdir(src_path): 
-                dest = src_path.split(self.glob.stg['sl'])[-1]
-                su.copytree(src_path, os.path.join(self.glob.config['metadata']['dest_path'], dest))
-
-            else:
+            # Check presence
+            if not os.path.isfile(src_path) and not os.path.isdir(src_path):
                 self.glob.lib.msg.error("Input file '" + src + "' not found in repo " + \
                                         self.glob.lib.rel_path(self.glob.stg['local_repo']))
+
+            # Copy files
+            if self.glob.stg['sync_staging']:
+                self.glob.lib.msg.low("Copying " + src_path + "...")
+                # Copy file
+                if os.path.isfile(src_path):
+                    su.copy(src_path, self.glob.config['metadata']['dest_path'])
+
+                # Copy dir
+                else:
+                    dest = src_path.split(self.glob.stg['sl'])[-1]
+                    su.copytree(src_path, os.path.join(self.glob.config['metadata']['dest_path'], dest))
 
 
     # Ensure input files exist

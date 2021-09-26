@@ -117,7 +117,7 @@ class init(object):
 
         if job_type == "bench":
             # Path to bench report file
-            report_path = os.path.join(self.glob.stg['pending_path'], report_file, self.glob.stg['bench_report_file'])
+            report_path = os.path.join(self.glob.stg['complete_path'], report_file, self.glob.stg['bench_report_file'])
 
         # Get exec_mode from report file
         report = self.read(report_path)
@@ -133,7 +133,7 @@ class init(object):
         report_path = os.path.join(self.glob.stg['build_path'], report_file, self.glob.stg['build_report_file'])
         if job_type == "bench":
             # Path to bench report file
-            report_path = os.path.join(self.glob.stg['pending_path'], report_file, self.glob.stg['bench_report_file'])
+            report_path = os.path.join(self.glob.stg['complete_path'], report_file, self.glob.stg['bench_report_file'])
 
         if os.path.isfile(report_path):
             return self.read(report_path)[job_type]['task_id']

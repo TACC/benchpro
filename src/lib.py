@@ -67,11 +67,11 @@ class init(object):
 
         return installed_list
 
-    # Get results in ./results/pending
-    def get_pending_results(self):
-        pending =  self.files.get_subdirs(self.glob.stg['pending_path'])
-        pending.sort()
-        return pending
+    # Get results in $BT_RESULTS/complete
+    def get_complete_results(self):
+        complete =  self.files.get_subdirs(self.glob.stg['complete_path'])
+        complete.sort()
+        return complete
 
     # Get results in ./results/captured
     def get_captured_results(self):

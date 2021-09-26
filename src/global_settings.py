@@ -128,7 +128,7 @@ class settings(object):
         self.stg['result_env']          = self.stg['result_env_var'] + self.stg['sl']
         self.stg['module_dir']          = "modulefiles"
         self.stg['log_path']            = os.path.join(self.basedir, self.stg['log_dir'])
-        self.stg['pending_path']        = os.path.join(self.stg['bench_path'], self.stg['pending_subdir'])
+        self.stg['complete_path']        = os.path.join(self.stg['bench_path'], self.stg['complete_subdir'])
         self.stg['captured_path']       = os.path.join(self.stg['bench_path'], self.stg['captured_subdir'])
         self.stg['failed_path']         = os.path.join(self.stg['bench_path'], self.stg['failed_subdir'])
         self.stg['module_path']         = os.path.join(self.stg['build_path'], self.stg['module_dir'])

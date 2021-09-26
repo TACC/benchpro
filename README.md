@@ -85,24 +85,24 @@ benchtool --avail
 ```
 6 Install the LAMMPS application (LAMMPS builds and runs quickly):
 ```
-benchtool --build lammps
+benchtool -b lammps
 ```
 7 List applications currently installed:
 ```
-benchtool --listApps
+benchtool -la
 ```
 NOTE: By default `dry_run=True` in `settings.ini` so the LAMMPS build script was created but not submitted to the scheduler. You can now submit your LAMMPS build job manually, or
 8 Remove the dry_run build:
 ```
-benchtool --delApp lammps
+benchtool -da lammps
 ```
 9 Overload the dry_run value in settings.ini and re-build with: 
 ```
-benchtool --build lammps --overload dry_run=False
+benchtool -b lammps --overload dry_run=False
 ```
 10 Check the details and status of your LAMMPS build with:
 ```
-benchtool --queryApp lammps
+benchtool -qa lammps
 ```
 In this example, parameters in `$BT_PROJECT/config/build/lammps_3Mar20.cfg` were used to populate the build template `$BT_PROJECT/templates/build/lammps_3Mar20.template` which was submitted to the scheduler.
 You can review the populated job script located in the `build_prefix` directory and named `lammps-build.sched`. Parameters for the scheduler job, system architecure, compile time optimizations and a module file were automatically generated.  
@@ -119,14 +119,14 @@ dry_run = False
 ```
 2 Run the LAMMPS LJ-melt benchmark with: 
 ```
-benchtool --bench ljmelt 
+benchtool -B ljmelt 
 ```
 We changed `settings.ini` so we don't need to use the `--overload` anymore. 
 It is important to note that BenchTool will use the default scheduler parameters for your system from a file defined in `config/system.cfg`. You can overload individual parameters using `--overload`, or use another scheduler config file with the flag `--sched [FILENAME]`. 
 
 3 Check the benchmark report with:
 ```
-benchtool --queryResult ljmelt
+benchtool -qr ljmelt
 ```
 4 Because this LAMMPS LJ-Melt benchmark was the last BenchTool job executed, a useful shortcut to check this report is:
 ```
@@ -138,14 +138,14 @@ Much like the build process, a 'bench_report' was generated to store metadata as
 
 ### Capture Benchmark Result
 
-A benchmark result exists in four states, during scheduler queueing and execution it is considered in `running` state, upon completion it will remain on the local system in a `pending` state, until it is captured it to the database when its state changes to `captured` or `failed`. 
+A benchmark result exists in four states, during scheduler queueing and execution it is considered in `running` state, upon completion it will remain on the local system in a `complete` state, until it is captured it to the database when its state changes to `captured` or `failed`. 
 1 We can check on the status of all benchmark runs with:
 ```
-benchtool --listResults 
+benchtool -lr 
 ```
-2 Once your LAMMPS benchmark result is in the pending state, capture all pending results to the database with:
+2 Once your LAMMPS benchmark result is in the complete state, capture all complete results to the database with:
 ```
-benchtool --capture
+benchtool -C
 ```
 3 You can now query your result in the database with :
 ```

@@ -80,11 +80,11 @@ class init(object):
     def new_results(self):
         self.log_and_print(["Checking for uncaptured results..."], False)
         # Uncaptured results + job complete
-        pending_results = self.glob.lib.get_completed_results(self.glob.lib.get_pending_results(), True)
-        if pending_results:
+        complete_results = self.glob.lib.get_completed_results(self.glob.lib.get_complete_results(), True)
+        if complete_results:
             self.log_and_print([self.glob.note,
-                                "There are " + str(len(pending_results)) + " uncaptured results found in " + 
-                                self.glob.lib.rel_path(self.glob.stg['pending_path']),
+                                "There are " + str(len(complete_results)) + " uncaptured results found in " + 
+                                self.glob.lib.rel_path(self.glob.stg['complete_path']),
                                 "Run 'benchtool --capture' to send to database."], False)
         else:
             self.log_and_print(["No new results found.",

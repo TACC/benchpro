@@ -53,7 +53,7 @@ def main():
     cmd_parser.add_argument("-C", "--capture", default=False, action='store_true',
                             help="Send results to database.")
     cmd_parser.add_argument("-lr", "--listResults", nargs='?', const="all", type=str,
-                            help="Provide summary of benchmarks results. Default is 'all', also takes 'pending', 'complete', 'captured' or \
+                            help="Provide summary of benchmarks results. Default is 'all', also takes 'complete', 'complete', 'captured' or \
                                     'failed'")
     cmd_parser.add_argument("-dr", "--delResult", default=False, nargs='+',
                             help="Deletes benchmark result from local directory, takes space delimited benchmark label, 'captured', \
