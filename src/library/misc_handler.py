@@ -59,19 +59,6 @@ class init(object):
         else:
             print("No temp files found.")
 
-    # Prune dir tree until not unique
-    def prune_tree(self, path):
-        path_elems  = path.split(self.glob.stg['sl'])
-        parent_path = self.glob.stg['sl'].join(path.split(self.glob.stg['sl'])[:-1])
-        parent_dir  = path_elems[-2]
-
-        # If parent dir is root ('build' or 'modulefile') or if it contains more than this subdir, delete this subdir
-        if (parent_dir == self.glob.stg['build_dir']) or  (parent_dir == self.glob.stg['module_dir']) or (len(gb.glob(os.path.join(parent_path,"*"))) > 1):
-            su.rmtree(path)
-        # Else resurse with parent
-        else:
-            self.prune_tree(parent_path)
-
     # Delete app path and associated module
     def delete_app_path(self, path):
         
@@ -88,7 +75,7 @@ class init(object):
 
             # Delete application dir
             try:
-                self.prune_tree(app_dir)
+                self.glob.lib.files.prune_tree(app_dir)
                 print()
                 print("Application removed.")
             except:
@@ -99,7 +86,7 @@ class init(object):
             print()
             # Detele module dir
             try:
-                self.prune_tree(mod_dir)
+                self.glob.lib.files.prune_tree(mod_dir)
                 print("Module removed.")
                 print()
             except:

@@ -3,6 +3,7 @@ import configparser as cp
 import copy
 import glob as gb
 import hashlib
+from packaging import version
 import os
 import sys
 import time
@@ -15,12 +16,13 @@ import src.library.file_handler as file_handler
 import src.library.misc_handler as misc_handler
 import src.library.module_handler as module_handler
 import src.library.msg_handler as msg_handler
+import src.library.overload_handler as overload_handler
 import src.library.process_handler as proc_handler
 import src.library.report_handler as report_handler
 import src.library.sched_handler as sched_handler
 import src.library.template_handler as template_handler
 
-# Contains several useful functions, mostly used by bencher and builder
+# Contains several useful functions, mostly used by bench_manager and build_manager
 class init(object):
     def __init__(self, glob):
         self.glob = glob
@@ -33,6 +35,7 @@ class init(object):
         self.misc     = misc_handler.init(self.glob)
         self.module   = module_handler.init(self.glob)
         self.msg      = msg_handler.init(self.glob)
+        self.overload = overload_handler.init(self.glob)
         self.proc     = proc_handler.init(self.glob)
         self.report   = report_handler.init(self.glob)
         self.sched    = sched_handler.init(self.glob)
@@ -149,84 +152,6 @@ class init(object):
             return False
         else:
             return True
-
-    # Overload dict keys with overload key
-    def overload(self, overload_key, param_dict):
-        # If found matching key
-            if overload_key in param_dict:
-                old = param_dict[overload_key]
-
-                # If cfg value is a list, skip datatype check
-                if "," in self.glob.overload_dict[overload_key]:
-                    param_dict[overload_key] = self.glob.overload_dict[overload_key]
-
-                else:
-                    datatype = type(param_dict[overload_key])
-
-                    try:
-                        # Convert datatypes
-                        if datatype is str: 
-                            param_dict[overload_key] = str(self.glob.overload_dict[overload_key])
-                        elif datatype is int:
-                            param_dict[overload_key] = int(self.glob.overload_dict[overload_key])
-                        elif datatype is bool:
-                            param_dict[overload_key] = self.glob.overload_dict[overload_key] == 'True'
-                    except:
-                        self.msg.error("datatype mismatch for '" + overload_key +"', expected=" + str(datatype) + ", provided=" + str(type(overload_key)))
-
-                self.msg.high("Overloading " + overload_key + ": '" + str(old) + "' -> '" + str(param_dict[overload_key]) + "'")
-                # Remove key from overload dict
-                self.glob.overload_dict.pop(overload_key)
-
-    # Replace cfg params with cmd line inputs 
-    def overload_params(self, search_dict):
-        for overload_key in list(self.glob.overload_dict):
-            # If dealing with code/sched/compiler cfg, descend another level
-            if list(search_dict)[0] == "metadata":
-                for section_dict in search_dict:
-                    self.overload(overload_key, search_dict[section_dict])
-            else:
-                self.overload(overload_key, search_dict)
-
-    # Generate dict fom colon-delimited params
-    def set_var_overload_dict(self, vars_list):
-        if vars_list:
-            for setting in vars_list:
-                pair = setting.split('=')
-                # Test key-value pair
-                if not len(pair) == 2:
-                    print("Invalid overload key-value pair detected: ", setting)
-                    sys.exit(1)
-                self.glob.overload_dict[pair[0]] = pair[1]
-
-    # Catch overload keys that are incompatible with local exec mode before checking for missed keys
-    def catch_incompatible_overloads(self):
-
-        # Runtime overload only works with sched exec_mode
-        bad_keys = ["runtime"]
-
-        for key in copy.deepcopy(self.glob.overload_dict):
-            if key in bad_keys:
-                self.msg.low("Ignoring bad overload key '" + key +  "' - incompatible with current exec_mode")
-                self.glob.overload_dict.pop(key)
-
-    # Print warning if cmd line params dict not empty
-    def check_for_unused_overloads(self):
-
-        # First check for overloads that 
-        self.catch_incompatible_overloads()
-
-        if len(self.glob.overload_dict):
-            self.msg.high("The following --overload argument does not match existing params:")
-            for key in self.glob.overload_dict:
-                self.msg.high("  " + key + "=" + self.glob.overload_dict[key])
-            self.msg.error("Invalid input arguments.")
-
-    # Write module to file
-    def write_list_to_file(self, list_obj, output_file):
-        with open(output_file, "w") as f:
-            for line in list_obj:
-                f.write(line)
 
     # Search code_path with values in search_list
     def search_with_dict(self, search_dict, code_path):
@@ -442,4 +367,17 @@ class init(object):
             history_file = os.path.join(self.glob.basedir, ".history")
             with open(history_file, "a") as hist:
                 hist.write(args[0].split("/")[-1] + " " + " ".join(args[1:]) + "\n")
+
+    # Check if the installed version is up-to-date with site version
+    def check_version(self):
+
+            site_version = os.getenv("BT_VERSION")
+            local_version = self.glob.lib.files.read_version()
+           
+            if version.parse(site_version) > version.parse(local_version):
+                self.msg.warning(["You are using BenchTool " + local_version + ", version " + site_version + " is available.", \
+                                "Run benchtool --update", \
+                                "Continuing..."])
+                time.sleep(3)
+
 

@@ -76,7 +76,16 @@ def check_status():
         print(e)
 
 # Copy packge files to user directory
-def copy_files(install_dict):
+def copy_files():
+
+    install_dict = {path_dict['home_dir']:  [".version",
+                                                "settings.ini",
+                                                "install.ini",
+                                                "README.md",
+                                                "config/",
+                                                "templates/",
+                                                "resources/"]
+                    }
 
     # Copy files into install directory
     for dest in list(install_dict.keys()):
@@ -95,30 +104,6 @@ def copy_files(install_dict):
                     print("Failed to install " + os.path.join(src_dir, "data", item) + " to " + dest)
                     print(e)
                     sys.exit(1)
-
-
-def install_files():
-    install_dict = {path_dict['home_dir']:  [".version",
-                                                "settings.ini",
-                                                "install.ini",
-                                                "README.md",
-                                                "config/",
-                                                "templates/",
-                                                "resources/"]
-#                    path_dict['build_dir']:   ["modulefiles/benchtool/"]
-                    }
-    copy_files(install_dict)
-
-def update_files():
-    install_dict = {path_dict['home_dir']:  [".version",
-                                                "settings.ini",
-                                                "install.ini",
-                                                "README.md",
-                                                "config/",
-                                                "templates/",
-                                                "resources/"]
-                    }
-    copy_files(install_dict)
 
 # Insert contextualized paths in settings.ini
 def update_settings():
@@ -140,41 +125,6 @@ def update_settings():
 
     # Write updates
     setting_parser.write(open(os.path.join(path_dict['home_dir'], "settings.ini"), 'w'))
-
-# Update module
-def update_module():
-    print("Updating module file...")
-    mod_file = glob.glob(os.path.join(path_dict['build_dir'], "modulefiles", "benchtool", "*.lua"))
-    version = ".".join(os.path.basename(mod_file[0]).split(".")[:-1])
-    # Update module file with project paths
-    with fileinput.FileInput(mod_file, inplace=True) as fp:
-        for line in fp:
-            if "local project_dir" in line:
-                print("local project_dir     = \"" + path_dict['home_dir'] + "\"", end = '\n')
-            elif "local app_dir" in line:
-                print("local app_dir         = \"" + path_dict['build_dir'] + "\"", end = '\n')
-            elif "local result_dir" in line:
-                print("local result_dir      = \"" + path_dict['bench_dir'] + "\"", end = '\n' )
-            elif "local version" in line:
-                print("local version         = \"" + version + "\"", end = '\n' )
-            else:
-                print(line, end ='')
-
-# Add benchtool in user .bashrc
-def update_bash():
-    print("Updating .bashrc...")
-    # Check its not in bash file already
-    in_bash = False
-    with open(os.path.expandvars("$HOME/.bashrc")) as fp:
-        if "benchtool" in fp.read():
-            in_bash = True
-
-    # Update .bachrc
-    if not in_bash:
-        with open(os.path.expandvars("$HOME/.bashrc"), "a") as fp: 
-            fp.write("# BENCHTOOL \n")
-            fp.write("export MODULEPATH=$MODULEPATH:" + os.path.join(path_dict['build_dir'], "modulefiles") + "\n" )
-            fp.write("ml benchtool")
 
 # Copy SSH key if its defined
 def copy_key():
@@ -249,12 +199,11 @@ def overwrite():
 # Run installer
 def install(settings):
 
+    check_env()
     read_ini(settings)
     check_status()
-    install_files()
+    copy_files()
     update_settings()
-#    update_module()
-#    update_bash()
     copy_key()
     success()
     ml()
@@ -272,7 +221,6 @@ def uninstall():
     print("Coninuing in 5 seconds...")
     time.sleep(5)
 
-    is_installed(home_path)
     check_env()
     read_ini(os.path.join(home_path, "settings.ini"))
     remove_dirs(list(path_dict.keys()))
@@ -282,7 +230,7 @@ def update():
     read_ini(False)
     check_env()
     remove_dirs(['home_dir'])
-    update_files()
+    copy_files()
     update_settings()
     copy_key()
     success()

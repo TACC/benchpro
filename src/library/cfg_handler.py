@@ -286,7 +286,7 @@ class init(object):
         # Path to application's data directory
         cfg_dict['config']['local_repo'] = self.glob.stg['local_repo']
 
-        self.glob.lib.overload_params(cfg_dict)
+        self.glob.lib.overload.replace(cfg_dict)
 
         # Get system from env if not defined
         if not cfg_dict['general']['system']:
@@ -377,7 +377,7 @@ class init(object):
         cfg_dict['metadata']['dest_path']    = cfg_dict['metadata']['build_path']
 
         # Overload params from cmdline
-        self.glob.lib.overload_params(cfg_dict)
+        self.glob.lib.overload.replace(cfg_dict)
 
         # Set sched nodes to 1 for build jobs
         cfg_dict['config']['nodes'] = 1
@@ -430,7 +430,7 @@ class init(object):
         self.get_val_types(cfg_dict)
 
         # Overload params from cmdline
-        self.glob.lib.overload_params(cfg_dict)
+        self.glob.lib.overload.replace(cfg_dict)
 
         # Path to data directory
         cfg_dict['config']['local_repo'] = self.glob.stg['local_repo']
@@ -554,7 +554,7 @@ class init(object):
         # Instantiate missing optional parameters
         if not 'reservation' in    cfg_dict['sched'].keys():   cfg_dict['sched']['reservation']   = ""
     
-        self.glob.lib.overload_params(cfg_dict)
+        self.glob.lib.overload.replace(cfg_dict)
     
         # Fill missing parameters
         if not cfg_dict['sched']['runtime']:

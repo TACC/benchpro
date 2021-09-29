@@ -11,24 +11,41 @@ class init(object):
         self.glob = glob
 
     # Delete tmp build files if installation fails
-    def remove_tmp_files(self):
-        file_list = gb.glob(os.path.join(self.glob.basedir, 'tmp.*'))
-        if file_list:
-            for f in file_list:
+    def cleanup(self, clean_list):
+        
+        # Clean default *.tmp files
+        if not clean_list:
+            clean_list = gb.glob(os.path.join(self.glob.basedir, 'tmp.*'))
+
+        if clean_list:
+            for f in clean_list:
                 try:
-                    os.remove(f)
-                    self.glob.log.debug("Successfully removed tmp file "+f)
-                except:
-                    self.glob.log.debug("Failed to remove tmp file ", f)
+                    # Files
+                    if os.path.isfile(f):
+                        os.remove(f)
+                    # Clean dir trees
+                    elif os.path.isdir(f):
+                        self.prune_tree(f)
+
+                    self.glob.log.debug("Successfully removed tmp object " + self.glob.lib.rel_path(f))
+                except Exception as e :
+                    self.glob.log.debug("Failed to remove tmp object " + self.glob.lib.rel_path(f))
+
+    # Remove created files if we are crashing
+    def rollback(self):
+        # Clean tmp files
+        self.cleanup([])
+        # Clean 
+        self.cleanup(self.glob.cleanup)
 
     # Find file in directory
-    def find_exact(self, file_name, path):
+    def find_exact(self, filename, path):
         # Check file doesn't exist already
-        if os.path.isfile(file_name):
-            return file_name
+        if os.path.isfile(filename):
+            return filename
 
         # Search recursively for file
-        files = gb.glob(path+'/**/'+file_name, recursive = True)
+        files = gb.glob(path+'/**/'+filename, recursive = True)
 
         if files:
             return files[0]
@@ -43,22 +60,48 @@ class init(object):
         else:
             return False
 
+    # Looks for file in paths
+    def look(self, paths, filename):
+        for path in paths:
+            results = gb.glob(os.path.join(path, filename))
+            if len(results) == 1:
+                return results[0]
+            
+        return False
+
+    # Accepts list of paths and filename, returns file path to file if found, or errors 
+    def find_in(self, paths, filename, error_if_missing):
+
+        # Add some default locations to the search path list
+        paths.extend([self.glob.basedir, self.glob.cwd, self.glob.home])
+        found = self.look(paths, filename) 
+
+        if found:
+            return found
+
+        # Error if not found?
+        if error_if_missing:
+            self.glob.lib.msg.error(["Unable to locate file '" + filename + "' in any of these locations:"].extends(\
+                                    [self.glob.lib.rel_path(locations)]))
+
+        return False
+
     # Find *file* in directory
-    def find_partial(self, file_name, path):
+    def find_partial(self, filename, path):
         # Check file doesn't exist already
-        if os.path.isfile(file_name):
-            return file_name
+        if os.path.isfile(filename):
+            return filename
         # Search provided path for file
         for root, dirs, files in os.walk(path):
-            match = next((s for s in files if file_name in s), None)
+            match = next((s for s in files if filename in s), None)
             if match:
                 return os.path.join(root, match)
         # File not found
         return None
 
     # Get owner of file
-    def file_owner(self, file_name):
-        return pwd.getpwuid(os.stat(file_name).st_uid).pw_name
+    def file_owner(self, filename):
+        return pwd.getpwuid(os.stat(filename).st_uid).pw_name
 
     # Get a list of sub-directories, called by 'search_tree'
     def get_subdirs(self, base):
@@ -77,6 +120,22 @@ class init(object):
                 else:
                     self.search_tree(installed_list, new_dir, start_depth,current_depth + 1, max_depth)
 
+    # Prune dir tree until not unique
+    def prune_tree(self, path):
+        path_elems  = path.split(self.glob.stg['sl'])
+        parent_path = self.glob.stg['sl'].join(path.split(self.glob.stg['sl'])[:-1])
+        parent_dir  = path_elems[-2]
+
+        # If parent dir is root ('build' or 'modulefile') or if it contains more than this subdir, delete this subdir
+        if (parent_dir == self.glob.stg['build_dir']) or \
+           (parent_dir == self.glob.stg['module_dir']) or \
+           (len(gb.glob(os.path.join(parent_path,"*"))) > 1):
+
+            su.rmtree(path)
+        # Else resurse with parent
+        else:
+            self.prune_tree(parent_path)
+
     # Create directories if needed
     def create_dir(self, path):
         if not os.path.exists(path):
@@ -85,6 +144,9 @@ class init(object):
             except:
                 self.glob.lib.msg.error(
                     "Failed to create directory " + path)
+
+        # Add to cleanup list
+        self.glob.cleanup.append(path)
 
     # Get list of files in search path
     def get_files_in_path(self, search_path):
@@ -217,4 +279,15 @@ class init(object):
                 else:
                     self.glob.lib.msg.error(["Unsupported file stage operation selected: '" + op + "'.", 
                                             "Supported operations = tar, wget, cp."])
+
+    # Read version number from file
+    def read_version(self):
+        with open(os.path.join(self.glob.basedir, ".version"), 'r') as f:
+            return f.readline().split(" ")[-1][1:].strip()
+
+    # Write module to file
+    def write_list_to_file(self, list_obj, output_file):
+        with open(output_file, "w") as f:
+            for line in list_obj:
+                f.write(line)
 

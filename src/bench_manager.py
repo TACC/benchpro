@@ -150,7 +150,7 @@ def start_task():
         glob.lib.files.install(provenance_path, glob.sched_template, None, False)
 
     # Delete tmp job script
-    glob.lib.files.remove_tmp_files()
+    glob.lib.files.cleanup([])
 
     glob.lib.msg.high(glob.success)
     # dry_run = True
@@ -250,7 +250,7 @@ def run_bench(input_dict, glob_copy):
                                             os.path.join(glob.stg['template_path'], glob.stg['sched_tmpl_dir']))
 
     # Check for empty overload params
-    glob.lib.check_for_unused_overloads()
+    glob.lib.overload.check_for_unused()
 
     # Check if MPI is allow on this host
     if glob.stg['bench_mode'] == "local" and not glob.stg['dry_run'] and not glob.lib.check_mpi_allowed():
@@ -313,7 +313,7 @@ def init(glob):
     glob.lib.msg.new_results()
 
     # Overload settings.ini with cmd line args
-    glob.lib.overload_params(glob.stg)
+    glob.lib.overload.replace(glob.stg)
 
     # Input is benchmark suite
     input_list = glob.args.bench

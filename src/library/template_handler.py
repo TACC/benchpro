@@ -186,7 +186,7 @@ class init(object):
             # Error and exit
             else:
                # Write file to disk
-                self.glob.lib.write_list_to_file(template_obj, self.glob.tmp_script)
+                self.glob.lib.files.write_list_to_file(template_obj, self.glob.tmp_script)
                 self.glob.lib.msg.error("Missing parameters were found after populating '" + self.glob.lib.rel_path(template_file) + "' and exit_on_missing=True in settings.ini: " + ' '.join(unfilled_keys))
         else:
             self.glob.log.debug("All build parameters were filled, continuing")
@@ -285,7 +285,7 @@ class init(object):
 
         # Write populated script to file
         self.glob.lib.msg.low(["Writing template... ", ""])
-        self.glob.lib.write_list_to_file(template_obj, self.glob.tmp_script)
+        self.glob.lib.files.write_list_to_file(template_obj, self.glob.tmp_script)
 
     # Get template files required to construct bench script
     def set_bench_files(self):
@@ -436,5 +436,5 @@ class init(object):
 
         # Write populated script to file
         self.glob.lib.msg.low(["Writing template... ", ""])
-        self.glob.lib.write_list_to_file(template_obj, self.glob.tmp_script)
+        self.glob.lib.files.write_list_to_file(template_obj, self.glob.tmp_script)
 

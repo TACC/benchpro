@@ -36,6 +36,7 @@ class settings(object):
     # list of depency jobs
     any_dep_list = []
     ok_dep_list = []
+    prev_pid = 0
 
     # Cfg lists
     build_cfgs = []
@@ -43,11 +44,15 @@ class settings(object):
 
     overload_dict = {}
     quiet_build =  False 
-    prev_pid = 0
+
+    # Files to cleanup on fail
+    cleanup = []
 
     # Context variables
     user                = str(os.getlogin())
     hostname            = str(socket.gethostname())
+    home                = os.path.expandvars("$HOME")
+
     if ("." in hostname):
         hostname        = '.'.join(map(str, hostname.split('.')[0:2]))
 

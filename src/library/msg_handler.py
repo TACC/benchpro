@@ -2,12 +2,27 @@
 # System imports
 import copy
 import os
+import signal
 import sys
 
 class init(object):
+
+    # Catch user interrupt
+    def signal_handler(self, sig, frame):
+        # Write to log
+        if self.glob.log:
+            self.high('    Writing to log, cleaning up and aborting...')
+            self.glob.log.debug("Caught user interrupt, exitting.")
+            self.glob.lib.files.rollback()
+        else:
+            print("    Aborting.")
+        sys.exit(0)
+
     def __init__(self, glob):
         self.glob = glob
-    
+        # Init interrupt handler
+        signal.signal(signal.SIGINT, self.signal_handler) 
+        
     # Convert strings to lists
     def listify(self, message):
         if not isinstance(message, list):
@@ -55,7 +70,7 @@ class init(object):
         # Clean tmp files
         if self.glob.stg['clean_on_fail']:
             self.log_and_print("Cleaning up tmp files...", True)
-            self.glob.lib.files.remove_tmp_files()
+            self.glob.lib.files.rollback()
 
         self.log_and_print(["Quitting", ""], True)
 

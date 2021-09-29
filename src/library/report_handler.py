@@ -13,7 +13,6 @@ class init(object):
     # Read report file into dict, accepts file path or directory path containing default report file name
     def read(self, report_file):
 
-
         # If input is not a file
         if not os.path.isfile(report_file):
 

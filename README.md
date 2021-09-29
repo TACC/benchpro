@@ -22,7 +22,7 @@ New applications are continuously being added.
 
 The following steps will walk you through the basic usage of benchtool and produce a small LAMMPS LJ-melt benchmark. Tested on Stampede2 and Frontera systems at TACC. The initial site setup is not needed on TACC systems as the tool has already been deployed.
 
-### Initial site setup
+### Site Install
 
 This section will install the BenchTool python package for use on the system - this step is not necessary on TACC systems.
 
@@ -44,96 +44,92 @@ cd benchtool
 python3 setup.py install
 ```
 
-At this point the Python package is installed, now you will need to run the tool's installation process for a specific user, which will copy configuration files and setup directory structures for your user. The default paths for this install process are stored in the file `src/data/install.ini` inside the package directory. You can pass a file to use to the install process which will overwrite values in this default file with the `--settings` argument.
+The Python package is now installed, next you will need to run the BenchTool user install process, which will copy configuration files and setup directory structures. 
 
-### Install BenchTool user files 
+### User Install
 
-In order to use BenchTool you need to install a local copy of the configuration and template files for your user account. This process also creates the directory structure required for building application and running benchmarks.
+In order to use BenchTool you need to install a local copy of the configuration and template files for your user account. This process also creates the directory structure for building applications and running benchmarks.
 
-1. Load the BenchTool module, this side loads the BenchTool Python package into the system Python3 and sets some environment variables.
+1. Load the BenchTool module, this adds the BenchTool Python package into the system Python3 and sets some environment variables.
 ```
 module use /scratch1/hpc_tools/benchtool/modulefiles
 ml benchtool
 ```
-2. Next run the install process, this installs files in $USER/.benchtool and creates directories in $SCRATCH/benchtool. An optional settings file can be provided to modify the default installation paths. An example of this file's format can be found in $BT_SITE/package/src/data/install.ini
+2. Run the install process that copies files to $USER/.benchtool and creates directories in $SCRATCH/benchtool. An optional settings file can be provided to modify these default installation paths. An example of this file can be found in $BT_SITE/package/src/data/install.ini
 ```
 benchtool --install [--settings FILE]
 ```
-Each time you install or update your local BenchTool installation you are required to run the validation process, which ensures that your system, environment and directory structure are correctly configured. 
+Each time you install or update your local BenchTool installation, a validation process will automatically run to confirm that your system, environment and directory structure are correctly configured. You can run this manually
 ```
 benchtool --validate
 ```
-You should see that all validation checks report a green 'PASS', if so BenchTool is ready to use.
-
-NOTE: some hardware statistics collection functionality provided by BenchTool requires root access, you can either run the permissions script below to privilege the scripts, or live with the runtime warning.
+Some of the hardware statistics collection functionality provided by BenchTool requires root access, you can either run the permissions script below to privilege the scripts, or live with the runtime warning.
 ```
-sudo -E $BT_PROJECT/resources/scripts/change_permissions.sh
+sudo -E $BT_HOME/resources/scripts/change_permissions.sh
 ```
-
-4 Print help & version info:
+3. Print help & version info:
 ```
 benchtool --help
 benchtool --version
 ```
-This walkthrough will use the long format command-line arguments for clarity, however short format will save you time - use the Help output for clarification.
+4. Print useful behaviour defaults 
+```
+benchtool --defaults
+```
 
 ### Build an Application
-
-5 List all available applications and benchmarks with:
+1. List all available applications and benchmarks with:
 ```
-benchtool --avail
+benchtool -a
 ```
-6 Install the LAMMPS application (LAMMPS builds and runs quickly):
+2. Install the LAMMPS application (LAMMPS builds and runs quickly):
 ```
 benchtool -b lammps
 ```
-7 List applications currently installed:
+3. List applications currently installed:
 ```
 benchtool -la
 ```
-NOTE: By default `dry_run=True` in `settings.ini` so the LAMMPS build script was created but not submitted to the scheduler. You can now submit your LAMMPS build job manually, or
-8 Remove the dry_run build:
+NOTE: By default `dry_run=True` in `$BT_HOME/settings.ini`, so the LAMMPS build script was created but not submitted to the scheduler. You can now submit your LAMMPS build job manually, or
+4. Remove the dry_run build:
 ```
 benchtool -da lammps
 ```
-9 Overload the dry_run value in settings.ini and re-build with: 
+5. Overload the default 'dry_run' and re-build with: 
 ```
-benchtool -b lammps --overload dry_run=False
+benchtool -b lammps -o dry_run=False
 ```
-10 Check the details and status of your LAMMPS build with:
+6. Check the details and status of your LAMMPS build with:
 ```
 benchtool -qa lammps
 ```
-In this example, parameters in `$BT_PROJECT/config/build/lammps_3Mar20.cfg` were used to populate the build template `$BT_PROJECT/templates/build/lammps_3Mar20.template` which was submitted to the scheduler.
-You can review the populated job script located in the `build_prefix` directory and named `lammps-build.sched`. Parameters for the scheduler job, system architecure, compile time optimizations and a module file were automatically generated.  
-For each application that is build, a 'build_report' is generated in order to preserve metadata about the application. This build report is referenced whenever the application is used to run a benchmark, and also when this application is captured to the database. You can manually examine this report in the application build directory.
+In this example, parameters in `$BT_HOME/config/build/lammps.cfg` were used to populate the build template `$BT_HOME/templates/build/lammps.template` and produce a job script  which was submitted to the scheduler. You can review the populated job script located in the `build_prefix` directory and named `build.batch`. Parameters for the job, system architecure, compile time optimizations and a module file were automatically generated. For each application that is built, a 'build_report' is generated in order to preserve metadata about the application. This build report is referenced whenever the application is used to run a benchmark, and also when this application is captured to the database. You can manually examine this report in the application directory or using the `--queryApp / -qa` flag.
 
 ### Run a Benchmark
 
-We can now proceed with running a benchmark with our LAMMPS installation. There is no need to wait for the LAMMPS build job to complete, BenchTool knows to check and create a job dependency as needed. In fact if `build_if_missing=True` in `settings.ini`, BenchTool would have automatically detected LAMMPS was not installed and built it without us needing to do the steps above. 
-The process to run a benchmark is similar to building; a config file is used to populate a template script. 
-A benchmark run is specified with `--bench`. The argument may be a single benchmark label, or a benchmark 'suite' (i.e collection of benchmarks) defined in `settings.ini`. Once again you can check for available benchmarks with `--avail`.  
-1 Modify `$BT_PROJECT/settings.ini`
+We can now proceed with running a benchmark with our LAMMPS installation. There is no need to wait for the LAMMPS build job to complete, BenchTool knows to check the build status and create a job dependency if needed. In fact if `build_if_missing=True` in `$BT_HOME/settings.ini`, BenchTool would have automatically detected LAMMPS was not installed and built it for the current system without us needing to do the steps above. The process to run a benchmark is similar to building; a config file is used to populate a template script. A benchmark run is specified with `--bench / -B`. The argument may be a single benchmark label, or a benchmark 'suite' (i.e collection of benchmarks) defined in `settings.ini`. Once again you can check for available benchmarks with `--avail / -a`.  
+
+1. Modify `$BT_HOME/settings.ini`
 ```
 dry_run = False
 ```
-2 Run the LAMMPS LJ-melt benchmark with: 
+2. Run the LAMMPS LJ-melt benchmark with: 
 ```
 benchtool -B ljmelt 
 ```
-We changed `settings.ini` so we don't need to use the `--overload` anymore. 
+We changed `settings.ini` so we don't need to use the `--overload / -o` flag anymore. 
 It is important to note that BenchTool will use the default scheduler parameters for your system from a file defined in `config/system.cfg`. You can overload individual parameters using `--overload`, or use another scheduler config file with the flag `--sched [FILENAME]`. 
 
-3 Check the benchmark report with:
+3. Check the benchmark report with:
 ```
 benchtool -qr ljmelt
 ```
-4 Because this LAMMPS LJ-Melt benchmark was the last BenchTool job executed, a useful shortcut to check this report is:
+4. Because this LAMMPS LJ-Melt benchmark was the last BenchTool job executed, a useful shortcut to check this report is:
 ```
 benchtool --last
 ```
 
-In this example, parameters in `$BT_PROJECT/config/bench/lammps_ljmelt.cfg` were used to populate the template `$BT_PROJECT/templates/bench/lammps.template`
+In this example, parameters in `$BT_HOME/config/bench/lammps_ljmelt.cfg` were used to populate the template `$BT_HOME/templates/bench/lammps.template`
 Much like the build process, a 'bench_report' was generated to store metadata associated with this benchmark run. It is stored in the benchmark result direcotry and will be used in the next step to capture the result to the database.
 
 ### Capture Benchmark Result
@@ -203,20 +199,20 @@ A full detailed list of config file fields are provided at the bottom of this RE
  - `[config]`  where variables used in the build template script can be added.
 
 You can define as many additional parameters as needed for your application. Eg: additional modules, build options, etc. All parameters `[param]` defined here will be used to fill `<<<[param]>>>` variables of the same name in the template file, thus consistent naming is important.
-This file must be located in `$BT_PROJECT/config/build`, preferably with the naming scheme `[label].cfg`. 
+This file must be located in `$BT_HOME/config/build`, preferably with the naming scheme `[label].cfg`. 
 
 ### 2. Build template file
 
 This template file is used to gerenate a contextualized build script which will executed to compile the application.
 Variables are defined with `<<<[param]>>>` syntax and populated with the variables defined in the config file above.
 If a `<<<[param]>>>` in the build template in not successfully populated and `exit_on_missing=True` in settings.ini, an expection will be raised.
-You are able to make use of the `local_repo` variable defined in `$BT_PROJECT/settings.ini` to store and use files locally. 
-This file must be located in `$BT_PROJECT/templates/build`, with the naming scheme `[label].template` 
+You are able to make use of the `local_repo` variable defined in `$BT_HOME/settings.ini` to store and use files locally. 
+This file must be located in `$BT_HOME/templates/build`, with the naming scheme `[label].template` 
 
 ### 3. Module template file (optional)
 
 You can define your own .lua module template, otherwise a generic one will be created for you.
-This file must be located in `$BT_PROJECT/templates/build`, with the naming scheme `[label].module` 
+This file must be located in `$BT_HOME/templates/build`, with the naming scheme `[label].module` 
 
 The application added above would be built with the following command:
 ```
@@ -238,14 +234,14 @@ A full detailed list of config file fields is provided below. A config file is s
  - `[result]` where result collection parameters are defined.
 
 Any additional parameters may be defined in order to setup the benchmark, i.e dataset label, problem size variables etc.
-This file must be located in `$BT_PROJECT/config/bench`, preferably with the naming scheme `[label].cfg`.
+This file must be located in `$BT_HOME/config/bench`, preferably with the naming scheme `[label].cfg`.
 
 ### 2. Benchmark template file  
 
 As with the build template. The benchmark template file is populated with the parameters defined in the config file above. This file should include setup of the dataset, any required pre-processing or domain decomposition steps if required, and the appropriate mpi_exec command.
-You are able to make use of the `local_repo` variable defined in `$BT_PROJECT/settings.ini` to copy local files. 
+You are able to make use of the `local_repo` variable defined in `$BT_HOME/settings.ini` to copy local files. 
 
-This file must be located in `$BT_PROJECT/templates/bench`, with the naming scheme `[label].template`. 
+This file must be located in `$BT_HOME/templates/bench`, with the naming scheme `[label].template`. 
 
 The benchmark added above would be run with the following command:
 ```
@@ -261,7 +257,7 @@ BenchTool supports a number of more advanced features which may be of use.
 ### Overloading parameters
 
 Useful for changing a setting for a onetime use. 
-Use `benchtool --setup` to confirm important default params from $BT_PROJECT/settings.ini
+Use `benchtool --setup` to confirm important default params from $BT_HOME/settings.ini
 You can overload params from settings.ini and params from  your build/bench config file.
 Accepts colon delimited lists.
 Exception will be raised if overload param does not match existing key in settings.ini or config file.
@@ -354,7 +350,7 @@ Global settings are defined in the file `settings.ini`
 | sched_mpi         | ibrun                         | MPI launcher to use in job script                                                 |
 | local_mpi         | mpirun                        | MPI launcher to use on local machine                                              |
 | tree_depth        | 6                             | Determines depth of app installation tree                                         |
-| topdir_env_var    | $BT_PROJECT                   | BenchTool's working directory environment variable (exported in from sourceme)    |
+| topdir_env_var    | $BT_HOME                   | BenchTool's working directory environment variable (exported in from sourceme)    |
 | log_dir           | ./log                         | Log file directory                                                                |
 | script_basedir    | ./scripts                     | Result validation and system check script directory                               |
 | ssh_key_dir       | ./auth                        | Directory containing SSH keys for server access                                   |
@@ -473,12 +469,12 @@ These config files contain parameters used to populate the benchmark template sc
 
 | Directory         | Purpse                                                    |
 |-------------------|-----------------------------------------------------------|
-| $BT_PROJECT/auth            | SSH keys.                                                 |
-| $BT_APPS/build              | Application build basedir.                                |
-| $BT_PROJECT/config          | config files containing template parameters.              |
-| $BT_PROJECT/dev             | Contains unit tests etc.                                  |
-| $BT_PROJECT/doc             | Contains Sphinx generated documentation. WIP              |
-| $BT_PROJECT/log             | Build, bench and catpure log files.                       |
-| $BT_PROJECT/resources       | Contains useful content including modulefiles, hardware collection and result validation scripts.    |
-| $BT_RESULTS/results         | Benchmark result basedir.                                 |
-| $BT_PROJECT/templates       | job template files                                        |
+| $BT_HOME/auth            | SSH keys.                                                 |
+| $BT_APPS                 | Application build basedir.                                |
+| $BT_HOME/config          | config files containing template parameters.              |
+| $BT_HOME/dev             | Contains unit tests etc.                                  |
+| $BT_HOME/doc             | Contains Sphinx generated documentation. WIP              |
+| $BT_HOME/log             | Build, bench and catpure log files.                       |
+| $BT_HOME/resources       | Contains useful content including modulefiles, hardware collection and result validation scripts.    |
+| $BT_RESULTS              | Benchmark result basedir.                                 |
+| $BT_HOME/templates       | job template files                                        |

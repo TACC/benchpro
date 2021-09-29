@@ -93,7 +93,7 @@ def build_code(input_dict, glob_copy):
 
     # Check for unused overload params (unless run from bench_manager)
     if not glob.quiet_build:
-        glob.lib.check_for_unused_overloads()
+        glob.lib.overload.check_for_unused()
 
     # Print inputs to log
     glob.lib.send_inputs_to_log('Builder')
@@ -131,7 +131,7 @@ def build_code(input_dict, glob_copy):
         glob.lib.files.install(provenance_path, glob.sched['metadata']['cfg_file'], None, False)
 
     # Clean up tmp files
-    glob.lib.files.remove_tmp_files()
+    glob.lib.files.cleanup([])
 
     glob.lib.msg.high(glob.success)
 
@@ -175,7 +175,7 @@ def init(glob):
     glob.lib.set_build_cfg_list()
 
     # Overload settings.ini with cmd line args
-    glob.lib.overload_params(glob.stg)
+    glob.lib.overload.replace(glob.stg)
 
     # Check for new results
     if not glob.quiet_build:

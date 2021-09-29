@@ -4,8 +4,8 @@
 import argparse
 import os
 import pprint as pp
+import signal
 import sys
-from timeit import default_timer as timer
 
 # Local Imports
 try:
@@ -22,6 +22,11 @@ except ImportError as e:
     print("Please setup your environment with 'source sourceme'")
     print(e)
     sys.exit(1)
+
+# Catch user abort
+def signal_handler(sig, frame):
+    print('    Aborted.')
+    sys.exit(0)
 
 def main():
     # Parse cmdline args
@@ -100,6 +105,9 @@ def main():
 
     args = cmd_parser.parse_args()
 
+    # User abort
+    signal.signal(signal.SIGINT, signal_handler)
+
     # Install user project files
     if args.install:
         installer.install(args.settings)
@@ -134,6 +142,9 @@ def main():
     # Add arg dict to global object
     glob.args = args
 
+    #Check version
+    glob.lib.check_version()
+
     # Run validator script
     if args.validate:
         validate.check_setup(glob)
@@ -149,7 +160,8 @@ def main():
     glob.lib.write_cmd_history(sys.argv)
 
     # Get overload dict
-    glob.lib.set_var_overload_dict(args.overload)
+    if args.overload:
+        glob.lib.overload.setup_dict(args.overload)
 
     # Start builder
     if args.build:

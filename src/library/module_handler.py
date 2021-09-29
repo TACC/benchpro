@@ -169,6 +169,6 @@ class init(object):
         tmp_mod_file = "tmp." + mod_file
         self.glob.lib.template.test_template(tmp_mod_file, mod_obj)
         # Write module template to file
-        self.glob.lib.write_list_to_file(mod_obj, tmp_mod_file)
+        self.glob.lib.files.write_list_to_file(mod_obj, tmp_mod_file)
 
         return mod_path, tmp_mod_file
