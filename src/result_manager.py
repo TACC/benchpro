@@ -265,23 +265,11 @@ def get_insert_dict(result_path, result, unit):
 
     return insert_dict
 
-
-    return insert_dict['resource_path']
-
-# Return valid SSH key path of error
-def get_ssh_key():
-    key_path = os.path.join(glob.stg['ssh_key_path'], glob.stg['ssh_key'])
-    if os.path.isfile(key_path):
-        return key_path
-    else:
-        glob.lib.msg.error("Could not locate SSH key '" + glob.stg['ssh_key'] + "' in " + glob.stg['ssh_key_path'])
-
 # Create directory on remote server
 def make_remote_dir(dest_dir):
     # Check that SSH key exists
-    key = get_ssh_key()
     try:
-        expr = "ssh -i " + key +" " + glob.stg['ssh_user'] + "@" + glob.stg['db_host'] + " -t mkdir -p " + dest_dir
+        expr = "ssh -i " + glob.stg['ssh_key_path'] +" " + glob.stg['ssh_user'] + "@" + glob.stg['db_host'] + " -t mkdir -p " + dest_dir
         glob.log.debug("Running: '" + expr + "'")
         # ssh -i [key] [user]@[db_host] -t mkdir -p [dest_dir]
         cmd = subprocess.run(expr, shell=True, check=True, capture_output=True, universal_newlines=True)
@@ -299,10 +287,8 @@ def make_remote_dir(dest_dir):
 def scp_files(src_dir, dest_dir):
 
     # Check that SSH key exists 
-    key = get_ssh_key()
-
     try:
-        expr = "scp -i " + key + " -r " + src_dir + " " + glob.stg['ssh_user'] + "@" + glob.stg['db_host'] + ":" + dest_dir + "/"
+        expr = "scp -i " + glob.stg['ssh_key_path'] + " -r " + src_dir + " " + glob.stg['ssh_user'] + "@" + glob.stg['db_host'] + ":" + dest_dir + "/"
         glob.log.debug("Running: '" + expr + "'")
         # scp -i [key] -r [src_dir] [user]@[server]:[dest_dir]
         cmd = subprocess.run(expr, shell=True, check=True, capture_output=True, universal_newlines=True)
@@ -322,10 +308,13 @@ def send_files(result_dir, dest_dir):
     # Use SCP
     if glob.stg['file_copy_handler'] == "scp":
         if not glob.user or not glob.stg['ssh_key']:
-            glob.lib.msg.error(\
-                        "Keys 'ssh_user' and 'ssh_key' required in glob_obj.cfg if using SCP file transmission.")
+            glob.lib.msg.error("Keys 'ssh_user' and 'ssh_key' required in glob_obj.cfg if using SCP file transmission.")
 
         server_path = os.path.join(glob.stg['scp_path'],dest_dir)
+
+        # Check SSH key 
+        if not glob.lib.files.find_exact(glob.stg['ssh_key_path'], ""):
+            glob.lib.msg.error("Unable to access ssh key " + glob.stg('ssh_key'))
 
         # Create directory on remote server
         if make_remote_dir(server_path):
@@ -352,16 +341,40 @@ def send_files(result_dir, dest_dir):
         else:
             glob.lib.msg.error("Failed to create remote directory on database server.")
 
-        # Use network FS
-    elif glob.stg['file_copy_handler'] == "fs":
-        if not glob.stg['dest_dir']:
-            glob.lib.msg.error("Key 'dest_dir' required in glob_obj.cfg if using FS file transmission.")
+        # Use local blackhole
+    elif glob.stg['file_copy_handler'] == "cp":
+        if not glob.stg['collection_path']:
+            glob.lib.msg.error("Key 'collection_path' required in $BT_HOME/settings.ini if using 'cp' file transmission mode.")
 
-        print("FS copy")
+        # Check write permissions
+        if not glob.lib.files.write_permission(glob.stg['collection_path']): 
+            glob.lib.msg.error("Unable to write result data to " + glob.stg['collection_path'])
+        
+        # File destination
+        dest_path = os.path.join(glob.stg['collection_path'], dest_dir)
+        glob.lib.files.create_dir(dest_path) 
 
-        # Transmission method neither 'scp' or 'fs'
+        # Copy files to local directory
+        glob.lib.files.copy(dest_path, glob.output_path, "", False)
+
+        # Copy matching files to server
+        search_substrings = ["*.err", "*.out", "*.sched", "*.batch", "*.txt", "*.log"]
+        for substring in search_substrings:
+            matching_files = gb.glob(os.path.join(glob.result_path, substring))
+            for match in matching_files:
+                glob.lib.files.copy(dest_path, os.path.join(glob.result_path, match), "", False)
+
+        # SCP bench_files to server
+        if os.path.isdir(os.path.join(glob.result_path, "bench_files")):
+            glob.lib.files.copy(dest_path, os.path.join(glob.result_path, "bench_files"), "", False)
+
+        # SCP hw_utils to server
+        if os.path.isdir(os.path.join(glob.result_path, "hw_report")):
+            glob.lib.files.copy(dest_path, os.path.join(glob.result_path, "hw_report"), "", False)
+
+    # Transmission method neither 'scp' or 'cp'
     else:
-       glob.lib.msg.error("unknown 'file_copy_handler' option in settings.cfg. Accepts 'scp' or 'fs'.") 
+       glob.lib.msg.error("unknown 'file_copy_handler' option in settings.cfg. Accepts 'scp' or 'cp'.") 
        
 # Look for results and send them to db
 def capture_result(glob_obj):

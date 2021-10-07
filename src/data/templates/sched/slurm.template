@@ -1,8 +1,0 @@
-#SBATCH -J <<<job_label>>>
-#SBATCH -o <<<working_path>>>/<<<stdout>>>
-#SBATCH -e <<<working_path>>>/<<<stderr>>>
-#SBATCH -p <<<queue>>>
-#SBATCH -t <<<runtime>>>
-#SBATCH -N <<<nodes>>>
-#SBATCH -n <<<ranks>>>
-#SBATCH -A <<<account>>>

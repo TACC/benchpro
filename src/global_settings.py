@@ -30,6 +30,7 @@ class settings(object):
     sched    = {}
     compiler = {}
     suite    = {}
+    system   = {}
 
     task     = {} 
 
@@ -83,7 +84,9 @@ class settings(object):
         optional = ['user',
                     'key',
                     'scp_path',
-                    'blackhole_path']
+                    'ssh_user',
+                    'ssh_key',
+                    'collection_path']
         if key not in optional and not value:
             print("Missing value for key '" + key + "' in settings.ini, check the documentation.")
             sys.exit(1)
@@ -119,13 +122,14 @@ class settings(object):
         self.suite = dict(settings_parser.items('suites'))
 
         # Resolve paths
-        self.stg['ssh_key_path']      = self.resolve_path(self.stg['ssh_key_dir'])
+        self.stg['ssh_key_path']      = self.resolve_path(self.stg['ssh_key'])
         self.stg['config_path']       = self.resolve_path(self.stg['config_dir'])
         self.stg['template_path']     = self.resolve_path(self.stg['template_dir'])
         self.stg['build_path']        = self.resolve_path(self.stg['build_dir'])
         self.stg['bench_path']        = self.resolve_path(self.stg['bench_dir'])
         self.stg['resource_path']     = self.resolve_path(self.stg['resource_dir'])
         self.stg['local_repo']        = self.resolve_path(self.stg['local_repo'])
+        self.stg['collection_path']   = self.resolve_path(self.stg['collection_path'])
 
         # Derived variables
         self.stg['project_env']         = self.stg['project_env_var'] + self.stg['sl']
@@ -140,7 +144,6 @@ class settings(object):
         self.stg['utils_path']          = os.path.join(self.stg['resource_path'], self.stg['hw_utils_subdir'])
         self.stg['script_path']         = os.path.join(self.stg['resource_path'], self.stg['script_subdir'])
 
-
     # Initialize the global object, settings and libraries
     def __init__(self, basedir):
 
@@ -153,7 +156,7 @@ class settings(object):
         # Check its set
         if not self.sys_env:
             print("ERROR: " + self.stg['system_env'] + " not set.")
-            exit(2)
+            exit(1)
 
         # Init function library
         self.lib = lib.init(self)

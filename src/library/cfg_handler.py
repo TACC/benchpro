@@ -79,6 +79,12 @@ class init(object):
         suffix = None
         subdir = None
 
+        self.glob.lib.files.find_in([self.glob.stg['config_path'],
+                                    os.path.join(self.glob.stg['config_path'], cfg_type),
+                                    os.path.join(self.glob.stg['config_path'], cfg_type, self.glob.sys_env)],
+                                    cfg_name, True)
+
+
         # If search input is a string, assume user input and search for cfg in various locations
         if isinstance(cfg_name, str):
 
@@ -291,10 +297,10 @@ class init(object):
         # Get system from env if not defined
         if not cfg_dict['general']['system']:
             self.glob.log.debug("WARNING: 'system' not defined in " + self.glob.lib.rel_path(cfg_dict['metadata']['cfg_file']))
-            self.glob.log.debug("WARNING: getting system label from $TACC_SYSTEM: " + self.glob.sys_env)
+            self.glob.log.debug("WARNING: getting system label from :" + self.glob.stg['system_env'] + " " + self.glob.sys_env)
             cfg_dict['general']['system'] = self.glob.sys_env
             if not cfg_dict['general']['system']:
-                self.glob.lib.msg.error("$TACC_SYSTEM not set, unable to continue. Please define 'system' in " + \
+                self.glob.lib.msg.error(self.glob.stg['system_env'] + " not set, unable to continue. Please define 'system' in " + \
                                         self.glob.lib.rel_path(cfg_dict['metadata']['cfg_file']))
 
         # Set system variables from system.cfg

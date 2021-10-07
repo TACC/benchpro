@@ -12,14 +12,13 @@ try:
     import src.bench_manager as bench_manager
     import src.build_manager as build_manager 
     import src.global_settings as global_settings
-    import src.installer as installer
     import src.result_manager as result_manager
     import src.validate as validate
 
 # Catch import exception
 except ImportError as e:
     print("You had an import error, you might be using Python2?")
-    print("Please setup your environment with 'source sourceme'")
+    print("Please make sure you loaded the benchtool module'")
     print(e)
     sys.exit(1)
 
@@ -33,15 +32,6 @@ def main():
     cmd_parser = argparse.ArgumentParser(
         description='This is a benchmarking tool to automate the installation of applications, \
                     execution of benchmarks and collection of results.')
-
-    cmd_parser.add_argument("--install", default=False, action='store_true',
-                            help="Install user files, accepts [--settings [FILE], or will use path defaults in src/data/install.ini")
-
-    cmd_parser.add_argument("--uninstall", default=False, action='store_true',
-                            help="Uninstall user files, application and result directories.")
-
-    cmd_parser.add_argument("--update", default=False, action='store_true',
-                            help="Update local user files from benchtool package.")
 
     cmd_parser.add_argument("--settings", default=False,
                             help="Provide .ini file with nonstandard install paths.")
@@ -108,32 +98,11 @@ def main():
     # User abort
     signal.signal(signal.SIGINT, signal_handler)
 
-    # Install user project files
-    if args.install:
-        installer.install(args.settings)
-        args.validate = True
-
-    # Remove user project files
-    if args.uninstall:
-        installer.uninstall()
-        sys.exit(0)
-
-    # Recopy user files
-    if args.update:
-        installer.update()
-        args.validate = True
-
     # Installation directoy set by module
     try:
         basedir = os.environ['BT_HOME']
     except:
         print("$BT_HOME not set. Load benchtool module. Aborting!")
-        sys.exit(1)
-
-    # Check installed
-    if not os.path.isfile(os.path.join(basedir, ".installed")):
-        print("Please run benchtool --install before continuing.")
-        print()
         sys.exit(1)
 
     # Init global settings
@@ -149,6 +118,9 @@ def main():
     if args.validate:
         validate.check_setup(glob)
         sys.exit(0)
+
+    #Check version
+    glob.lib.check_version()
 
     # Check validated
     if not os.path.isfile(os.path.join(basedir, ".validated")):

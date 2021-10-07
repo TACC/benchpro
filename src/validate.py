@@ -3,6 +3,7 @@
 #System Imports
 import configparser as cp
 import os 
+from packaging import version
 import shutil as sh
 import subprocess
 import sys
@@ -31,6 +32,7 @@ def check_python_version():
     ver = sys.version.split(" ")[0]
     if (ver[0] ==  3) and (ver[1] < 5):
         print(bcolors.FAIL, "Python version: " + ver)
+        sys.exit(1)
     else:
         print(bcolors.PASS, "Python version: " + ver)
 
@@ -41,6 +43,7 @@ def create_path(path):
         print(bcolors.CREATE, path)
     except:
         print(bcolors.FAIL, "cannot create", path)
+        sys.exit(1)
 
 # Create path if not present
 def confirm_path_exists(path_list):
@@ -57,13 +60,15 @@ def ensure_path_exists(path_list):
             print(bcolors.PASS, path, "found")
         else:
             print(bcolors.FAIL, path, "not found")
+            sys.exit(1)
 
 # Test if file exists
 def ensure_file_exists(f):
-    if os.path.isdir(f):
+    if os.path.isfile(f):
         print(bcolors.PASS, "file", f, "found")
     else:
         print(bcolors.FAIL, "file", f, "not found")
+        sys.exit(1)
 
 # Test if executable is in PATH
 def check_exe(exe_list):
@@ -72,6 +77,7 @@ def check_exe(exe_list):
             print(bcolors.PASS, exe, "in PATH")
         else:
             print(bcolors.FAIL, exe, "not in PATH")
+            sys.exit(1)
 
 # Test environment variable is set
 def check_env_vars(var_list):
@@ -80,7 +86,7 @@ def check_env_vars(var_list):
             print(bcolors.PASS, var, "is set")
         else:
             print(bcolors.FAIL, var, "not set")
-            print("Did you run 'source sourceme'")
+            print("Is benchtool module loaded?")
             sys.exit(1)
     
 # Test write access to dir
@@ -89,6 +95,7 @@ def check_write_priv(path):
         print(bcolors.PASS, path, "is writable")
     else:
         print(bcolors.FAIL, path, "is not writable")
+        sys.exit(1)
 
 # Check file permissions
 def check_file_perm(filename, perm):
@@ -99,10 +106,12 @@ def check_file_perm(filename, perm):
         print(bcolors.WARN, filename, "not found.")
 
 # Confirm SSH connection is successful
-def check_ssh_connect(host, user, key):
-    if os.path.isfile(key):
+def check_ssh_connect(glob):
+
+    if os.path.isfile(glob.stg['ssh_key_path']):
         try:
-            expr = "ssh -i " + key +" " + user + "@" + host + " -t echo 'Client connection test'"
+            print("ssh -i " + glob.stg['ssh_key_path'] + " " + glob.stg['ssh_user'] + "@" + glob.stg['db_host'] + " -t echo 'Client connection test'")
+            expr = "ssh -i " + glob.stg['ssh_key_path'] + " " + glob.stg['ssh_user'] + "@" + glob.stg['db_host'] + " -t echo 'Client connection test'"
             cmd = subprocess.run(expr, shell=True, check=True, capture_output=True, universal_newlines=True)
             print(bcolors.PASS, "connected to", host)
 
@@ -121,12 +130,23 @@ def check_db_connect(glob):
             password =  glob.stg['db_passwd']
         )
     except Exception as err:
-        print (bcolors.WARN, "connected to", glob.stg['db_name'])
-        return
+        print(bcolors.FAIL, "connected to", glob.stg['db_name'])
+        sys.exit(1)
 
-    print (bcolors.PASS, "connected to", glob.stg['db_name'])
+    print(bcolors.PASS, "connected to", glob.stg['db_name'])
 
 
+def check_benchtool_version(glob):
+
+    site_version = os.getenv("BT_VERSION")
+    local_version = glob.lib.files.read_version()
+
+    if version.parse(site_version) > version.parse(local_version):
+        print(bcolors.FAIL, "version mismatch, site version='" + site_version + "', your version='"+local_version+"'")
+        print("run git -C $BT_HOME pull")
+        sys.exit(1)
+    else:
+        print(bcolors.PASS, "running version " + site_version)
 
 # Validate setup 
 def check_setup(glob_obj):
@@ -136,37 +156,49 @@ def check_setup(glob_obj):
     # Python version
     check_python_version()
 
+    # Check benchtool version
+    check_benchtool_version(glob)
+
     # Sys envs
     project_env = glob.stg['project_env_var'].strip("$")
     app_env     = glob.stg['app_env_var'].strip("$")
     result_env  = glob.stg['result_env_var'].strip("$")
     system_env  = glob.stg['system_env'].strip("$")
-    check_env_vars([system_env, project_env, app_env, result_env, 'LMOD_VERSION'])
+
+    check_env_vars([system_env, 
+                    project_env, 
+                    app_env, 
+                    result_env,
+                    'BT_VERSION',
+                    'LMOD_VERSION'])
 
     # Check priv
-    project_dir = os.environ.get(project_env)
+    project_dir = os.getenv(project_env)
     check_write_priv(project_dir)
 
     # Check paths
-    confirm_path_exists([glob.stg['log_path'], glob.stg['build_path'], glob.stg['bench_path'], glob.stg['complete_path'], glob.stg['captured_path'], glob.stg['failed_path'], glob.stg['ssh_key_path']])
-    ensure_path_exists([glob.stg['local_repo'], glob.stg['config_path'], glob.stg['template_path']])
+    confirm_path_exists([glob.stg['log_path'], 
+                        glob.stg['build_path'], 
+                        glob.stg['bench_path'], 
+                        glob.stg['complete_path'],
+                        glob.stg['captured_path'], 
+                        glob.stg['failed_path']])
+
+    ensure_path_exists([glob.stg['local_repo'], 
+                        glob.stg['config_path'], 
+                        glob.stg['template_path']])
 
     # Check exe
     check_exe(['benchtool', 'sinfo', 'sacct'])
 
-    # Check permissions
-    check_file_perm(os.path.join(glob.stg['ssh_key_path'], glob.stg['ssh_key'] ), 0o600)
-
-    time.sleep(1)
-
     # Check db host access
-    check_ssh_connect(glob.stg['db_host'], glob.stg['ssh_user'], os.path.join(project_dir, glob.stg['ssh_key_path'], glob.stg['ssh_key']))
+    #check_ssh_connect(glob)
 
     # Check db access
     if db:
         check_db_connect(glob)
     else: 
-        print(bcolors.FAIL, "no psycopg2, no db access")
+        print(bcolors.WARN, "database access check disabled")
 
     # Create validate file
     with open(os.path.join(glob.basedir, ".validated"), 'w'): pass 

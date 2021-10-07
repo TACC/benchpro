@@ -73,7 +73,7 @@ class init(object):
     def find_in(self, paths, filename, error_if_missing):
 
         # Add some default locations to the search path list
-        paths.extend([self.glob.basedir, self.glob.cwd, self.glob.home])
+        paths.extend(["", self.glob.basedir, self.glob.cwd, self.glob.home])
         found = self.look(paths, filename) 
 
         if found:
@@ -102,6 +102,12 @@ class init(object):
     # Get owner of file
     def file_owner(self, filename):
         return pwd.getpwuid(os.stat(filename).st_uid).pw_name
+
+    # Check write permissions to a directory
+    def write_permission(self, path):
+        if os.access(path, os.W_OK | os.X_OK):
+            return True
+        return False
 
     # Get a list of sub-directories, called by 'search_tree'
     def get_subdirs(self, base):
@@ -159,29 +165,29 @@ class init(object):
         return path
 
     # Copy tmp files to directory
-    def install(self, path, obj, new_obj_name, clean):
+    def copy(self, dest, src, new_name, clean):
 
         # Get file name
-        if not new_obj_name:
-            new_obj_name = obj
-            if self.glob.stg['sl'] in new_obj_name:
-                new_obj_name = new_obj_name.split(self.glob.stg['sl'])[-1]
+        if not new_name:
+            new_name = src
+            if self.glob.stg['sl'] in new_name:
+                new_name = new_name.split(self.glob.stg['sl'])[-1]
 
             # Strip tmp prefix from file for new filename
-            if 'tmp.' in new_obj_name:
-                new_obj_name = new_obj_name[4:]
+            if 'tmp.' in new_name:
+                new_name = new_name[4:]
 
         try:
-            su.copyfile(obj, os.path.join(path, new_obj_name))
-            self.glob.log.debug("Copied file " + obj + " into " + path)
+            su.copyfile(src, os.path.join(dest, new_name))
+            self.glob.log.debug("Copied file " + src + " into " + dest)
         except IOError as e:
             self.glob.lib.msg.high(e)
             self.glob.lib.msg.error(
-                "Failed to move " + obj + " to " + os.path.join(path, new_obj_name))
+                "Failed to move " + src + " to " + os.path.join(dest, new_name))
 
         # Remove tmp files after copy
         if clean:
-            os.remove(obj)
+            os.remove(src)
 
     # Extract tar file list to working dir
     def untar_files(self, file_list):

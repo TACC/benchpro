@@ -25,7 +25,7 @@ class init(object):
                 report_file = os.path.join(report_file, self.glob.stg['bench_report_file'])
             # Else error
             else:
-                self.glob.lib.msg.warning("Report file '" + report_file  + "' not found. Skipping.")
+                self.glob.lib.msg.warning("Report file '" + self.glob.lib.rel_path(report_file)  + "' not found. Skipping.")
                 return False
 
         report_parser    = cp.ConfigParser()
@@ -122,8 +122,6 @@ class init(object):
         report = self.read(report_path)
         if report:
             return report[job_type]['exec_mode']
-        else:
-            self.glob.lib.msg.error("Unable to read report file " + self.glob.lib.rel_path(report_path))
 
     # Return task_id value from provided report directory
     def get_task_id(self, job_type, report_file):

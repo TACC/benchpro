@@ -1,1 +1,0 @@
-${mpi_exec} ${exe} -noconfout -s ./${dataset}.tpr -deffnm md -g ${output} -nsteps ${steps}

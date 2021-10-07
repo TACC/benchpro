@@ -135,19 +135,19 @@ def start_task():
     # Make bench path and move tmp bench script file
     
     glob.lib.files.create_dir(glob.config['metadata']['working_path'])
-    glob.lib.files.install(glob.config['metadata']['working_path'], glob.tmp_script, None, True)
+    glob.lib.files.copy(glob.config['metadata']['working_path'], glob.tmp_script, None, True)
 
     # Copy bench cfg & template files to bench dir
     provenance_path = os.path.join(glob.config['metadata']['working_path'], "bench_files")
     glob.lib.files.create_dir(provenance_path)
 
-    glob.lib.files.install(provenance_path, glob.config['metadata']['cfg_file'], "bench.cfg", False)
-    glob.lib.files.install(provenance_path, glob.config['template'], "bench.template", False)
+    glob.lib.files.copy(provenance_path, glob.config['metadata']['cfg_file'], "bench.cfg", False)
+    glob.lib.files.copy(provenance_path, glob.config['template'], "bench.template", False)
 
     # If bench_mode == sched
     if glob.stg['bench_mode'] == "sched":
-        glob.lib.files.install(provenance_path, glob.sched['metadata']['cfg_file'], None, False)
-        glob.lib.files.install(provenance_path, glob.sched_template, None, False)
+        glob.lib.files.copy(provenance_path, glob.sched['metadata']['cfg_file'], None, False)
+        glob.lib.files.copy(provenance_path, glob.sched_template, None, False)
 
     # Delete tmp job script
     glob.lib.files.cleanup([])

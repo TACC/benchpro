@@ -113,22 +113,22 @@ def build_code(input_dict, glob_copy):
 
     # Make build path and move tmp build script file
     glob.lib.files.create_dir(glob.config['metadata']['working_path'])
-    glob.lib.files.install(glob.config['metadata']['working_path'], glob.tmp_script, None, True)
+    glob.lib.files.copy(glob.config['metadata']['working_path'], glob.tmp_script, None, True)
 
     # Make module path and move tmp module file
     glob.lib.files.create_dir(mod_path)
-    glob.lib.files.install(mod_path, mod_file, None, True)
+    glob.lib.files.copy(mod_path, mod_file, None, True)
 
     # Copy code and sched cfg & template files to build dir
     provenance_path = os.path.join(glob.config['metadata']['working_path'], "build_files")
     glob.lib.files.create_dir(provenance_path)
 
-    glob.lib.files.install(provenance_path, glob.config['metadata']['cfg_file'], "build.cfg", False)
-    glob.lib.files.install(provenance_path, glob.config['template'], "build.template", False)
+    glob.lib.files.copy(provenance_path, glob.config['metadata']['cfg_file'], "build.cfg", False)
+    glob.lib.files.copy(provenance_path, glob.config['template'], "build.template", False)
 
     # Copy sched config file if building via sched
     if glob.stg['build_mode'] == "sched":
-        glob.lib.files.install(provenance_path, glob.sched['metadata']['cfg_file'], None, False)
+        glob.lib.files.copy(provenance_path, glob.sched['metadata']['cfg_file'], None, False)
 
     # Clean up tmp files
     glob.lib.files.cleanup([])

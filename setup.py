@@ -12,11 +12,10 @@ required_packages = [x.strip() for x in all_reqs if ('git+' not in x) and (
 
 setup (
     name='benchtool',
-    version='1.1.6',
+    version='1.2.2',
     description="Tool for building apps, running benchmarks and collecting results.",
     packages = find_packages(),
     include_package_data=True,
-    package_data={'': ['data/*.ini']},
     zip_safe=False,
     install_requires = required_packages,
     python_requires='>=3.6',
@@ -24,7 +23,7 @@ setup (
     keywords = "benchmarks, complication, performance results",
     long_description = open('README.md').read(),
     license='MIT',
-    url='https://github.com/TACC/benchtool',
+    url='https://github.com/TACC/benchtool-package',
     author_email = 'mcawood@tacc.utexas.edu',
     classifiers=[
         'Programming Language :: Python',

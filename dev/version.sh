@@ -6,17 +6,21 @@ if [ -z ${1} ]; then
 fi
 
 # Update module filename
-mv src/data/modulefiles/benchtool/*.lua src/data/modulefiles/benchtool/${1}.lua
-sed -i "/local version/c\local version         = \"${1}\"" src/data/modulefiles/benchtool/${1}.lua
-
-# Update version in settings.ini
-sed -i "/version =/c\version = ${1}" src/data/settings.ini
+mv ./data/modulefiles/benchtool/*.lua ./data/modulefiles/benchtool/${1}.lua
+sed -i "/local version/c\local version         = \"${1}\"" ./data/modulefiles/benchtool/${1}.lua
 
 # Update version in setup.py
-sed -i "/version=/c\    version=\'${1}\'," setup.py
+sed -i "/version=/c\    version=\'${1}\'," ./setup.py
 
-# Update version file
-echo "benchtool v${1}" > src/data/.version
-date >> src/data/.version
+# Update install.sh
+sed -i "/VESION=/c\VERSION=\"${1}\"" ./install.sh
 
-echo "Version info updated."
+# Update version in user repo
+echo "benchtool v${1}" > ./benchtool/.version
+date >> ./benchtool/.version
+
+git -C benchtool add .version
+git -C benchtool commit -m 'updated version info'
+git -C benchtool push 
+
+echo "Version updated"
