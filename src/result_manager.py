@@ -353,7 +353,7 @@ def send_files(result_dir, dest_dir):
         # File destination
         dest_path = os.path.join(glob.stg['collection_path'], dest_dir)
         glob.lib.files.create_dir(dest_path) 
-
+        
         # Copy files to local directory
         glob.lib.files.copy(dest_path, glob.output_path, "", False)
 

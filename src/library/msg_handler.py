@@ -29,6 +29,10 @@ class init(object):
             return [message]
         return message
 
+    def log(self, message):
+        if self.glob.log:
+            self.glob.log.debug(message)
+
     # Log and print to stdout
     def log_and_print(self, message, priority):
         message = self.listify(message)
@@ -36,7 +40,7 @@ class init(object):
         # Log and print if priority
         for line in message:
             if self.glob.log:
-                self.glob.log.debug(line)
+                self.log(line)
             if self.glob.stg['debug'] or priority: 
                 print(line)
 

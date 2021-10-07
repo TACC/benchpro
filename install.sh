@@ -31,6 +31,7 @@ ${WORKING_DIR}/dev/clean.sh
 rm -rf ${SITE_PATH}/python/lib/python${PY_VER}/site-packages/benchtool-${VERSION}*
 rm -f ${SITE_PATH}/modulefiles/benchtool/${VERSION}.lua
 rm -f ${SITE_PATH}/package
+rm -f ${BT_SITE}/python/lib/python${PY_VER}/site-packages/benchtool-latest
 
 # Setup
 mkdir -p ${SITE_PATH}/logs
@@ -42,7 +43,6 @@ mkdir -p ${SITE_PATH}/modulefiles/benchtool
 printf "\nCleaned up...\n\n"
 
 # Copy module file
-rm -f ${SITE_PATH}/modulefiles/benchtool/*
 cp ${WORKING_DIR}/data/modulefiles/benchtool/*.lua ${SITE_PATH}/modulefiles/benchtool/
 sed -i "/local site_dir/c\local site_dir = \"${SITE_PATH}\"" ${SITE_PATH}/modulefiles/benchtool/*.lua
 
@@ -74,9 +74,9 @@ chmod -R g+w ${SITE_PATH}/collection
 
 # Update symlink
 ln -s python/lib/python${PY_VER}/site-packages/benchtool-latest/ ${BT_SITE}/package 
-rm -f ${BT_SITE}/python/lib/python${PY_VER}/site-packages/benchtool-latest
 ln -s benchtool-${BT_VERSION}-py${PY_VER}.egg/ ${BT_SITE}/python/lib/python${PY_VER}/site-packages/benchtool-latest
 
+# Install user files 
 
 if [ ! -d $USER_PATH ]; then
     git clone git@github.com:TACC/benchtool.git $USER_PATH

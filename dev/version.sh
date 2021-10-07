@@ -19,8 +19,11 @@ sed -i "/VESION=/c\VERSION=\"${1}\"" ./install.sh
 echo "benchtool v${1}" > ./benchtool/.version
 date >> ./benchtool/.version
 
-git -C benchtool add .version
-git -C benchtool commit -m 'updated version info'
-git -C benchtool push 
 
+echo "Push user repo"
+echo "--------------"
+echo "git -C benchtool add ."
+echo "git -C benchtool commit -m 'updated version info'"
+echo "git -C benchtool push "
+echo
 echo "Version updated"

@@ -135,6 +135,7 @@ class init(object):
         # If parent dir is root ('build' or 'modulefile') or if it contains more than this subdir, delete this subdir
         if (parent_dir == self.glob.stg['build_dir']) or \
            (parent_dir == self.glob.stg['module_dir']) or \
+           (parent_dir == os.path.basename(self.glob.stg['collection_path'])) or \
            (len(gb.glob(os.path.join(parent_path,"*"))) > 1):
 
             su.rmtree(path)
@@ -178,7 +179,10 @@ class init(object):
                 new_name = new_name[4:]
 
         try:
-            su.copyfile(src, os.path.join(dest, new_name))
+            if os.path.isfile(src):
+                su.copyfile(src, os.path.join(dest, new_name))
+            else:
+                su.copytree(src, os.path.join(dest, new_name))
             self.glob.log.debug("Copied file " + src + " into " + dest)
         except IOError as e:
             self.glob.lib.msg.high(e)
