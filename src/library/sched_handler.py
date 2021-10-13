@@ -198,4 +198,3 @@ class init(object):
         # Store jobid in shared global object
         self.glob.task_id = jobid
 
-

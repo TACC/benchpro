@@ -602,9 +602,6 @@ def query_result(glob_obj, result_label):
     global glob
     glob = glob_obj
 
-    # Start logger
-    logger.start_logging("CAPTURE", glob.stg['results_log_file'] + "_" + glob.time_str + ".log", glob)
-
     # Search ./results/complete ./results/captured and ./results/failed
     matching_dirs = get_matching_results(glob.stg['complete_path'],  result_label) + \
                     get_matching_results(glob.stg['captured_path'], result_label) + \
@@ -628,7 +625,7 @@ def query_result(glob_obj, result_label):
                             "It seems something went wrong with --bench"])
 
     task_id = ""
-    print("Benchmark report:")
+    print("Report for benchmark: " + result_label)
     print("----------------------------------------")   
 
     # Read report and print it

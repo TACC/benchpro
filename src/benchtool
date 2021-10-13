@@ -107,8 +107,6 @@ def main():
 
     # Init global settings
     glob = global_settings.settings(basedir)
-
-    # Add arg dict to global object
     glob.args = args
 
     #Check version
@@ -119,18 +117,12 @@ def main():
         validate.check_setup(glob)
         sys.exit(0)
 
-    #Check version
-    glob.lib.check_version()
-
     # Check validated
     if not os.path.isfile(os.path.join(basedir, ".validated")):
         print("Please run  benchtool --validate before continuing.")
         print()
         sys.exit(1)
     
-    # Write cmd to history file
-    glob.lib.write_cmd_history(sys.argv)
-
     # Get overload dict
     if args.overload:
         glob.lib.overload.setup_dict(args.overload)

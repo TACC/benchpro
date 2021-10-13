@@ -88,6 +88,7 @@ def get_code_info(input_label, search_dict):
 def gen_bench_script():
 
     # Evaluate math in cfg dict -
+    glob.args.build = None
     for sect in ['config', 'runtime', 'files', 'result']:
         glob.lib.expr.eval_dict(glob.config[sect])
 
@@ -109,7 +110,7 @@ def gen_bench_script():
     glob.counter += 1
 
     # Working Dir
-    glob.config['metadata']['working_dir'] =  glob.system['sys_env'] + "_" + \
+    glob.config['metadata']['working_dir'] =  glob.system['system'] + "_" + \
                                             glob.config['config']['bench_label'] + "_" + \
                                             glob.time_str + "_" + str(glob.config['runtime']['nodes']).zfill(3) + "N_" + \
                                             str(glob.config['runtime']['ranks_per_node']).zfill(2) + "R_" + \
@@ -197,14 +198,12 @@ def start_task():
     if not glob.config['result']['output_file']:
         glob.config['result']['output_file'] = glob.task_id + ".out"
 
-
-    #glob.lib.check_for_slurm_vars()
-
     # Generate bench report
     glob.lib.report.bench()
 
-    # Write to output file
-    glob.lib.write_to_outputs("bench", glob.config['metadata']['working_dir'])
+    # Add bench output to history file
+    glob.cmd += " | " + glob.config['metadata']['working_dir']
+    glob.lib.files.write_cmd_history()
 
 # Main function to check for installed application, setup benchmark and run it
 def run_bench(input_dict, glob_copy):
@@ -216,7 +215,14 @@ def run_bench(input_dict, glob_copy):
     glob.any_dep_list = []
     glob.ok_dep_list = []
 
-    glob.lib.msg.heading("Starting benchmark with criteria '" + ", ".join([i + "=" + input_dict[i] for i in input_dict]) + "'")
+    input_str = ", ".join([i + "=" + input_dict[i] for i in input_dict])
+
+    # History entry
+    glob.cmd = "benchtool -B " + input_str
+    if glob.args.overload:
+        glob.cmd += " -o " + " ".join(glob.args.overload)
+
+    glob.lib.msg.heading("Starting benchmark with criteria '" + input_str + "'")
 
     # Get benchmark params from cfg file
     glob.lib.cfg.ingest('bench', input_dict)

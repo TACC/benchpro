@@ -301,3 +301,9 @@ class init(object):
             for line in list_obj:
                 f.write(line)
 
+    # Write command line to history file
+    def write_cmd_history(self):
+        history_file = os.path.join(self.glob.basedir, ".history")
+        with open(history_file, "a") as hist:
+            hist.write(self.glob.cmd + "\n")
+

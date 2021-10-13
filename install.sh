@@ -82,8 +82,14 @@ if [ ! -d $USER_PATH ]; then
     git clone git@github.com:TACC/benchtool.git $USER_PATH
     printf "\nUser files installed...\n\n"
 else
+    
     git -C $USER_PATH pull 
     printf "\nUser files updated...\n\n"
+fi
+
+if [ $? != 0 ]; then
+    printf "\nUser files install failed, quitting.\n\n"
+    exit 1
 fi
 
 benchtool --validate
@@ -97,6 +103,11 @@ printf "\nValidation complete...\n\n"
 
 # Check version
 benchtool --version
+
+if [ $? != 0 ]; then
+    printf "\nVersion check failed, quitting.\n\n"
+    exit 1
+fi
 
 # Clean build files
 $WORKING_DIR/dev/clean.sh

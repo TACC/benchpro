@@ -26,8 +26,8 @@ class init(object):
         cfg_list = self.glob.lib.files.get_files_in_path(search_path)
 
         # If system subdir exists, scan that too
-        if os.path.isdir(os.path.join(search_path,self.glob.system['sys_env'])):
-            cfg_list = cfg_list + self.glob.lib.files.get_files_in_path(os.path.join(search_path,self.glob.system['sys_env']))
+        if os.path.isdir(os.path.join(search_path,self.glob.system['system'])):
+            cfg_list = cfg_list + self.glob.lib.files.get_files_in_path(os.path.join(search_path,self.glob.system['system']))
         return cfg_list
 
     # Search for unique cfg file in cfg dir
@@ -81,7 +81,7 @@ class init(object):
 
         self.glob.lib.files.find_in([self.glob.stg['config_path'],
                                     os.path.join(self.glob.stg['config_path'], cfg_type),
-                                    os.path.join(self.glob.stg['config_path'], cfg_type, self.glob.sys_env)],
+                                    os.path.join(self.glob.stg['config_path'], cfg_type, self.glob.system['system'])],
                                     cfg_name, True)
 
 
@@ -134,7 +134,7 @@ class init(object):
             return cfg_file
 
         # 7: Seach system subdir 
-        search_path = search_path + self.glob.sys_env + self.glob.stg['sl']
+        search_path = search_path + self.glob.system['system'] + self.glob.stg['sl']
         cfg_file = self.search_cfg_with_list(cfg_name, search_path)
         if cfg_file:
             return cfg_file
@@ -266,7 +266,7 @@ class init(object):
         self.check_dict_section(cfg_dict['metadata']['cfg_file'], cfg_dict, 'config')
 
         # Instantiate missing optional parameters
-        if not 'system'           in cfg_dict['general'].keys():  cfg_dict['general']['system']         = self.glob.sys_env
+        if not 'system'           in cfg_dict['general'].keys():  cfg_dict['general']['system']         = self.glob.system['system']
         if not 'build_prefix'     in cfg_dict['general'].keys():  cfg_dict['general']['build_prefix']   = ""
         if not 'template'         in cfg_dict['general'].keys():  cfg_dict['general']['template']       = ""
         if not 'module_use'       in cfg_dict['general'].keys():  cfg_dict['general']['module_use']     = ""
@@ -297,14 +297,14 @@ class init(object):
         # Get system from env if not defined
         if not cfg_dict['general']['system']:
             self.glob.log.debug("WARNING: 'system' not defined in " + self.glob.lib.rel_path(cfg_dict['metadata']['cfg_file']))
-            self.glob.log.debug("WARNING: getting system label from :" + self.glob.stg['system_env'] + " " + self.glob.sys_env)
-            cfg_dict['general']['system'] = self.glob.sys_env
+            self.glob.log.debug("WARNING: getting system label from :" + self.glob.stg['system_env'] + " " + self.glob.system['system'])
+            cfg_dict['general']['system'] = self.glob.system['system']
             if not cfg_dict['general']['system']:
                 self.glob.lib.msg.error(self.glob.stg['system_env'] + " not set, unable to continue. Please define 'system' in " + \
                                         self.glob.lib.rel_path(cfg_dict['metadata']['cfg_file']))
 
         # Set system variables from system.cfg
-        self.glob.system = self.glob.lib.get_system_vars(cfg_dict['general']['system'])
+        self.glob.lib.get_system_vars(cfg_dict['general']['system'])
 
         # Confirm additions file exists if set
         if cfg_dict['config']['script_additions']:
@@ -314,12 +314,6 @@ class init(object):
             else:
                 cfg_dict['config']['script_additions'] = os.path.join(self.glob.stg['template_path'], cfg_dict['config']['script_additions'])
         
-        # Check that system settings were successfully parserd from file
-        if not self.glob.system:
-            self.glob.lib.msg.error("Failed to read system profile '"+ cfg_dict['requirements']['system'] +"' in " + \
-                                        self.glob.lib.rel_path(os.path.join(self.glob.stg['config_path'], self.glob.stg['system_cfg_file'])) + \
-                                        "\nPlease add this system profile.")
-
         # Check requested modules exist, and if so, result full module names
         if self.glob.stg['check_modules']:
             self.glob.lib.module.check_exists(cfg_dict['modules'], cfg_dict['general']['module_use'])
@@ -443,17 +437,11 @@ class init(object):
 
         # If system not specified for bench requirements, add current system
         if not cfg_dict['requirements']['system']:
-            cfg_dict['requirements']['system'] = self.glob.sys_env
+            cfg_dict['requirements']['system'] = self.glob.system['system']
 
         # Set system variables from system.cfg
-        self.glob.system = self.glob.lib.get_system_vars(cfg_dict['requirements']['system'])
+        self.glob.lib.get_system_vars(cfg_dict['requirements']['system'])
     
-        # Check that system settings were successfully parserd from file
-        if not self.glob.system:
-            self.glob.lib.msg.error("Failed to read system profile '"+ cfg_dict['requirements']['system'] +"' in " + \
-                                        self.glob.lib.rel_path(os.path.join(self.glob.stg['config_path'], self.glob.stg['system_cfg_file'])) + \
-                                        "\nPlease add this system profile.")
-
         # Set default 1 rank per core, if not defined
         if not cfg_dict['runtime']['ranks_per_node']:
             cfg_dict['runtime']['ranks_per_node'] = self.glob.system['cores_per_node']

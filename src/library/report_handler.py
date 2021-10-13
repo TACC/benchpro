@@ -85,7 +85,7 @@ class init(object):
         # Construct content of bench report
         content.extend (["[bench]", 
                         "bench_prefix   = "+ self.glob.config['metadata']['working_path'],
-                        "system         = "+ self.glob.system['sys_env'],
+                        "system         = "+ self.glob.system['system'],
                         "launch_node    = "+ self.glob.hostname,
                         "nodes          = "+ self.glob.config['runtime']['nodes'],
                         "ranks          = "+ self.glob.config['runtime']['ranks_per_node'],

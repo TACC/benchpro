@@ -49,6 +49,10 @@ class settings(object):
     # Files to cleanup on fail
     cleanup = []
 
+
+    # Command history line
+    cmd = ""
+
     # Context variables
     user                = str(os.getlogin())
     hostname            = str(socket.gethostname())
@@ -151,10 +155,10 @@ class settings(object):
         self.read_settings(basedir) 
 
         # Get system label
-        self.sys_env = self.resolve_path(self.stg['system_env'])
+        self.system['system'] = self.resolve_path(self.stg['system_env'])
 
         # Check its set
-        if not self.sys_env:
+        if not self.system['system']:
             print("ERROR: " + self.stg['system_env'] + " not set.")
             exit(1)
 

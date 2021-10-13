@@ -113,11 +113,19 @@ class init(object):
             for app in input_list:
                 # Create search dict from search elements
                 search_dict = {}
-                for elem in app.split(","):
-                    if not "=" in elem:
-                        search_dict['code'] = elem
-                    else:
-                        search_dict[elem.split("=")[0]] = elem.split("=")[1]
+                
+                # Handle / delimited paths
+                if "/" in app:
+                    for elem in app.split("/"):
+                        search_dict[elem] = elem
+
+                # Handle , delimited couples
+                else:
+                    for elem in app.split(","):
+                        if not "=" in elem:
+                            search_dict['code'] = elem
+                        else:
+                            search_dict[elem.split("=")[0]] = elem.split("=")[1]
 
                 # If installed, add to remove list
                 tmp = self.glob.lib.check_if_installed(search_dict)
@@ -352,10 +360,10 @@ class init(object):
         self.print_config(atype, gb.glob(app_dir + "*.cfg"))
 
         # Scan config/build/[system]
-        app_dir = app_dir + self.glob.sys_env + self.glob.stg['sl']
+        app_dir = app_dir + self.glob.system['system'] + self.glob.stg['sl']
         if os.path.isdir(app_dir):
             print("------------------------------------------------------------")
-            print(self.glob.lib.rel_path(os.path.join(search_path, self.glob.sys_env)) + ":")
+            print(self.glob.lib.rel_path(os.path.join(search_path, self.glob.system['system'])) + ":")
             print("------------------------------------------------------------")
             print("| Config file".ljust(32) + "| Run with")
             self.print_config(atype, gb.glob(app_dir + "*.cfg"))
@@ -385,41 +393,47 @@ class init(object):
             print("Invalid input '"+self.glob.args.avail+"'")
             
     # Print key/value pair from setting.ini dict
-    def print_setting(self, key):
-        print("  " + key.ljust(18) + " = " + str(self.glob.stg[key]))
+    def print_setting(self, key, value):
+        print("  " + key.ljust(18) + " = " + str(value))
 
     # Print default params from settings.ini
     def print_defaults(self):
         print()
+
+        # Print site info
+        print("Setup info:")
+        [self.print_setting(key[0], key[1]) for key in [        ["User", self.glob.user], \
+                                                                ["Host", self.glob.hostname.split(".")[0]], \
+                                                                ["System", self.glob.system['system']], \
+                                                                ["CWD", self.glob.cwd]]]
+        
+        # Print BenchTool settings
+        print()
         print("Benchtool defaults:")
-        [self.print_setting(key) for key in ['dry_run', \
-                                            'debug', \
-                                            'exit_on_missing', \
-                                            'overwrite', \
-                                            'build_mode', \
-                                            'build_if_missing', \
-                                            'bench_mode',\
-                                            'check_modules', \
-                                            'sync_staging']]
+        [self.print_setting(key, self.glob.stg[key]) for key in ['dry_run', \
+                                                                'debug', \
+                                                                'exit_on_missing', \
+                                                                'overwrite', \
+                                                                'build_mode', \
+                                                                'build_if_missing', \
+                                                                'bench_mode',\
+                                                                'check_modules', \
+                                                                'sync_staging']]
         print()
         # Print scheduler defaults for this system if available
-        self.glob.system = self.glob.lib.get_system_vars(self.glob.sys_env)
-        if self.glob.system:
+        self.glob.lib.get_system_vars(self.glob.system['system'])
 
-            sched_cfg = self.glob.lib.get_sched_cfg()
-            try:
-                with open(os.path.join(self.glob.stg['config_path'], self.glob.stg['sched_cfg_dir'], sched_cfg)) as f:
-                    print("Scheduler defaults for " + self.glob.sys_env + ":")
-                    for line in f.readlines():
-                        if "=" in line:
-                            print("  " + line.split("=")[0].strip().ljust(19) + "= " + line.split("=")[1].strip() )
+        sched_cfg = self.glob.lib.get_sched_cfg()
+        try:
+            with open(os.path.join(self.glob.stg['config_path'], self.glob.stg['sched_cfg_dir'], sched_cfg)) as f:
+                print("Scheduler defaults for " + self.glob.system['system'] + ":")
+                for line in f.readlines():
+                    if "=" in line:
+                        print("  " + line.split("=")[0].strip().ljust(19) + "= " + line.split("=")[1].strip() )
 
-            except Exception as err:
-                print("Unable to read " + sched_cfg)
-                print(err)
-        else:
-            print("No default scheduler settings found for system " + self.glob.sys_env + ".")
-            print() 
+        except Exception as err:
+            print("Unable to read " + sched_cfg)
+            print(err)
     
         print()
         print("Overload with '-o [SETTING1=ARG] [SETTING2=ARG]'")
@@ -440,7 +454,7 @@ class init(object):
             print(f.read())
 
     # Return the last line of the .outputs file
-    def get_last_output(self):
+    def get_last_history(self):
 
         if not os.path.isfile(os.path.join(self.glob.basedir, ".history")):
             print("No previous outputs found.")
@@ -459,22 +473,17 @@ class init(object):
     def print_last(self):
 
         # Get requested 
-        last = self.get_last_output()
-        command = last.replace("benchtool ", "")
-        
-        op = command
-        label = ""
-        if len(command.split(" ")) > 1:
-            op = command.split(" ")[0]
-            label = command.split(" ")[1]
+        last = self.get_last_history()
+
+        output = last.split("|")[1].strip()
+        op = last.split(" ")[1]
 
         # If last output was from build task
         if op == "--build" or op == "-b":
-            self.query_app(label)
+            self.query_app(output)
 
         # If last output was from bench task
         elif op == "bench" or op == "-B":
-            result_manager.query_result(self.glob, label)
-        else:
-            print("benchtool", op, label)
+            result_manager.query_result(self.glob, output)
+
 

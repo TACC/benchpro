@@ -254,16 +254,6 @@ class init(object):
         elif len(results) > 1:
             self.msg.error(["There are multiple applications available which meet your search criteria:"] + [self.rel_path(result) for result in results])
 
-
-    # Replace SLURM variables in ouput files
-    def check_for_slurm_vars(self):
-        self.glob.config['result']['output_file'] = self.glob.config['result']['output_file'].replace("$SLURM_JOBID", self.glob.task_id) 
-
-    # Write operation to file
-    def write_to_outputs(self, op, label):
-        with open(os.path.join(self.glob.basedir, ".outputs"), "a") as f:
-            f.write(op + " " + label + "\n")
-
     # Get scheduler config filename based on user input or defaults
     def get_sched_cfg(self):
         # If user provided custom sched cfg cmdline arg
@@ -276,29 +266,35 @@ class init(object):
                 return self.glob.system['default_sched']
             # Use generic filename string and hope
             else:
-                return "slurm_" + self.glob.sys_env
+                return "slurm_" + self.glob.system['system']
    
     # Extract system variables from system.cfg
     def get_system_vars(self, system):
     
-        system_dict = {'sys_env': system}
+        self.glob.system['system'] = system
         cfg_file = os.path.join(self.glob.stg['config_path'], self.glob.stg['system_cfg_file'])
+        
+        # Check system cfg file exists
+        if not os.path.isfile(cfg_file):
+           self.glob.lib.msg.error(self.glob.stg['system_cfg_file'] + " file not found in " + self.glob.lib.rel_path(self.glob.stg['config_path'])) 
+
         system_parser   = cp.RawConfigParser(allow_no_value=True)
         system_parser.read(cfg_file)
 
         try:
-            system_dict['sockets']              = system_parser[system]['sockets']
-            system_dict['cores']                = system_parser[system]['cores']
-            system_dict['cores_per_socket']     = int(int(system_dict['cores']) / int(system_dict['sockets']))
-            system_dict['cores_per_node']       = system_parser[system]['cores']
-            system_dict['default_arch']         = system_parser[system]['default_arch']
+            self.glob.system['sockets']              = system_parser[system]['sockets']
+            self.glob.system['cores']                = system_parser[system]['cores']
+            self.glob.system['cores_per_socket']     = int(int(self.glob.system['cores']) / int(self.glob.system['sockets']))
+            self.glob.system['cores_per_node']       = system_parser[system]['cores']
+            self.glob.system['default_arch']         = system_parser[system]['default_arch']
             # Set system default sched cfg if available
             if 'default_sched' in system_parser[system]:
-                system_dict['default_sched'] = system_parser[system]['default_sched']
-            return system_dict
+                self.glob.system['default_sched'] = system_parser[system]['default_sched']
 
         except:
-            return False
+            self.glob.lib.msg.error(["No default scheduler settings found for system '" + self.glob.system['system'] + "'.", 
+                                "Add system profile to " + self.glob.lib.rel_path(cfg_file)])
+                
 
     # Generate unique application ID based on current time
     def get_application_id(self):
@@ -315,8 +311,8 @@ class init(object):
         cfg_files = gb.glob(os.path.join(path, "*.cfg"))
         
         # Get system specific cfgs
-        if os.path.isdir(os.path.join(path,self.glob.sys_env)):
-            cfg_files += gb.glob(os.path.join(path, self.glob.sys_env, "*.cfg"))
+        if os.path.isdir(os.path.join(path,self.glob.system['system'])):
+            cfg_files += gb.glob(os.path.join(path, self.glob.system['system'], "*.cfg"))
 
         # Construct
         for cfg in cfg_files:
@@ -360,13 +356,6 @@ class init(object):
     # Parse input string for --bench
     def parse_bench_str(self, input_str):
         return self.parse_input_str(input_str, "bench_label")
-
-    # Write command line to history file
-    def write_cmd_history(self, args):
-        if not self.glob.args.history and not self.glob.args.last:
-            history_file = os.path.join(self.glob.basedir, ".history")
-            with open(history_file, "a") as hist:
-                hist.write(args[0].split("/")[-1] + " " + " ".join(args[1:]) + "\n")
 
     # Check if the installed version is up-to-date with site version
     def check_version(self):

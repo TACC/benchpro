@@ -63,7 +63,14 @@ def build_code(input_dict, glob_copy):
     global glob
     glob = glob_copy
 
-    glob.lib.msg.heading("Building application:  '" + ",".join([i + "=" + input_dict[i] for i in input_dict.keys() if i]) + "'")
+    input_str = ",".join([key + "=" + input_dict[key] for key in input_dict.keys() if key])
+
+    # Line for history file
+    glob.cmd = "benchtool -b " + input_str
+    if glob.args.overload:
+        glob.cmd += " -o " + " ".join(glob.args.overload)
+
+    glob.lib.msg.heading("Building application:  '" + input_str + "'")
 
     # Parse config input files
     glob.lib.cfg.ingest('build',    input_dict)
@@ -135,7 +142,7 @@ def build_code(input_dict, glob_copy):
 
     glob.lib.msg.high(glob.success)
 
-# If dry_run
+    # If dry_run
     if glob.stg['dry_run']:
         glob.lib.msg.low(["This was a dryrun, skipping build step. Script created at:",
                         ">  " + glob.lib.rel_path(os.path.join(glob.config['metadata']['working_path'], glob.script_file))])
@@ -163,6 +170,10 @@ def build_code(input_dict, glob_copy):
 
     # Generate build report
     glob.lib.report.build()
+
+    # Add build dict to history file
+    glob.cmd += " | " + glob.config['general']['code'] + "/" + glob.config['general']['version'] + "/" + glob.config['config']['build_label']
+    glob.lib.files.write_cmd_history()
     glob.lib.msg.high("Done.") 
 
 # Setup contants and get build label
