@@ -1,6 +1,6 @@
 #!/bin/bash
 WORKING_DIR=`pwd`
-VERSION="1.2.2"
+VERSION="1.2.5"
 PY_VER="3.`python3 --version | cut -d '.' -f 2`"
 SITE_PATH="/scratch1/hpc_tools/benchtool"
 USER_PATH="$HOME/benchtool"
@@ -31,7 +31,7 @@ ${WORKING_DIR}/dev/clean.sh
 rm -rf ${SITE_PATH}/python/lib/python${PY_VER}/site-packages/benchtool-${VERSION}*
 rm -f ${SITE_PATH}/modulefiles/benchtool/${VERSION}.lua
 rm -f ${SITE_PATH}/package
-rm -f ${BT_SITE}/python/lib/python${PY_VER}/site-packages/benchtool-latest
+rm -f ${SITE_PATH}/python/lib/python${PY_VER}/site-packages/benchtool-latest
 
 # Setup
 mkdir -p ${SITE_PATH}/logs

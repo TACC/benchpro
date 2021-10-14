@@ -456,7 +456,7 @@ def parse_input_str(args):
         return ";"
    
     select_str = ""
-    for option in args.split(":"):
+    for option in args.split(" "):
         search = option.split('=')
         if not len(search) == 2:
             glob.lib.msg.error("Invalid query key-value pair: " + option)   

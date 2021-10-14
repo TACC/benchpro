@@ -115,6 +115,14 @@ class settings(object):
         settings_parser = configparser.RawConfigParser(allow_no_value=True)
         settings_parser.read(settings_ini)
 
+        # Check user files are present
+        if not os.path.isfile(settings_ini):
+            print("$BT_HOME/settings.ini file not found, did you install required user files?")
+            print("If not, do so now with:")
+            print("git clone https://github.com/TACC/benchtool.git $HOME/benchtool")
+            print("Quitting for now...")
+            sys.exit(1)
+    
         # Read contents of settings.ini into dict
         for section in settings_parser:
             if not section == "DEFAULT":

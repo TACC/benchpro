@@ -13,7 +13,7 @@ sed -i "/local version/c\local version         = \"${1}\"" ./data/modulefiles/be
 sed -i "/version=/c\    version=\'${1}\'," ./setup.py
 
 # Update install.sh
-sed -i "/VESION=/c\VERSION=\"${1}\"" ./install.sh
+sed -i "/VERSION=/c\VERSION=\"${1}\"" ./install.sh
 
 # Update version in user repo
 echo "benchtool v${1}" > ./benchtool/.version

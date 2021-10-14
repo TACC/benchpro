@@ -1,32 +1,12 @@
-# BenchTool
-This is a framework to automate and standardize application compilation, benchmarking and result collection on large scale HPC systems.
-There are several application profiles included with benchtool for debugging and testing:
+# BenchTool-package
+BenchTool is a framework to automate and standardize application compilation, benchmarking and result collection on large scale HPC systems.
 
-| Applications               | Synthetic Benchmarks     |
-|----------------------------|--------------------------|
-| AMBER 20                   | HPL                      |
-| GROMACS 2020.2             | HPCG                     |
-| LAMMPS 3Mar20              | STREAM                   |
-| MILC 7.8.1                 | GPCNET                   |
-| NAMD 2.14                  |                          |
-| OpenFOAM v2012             |                          |
-| Quantum Espresso 6.5       |                          |
-| SWIFTsim 0.9.0             |                          |
-| WRF 4.2                    |                          |
-| SpecFEM3D Globe 7.0.2      |                          |
+## Site Installation
 
-These application profiles have been created with the expectation that corresponding source code and datasets are available in the local repository directory.
-New applications are continuously being added.
+BenchTool is installed as a Python3 package. By default the installation base directory is `/scratch1/hpc_tools/benchtool`, this can be changed by modifying `SITE_PATH` in install.sh.
 
-## Getting Started
 
-The following steps will walk you through the basic usage of benchtool and produce a small LAMMPS LJ-melt benchmark. Tested on Stampede2 and Frontera systems at TACC. The initial site setup is not needed on TACC systems as the tool has already been deployed.
-
-### Site Installation
-
-BenchTool is installed as a Python3 package.
-
-1.b Load system Python3
+1 Load system Python3 module
 ``` 
 ml python3
 ```
@@ -37,75 +17,33 @@ git clone https://github.com/TACC/benchtool.git
 cd benchtool-package
 ./install.sh [key]
 ```
-Note: The SSH key provided on the command line is required to access the database server to store provenenace data. BenchTool does not interact with this key at all, but will provide you a line to add to crontabfor periodically scanning user results and pushing them to the database server.
 
-The Python package is now installed, as part of the install process user files were installed into $HOME/benchtool from https://github.com/https://github.com/TACC/benchtoolTACC/benchtool
+The installation script will limit access to the package directroy to unix group G-25072.
 
-### User Repo
+Note: The SSH key provided on the command line is required to access the database server to store provenenace data. BenchTool does not interact with this key at all, but will provide you a line to add to cron task to periodically scan and submit user results to the database server.
 
-In order to use BenchTool users need to install a local instance of the configuration and template files into their home directory. For additional information on how to install the user files and BenchTool usage information, refer to the user repository here: https://github.com/TACC/benchtool
+## User Repo
 
-### Web frontend
+In order to use BenchTool, users need to install a local instance of the configuration and template files into their home directory. For additional information on how to install the user files and BenchTool usage information, refer to the user repository here: https://github.com/TACC/benchtool
 
-The captured applications and benchmark results are available through a Django frontend, which is currently running on tacc-stats03 port 8001. 
+The user files repository was installed as part of the process described above for setup validation.
 
-## Advanced Features
+### Version Control
 
-BenchTool supports a number of more advanced features which may be of use.
-
-### Overloading parameters
-
-Useful for changing a setting for a onetime use. 
-Use `benchtool --setup` to confirm important default params from $BT_HOME/settings.ini
-You can overload params from settings.ini and params from  your build/bench config file.
-Accepts colon delimited lists.
-Exception will be raised if overload param does not match existing key in settings.ini or config file.
-
-Example 1: overload dry_run and build locally rather than via sched:
+The user repository version number in $BT_HOME/.version is tested against the package version number $BT_VERSION to ensure compatibility between the two repositories. If users are running an old version, they will be prompted to update when using the utility. If changes are made to this repository, the version should be updated with the provided script:
 ```
-benchtool --build lammps --overload dry_run=False build_mode=local
+./dev/version.sh [x.y.z]
 ```
+You will then have to push changes to the user file repository (follow instructions provided) before rerunning the `install.sh` script so that versioning is consistent.
 
-Example 2: run LAMMPS benchmark with modified nodes, ranks and threads:
+## Web server
+
+Captured applications and benchmark results are available via a web frontend at http://tacc-stats03.tacc.utexas.edu/. 
+
+In order to submit application and benchmark data to the database server from a new host, its IP address needs to be added to the database whitelist file `/home/postgres/9.6/data/pg_hba.conf`. Ensure you restart the database to read the updated file:
 ```
-bench --bench ljmelt --overload nodes=16 ranks_per_node=8 threads=6
+systemctl restart postgresql
 ```
-
-### Input list support
-
-Comma delimited lists of nodes, ranks and threads are supported which can be useful for automating scaling and optimization investigations.
-These lists can be specified in the config file, or via the overload feature detailed above.
-A list of nodes will be iterated over, and for each, the list of threads and ranks will both be iterated over.
-If the single thread and multiple ranks are specified, the same thread value will be used for all ranks, and vice versa. If ranks and threads and both larger than a single value but not equal length, an exception will be raised.
-
-Example 1: Run LAMMPS on 4, 8 and 16 nodes, first using 4 ranks per node with 8 threads each, and then 8 ranks per node using 4 threads each:
-```
-benchtool --bench ljmelt --overload nodes=4,8,16 ranks_per_node=4,8 threads=8,4
-```
-From this example, the resulting set of runs would look like:
-```
-Nodes=  4, ranks= 4, threads= 8 
-Nodes=  4, ranks= 8, threads= 4 
-Nodes=  8, ranks= 4, threads= 8 
-Nodes=  8, ranks= 8, threads= 4 
-Nodes= 16, ranks= 4, threads= 8 
-Nodes= 16, ranks= 8, threads= 4 
-```
-
-### Local build and bench modes
-
-Allows you to run the generated scripts in a shell on the local machine rather than  via the scheduler.
-Useful for evaluating hardware which is not integrated into the scheduler.
-
-In settings.ini `build_mode` and `bench_mode` are responsible for selecting this feature. Values `sched` or `local` are accepted, or an exception will be raised. 
-You can opt to build locally and run via the scheduler, or vice a versa.
-
-### Benchmarks with no application dependency
-
-Some benchmarks such as synthetics are microbenchmarks do require an application be compiled and module created.
-You are able to create a benchmark without any dependency to an application. 
-This is done by not specifying any values in the [requirements] section of the benchmark config file.
-
 
 # Inputs & settings format
 
@@ -268,11 +206,8 @@ These config files contain parameters used to populate the benchmark template sc
 
 | Directory         | Purpse                                                    |
 |-------------------|-----------------------------------------------------------|
-| $BT_HOME/auth            | SSH keys.                                                 |
 | $BT_APPS                 | Application build basedir.                                |
 | $BT_HOME/config          | config files containing template parameters.              |
-| $BT_HOME/dev             | Contains unit tests etc.                                  |
-| $BT_HOME/doc             | Contains Sphinx generated documentation. WIP              |
 | $BT_HOME/log             | Build, bench and catpure log files.                       |
 | $BT_HOME/resources       | Contains useful content including modulefiles, hardware collection and result validation scripts.    |
 | $BT_RESULTS              | Benchmark result basedir.                                 |
