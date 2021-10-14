@@ -21,6 +21,7 @@ local project_dir     = pathJoin(home, "benchtool")
 local app_dir         = pathJoin(scratch, "benchtool/build")
 local result_dir      = pathJoin(scratch, "benchtool/results")
 local version         = "1.2.5"
+local py_vers         = "3.7"
 
 set_alias("cdb", "cd $BT_HOME")
 
@@ -41,6 +42,6 @@ end
 always_load("python3")
 family("benchtool")
 
-prepend_path("PYTHONPATH",         pathJoin(site_dir, "python/lib/python3.7/site-packages/" ))
+prepend_path("PYTHONPATH",         pathJoin(site_dir, "python/lib/python" .. py_vers, "site-packages/" ))
 prepend_path("PATH",               pathJoin(site_dir, "python/bin" ))
 
