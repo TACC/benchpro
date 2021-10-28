@@ -9,6 +9,6 @@ def get_splash(glob):
 
                         "  ->User         : " + glob.user,
                         "  ->System       : " + glob.hostname,
-                        "  ->$BENCHTOOL   : " + glob.basedir,
+                        "  ->$BENCHTOOL   : " + glob.bt_home,
                         "  ->Date         : " + glob.time_str]
 

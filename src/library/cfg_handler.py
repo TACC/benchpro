@@ -1,63 +1,13 @@
 # System Imports
-import configparser as cp
 import glob as gb
 import os
 import re
-import subprocess
 import sys
 
 class init(object):
     def __init__(self, glob):
         self.glob = glob
 
-    # Get list of config files by type
-    def get_list_of_cfgs(self, cfg_type):
-        # Get cfg subdir name from input
-        type_dir = ""
-        if cfg_type == "build":
-            type_dir = self.glob.stg['build_cfg_dir']
-        elif cfg_type == "bench":
-            type_dir = self.glob.stg['bench_cfg_dir']
-        else:
-            self.glob.lib.msg.error("unknown cfg type '"+cfg_type+"'. get_list_of_cfgs() accepts either 'build' or 'bench'.")
-
-        search_path = os.path.join(self.glob.stg['config_path'], type_dir)
-        # Get list of cfg files in dir
-        cfg_list = self.glob.lib.files.get_files_in_path(search_path)
-
-        # If system subdir exists, scan that too
-        if os.path.isdir(os.path.join(search_path,self.glob.system['system'])):
-            cfg_list = cfg_list + self.glob.lib.files.get_files_in_path(os.path.join(search_path,self.glob.system['system']))
-        return cfg_list
-
-    # Search for unique cfg file in cfg dir
-    def search_cfg_str(self, cfg_name, search_path):
-
-        if os.path.isdir(search_path):
-            self.glob.log.debug("Looking for " + cfg_name + " in " + self.glob.lib.rel_path(search_path) + "...")
-            matches = gb.glob(os.path.join(search_path, "*" + cfg_name + "*"))
-            matches.sort()
-            # Unique match
-            if len(matches) == 1:
-                self.glob.log.debug("Found")
-                return matches[0]
-
-            # Muliple matches
-            elif len(matches) > 1:
-                default = [i for i in matches if "default" in i]
-                # Check for default
-                if len(default) == 1:
-                    return default[0]
-
-                # Error
-                else:
-                    print("Multiple input config files matching '" + cfg_name + "' found in " + self.glob.lib.rel_path(search_path) + ":")
-                    for match in matches:
-                        print("  " + match.split('/')[-1])
-            
-                    self.glob.lib.msg.error("please provide a unique input config.")
-
-        return None
 
     # Search path of cfg files for unique match of search list
     def search_cfg_with_list(self, search_list, search_path):
@@ -74,83 +24,9 @@ class init(object):
                     return cfg      
         return None
 
-    # Check cfg file exists
-    def check_file(self, cfg_type, cfg_name):
-        suffix = None
-        subdir = None
-
-        self.glob.lib.files.find_in([self.glob.stg['config_path'],
-                                    os.path.join(self.glob.stg['config_path'], cfg_type),
-                                    os.path.join(self.glob.stg['config_path'], cfg_type, self.glob.system['system'])],
-                                    cfg_name, True)
-
-
-        # If search input is a string, assume user input and search for cfg in various locations
-        if isinstance(cfg_name, str):
-
-            self.glob.log.debug("Checking if " + cfg_name + " is a full path...")
-            # 1: check if rovided cfg_name is a path
-            if cfg_name[0] == "/":
-                self.glob.log.debug("Found")
-                return cfg_name
-
-            # 2: check for file in user's CWD
-            search_path = self.glob.cwd + self.glob.stg['sl']
-            self.glob.log.debug("Looking for " + cfg_name + " in " + search_path + "...")
-            if os.path.isfile(search_path + cfg_name):
-                self.glob.log.debug("Found")
-                return search_path + cfg_name
-
-            # 3: check user's HOME
-            search_path = os.getenv("HOME") + self.glob.stg['sl']
-            self.glob.log.debug("Looking for " + cfg_name + " in " + search_path + "...")
-            if os.path.isfile(search_path + cfg_name):
-                self.glob.log.debug("Found")
-                return search_path + cfg_name
-
-
-            # 4: check in project basedir
-            search_path = self.glob.basedir + self.glob.stg['sl']
-            self.glob.log.debug("Looking for " + cfg_name + " in " + self.glob.lib.rel_path(search_path) + "...")
-            if os.path.isfile(search_path + cfg_name):
-                self.glob.log.debug("Found")
-                return search_path + cfg_name
-    
-            # If not found, cast to list for further searching 
-            cfg_name = [cfg_name]
-
-        # Use search list to look in expected places
-
-        # 5: Search cfg dir
-        search_path = self.glob.stg['config_path'] + self.glob.stg['sl'] 
-        cfg_file = self.search_cfg_with_list(cfg_name, search_path)
-        if cfg_file:
-            return cfg_file
-
-        # 6: Search 'type' subdir
-        search_path = search_path + cfg_type + self.glob.stg['sl']
-        cfg_file = self.search_cfg_with_list(cfg_name, search_path)
-        if cfg_file:
-            return cfg_file
-
-        # 7: Seach system subdir 
-        search_path = search_path + self.glob.system['system'] + self.glob.stg['sl']
-        cfg_file = self.search_cfg_with_list(cfg_name, search_path)
-        if cfg_file:
-            return cfg_file
-
-        # Not found
-        if cfg_type:
-            self.glob.lib.misc.print_avail_type(cfg_type, os.path.join(self.glob.stg['config_path'], cfg_type))
-
-            self.glob.lib.msg.error("config file containing '" + ", ".join(cfg_name) + "' not found.")
-
-        else:
-            self.glob.lib.msg.error("input file containing '" + ", ".join(cfg_name) + "' not found.")
-       
     # Find matching config file given search criteria
-    def find_cfg(self, search_dict, avail_cfgs, blanks_are_wild):
-    
+    def search_cfg_with_dict(self, search_dict, avail_cfgs, blanks_are_wild):
+
         matching_cfgs = []
 
         # Iter over all avail cfg files
@@ -159,7 +35,7 @@ class init(object):
             match = True
             found = False
             for key in search_dict.keys():
-                # For each section of cfg    
+                # For each section of cfg
                 for sec in cfg.keys():
                     # If key is in cfg section and we can match to blank values
                     if key in cfg[sec].keys():
@@ -195,25 +71,49 @@ class init(object):
                 print("    " + cfg['metadata']['cfg_label'])
             self.glob.lib.msg.error("Multiple config files found matching search criteria '" + ",".join([key + "=" + search_dict[key] for key in search_dict.keys()]) + "'")
 
-    # Parse cfg file into dict
-    def read_file(self, cfg_file):
-        cfg_parser = cp.ConfigParser()
-        cfg_parser.optionxform=str
-        cfg_parser.read(cfg_file)
-    
-        # Add file name & label to dict
-        cfg_dict = {}
-        cfg_dict['metadata'] ={}
+    # Check cfg file exists
+    def find_cfg_file(self, cfg_type, cfg_name):
+        suffix = None
+        subdir = None
 
-        cfg_dict['metadata']['cfg_label'] = ".".join(cfg_file.split(self.glob.stg['sl'])[-1].split(".")[:-1])
-        cfg_dict['metadata']['cfg_file']  = cfg_file
+        # If search input is a string, assume user input and search for cfg in various locations
+        if isinstance(cfg_name, str):
+            cfg_found = self.glob.lib.files.find_in([self.glob.stg['config_path'],
+                                            os.path.join(self.glob.stg['config_path'], cfg_type),
+                                            os.path.join(self.glob.stg['config_path'], cfg_type, self.glob.system['system'])],
+                                            cfg_name, True)
+            if cfg_found:
+                return cfg_found
 
-        # Read sections into dict 
-        for section in cfg_parser.sections():
-            cfg_dict[section] = dict(cfg_parser.items(section))
+        # Use search list to look in expected places
 
-        return cfg_dict
+        # Search cfg dir
+        search_path = self.glob.stg['config_path'] + self.glob.stg['sl'] 
+        cfg_file = self.search_cfg_with_list(cfg_name, search_path)
+        if cfg_file:
+            return cfg_file
 
+        # Search 'type' subdir
+        search_path = search_path + cfg_type + self.glob.stg['sl']
+        cfg_file = self.search_cfg_with_list(cfg_name, search_path)
+        if cfg_file:
+            return cfg_file
+
+        # Seach system subdir 
+        search_path = search_path + self.glob.system['system'] + self.glob.stg['sl']
+        cfg_file = self.search_cfg_with_list(cfg_name, search_path)
+        if cfg_file:
+            return cfg_file
+
+        # Not found
+        if cfg_type:
+            self.glob.lib.misc.print_avail_type(cfg_type, os.path.join(self.glob.stg['config_path'], cfg_type))
+
+            self.glob.lib.msg.error("config file containing '" + ", ".join(cfg_name) + "' not found.")
+
+        else:
+            self.glob.lib.msg.error("input file containing '" + ", ".join(cfg_name) + "' not found.")
+       
     # Error if section heading missing in cfg file
     def check_dict_section(self, cfg_file, cfg_dict, section):
         if not section in cfg_dict:
@@ -319,8 +219,8 @@ class init(object):
             self.glob.lib.module.check_exists(cfg_dict['modules'], cfg_dict['general']['module_use'])
 
         # Parse architecture defaults config file 
-        arch_file = self.check_file('arch', self.glob.stg['config_path'] + self.glob.stg['sl'] + self.glob.stg['arch_cfg_file'])
-        arch_dict = self.read_file(arch_file)
+        arch_file = self.find_cfg_file('arch', self.glob.stg['config_path'] + self.glob.stg['sl'] + self.glob.stg['arch_cfg_file'])
+        arch_dict = self.glob.lib.files.read_cfg(arch_file)
 
         # Get core count for system
         try:
@@ -509,7 +409,7 @@ class init(object):
     
             # Define --hostfile args
             if cfg_dict['runtime']['hostfile']:
-                hostfile = self.check_file("", cfg_dict['runtime']['hostfile'])
+                hostfile = self.find_cfg_file("", cfg_dict['runtime']['hostfile'])
                 cfg_dict['runtime']['host_str'] = "-hostfile " + hostfile
     
             # Define -host args
@@ -563,30 +463,30 @@ class init(object):
 
         # Process and store build cfg 
         if cfg_type == 'build':
-            cfg_dict = self.find_cfg(search_dict, self.glob.build_cfgs, True)
+            cfg_dict = self.search_cfg_with_dict(search_dict, self.glob.build_cfgs, True)
             self.glob.log.debug("Starting build cfg processing.")
             self.process_build_cfg(cfg_dict)
             self.glob.config = cfg_dict
     
         # Process and store bench cfg 
         elif cfg_type == 'bench':
-            cfg_dict = self.find_cfg(search_dict, self.glob.bench_cfgs, False)
+            cfg_dict = self.search_cfg_with_dict(search_dict, self.glob.bench_cfgs, False)
             self.glob.log.debug("Starting bench cfg processing.")
             self.process_bench_cfg(cfg_dict)
             self.glob.config = cfg_dict
     
         # Process and store sched cfg 
         elif cfg_type == 'sched':
-            cfg_file = self.check_file(cfg_type, search_dict)
-            cfg_dict = self.read_file(cfg_file)
+            cfg_file = self.find_cfg_file(cfg_type, search_dict)
+            cfg_dict = self.glob.lib.files.read_cfg(cfg_file)
             self.glob.log.debug("Starting sched cfg processing.")
             self.process_sched_cfg(cfg_dict)
             self.glob.sched = cfg_dict
     
         # Process and store compiler cfg 
         elif cfg_type == 'compiler':
-            cfg_file = self.check_file(cfg_type, search_dict)
-            cfg_dict = self.read_file(cfg_file)
+            cfg_file = self.find_cfg_file(cfg_type, search_dict)
+            cfg_dict = self.glob.lib.files.read_cfg(cfg_file)
             self.glob.compiler = cfg_dict
     
     

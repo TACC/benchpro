@@ -146,7 +146,7 @@ def check_benchtool_version(glob):
         print("run git -C $BT_HOME pull")
         sys.exit(1)
     else:
-        print(bcolors.PASS, "running version " + site_version)
+        print(bcolors.PASS, "BenchTool version " + site_version)
 
 # Validate setup 
 def check_setup(glob_obj):
@@ -201,4 +201,4 @@ def check_setup(glob_obj):
         print(bcolors.WARN, "database access check disabled")
 
     # Create validate file
-    with open(os.path.join(glob.basedir, ".validated"), 'w'): pass 
+    with open(os.path.join(glob.bt_home, ".validated"), 'w'): pass 

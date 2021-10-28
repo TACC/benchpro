@@ -1,4 +1,5 @@
 # System imports
+import configparser as cp
 import glob as gb
 import os
 import pwd
@@ -15,7 +16,7 @@ class init(object):
         
         # Clean default *.tmp files
         if not clean_list:
-            clean_list = gb.glob(os.path.join(self.glob.basedir, 'tmp.*'))
+            clean_list = gb.glob(os.path.join(self.glob.bt_home, 'tmp.*'))
 
         if clean_list:
             for f in clean_list:
@@ -73,7 +74,7 @@ class init(object):
     def find_in(self, paths, filename, error_if_missing):
 
         # Add some default locations to the search path list
-        paths.extend(["", self.glob.basedir, self.glob.cwd, self.glob.home])
+        paths.extend(["", self.glob.bt_home, self.glob.cwd, self.glob.home])
         found = self.look(paths, filename) 
 
         if found:
@@ -292,7 +293,7 @@ class init(object):
 
     # Read version number from file
     def read_version(self):
-        with open(os.path.join(self.glob.basedir, ".version"), 'r') as f:
+        with open(os.path.join(self.glob.bt_home, ".version"), 'r') as f:
             return f.readline().split(" ")[-1][1:].strip()
 
     # Write module to file
@@ -303,7 +304,47 @@ class init(object):
 
     # Write command line to history file
     def write_cmd_history(self):
-        history_file = os.path.join(self.glob.basedir, ".history")
+        history_file = os.path.join(self.glob.bt_home, ".history")
         with open(history_file, "a") as hist:
             hist.write(self.glob.cmd + "\n")
+
+    # Get list of config files by type
+    def get_cfg_list(self, cfg_type):
+        # Get cfg subdir name from input
+        type_dir = ""
+        if cfg_type == "build":
+            type_dir = self.glob.stg['build_cfg_dir']
+        elif cfg_type == "bench":
+            type_dir = self.glob.stg['bench_cfg_dir']
+        else:
+            self.glob.lib.msg.error("unknown cfg type '"+cfg_type+"'. get_cfgs() accepts either 'build' or 'bench'.")
+
+        search_path = os.path.join(self.glob.stg['config_path'], type_dir)
+        # Get list of cfg files in dir
+        cfg_list = self.glob.lib.files.get_files_in_path(search_path)
+
+        # If system subdir exists, scan that too
+        if os.path.isdir(os.path.join(search_path,self.glob.system['system'])):
+            cfg_list = cfg_list + self.glob.lib.files.get_files_in_path(os.path.join(search_path,self.glob.system['system']))
+        return cfg_list
+
+    # Parse cfg file into dict
+    def read_cfg(self, cfg_file):
+        cfg_parser = cp.ConfigParser()
+        cfg_parser.optionxform=str
+        cfg_parser.read(cfg_file)
+
+        # Add file name & label to dict
+        cfg_dict = {}
+        cfg_dict['metadata'] ={}
+
+        cfg_dict['metadata']['cfg_label'] = ".".join(cfg_file.split(self.glob.stg['sl'])[-1].split(".")[:-1])
+        cfg_dict['metadata']['cfg_file']  = cfg_file
+
+        # Read sections into dict
+        for section in cfg_parser.sections():
+            cfg_dict[section] = dict(cfg_parser.items(section))
+
+        return cfg_dict
+
 

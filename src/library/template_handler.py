@@ -195,7 +195,7 @@ class init(object):
     def set_build_files(self):
         # Temp build script
         self.glob.script_file = "build.batch"
-        self.glob.tmp_script = os.path.join(self.glob.basedir, "tmp." + self.glob.script_file)
+        self.glob.tmp_script = os.path.join(self.glob.bt_home, "tmp." + self.glob.script_file)
 
         if self.glob.stg['build_mode'] == "sched":
             self.glob.sched['template'] = self.glob.lib.files.find_exact(self.glob.sched['sched']['type'] + ".template", self.glob.stg['template_path'])
@@ -291,7 +291,7 @@ class init(object):
     def set_bench_files(self):
         # Temp job script 
         self.glob.script_file = "bench.batch"
-        self.glob.tmp_script = os.path.join(self.glob.basedir, "tmp." + self.glob.script_file) 
+        self.glob.tmp_script = os.path.join(self.glob.bt_home, "tmp." + self.glob.script_file) 
     
         # Scheduler template file
         if self.glob.stg['bench_mode'] == "sched":

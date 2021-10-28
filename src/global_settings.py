@@ -79,7 +79,7 @@ class settings(object):
         # Convert relative paths
         if len(path) > 2:
             if path[0:2] == "./":
-                return os.path.join(self.basedir, path[2:])
+                return os.path.join(self.bt_home, path[2:])
                 
         return path
 
@@ -107,11 +107,11 @@ class settings(object):
             return value
 
     # Read in settings.ini file
-    def read_settings(self, basedir):
+    def read_settings(self, bt_home):
 
-        self.basedir = self.resolve_path(basedir)
+        self.bt_home = self.resolve_path(bt_home)
 
-        settings_ini    = os.path.join(self.basedir, "settings.ini")
+        settings_ini    = os.path.join(self.bt_home, "settings.ini")
         settings_parser = configparser.RawConfigParser(allow_no_value=True)
         settings_parser.read(settings_ini)
 
@@ -133,23 +133,28 @@ class settings(object):
         # Read suites into own dict
         self.suite = dict(settings_parser.items('suites'))
 
+        # Preserve enviroment variable labels
+        self.stg['project_env']         = self.stg['home_path'] 
+        self.stg['app_env']             = self.stg['build_path'] 
+        self.stg['result_env']          = self.stg['bench_path'] 
+
         # Resolve paths
-        self.stg['ssh_key_path']      = self.resolve_path(self.stg['ssh_key'])
-        self.stg['config_path']       = self.resolve_path(self.stg['config_dir'])
-        self.stg['template_path']     = self.resolve_path(self.stg['template_dir'])
-        self.stg['build_path']        = self.resolve_path(self.stg['build_dir'])
-        self.stg['bench_path']        = self.resolve_path(self.stg['bench_dir'])
-        self.stg['resource_path']     = self.resolve_path(self.stg['resource_dir'])
-        self.stg['local_repo']        = self.resolve_path(self.stg['local_repo'])
-        self.stg['collection_path']   = self.resolve_path(self.stg['collection_path'])
+        self.stg['home_path']            = self.resolve_path(self.stg['home_path'])
+        self.stg['build_path']           = self.resolve_path(self.stg['build_path'])
+        self.stg['bench_path']           = self.resolve_path(self.stg['bench_path'])
+
+        self.stg['ssh_key_path']        = self.resolve_path(self.stg['ssh_key'])
+        self.stg['config_path']         = self.resolve_path(self.stg['config_dir'])
+        self.stg['template_path']       = self.resolve_path(self.stg['template_dir'])
+        self.stg['resource_path']       = self.resolve_path(self.stg['resource_dir'])
+        self.stg['local_repo']          = self.resolve_path(self.stg['local_repo'])
+        self.stg['collection_path']     = self.resolve_path(self.stg['collection_path'])
 
         # Derived variables
-        self.stg['project_env']         = self.stg['project_env_var'] + self.stg['sl']
-        self.stg['app_env']             = self.stg['app_env_var'] + self.stg['sl']
-        self.stg['result_env']          = self.stg['result_env_var'] + self.stg['sl']
         self.stg['module_dir']          = "modulefiles"
-        self.stg['log_path']            = os.path.join(self.basedir, self.stg['log_dir'])
-        self.stg['complete_path']        = os.path.join(self.stg['bench_path'], self.stg['complete_subdir'])
+        self.stg['build_dir']           = os.path.basename(self.stg['build_path']) 
+        self.stg['log_path']            = os.path.join(self.bt_home, self.stg['log_dir'])
+        self.stg['complete_path']       = os.path.join(self.stg['bench_path'], self.stg['complete_subdir'])
         self.stg['captured_path']       = os.path.join(self.stg['bench_path'], self.stg['captured_subdir'])
         self.stg['failed_path']         = os.path.join(self.stg['bench_path'], self.stg['failed_subdir'])
         self.stg['module_path']         = os.path.join(self.stg['build_path'], self.stg['module_dir'])
@@ -157,10 +162,10 @@ class settings(object):
         self.stg['script_path']         = os.path.join(self.stg['resource_path'], self.stg['script_subdir'])
 
     # Initialize the global object, settings and libraries
-    def __init__(self, basedir):
+    def __init__(self, bt_home):
 
         # Parse settings.ini
-        self.read_settings(basedir) 
+        self.read_settings(bt_home) 
 
         # Get system label
         self.system['system'] = self.resolve_path(self.stg['system_env'])

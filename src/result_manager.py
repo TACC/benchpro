@@ -520,7 +520,7 @@ def query_db(glob_obj):
 
         # Export to csv
         if glob.args.export:
-            csvFile = os.path.join(glob.basedir, "dbquery_"+ glob.time_str + ".csv")
+            csvFile = os.path.join(glob.bt_home, "dbquery_"+ glob.time_str + ".csv")
             print()
             print("Exporting to csv file: " + glob.lib.rel_path(csvFile))
 

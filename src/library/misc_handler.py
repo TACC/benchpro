@@ -17,7 +17,7 @@ class init(object):
     def find_matching_files(self, search_list):
         file_list = []
         for search in search_list:
-            file_list += gb.glob(os.path.join(self.glob.basedir, search))
+            file_list += gb.glob(os.path.join(self.glob.bt_home, search))
         return file_list
 
     # Delete matching files
@@ -333,7 +333,7 @@ class init(object):
         fnames = [config.split('/')[-1] for config in config_list]
         
         for config in config_list:
-            contents = self.glob.lib.cfg.read_file(config)
+            contents = self.glob.lib.files.read_cfg(config)
 
             column = 30
 
@@ -441,7 +441,7 @@ class init(object):
 
     # Print command line history file
     def print_history(self):
-        history_file = os.path.join(self.glob.basedir, ".history")
+        history_file = os.path.join(self.glob.bt_home, ".history")
         if os.path.isfile(history_file):
             with open(history_file, "r") as hist:
                 content = hist.read()
@@ -450,17 +450,17 @@ class init(object):
 
     # Print version file and quit
     def print_version(self):
-        with open(os.path.join(self.glob.basedir, ".version")) as f:
+        with open(os.path.join(self.glob.bt_home, ".version")) as f:
             print(f.read())
 
     # Return the last line of the .outputs file
     def get_last_history(self):
 
-        if not os.path.isfile(os.path.join(self.glob.basedir, ".history")):
+        if not os.path.isfile(os.path.join(self.glob.bt_home, ".history")):
             print("No previous outputs found.")
             sys.exit(0)
 
-        with open(os.path.join(self.glob.basedir, ".history"), "r") as f:
+        with open(os.path.join(self.glob.bt_home, ".history"), "r") as f:
             lines = f.readlines()
             if len(lines) == 0:
                 print("No previous outputs found.")    

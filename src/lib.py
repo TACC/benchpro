@@ -47,14 +47,14 @@ class init(object):
         if not path:
             return None
         # if in project path
-        if self.glob.basedir in path:
-            return self.glob.stg['project_env_var'] + path.replace(self.glob.basedir, "")
+        if self.glob.bt_home in path:
+            return os.path.join(self.glob.stg['project_env'] + path.replace(self.glob.bt_home, ""))
         # if in application path
         elif self.glob.stg['build_path'] in path:
-            return self.glob.stg['app_env_var'] + path.replace(self.glob.stg['build_path'], "")
+            return os.path.join(self.glob.stg['app_env'] + path.replace(self.glob.stg['build_path'], ""))
         # if in result path
         elif self.glob.stg['bench_path'] in path:
-            return self.glob.stg['result_env_var'] + path.replace(self.glob.stg['bench_path'], "")
+            return os.path.join(self.glob.stg['result_env'] + path.replace(self.glob.stg['bench_path'], ""))
 
         # if not any of the above
         return path
@@ -212,7 +212,7 @@ class init(object):
     def get_avail_codes(self):
 
         # Get all application build config files
-        cfg_list = self.cfg.get_list_of_cfgs("build")
+        cfg_list = self.files.get_cfg_list("build")
 
         avail_list = []
         for cfg_file in cfg_list:
@@ -316,7 +316,7 @@ class init(object):
 
         # Construct
         for cfg in cfg_files:
-            cfg_list.append(self.cfg.read_file(cfg))
+            cfg_list.append(self.files.read_cfg(cfg))
     
         return cfg_list
     

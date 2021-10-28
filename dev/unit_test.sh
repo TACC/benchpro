@@ -1,65 +1,48 @@
 #!/bin/bash
 
-APP=lammps
-BENCH=ljmelt
+APP="lammps"
+BENCH="ljmelt"
+
+result(){
+    op=`echo $2 | cut -d " " -f1`
+    printf "%-20s" "$op"
+    if [ $1 -ne 0 ]; then
+        printf ": FAILED"
+        printf "\n"
+        exit 1
+    else
+        printf ": PASSED"
+        printf "\n"
+    fi
+}
 
 # Remove existing installation
 benchtool --delApp $APP		> /dev/null
 
-echo "EXIT CODES:"
+declare cases=( "help"
+            "version" 
+            "validate"
+            "avail"
+            "build $APP --overload dry_run=True build_label=test"
+            "listApps"
+            "queryApp $APP"
+            "bench $BENCH --overload dry_run=True build_label=test"
+            "last"
+            "delApp $APP/test "
+            "capture"
+            "listResults all"
+            "dbResult dataset=$BENCH --export"
+            "dbApp code=$APP"
+            "history"
+            "clean"
+            ) 
 
-benchtool --help           > /dev/null
-echo     "--help          $?"
-
-benchtool --version           > /dev/null
-echo     "--version       $?"
-
-benchtool --validate           > /dev/null
-echo     "--validate      $?"
-
-benchtool --avail			> /dev/null
-echo     "--avail         $?"
-
-benchtool --build $APP --overload dry_run=True build_label=test	> /dev/null
-echo     "--build         $?"
-
-benchtool --listApps		> /dev/null
-echo     "--listApps      $?"
-
-benchtool --queryApp $APP	> /dev/null
-echo     "--queryApp      $?"
-
-benchtool --bench $BENCH --overload dry_run=True build_label=test > /dev/null
-echo     "--bench         $?"
-
-benchtool --last           > /dev/null
-echo     "--last          $?"
-
-output=$(benchtool --listResults pending | tail -n 3 | head -n 1)
-benchtool --queryResult $output > /dev/null
-echo     "--queryResult   $?"
-
-benchtool --delApp $APP/test  	> /dev/null
-echo     "--delApp        $?"
-
-benchtool --capture         > /dev/null
-echo     "--capture       $?"
-
-benchtool --listResults all > /dev/null
-echo     "--listResults   $?"
-
-benchtool --dbResult dataset=$BENCH --export    > /dev/null
-echo     "--dbResult      $?"
-
-benchtool --dbApp code=$APP   > /dev/null
-echo     "--dbApp         $?"
+for c in "${cases[@]}"; do
+    benchtool --$c > /dev/null 2>&1
+    result $? $c
+done
 
 #benchtool --build all_apps --overload dry_run=True > /dev/null
 #echo     "--suite         $?"
 
-benchtool --history           > /dev/null
-echo     "--history       $?"
-
-benchtool --clean           > /dev/null
-echo     "--clean         $?"
-
+echo "Done"
