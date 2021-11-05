@@ -34,7 +34,7 @@ elif [ $BT_SYSTEM = "ls6" ]; then
 elif [ $BT_SYSTEM = "stampede2" ]; then
     set TACC_SCRATCH "/scratch"
     set BT_SITE "${TACC_SCRATCH}/hpc_tools/benchtool"
-    set BT_REPO "${BT_REPO}/repo"
+    set BT_REPO "${BT_SITE}/repo"
 fi
 echo 
 return 0
