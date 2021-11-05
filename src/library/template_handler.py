@@ -93,31 +93,8 @@ class init(object):
     # Get input files asynchronously
     def stage_input_files(self, template_obj):
         template_obj.append("\n")
-        for op in self.glob.config['files'].keys():
-
-            # Add tar lines to script
-            if op == "tar":
-                for elem in self.glob.config['files'][op].split(","):
-                    src = elem.strip()
-                    template_obj.append("tar -xf ${local_repo}/" + src + \
-                                        " -C . \n")
-                    
-            # Add copy lines to script
-            if op == "cp":
-                for elem in self.glob.config['files'][op].split(","):
-                    src = elem.strip()
-                    template_obj.append("cp -r ${local_repo}/" + src + \
-                                        " . \n")
-            # Add wget lines to script
-            if op == "wget":
-
-                for elem in self.glob.config['files'][op].split(","):
-                    src = elem.strip()
-                    template_obj.append("wget " + src + " -P . \n")
-
-                    # Check if download was an archive
-                    if any(x in src for x in ['tar', 'tgz', 'bgz']):
-                        template_obj.append("tar -xf " + src.split("/")[-1] + " -C ./ \n")
+        for op in self.glob.stage_ops:
+            template_obj.append(op + "\n")
 
     # If the setting in enabled, add the provenance data collection script to the script
     def collect_stats(self, template_obj):

@@ -1,15 +1,26 @@
 # System imports
+import cgi
 import configparser as cp
 import glob as gb
 import os
 import pwd
 import shutil as su
 import tarfile
-import urllib.request
+from urllib.request import urlopen
+from urllib.request import urlretrieve
+
 
 class init(object):
     def __init__(self, glob):
         self.glob = glob
+
+    # Read non-cfg file into list
+    def read(self, file_path):
+        if not os.path.isfile(file_path):
+            self.glob.lib.msg.error("File " + self.glob.lib.rel_path(file_path) + " not found.")
+
+        with open(file_path) as f:
+            return f.readlines()
 
     # Delete tmp build files if installation fails
     def cleanup(self, clean_list):
@@ -75,15 +86,15 @@ class init(object):
 
         # Add some default locations to the search path list
         paths.extend(["", self.glob.bt_home, self.glob.cwd, self.glob.home])
-        found = self.look(paths, filename) 
+        file_path = self.look(paths, filename) 
 
-        if found:
-            return found
+        if file_path:
+            return file_path
 
         # Error if not found?
         if error_if_missing:
-            self.glob.lib.msg.error(["Unable to locate file '" + filename + "' in any of these locations:"].extends(\
-                                    [self.glob.lib.rel_path(locations)]))
+            self.glob.lib.msg.error(["Unable to locate file '" + filename + "' in any of these locations:"] +\
+                                    [self.glob.lib.rel_path(p) for p in paths])
 
         return False
 
@@ -195,101 +206,154 @@ class init(object):
             os.remove(src)
 
     # Extract tar file list to working dir
-    def untar_files(self, file_list):
-        # Iterate over file list
-        for src in file_list:
-            # Check file existing in repo
-            if os.path.isfile(src):
+    def untar_file(self, src):
 
-                # Stage files synchronously
-                if self.glob.stg['sync_staging']:
-                    self.glob.lib.msg.low("Extracting " + src + "...")
-                    # Extract to working dir
-                    tar = tarfile.open(src)
-                    tar.extractall(self.glob.config['metadata']['dest_path'])
-                    tar.close()
+        # untar now
+        if self.glob.stg['sync_staging']:
+            self.glob.lib.msg.low("Extracting " + src + "...")
 
             # File not found
-            else:
+            if not os.path.isfile(src):
                 self.glob.lib.msg.error("Input file '" + src + "' not found in repo " + \
                                         self.glob.lib.rel_path(self.glob.stg['local_repo']))
 
-    # Download URL
-    def wget_files(self, file_list):
-        for elem in file_list:
-            src = elem.strip()
-            dest = os.path.join(self.glob.config['metadata']['dest_path'], src.split("/")[-1])
+                # Extract to working dir
+                tar = tarfile.open(src)
+                tar.extractall(self.glob.config['metadata']['working_path'])
+                tar.close()
 
-            if self.glob.stg['sync_staging']:
-                self.glob.lib.msg.low("Downloading " + src + "...")
-                try:
-                    urllib.request.urlretrieve(src, dest)
-                except:
-                    self.glob.lib.msg.error("Failed to download " + src)
+        # untar in script
+        else:
+            self.glob.stage_ops.append("tar -xf " + src + " -C " + self.glob.config['metadata']['working_path'])
 
-                # Check if file is compressed
-                if any(x in src for x in ['tar', 'tgz', 'bgz']):
-                    self.untar_files([os.path.join(src,dest)])
+    # Copy file to working dir
+    def cp_file(self, src):
 
-    # Copy file list to working dir
-    def cp_files(self, file_list):
-        for elem in file_list:
-            src = elem.strip()
+        # Absolute path or in local repo
+        src_path = os.path.expandvars(src)
+        if not os.path.isfile(src_path) and not os.path.isdir(src_path):
+            src_path = os.path.join(self.glob.stg['local_repo'], src)
 
-            # Absolute path or in local repo
-            src_path = os.path.expandvars(src)
-            if not os.path.isfile(src_path) and not os.path.isdir(src_path):
-                src_path = os.path.join(self.glob.stg['local_repo'], src)
+        # Copy now
+        if self.glob.stg['sync_staging']:
+
 
             # Check presence
             if not os.path.isfile(src_path) and not os.path.isdir(src_path):
                 self.glob.lib.msg.error("Input file '" + src + "' not found in repo " + \
                                         self.glob.lib.rel_path(self.glob.stg['local_repo']))
 
-            # Copy files
-            if self.glob.stg['sync_staging']:
-                self.glob.lib.msg.low("Copying " + src_path + "...")
-                # Copy file
-                if os.path.isfile(src_path):
-                    su.copy(src_path, self.glob.config['metadata']['dest_path'])
+            self.glob.lib.msg.low("Copying " + src_path + "...")
+            # Copy file
+            if os.path.isfile(src_path):
+                su.copy(src_path, self.glob.config['metadata']['working_path'])
 
-                # Copy dir
-                else:
-                    dest = src_path.split(self.glob.stg['sl'])[-1]
-                    su.copytree(src_path, os.path.join(self.glob.config['metadata']['dest_path'], dest))
+            # Copy dir
+            else:
+                dest = src_path.split(self.glob.stg['sl'])[-1]
+                su.copytree(src_path, os.path.join(self.glob.config['metadata']['working_path'], dest))
 
+        # Copy in script
+        else:
+           self.glob.stage_ops.append("cp -r " + src_path + " " + self.glob.config['metadata']['working_path']) 
 
-    # Ensure input files exist
+    # Process local file depending on type
+    def stage_local(self, file_list):
+
+        for filename in file_list:
+            filename  = filename.strip()
+
+            # Locate file
+            if self.glob.stg['sync_staging']: 
+                file_path = self.find_in([self.glob.stg['local_repo'], self.glob.config['metadata']['working_path']], filename, False)
+            # Assume will be in repo after download
+            else:
+                file_path = os.path.join(self.glob.stg['local_repo'], filename)
+
+            # Check if compressed
+            if any(x in filename for x in ['tar', 'tgz', 'bgz']):
+                self.untar_file(file_path)
+            else:
+                self.cp_file(file_path)
+
+    # Extract filename from URL 
+    def get_url_filename(self, url):
+        remotefile = urlopen(url)
+        value, params = cgi.parse_header(remotefile.info()['Content-Disposition'])
+        return params["filename"]
+
+    # Check if file or dir is present in local repo
+    def in_local_repo(self, filename):
+        if os.path.isfile(os.path.join(self.glob.stg['local_repo'], filename)) \
+        or os.path.isdir(os.path.join(self.glob.stg['local_repo'], filename)):
+            return True
+        return False
+
+    # Download URL 
+    def wget_file(self, url, filename):
+        dest = None
+        # Destination = working_dir or local repo
+        if self.glob.stg['cache_downloads']:
+            dest = os.path.join(self.glob.stg['local_repo'], filename)
+        else:
+            dest = os.path.join(self.glob.config['metadata']['working_path'], filename)
+
+        # Download now
+        if self.glob.stg['sync_staging']:
+            try:
+                self.glob.lib.msg.low("Fetching file " + filename + "...")
+                urlretrieve(url, dest)
+            except Exception as e:
+                self.glob.lib.msg.error("Failed to download URL '" + url + "'")
+        # Download in script
+        else:
+            self.glob.stage_ops.append("wget -O " + dest + " " + url)
+
+    # Download list of URLs
+    def stage_urls(self, url_list):
+        for url in url_list:
+            local_copy = False
+            # Clean up list elem
+            url = url.strip()
+            # Get filename from URL
+            filename = self.get_url_filename(url)
+
+            # Prefer local files & file in local repo
+            if self.glob.stg['prefer_local_files'] and self.in_local_repo(filename):
+                local_copy = True
+
+            # No local copy - download
+            if not local_copy:
+                self.wget_file(url, filename)
+            
+            # Process downloaded file
+            self.stage_local([filename])
+
+    # Stage files listed in cfg under [files]
     def stage(self):
-       
+      
+        # Create working dir
+        self.create_dir(self.glob.config['metadata']['working_path'])
+
         # Check section exists
         if 'files' in self.glob.config.keys():
 
-            self.glob.lib.msg.low("Staging input files...")
-            if self.glob.stg['sync_staging']:
-                # Create build dir
-                self.create_dir(self.glob.config['metadata']['dest_path'])
-            else:
-                self.glob.stage = {}
+            self.glob.lib.msg.high("Staging input files...")
 
-            # Evaluate expressions
+            # Evaluate expressions in [config] and [files] sections of cfg file 
             self.glob.lib.expr.eval_dict(self.glob.config['config'])
             self.glob.lib.expr.eval_dict(self.glob.config['files'])
 
-            # Parse through supported file operations
+            # Parse through supported file operations - local, download
             for op in self.glob.config['files'].keys():
-                if op == 'tar':
-                    self.untar_files([os.path.join(self.glob.stg['local_repo'], x.strip()) for x in self.glob.config['files'][op].split(',')])
 
-                elif op == 'wget':
-                    self.wget_files(self.glob.config['files'][op].split(','))
-    
-                elif op == 'cp':
-                    self.cp_files(self.glob.config['files'][op].split(','))
-
+                if op == 'local':
+                    self.stage_local(self.glob.config['files'][op].split(','))
+                elif op == 'download':
+                    self.stage_urls(self.glob.config['files'][op].split(','))
                 else:
                     self.glob.lib.msg.error(["Unsupported file stage operation selected: '" + op + "'.", 
-                                            "Supported operations = tar, wget, cp."])
+                                            "Supported operations = 'download' or 'local'"])
 
     # Read version number from file
     def read_version(self):

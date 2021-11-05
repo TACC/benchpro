@@ -102,6 +102,9 @@ def build_code(input_dict, glob_copy):
     if not glob.quiet_build:
         glob.lib.overload.check_for_unused()
 
+    # Apply system rules
+    glob.lib.expr.apply_system_rules()
+
     # Print inputs to log
     glob.lib.send_inputs_to_log('Builder')
 

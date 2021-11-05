@@ -39,10 +39,11 @@ class init(object):
 
         # Log and print if priority
         for line in message:
-            if self.glob.log:
-                self.log(line)
-            if self.glob.stg['debug'] or priority: 
-                print(line)
+            if line:
+                if self.glob.log:
+                    self.log(line)
+                if self.glob.stg['debug'] or priority: 
+                    print(line)
 
         # Print line break for multiple 
         if len(message) > 1 and (self.glob.stg['debug'] or priority):

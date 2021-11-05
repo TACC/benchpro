@@ -165,7 +165,7 @@ class init(object):
         success, stdout, stderr = self.slurm_exec("sbatch " + self.get_dep_str() + script_path)
 
         if not success:
-            self.glob.lib.msg.error("failed to submit job to scheduler")
+            self.glob.lib.msg.error(["failed to submit job to scheduler:", stdout, stderr])
 
         self.glob.log.debug(stdout)
         self.glob.log.debug(stderr)

@@ -11,28 +11,42 @@ import src.lib as lib
 # Global constants
 class settings(object):
 
-    # Coloured text
+    # Text formatting
     warning     = '\033[1;33mWARNING \033[0m'
     error       = '\033[0;31mERROR \033[0m'
     success     = '\033[0;32mSUCCESS \033[0m'
     note        = '\033[0;34mNOTE \033[0m'
-
     bold        = '\033[1m'
     end         = '\033[0m'
 
     # Create logging obj
     log = None
 
-    # Global variable dicts
-    stg      = {}
-    build_report    = None
-    config   = {}
-    sched    = {}
-    compiler = {}
-    suite    = {}
-    system   = {}
+    # ===Global variable dicts===
 
-    task     = {} 
+    # stg = settings.ini
+    stg         = {}
+    # Cfg file key-values
+    config      = {}
+    config['general'] = {}
+    config['config'] = {}
+    config['requirements'] = {}
+    config['runtime'] = {}
+    config['result'] = {}
+    # Scheduler key-values
+    sched       = {}
+    sched['sched'] = {}
+    # Compiler key-values
+    compiler    = {}
+    # Elems of [suite] from settings.ini
+    suite       = {}
+    # System key-values
+    system      = {}
+    # List of staging command to add to script
+    stage_ops   = []
+
+    # Report obj
+    build_report= None
 
     # list of depency jobs
     any_dep_list = []
@@ -48,7 +62,6 @@ class settings(object):
 
     # Files to cleanup on fail
     cleanup = []
-
 
     # Command history line
     cmd = ""
@@ -75,6 +88,7 @@ class settings(object):
         # Check for unresolved envvar
         if "$" in path:
             print("Unable to resolve environment variable in '" + path + "''. Exiting.")
+            sys.exit(1)
     
         # Convert relative paths
         if len(path) > 2:
@@ -147,7 +161,7 @@ class settings(object):
         self.stg['config_path']         = self.resolve_path(self.stg['config_dir'])
         self.stg['template_path']       = self.resolve_path(self.stg['template_dir'])
         self.stg['resource_path']       = self.resolve_path(self.stg['resource_dir'])
-        self.stg['local_repo']          = self.resolve_path(self.stg['local_repo'])
+        self.stg['local_repo']          = self.resolve_path(self.stg['local_repo_env'])
         self.stg['collection_path']     = self.resolve_path(self.stg['collection_path'])
 
         # Derived variables
@@ -160,6 +174,7 @@ class settings(object):
         self.stg['module_path']         = os.path.join(self.stg['build_path'], self.stg['module_dir'])
         self.stg['utils_path']          = os.path.join(self.stg['resource_path'], self.stg['hw_utils_subdir'])
         self.stg['script_path']         = os.path.join(self.stg['resource_path'], self.stg['script_subdir'])
+        self.stg['rules_path']          = os.path.join(self.stg['config_path'], self.stg['rules_dir'])
 
     # Initialize the global object, settings and libraries
     def __init__(self, bt_home):

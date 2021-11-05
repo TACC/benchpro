@@ -296,6 +296,9 @@ def run_bench(input_dict, glob_copy):
             for gpu in gpu_list:
                 glob.config['runtime']['gpus'] = gpu
 
+                # Apply system rules
+                glob.lib.expr.apply_system_rules()
+
                 # Generate bench script
                 gen_bench_script()
                 start_task()

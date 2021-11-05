@@ -45,7 +45,7 @@ class init(object):
     def rel_path(self, path):
         # if empty str
         if not path:
-            return None
+            return ""
         # if in project path
         if self.glob.bt_home in path:
             return os.path.join(self.glob.stg['project_env'] + path.replace(self.glob.bt_home, ""))
@@ -55,6 +55,9 @@ class init(object):
         # if in result path
         elif self.glob.stg['bench_path'] in path:
             return os.path.join(self.glob.stg['result_env'] + path.replace(self.glob.stg['bench_path'], ""))
+        # local repo
+        elif self.glob.stg['local_repo'] in path:
+            return os.path.join(self.glob.stg['local_repo_env'] + path.replace(self.glob.stg['local_repo'], ""))
 
         # if not any of the above
         return path

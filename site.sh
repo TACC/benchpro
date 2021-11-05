@@ -9,8 +9,8 @@ set() {
 
 # SETUP
 set BT_SYSTEM $TACC_SYSTEM
-set BT_VERSION "1.2.6"
-set PY_VERSION "3.`python3 --version | cut -d '.' -f 2`"
+set BT_VERSION "1.3.0"
+set PY_VERSION "3.`python3 --version | head -n 1 | cut -d '.' -f 2`"
 set BT_HOME '$HOME/benchtool'
 set BT_APPS '$SCRATCH/benchtool/apps'
 set BT_RESULTS '$SCRATCH/benchtool/results'
