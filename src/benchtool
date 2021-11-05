@@ -132,6 +132,7 @@ def main():
         build_manager.init(glob)
     # Start bencher
     elif args.bench:
+        glob.op = "bench"
         bench_manager.init(glob)
     # Start capture
     elif args.capture:

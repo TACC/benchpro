@@ -217,14 +217,14 @@ class init(object):
                 self.glob.lib.msg.error("Input file '" + src + "' not found in repo " + \
                                         self.glob.lib.rel_path(self.glob.stg['local_repo']))
 
-                # Extract to working dir
-                tar = tarfile.open(src)
-                tar.extractall(self.glob.config['metadata']['working_path'])
-                tar.close()
+            # Extract to working dir
+            tar = tarfile.open(src)
+            tar.extractall(self.glob.config['metadata']['copy_path'])
+            tar.close()
 
         # untar in script
         else:
-            self.glob.stage_ops.append("tar -xf " + src + " -C " + self.glob.config['metadata']['working_path'])
+            self.glob.stage_ops.append("tar -xf " + src + " -C " + self.glob.config['metadata']['copy_path'])
 
     # Copy file to working dir
     def cp_file(self, src):
@@ -246,16 +246,16 @@ class init(object):
             self.glob.lib.msg.low("Copying " + src_path + "...")
             # Copy file
             if os.path.isfile(src_path):
-                su.copy(src_path, self.glob.config['metadata']['working_path'])
+                su.copy(src_path, self.glob.config['metadata']['copy_path'])
 
             # Copy dir
             else:
                 dest = src_path.split(self.glob.stg['sl'])[-1]
-                su.copytree(src_path, os.path.join(self.glob.config['metadata']['working_path'], dest))
+                su.copytree(src_path, os.path.join(self.glob.config['metadata']['copy_path'], dest))
 
         # Copy in script
         else:
-           self.glob.stage_ops.append("cp -r " + src_path + " " + self.glob.config['metadata']['working_path']) 
+           self.glob.stage_ops.append("cp -r " + src_path + " " + self.glob.config['metadata']['copy_path']) 
 
     # Process local file depending on type
     def stage_local(self, file_list):
@@ -265,7 +265,7 @@ class init(object):
 
             # Locate file
             if self.glob.stg['sync_staging']: 
-                file_path = self.find_in([self.glob.stg['local_repo'], self.glob.config['metadata']['working_path']], filename, False)
+                file_path = self.find_in([self.glob.stg['local_repo'], self.glob.config['metadata']['copy_path']], filename, False)
             # Assume will be in repo after download
             else:
                 file_path = os.path.join(self.glob.stg['local_repo'], filename)
@@ -296,7 +296,7 @@ class init(object):
         if self.glob.stg['cache_downloads']:
             dest = os.path.join(self.glob.stg['local_repo'], filename)
         else:
-            dest = os.path.join(self.glob.config['metadata']['working_path'], filename)
+            dest = os.path.join(self.glob.config['metadata']['copy_path'], filename)
 
         # Download now
         if self.glob.stg['sync_staging']:
@@ -333,7 +333,7 @@ class init(object):
     def stage(self):
       
         # Create working dir
-        self.create_dir(self.glob.config['metadata']['working_path'])
+        self.create_dir(self.glob.config['metadata']['copy_path'])
 
         # Check section exists
         if 'files' in self.glob.config.keys():

@@ -272,9 +272,10 @@ class init(object):
         # Get build and install subdirs
         cfg_dict['metadata']['build_path']   = os.path.join(cfg_dict['metadata']['working_path'], self.glob.stg['build_subdir'])
         cfg_dict['metadata']['install_path'] = os.path.join(cfg_dict['metadata']['working_path'], self.glob.stg['install_subdir'])
+        
 
         # Path to copy files to
-        cfg_dict['metadata']['dest_path']    = cfg_dict['metadata']['build_path']
+        cfg_dict['metadata']['copy_path']    = cfg_dict['metadata']['build_path']
 
         # Overload params from cmdline
         self.glob.lib.overload.replace(cfg_dict)

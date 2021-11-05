@@ -21,7 +21,7 @@ class settings(object):
 
     # Create logging obj
     log = None
-
+    op = ""
     # ===Global variable dicts===
 
     # stg = settings.ini

@@ -351,26 +351,26 @@ def send_files(result_dir, dest_dir):
             glob.lib.msg.error("Unable to write result data to " + glob.stg['collection_path'])
         
         # File destination
-        dest_path = os.path.join(glob.stg['collection_path'], dest_dir)
-        glob.lib.files.create_dir(dest_path) 
+        copy_path = os.path.join(glob.stg['collection_path'], dest_dir)
+        glob.lib.files.create_dir(copy_path) 
         
         # Copy files to local directory
-        glob.lib.files.copy(dest_path, glob.output_path, "", False)
+        glob.lib.files.copy(copy_path, glob.output_path, "", False)
 
         # Copy matching files to server
         search_substrings = ["*.err", "*.out", "*.sched", "*.batch", "*.txt", "*.log"]
         for substring in search_substrings:
             matching_files = gb.glob(os.path.join(glob.result_path, substring))
             for match in matching_files:
-                glob.lib.files.copy(dest_path, os.path.join(glob.result_path, match), "", False)
+                glob.lib.files.copy(copy_path, os.path.join(glob.result_path, match), "", False)
 
         # SCP bench_files to server
         if os.path.isdir(os.path.join(glob.result_path, "bench_files")):
-            glob.lib.files.copy(dest_path, os.path.join(glob.result_path, "bench_files"), "", False)
+            glob.lib.files.copy(copy_path, os.path.join(glob.result_path, "bench_files"), "", False)
 
         # SCP hw_utils to server
         if os.path.isdir(os.path.join(glob.result_path, "hw_report")):
-            glob.lib.files.copy(dest_path, os.path.join(glob.result_path, "hw_report"), "", False)
+            glob.lib.files.copy(copy_path, os.path.join(glob.result_path, "hw_report"), "", False)
 
     # Transmission method neither 'scp' or 'cp'
     else:
