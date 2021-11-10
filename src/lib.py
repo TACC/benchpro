@@ -73,9 +73,9 @@ class init(object):
 
         return installed_list
 
-    # Get results in $BT_RESULTS/complete
-    def get_complete_results(self):
-        complete =  self.files.get_subdirs(self.glob.stg['complete_path'])
+    # Get results in $BT_RESULTS/pending
+    def get_pending_results(self):
+        complete =  self.files.get_subdirs(self.glob.stg['pending_path'])
         complete.sort()
         return complete
 

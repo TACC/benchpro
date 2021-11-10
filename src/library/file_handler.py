@@ -278,9 +278,14 @@ class init(object):
 
     # Extract filename from URL 
     def get_url_filename(self, url):
-        remotefile = urlopen(url)
-        value, params = cgi.parse_header(remotefile.info()['Content-Disposition'])
-        return params["filename"]
+
+        try:
+            remotefile = urlopen(url)
+            value, params = cgi.parse_header(remotefile.info()['Content-Disposition'])
+            return params["filename"]
+
+        except:
+            self.glob.lib.msg.error("Unable to reach URL " + url)
 
     # Check if file or dir is present in local repo
     def in_local_repo(self, filename):

@@ -118,7 +118,7 @@ def gen_bench_script():
                                             gpu_path_str
 
     # Check if working dir path already exists
-    glob.config['metadata']['working_path'] = glob.lib.files.check_dup_path(os.path.join(glob.stg['complete_path'], glob.config['metadata']['working_dir']))
+    glob.config['metadata']['working_path'] = glob.lib.files.check_dup_path(os.path.join(glob.stg['pending_path'], glob.config['metadata']['working_dir']))
     # Path to copy files to
     glob.config['metadata']['copy_path']    = glob.config['metadata']['working_path']
 

@@ -180,7 +180,7 @@ def check_setup(glob_obj):
     confirm_path_exists([glob.stg['log_path'], 
                         glob.stg['build_path'], 
                         glob.stg['bench_path'], 
-                        glob.stg['complete_path'],
+                        glob.stg['pending_path'],
                         glob.stg['captured_path'], 
                         glob.stg['failed_path']])
 

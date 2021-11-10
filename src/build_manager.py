@@ -175,7 +175,7 @@ def build_code(input_dict, glob_copy):
     glob.lib.report.build()
 
     # Add build dict to history file
-    glob.cmd += " | " + glob.config['general']['code'] + "/" + glob.config['general']['version'] + "/" + glob.config['config']['build_label']
+    glob.cmd += " | " + glob.config['general']['code'] + "/" + str(glob.config['general']['version']) + "/" + glob.config['config']['build_label']
     glob.lib.files.write_cmd_history()
     glob.lib.msg.high("Done.") 
 

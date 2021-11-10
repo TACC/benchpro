@@ -51,9 +51,9 @@ class init(object):
                     # Cast to int
                     try:
                         return int(value)
-                    # Wrap string in 's for comparisons
+                    # Return str
                     except:
-                        return "'" + value + "'"
+                        return value 
 
         # No match found in search space
         self.glob.lib.msg.error("Unable to resolve variable '" + key + "'")
