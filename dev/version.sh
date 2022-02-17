@@ -9,16 +9,16 @@ fi
 sed -i "/version=/c\    version=\'${1}\'," ./setup.py
 
 # Update site.sh
-sed -i "/set BT_VERSION/c\set BT_VERSION \"${1}\"" ./site.sh
+sed -i "/set BP_VERSION/c\set BP_VERSION \"${1}\"" ./site.sh
 
 # Update version in user repo
-echo "benchtool v${1}" > ./benchtool/.version
-date >> ./benchtool/.version
+echo "benchpro v${1}" > ./benchpro/.version
+date >> ./benchpro/.version
 
 echo "Push user repo before reinstalling"
 echo "--------------"
-echo "git -C benchtool add ."
-echo "git -C benchtool commit -m 'updated version info'"
-echo "git -C benchtool push "
+echo "git -C benchpro add ."
+echo "git -C benchpro commit -m 'updated version info'"
+echo "git -C benchpro push "
 echo
 echo "Version updated"

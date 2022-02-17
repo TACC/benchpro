@@ -73,7 +73,7 @@ class init(object):
 
         return installed_list
 
-    # Get results in $BT_RESULTS/pending
+    # Get results in $BP_RESULTS/pending
     def get_pending_results(self):
         complete =  self.files.get_subdirs(self.glob.stg['pending_path'])
         complete.sort()
@@ -363,12 +363,12 @@ class init(object):
     # Check if the installed version is up-to-date with site version
     def check_version(self):
 
-            site_version = os.getenv("BT_VERSION")
+            site_version = os.getenv("BP_VERSION")
             local_version = self.glob.lib.files.read_version()
            
             if version.parse(site_version) > version.parse(local_version):
-                self.msg.warning(["You are using BenchTool " + local_version + ", version " + site_version + " is available.", \
-                                "Run benchtool --update", \
+                self.msg.warning(["You are using BenchPRO " + local_version + ", version " + site_version + " is available.", \
+                                "Run benchpro --update", \
                                 "Continuing..."])
                 time.sleep(3)
 

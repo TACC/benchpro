@@ -131,9 +131,9 @@ class settings(object):
 
         # Check user files are present
         if not os.path.isfile(settings_ini):
-            print("$BT_HOME/settings.ini file not found, did you install required user files?")
+            print("$BP_HOME/settings.ini file not found, did you install required user files?")
             print("If not, do so now with:")
-            print("git clone https://github.com/TACC/benchtool.git $HOME/benchtool")
+            print("git clone https://github.com/TACC/benchpro.git $HOME/benchpro")
             print("Quitting for now...")
             sys.exit(1)
     

@@ -407,7 +407,7 @@ class init(object):
                                                                 ["System", self.glob.system['system']], \
                                                                 ["CWD", self.glob.cwd]]]
         
-        # Print BenchTool settings
+        # Print BenchPRO settings
         print()
         print("Benchtool defaults:")
         [self.print_setting(key, self.glob.stg[key]) for key in ['dry_run', \

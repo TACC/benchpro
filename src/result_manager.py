@@ -344,7 +344,7 @@ def send_files(result_dir, dest_dir):
         # Use local blackhole
     elif glob.stg['file_copy_handler'] == "cp":
         if not glob.stg['collection_path']:
-            glob.lib.msg.error("Key 'collection_path' required in $BT_HOME/settings.ini if using 'cp' file transmission mode.")
+            glob.lib.msg.error("Key 'collection_path' required in $BP_HOME/settings.ini if using 'cp' file transmission mode.")
 
         # Check write permissions
         if not glob.lib.files.write_permission(glob.stg['collection_path']): 
@@ -384,7 +384,7 @@ def capture_result(glob_obj):
     # Start logger
     logger.start_logging("CAPTURE", glob.stg['results_log_file'] + "_" + glob.time_str + ".log", glob)
 
-    # Get list of results in $BT_RESULTS/complete with a COMPLETE job state
+    # Get list of results in $BP_RESULTS/complete with a COMPLETE job state
     results = glob.lib.get_completed_results(glob.lib.get_pending_results(), True)
 
     # No outstanding results

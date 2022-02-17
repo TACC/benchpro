@@ -11,7 +11,7 @@ required_packages = [x.strip() for x in all_reqs if ('git+' not in x) and (
     not x.startswith('#')) and (not x.startswith('-'))]
 
 setup (
-    name='benchtool',
+    name='benchpro',
     version='1.3.0',
     description="Tool for building apps, running benchmarks and collecting results.",
     packages = find_packages(),
@@ -23,14 +23,14 @@ setup (
     keywords = "benchmarks, complication, performance results",
     long_description = open('README.md').read(),
     license='MIT',
-    url='https://github.com/TACC/benchtool-package',
+    url='https://github.com/TACC/benchpro-package',
     author_email = 'mcawood@tacc.utexas.edu',
     classifiers=[
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.6',
     ],
-    scripts=['src/benchtool'],
+    scripts=['src/benchpro'],
 
 )
 

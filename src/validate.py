@@ -86,7 +86,7 @@ def check_env_vars(var_list):
             print(bcolors.PASS, var, "is set")
         else:
             print(bcolors.FAIL, var, "not set")
-            print("Is benchtool module loaded?")
+            print("Is benchpro module loaded?")
             sys.exit(1)
     
 # Test write access to dir
@@ -136,17 +136,17 @@ def check_db_connect(glob):
     print(bcolors.PASS, "connected to", glob.stg['db_name'])
 
 
-def check_benchtool_version(glob):
+def check_benchpro_version(glob):
 
-    site_version = os.getenv("BT_VERSION")
+    site_version = os.getenv("BP_VERSION")
     local_version = glob.lib.files.read_version()
 
     if version.parse(site_version) > version.parse(local_version):
         print(bcolors.FAIL, "version mismatch, site version='" + site_version + "', your version='"+local_version+"'")
-        print("run git -C $BT_HOME pull")
+        print("run git -C $BP_HOME pull")
         sys.exit(1)
     else:
-        print(bcolors.PASS, "BenchTool version " + site_version)
+        print(bcolors.PASS, "BenchPRO version " + site_version)
 
 # Validate setup 
 def check_setup(glob_obj):
@@ -156,8 +156,8 @@ def check_setup(glob_obj):
     # Python version
     check_python_version()
 
-    # Check benchtool version
-    check_benchtool_version(glob)
+    # Check benchpro version
+    check_benchpro_version(glob)
 
     # Sys envs
     project_env = glob.stg['project_env_var'].strip("$")
@@ -169,7 +169,7 @@ def check_setup(glob_obj):
                     project_env, 
                     app_env, 
                     result_env,
-                    'BT_VERSION',
+                    'BP_VERSION',
                     'LMOD_VERSION'])
 
     # Check priv
@@ -189,7 +189,7 @@ def check_setup(glob_obj):
                         glob.stg['template_path']])
 
     # Check exe
-    check_exe(['benchtool', 'sinfo', 'sacct'])
+    check_exe(['benchpro', 'sinfo', 'sacct'])
 
     # Check db host access
     #check_ssh_connect(glob)

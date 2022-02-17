@@ -17,7 +17,7 @@ result(){
 }
 
 # Remove existing installation
-benchtool --delApp $APP		> /dev/null
+benchpro --delApp $APP		> /dev/null
 
 declare cases=( "help"
             "version" 
@@ -38,11 +38,11 @@ declare cases=( "help"
             ) 
 
 for c in "${cases[@]}"; do
-    benchtool --$c > /dev/null 2>&1
+    benchpro --$c > /dev/null 2>&1
     result $? $c
 done
 
-#benchtool --build all_apps --overload dry_run=True > /dev/null
+#benchpro --build all_apps --overload dry_run=True > /dev/null
 #echo     "--suite         $?"
 
 echo "Done"

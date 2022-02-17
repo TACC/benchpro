@@ -153,7 +153,7 @@ def ml():
 
 def check_env():
     try:
-        print("Project directory = " + os.environ["BT_HOME"])
+        print("Project directory = " + os.environ["BP_HOME"])
     except:
         print("Ensure benchtool module is loaded before continuing.")
         sys.exit(1)
@@ -161,11 +161,11 @@ def check_env():
 # Check benchtool is installed
 def is_installed(path):
     if not path:
-        print("$BT_HOME not set, is the benchtool module loaded?")
+        print("$BP_HOME not set, is the benchtool module loaded?")
         sys.exit(0)
     
     if not os.path.isfile(os.path.join(path, ".installed")):
-        print("Benchtool is not installed in $BT_HOME")
+        print("Benchtool is not installed in $BP_HOME")
         sys.exit(0)
 
 # Delete project directories for uninstall
@@ -176,11 +176,11 @@ def remove_dirs(path_list):
         if os.path.isdir(path_dict[path]):
             shutil.rmtree(path_dict[path])
 
-# Rewrite package config files into $BT_HOME
+# Rewrite package config files into $BP_HOME
 def overwrite():
     global src_dir
     root_src_dir = os.path.join(src_dir, "data")
-    root_dst_dir = os.path.expandvars("$BT_HOME")
+    root_dst_dir = os.path.expandvars("$BP_HOME")
 
     for src_dir, dirs, files in os.walk(root_src_dir):
         dst_dir = src_dir.replace(root_src_dir, root_dst_dir, 1)
@@ -214,7 +214,7 @@ def install(settings):
 # Run uninstaller
 def uninstall():
 
-    home_path = os.path.expandvars("$BT_HOME")
+    home_path = os.path.expandvars("$BP_HOME")
     is_installed(home_path)
 
     print("\033[0;31m!!!DELETING ALL APPLICATIONS, RESULTS AND CONFIG DATA!!!\033[0m")

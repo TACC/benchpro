@@ -8,12 +8,12 @@ set() {
 }
 
 # SETUP
-set BT_SYSTEM $TACC_SYSTEM
-set BT_VERSION "1.3.0"
+set BP_SYSTEM $TACC_SYSTEM
+set BP_VERSION "1.3.0"
 set PY_VERSION "3.`python3 --version | head -n 1 | cut -d '.' -f 2`"
-set BT_HOME '$HOME/benchtool'
-set BT_APPS '$SCRATCH/benchtool/apps'
-set BT_RESULTS '$SCRATCH/benchtool/results'
+set BP_HOME '$HOME/benchpro'
+set BP_APPS '$SCRATCH/benchpro/apps'
+set BP_RESULTS '$SCRATCH/benchpro/results'
 
 # DB access
 set DB_USER "bench_user"
@@ -21,20 +21,20 @@ set DB_HOST "tacc-stats03.tacc.utexas.edu"
 set REMOTE_PATH "/home/mcawood/benchdb/data_store"
 
 # SYSTEM SPECIFIC
-if [ $BT_SYSTEM = "frontera" ]; then
+if [ $BP_SYSTEM = "frontera" ]; then
     set TACC_SCRATCH "/scratch1"
-    set BT_SITE "${TACC_SCRATCH}/hpc_tools/benchtool"
-    set BT_REPO "${BT_SITE}/repo"
+    set BP_SITE "${TACC_SCRATCH}/hpc_tools/benchpro"
+    set BP_REPO "${BP_SITE}/repo"
 
-elif [ $BT_SYSTEM = "ls6" ]; then
+elif [ $BP_SYSTEM = "ls6" ]; then
     set TACC_SCRATCH "/scratch"
-    set BT_SITE "${TACC_SCRATCH}/06280/mcawood/benchtool"
-    set BT_REPO "${BT_SITE}/repo"
+    set BP_SITE "${TACC_SCRATCH}/06280/mcawood/benchpro"
+    set BP_REPO "${BP_SITE}/repo"
 
-elif [ $BT_SYSTEM = "stampede2" ]; then
+elif [ $BP_SYSTEM = "stampede2" ]; then
     set TACC_SCRATCH "/scratch"
-    set BT_SITE "${TACC_SCRATCH}/hpc_tools/benchtool"
-    set BT_REPO "${BT_SITE}/repo"
+    set BP_SITE "${TACC_SCRATCH}/hpc_tools/benchpro"
+    set BP_REPO "${BP_SITE}/repo"
 fi
 echo 
 return 0

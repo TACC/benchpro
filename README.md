@@ -1,9 +1,9 @@
-# BenchTool-package
-BenchTool is a framework to automate and standardize application compilation, benchmarking and result collection on large scale HPC systems.
+# BenchPRO-package
+BenchPRO is a framework to automate and standardize application compilation, benchmarking and result collection on large scale HPC systems.
 
 ## Site Installation
 
-BenchTool is installed as a Python3 package. By default the installation base directory is `/scratch1/hpc_tools/benchtool`, this can be changed by modifying `SITE_PATH` in install.sh.
+BenchPRO is installed as a Python3 package. By default the installation base directory is `/scratch1/hpc_tools/benchpro`, this can be changed by modifying `SITE_PATH` in install.sh.
 
 
 1 Load system Python3 module
@@ -11,26 +11,26 @@ BenchTool is installed as a Python3 package. By default the installation base di
 ml python3
 ```
 
-2 Download and install BenchTool package: 
+2 Download and install BenchPRO package: 
 ```
-git clone https://github.com/TACC/benchtool.git
-cd benchtool-package
+git clone https://github.com/TACC/benchpro.git
+cd benchpro-package
 ./install.sh [key]
 ```
 
 The installation script will limit access to the package directroy to unix group G-25072.
 
-Note: The SSH key provided on the command line is required to access the database server to store provenenace data. BenchTool does not interact with this key at all, but will provide you a line to add to cron task to periodically scan and submit user results to the database server.
+Note: The SSH key provided on the command line is required to access the database server to store provenenace data. BenchPRO does not interact with this key at all, but will provide you a line to add to cron task to periodically scan and submit user results to the database server.
 
 ## User Repo
 
-In order to use BenchTool, users need to install a local instance of the configuration and template files into their home directory. For additional information on how to install the user files and BenchTool usage information, refer to the user repository here: https://github.com/TACC/benchtool
+In order to use BenchPRO, users need to install a local instance of the configuration and template files into their home directory. For additional information on how to install the user files and BenchPRO usage information, refer to the user repository here: https://github.com/TACC/benchpro
 
 The user files repository was installed as part of the process described above for setup validation.
 
 ### Version Control
 
-The user repository version number in $BT_HOME/.version is tested against the package version number $BT_VERSION to ensure compatibility between the two repositories. If users are running an old version, they will be prompted to update when using the utility. If changes are made to this repository, the version should be updated with the provided script:
+The user repository version number in $BP_HOME/.version is tested against the package version number $BP_VERSION to ensure compatibility between the two repositories. If users are running an old version, they will be prompted to update when using the utility. If changes are made to this repository, the version should be updated with the provided script:
 ```
 ./dev/version.sh [x.y.z]
 ```
@@ -87,7 +87,7 @@ Global settings are defined in the file `settings.ini`
 | sched_mpi         | ibrun                         | MPI launcher to use in job script                                                 |
 | local_mpi         | mpirun                        | MPI launcher to use on local machine                                              |
 | tree_depth        | 6                             | Determines depth of app installation tree                                         |
-| topdir_env_var    | $BT_HOME                   | BenchTool's working directory environment variable (exported in from sourceme)    |
+| topdir_env_var    | $BP_HOME                   | BenchPRO's working directory environment variable (exported in from sourceme)    |
 | log_dir           | ./log                         | Log file directory                                                                |
 | script_basedir    | ./scripts                     | Result validation and system check script directory                               |
 | ssh_key_dir       | ./auth                        | Directory containing SSH keys for server access                                   |
@@ -108,7 +108,7 @@ Global settings are defined in the file `settings.ini`
 | bench_tmpl_dir    | bench                         | Benchmark template file subdirectory                                              |
 | compile_tmpl_file | compiler.template             | Template for setting environment variables                                        |
 | **[builder]**     |                               | -                                                                                 |
-| app_env_var       | $BT_APPS                      | Application directory environment variable                                        |
+| app_env_var       | $BP_APPS                      | Application directory environment variable                                        |
 | overwrite         | False                         | If existing installation  is found in build path, replace it                      |
 | build_mode        | sched                         | Accepts 'sched' or 'local', applications compiled via sched job or local shell    |
 | build_basedir     | ./build                       | Top directory for application installation tree                                   |
@@ -118,7 +118,7 @@ Global settings are defined in the file `settings.ini`
 | build_report_file | build_report.txt              | Application build report file name                                                |
 | max_build_jobs    | 5                             | Maximum number of concurrent running build jobs allowed in the scheduler          |
 | **[bencher]**     |                               |                                                                                   |
-| result_env_var    | $BT_RESULTS                   | Application directory environment variable                                        |
+| result_env_var    | $BP_RESULTS                   | Application directory environment variable                                        |
 | bench_mode        | sched                         | Accepts 'sched' or 'local', benchmarks run via sched job or local shell           |
 | build_if_missing  | True                          | If application needed for benchmark is not currently installed, install it        |
 | local_repo    | /scratch/06280/mcawood/local_repo  | Directory containing benchmark datasets                                          |
@@ -206,9 +206,9 @@ These config files contain parameters used to populate the benchmark template sc
 
 | Directory         | Purpse                                                    |
 |-------------------|-----------------------------------------------------------|
-| $BT_APPS                 | Application build basedir.                                |
-| $BT_HOME/config          | config files containing template parameters.              |
-| $BT_HOME/log             | Build, bench and catpure log files.                       |
-| $BT_HOME/resources       | Contains useful content including modulefiles, hardware collection and result validation scripts.    |
-| $BT_RESULTS              | Benchmark result basedir.                                 |
-| $BT_HOME/templates       | job template files                                        |
+| $BP_APPS                 | Application build basedir.                                |
+| $BP_HOME/config          | config files containing template parameters.              |
+| $BP_HOME/log             | Build, bench and catpure log files.                       |
+| $BP_HOME/resources       | Contains useful content including modulefiles, hardware collection and result validation scripts.    |
+| $BP_RESULTS              | Benchmark result basedir.                                 |
+| $BP_HOME/templates       | job template files                                        |

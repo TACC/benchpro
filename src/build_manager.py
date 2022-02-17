@@ -66,7 +66,7 @@ def build_code(input_dict, glob_copy):
     input_str = ",".join([key + "=" + input_dict[key] for key in input_dict.keys() if key])
 
     # Line for history file
-    glob.cmd = "benchtool -b " + input_str
+    glob.cmd = "benchpro -b " + input_str
     if glob.args.overload:
         glob.cmd += " -o " + " ".join(glob.args.overload)
 

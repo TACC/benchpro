@@ -105,7 +105,7 @@ class init(object):
             self.log_and_print([self.glob.note,
                                 "There are " + str(len(complete_results)) + " uncaptured results found in " + 
                                 self.glob.lib.rel_path(self.glob.stg['pending_path']),
-                                "Run 'benchtool --capture' to send to database."], False)
+                                "Run 'benchpro --capture' to send to database."], False)
         else:
             self.log_and_print(["No new results found.",
                                 ""], False)

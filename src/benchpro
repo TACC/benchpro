@@ -18,7 +18,7 @@ try:
 # Catch import exception
 except ImportError as e:
     print("You had an import error, you might be using Python2?")
-    print("Please make sure you loaded the benchtool module'")
+    print("Please make sure you loaded the benchpro module'")
     print(e)
     sys.exit(1)
 
@@ -80,7 +80,7 @@ def main():
                             help="Export database query to .csv file dbquery_[date].csv")
 
     cmd_parser.add_argument("--history", default=False, action='store_true',
-                                help="Print benchtool input history.")
+                                help="Print benchpro input history.")
 
     cmd_parser.add_argument("-L", "--last", nargs='?', const=1, type=int,
                                 help="Print query from last build or bench task.")
@@ -100,9 +100,9 @@ def main():
 
     # Installation directoy set by module
     try:
-        bt_home = os.environ['BT_HOME']
+        bt_home = os.environ['BP_HOME']
     except:
-        print("$BT_HOME not set. Load benchtool module. Aborting!")
+        print("$BP_HOME not set. Load benchpro module. Aborting!")
         sys.exit(1)
 
     # Init global settings
@@ -119,7 +119,7 @@ def main():
 
     # Check validated
     if not os.path.isfile(os.path.join(bt_home, ".validated")):
-        print("Please run  benchtool --validate before continuing.")
+        print("Please run  benchpro --validate before continuing.")
         print()
         sys.exit(1)
     
@@ -180,7 +180,7 @@ def main():
     # No seletion provided
     else:
         print("Invalid input")
-        print("Try 'benchtool --help' for more information.")
+        print("Try 'benchpro --help' for more information.")
 
     print()
     return 0

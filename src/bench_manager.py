@@ -218,7 +218,7 @@ def run_bench(input_dict, glob_copy):
     input_str = ", ".join([i + "=" + input_dict[i] for i in input_dict])
 
     # History entry
-    glob.cmd = "benchtool -B " + input_str
+    glob.cmd = "benchpro -B " + input_str
     if glob.args.overload:
         glob.cmd += " -o " + " ".join(glob.args.overload)
 
