@@ -28,7 +28,7 @@ if [ $BP_SYSTEM = "frontera" ]; then
 
 elif [ $BP_SYSTEM = "ls6" ]; then
     set TACC_SCRATCH "/scratch"
-    set BP_SITE "${TACC_SCRATCH}/06280/mcawood/benchpro"
+    set BP_SITE "${TACC_SCRATCH}/projects/benchtool"
     set BP_REPO "${BP_SITE}/repo"
 
 elif [ $BP_SYSTEM = "stampede2" ]; then

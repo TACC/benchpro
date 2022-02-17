@@ -109,7 +109,7 @@ echo "ml benchpro"
 echo
 echo "------------------------------------------------"
 echo "Add the following lines to your crontab:"
-echo "* /5 * * * * /bin/rsync --remove-source-files -av -e \"ssh -i $SSH_KEY\" $BP_SITE/collection/* $DB_USER@$DB_HOST:$REMOTE_PATH/ | tee -a $BP_SITE/logs/collect_\`date +\\%Y\\-%m-%d\`.log"
+echo "* 5 * * * * /bin/rsync --remove-source-files -av -e \"ssh -i $SSH_KEY\" $BP_SITE/collection/* $DB_USER@$DB_HOST:$REMOTE_PATH/ | tee -a $BP_SITE/logs/collect_\`date +\\%Y\\-%m-%d\`.log"
 echo "0 0 * * * /bin/rsync -av /home1/06280/mcawood/work2/repo_backup/ $BP_SITE/repo/ | tee -a $BP_SITE/logs/repo_\`date +\\%Y\\-%m-%d\`.log"
 echo 
 

@@ -123,8 +123,11 @@ class init(object):
 
     # Get a list of sub-directories, called by 'search_tree'
     def get_subdirs(self, base):
-        return [name for name in os.listdir(base)
-            if os.path.isdir(os.path.join(base, name))]
+        try:
+            return [name for name in os.listdir(base)
+                if os.path.isdir(os.path.join(base, name))]
+        except Exception as e:
+            self.glob.lib.msg.error("Directory '" + base + "' not found, did you run --validate?")
 
     # Recursive function to scan app directory, called by 'get_installed'
     def search_tree(self, installed_list, app_dir, start_depth, current_depth, max_depth):
