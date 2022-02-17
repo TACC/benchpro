@@ -201,4 +201,4 @@ def check_setup(glob_obj):
         print(bcolors.WARN, "database access check disabled")
 
     # Create validate file
-    with open(os.path.join(glob.bt_home, ".validated"), 'w'): pass 
+    with open(os.path.join(glob.bp_home, ".validated"), 'w'): pass 

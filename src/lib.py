@@ -47,8 +47,8 @@ class init(object):
         if not path:
             return ""
         # if in project path
-        if self.glob.bt_home in path:
-            return os.path.join(self.glob.stg['project_env'] + path.replace(self.glob.bt_home, ""))
+        if self.glob.bp_home in path:
+            return os.path.join(self.glob.stg['project_env'] + path.replace(self.glob.bp_home, ""))
         # if in application path
         elif self.glob.stg['build_path'] in path:
             return os.path.join(self.glob.stg['app_env'] + path.replace(self.glob.stg['build_path'], ""))

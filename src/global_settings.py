@@ -93,7 +93,7 @@ class settings(object):
         # Convert relative paths
         if len(path) > 2:
             if path[0:2] == "./":
-                return os.path.join(self.bt_home, path[2:])
+                return os.path.join(self.bp_home, path[2:])
                 
         return path
 
@@ -121,11 +121,11 @@ class settings(object):
             return value
 
     # Read in settings.ini file
-    def read_settings(self, bt_home):
+    def read_settings(self, bp_home):
 
-        self.bt_home = self.resolve_path(bt_home)
+        self.bp_home = self.resolve_path(bp_home)
 
-        settings_ini    = os.path.join(self.bt_home, "settings.ini")
+        settings_ini    = os.path.join(self.bp_home, "settings.ini")
         settings_parser = configparser.RawConfigParser(allow_no_value=True)
         settings_parser.read(settings_ini)
 
@@ -167,7 +167,7 @@ class settings(object):
         # Derived variables
         self.stg['module_dir']          = "modulefiles"
         self.stg['build_dir']           = os.path.basename(self.stg['build_path']) 
-        self.stg['log_path']            = os.path.join(self.bt_home, self.stg['log_dir'])
+        self.stg['log_path']            = os.path.join(self.bp_home, self.stg['log_dir'])
         self.stg['pending_path']       = os.path.join(self.stg['bench_path'], self.stg['pending_subdir'])
         self.stg['captured_path']       = os.path.join(self.stg['bench_path'], self.stg['captured_subdir'])
         self.stg['failed_path']         = os.path.join(self.stg['bench_path'], self.stg['failed_subdir'])
@@ -177,10 +177,10 @@ class settings(object):
         self.stg['rules_path']          = os.path.join(self.stg['config_path'], self.stg['rules_dir'])
 
     # Initialize the global object, settings and libraries
-    def __init__(self, bt_home):
+    def __init__(self, bp_home):
 
         # Parse settings.ini
-        self.read_settings(bt_home) 
+        self.read_settings(bp_home) 
 
         # Get system label
         self.system['system'] = self.resolve_path(self.stg['system_env'])

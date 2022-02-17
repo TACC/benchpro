@@ -27,7 +27,7 @@ class init(object):
         
         # Clean default *.tmp files
         if not clean_list:
-            clean_list = gb.glob(os.path.join(self.glob.bt_home, 'tmp.*'))
+            clean_list = gb.glob(os.path.join(self.glob.bp_home, 'tmp.*'))
 
         if clean_list:
             for f in clean_list:
@@ -85,7 +85,7 @@ class init(object):
     def find_in(self, paths, filename, error_if_missing):
 
         # Add some default locations to the search path list
-        paths.extend(["", self.glob.bt_home, self.glob.cwd, self.glob.home])
+        paths.extend(["", self.glob.bp_home, self.glob.cwd, self.glob.home])
         file_path = self.look(paths, filename) 
 
         if file_path:
@@ -362,7 +362,7 @@ class init(object):
 
     # Read version number from file
     def read_version(self):
-        with open(os.path.join(self.glob.bt_home, ".version"), 'r') as f:
+        with open(os.path.join(self.glob.bp_home, ".version"), 'r') as f:
             return f.readline().split(" ")[-1][1:].strip()
 
     # Write module to file
@@ -373,7 +373,7 @@ class init(object):
 
     # Write command line to history file
     def write_cmd_history(self):
-        history_file = os.path.join(self.glob.bt_home, ".history")
+        history_file = os.path.join(self.glob.bp_home, ".history")
         with open(history_file, "a") as hist:
             hist.write(self.glob.cmd + "\n")
 

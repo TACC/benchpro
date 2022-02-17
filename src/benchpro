@@ -100,13 +100,13 @@ def main():
 
     # Installation directoy set by module
     try:
-        bt_home = os.environ['BP_HOME']
+        bp_home = os.environ['BP_HOME']
     except:
         print("$BP_HOME not set. Load benchpro module. Aborting!")
         sys.exit(1)
 
     # Init global settings
-    glob = global_settings.settings(bt_home)
+    glob = global_settings.settings(bp_home)
     glob.args = args
 
     #Check version
@@ -118,7 +118,7 @@ def main():
         sys.exit(0)
 
     # Check validated
-    if not os.path.isfile(os.path.join(bt_home, ".validated")):
+    if not os.path.isfile(os.path.join(bp_home, ".validated")):
         print("Please run  benchpro --validate before continuing.")
         print()
         sys.exit(1)

@@ -41,13 +41,13 @@ printf "\nCleaned up...\n\n"
 
 # Copy  and contextualize module file
 cp ${WORKING_DIR}/data/modulefiles/benchpro.lua                        ${BP_SITE}/modulefiles/benchpro/${BP_VERSION}.lua
-sed -i "/local bt_site/c\local bt_site = \"${BP_SITE}\""                ${BP_SITE}/modulefiles/benchpro/${BP_VERSION}.lua
-sed -i "/local bt_repo/c\local bt_repo = \"${BP_REPO}\""                ${BP_SITE}/modulefiles/benchpro/${BP_VERSION}.lua
+sed -i "/local bp_site/c\local bp_site = \"${BP_SITE}\""                ${BP_SITE}/modulefiles/benchpro/${BP_VERSION}.lua
+sed -i "/local bp_repo/c\local bp_repo = \"${BP_REPO}\""                ${BP_SITE}/modulefiles/benchpro/${BP_VERSION}.lua
 sed -i "/local tacc_scratch/c\local tacc_scratch = \"${TACC_SCRATCH}\"" ${BP_SITE}/modulefiles/benchpro/${BP_VERSION}.lua
-sed -i "/local bt_home/c\local bt_home = \"${BP_HOME}\""                ${BP_SITE}/modulefiles/benchpro/${BP_VERSION}.lua
-sed -i "/local bt_apps/c\local bt_apps = \"${BP_APPS}\""                ${BP_SITE}/modulefiles/benchpro/${BP_VERSION}.lua
-sed -i "/local bt_results/c\local bt_results = \"${BP_RESULTS}\""       ${BP_SITE}/modulefiles/benchpro/${BP_VERSION}.lua
-sed -i "/local bt_version/c\local bt_version = \"${BP_VERSION}\""       ${BP_SITE}/modulefiles/benchpro/${BP_VERSION}.lua
+sed -i "/local bp_home/c\local bp_home = \"${BP_HOME}\""                ${BP_SITE}/modulefiles/benchpro/${BP_VERSION}.lua
+sed -i "/local bp_apps/c\local bp_apps = \"${BP_APPS}\""                ${BP_SITE}/modulefiles/benchpro/${BP_VERSION}.lua
+sed -i "/local bp_results/c\local bp_results = \"${BP_RESULTS}\""       ${BP_SITE}/modulefiles/benchpro/${BP_VERSION}.lua
+sed -i "/local bp_version/c\local bp_version = \"${BP_VERSION}\""       ${BP_SITE}/modulefiles/benchpro/${BP_VERSION}.lua
 sed -i "/local py_version/c\local py_version = \"${PY_VERSION}\""       ${BP_SITE}/modulefiles/benchpro/${BP_VERSION}.lua
 
 ml use ${BP_SITE}/modulefiles
