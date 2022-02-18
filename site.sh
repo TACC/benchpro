@@ -9,7 +9,7 @@ set() {
 
 # SETUP
 set BP_SYSTEM $TACC_SYSTEM
-set BP_VERSION "1.3.1"
+set BP_VERSION "1.3.2"
 set PY_VERSION "3.`python3 --version | head -n 1 | cut -d '.' -f 2`"
 set BP_HOME '$HOME/benchpro'
 set BP_APPS '$SCRATCH/benchpro/apps'

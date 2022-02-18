@@ -268,7 +268,7 @@ class init(object):
 
             # Locate file
             if self.glob.stg['sync_staging']: 
-                file_path = self.find_in([self.glob.stg['local_repo'], self.glob.config['metadata']['copy_path']], filename, False)
+                file_path = self.find_in([self.glob.stg['local_repo'], self.glob.config['metadata']['copy_path']], filename, True)
             # Assume will be in repo after download
             else:
                 file_path = os.path.join(self.glob.stg['local_repo'], filename)
