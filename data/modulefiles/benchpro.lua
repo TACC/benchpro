@@ -32,8 +32,10 @@ if (i) then
 end
 setenv("BP_RESULTS",  bp_results)
 
--- cdb alias
+-- aliases
+set_alias("bp", "benchpro")
 set_alias("cdb", "cd $BP_HOME")
+
 
 -- add user's application directory tree to MODULEPATH
 prepend_path("MODULEPATH" ,  pathJoin(bp_apps, "modulefiles" ))
