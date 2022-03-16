@@ -132,8 +132,10 @@ def check_db_connect(glob):
             password =  glob.stg['db_passwd']
         )
     except Exception as err:
-        print(bcolors.FAIL, "connected to", glob.stg['db_name'])
-        sys.exit(1)
+        print(bcolors.WARN, "unable to connect to " + glob.stg['db_name'] + " from this server")
+        print("    This server is not on the database access whitelist, contact your maintainer.")
+            
+        return 
 
     print(bcolors.PASS, "connected to", glob.stg['db_name'])
 
@@ -204,3 +206,4 @@ def check_setup(glob_obj):
 
     # Create validate file
     with open(os.path.join(glob.bp_home, ".validated"), 'w'): pass 
+    print("Done.")
