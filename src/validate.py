@@ -106,20 +106,22 @@ def check_file_perm(filename, perm):
         print(bcolors.WARN, filename, "not found.")
 
 # Confirm SSH connection is successful
-def check_ssh_connect(glob):
+def check_db_access(glob):
 
-    if os.path.isfile(glob.stg['ssh_key_path']):
+    if glob.stg['db_host']:
         try:
-            print("ssh -i " + glob.stg['ssh_key_path'] + " " + glob.stg['ssh_user'] + "@" + glob.stg['db_host'] + " -t echo 'Client connection test'")
-            expr = "ssh -i " + glob.stg['ssh_key_path'] + " " + glob.stg['ssh_user'] + "@" + glob.stg['db_host'] + " -t echo 'Client connection test'"
-            cmd = subprocess.run(expr, shell=True, check=True, capture_output=True, universal_newlines=True)
-            print(bcolors.PASS, "connected to", host)
+            status = subprocess.getstatusoutput("ping -c 1 " + glob.stg['db_host'])
+            if status[0] == 0:
+                print(bcolors.PASS, "connected to", glob.stg['db_host'])
+
+            else:
+                print(bcolors.WARN, "Unable to access " + glob.stg['db_host'] + " from this server")
 
         except subprocess.CalledProcessError as e:
-            print(bcolors.WARN, "connected to", host)
+            print(bcolors.WARN, "Unable to access " + glob.stg['db_host'] + " from this server")
 
     else:
-        print(bcolors.WARN, "SSH key not found")
+        print(bcolors.WARN, "Unable to access " + glob.stg['db_host'] + " from this server")
 
 def check_db_connect(glob):
     try:
@@ -192,9 +194,9 @@ def check_setup(glob_obj):
     check_exe(['benchpro', 'sinfo', 'sacct'])
 
     # Check db host access
-    #check_ssh_connect(glob)
+    check_db_access(glob)
 
-    # Check db access
+    # Check db connection
     if db:
         check_db_connect(glob)
     else: 

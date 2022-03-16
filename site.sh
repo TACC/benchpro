@@ -17,8 +17,8 @@ set BP_RESULTS '$SCRATCH/benchpro/results'
 
 # DB access
 set DB_USER "bench_user"
-set DB_HOST "tacc-stats03.tacc.utexas.edu"
-set REMOTE_PATH "/home/mcawood/benchdb/data_store"
+set DB_HOST "benchpro.tacc.utexas.edu"
+set REMOTE_PATH "/home/bench_user/benchdb/data_store"
 
 # SYSTEM SPECIFIC
 if [ $BP_SYSTEM = "frontera" ]; then
