@@ -123,7 +123,7 @@ def build_code(input_dict, glob_copy):
 
     # Make build path and move tmp build script file
     glob.lib.files.create_dir(glob.config['metadata']['working_path'])
-    glob.lib.files.copy(glob.config['metadata']['working_path'], glob.tmp_script, None, True)
+    glob.lib.files.copy(glob.config['metadata']['working_path'], glob.tmp_job_file, None, True)
 
     # Make module path and move tmp module file
     glob.lib.files.create_dir(mod_path)
@@ -148,7 +148,7 @@ def build_code(input_dict, glob_copy):
     # If dry_run
     if glob.stg['dry_run']:
         glob.lib.msg.low(["This was a dryrun, skipping build step. Script created at:",
-                        ">  " + glob.lib.rel_path(os.path.join(glob.config['metadata']['working_path'], glob.script_file))])
+                        ">  " + glob.lib.rel_path(os.path.join(glob.config['metadata']['working_path'], glob.job_file))])
         glob.task_id = "dry_run"
 
     else:

@@ -287,7 +287,8 @@ class init(object):
             value, params = cgi.parse_header(remotefile.info()['Content-Disposition'])
             return params["filename"]
 
-        except:
+        except Exception as e:
+            print(e)
             self.glob.lib.msg.error("Unable to reach URL " + url)
 
     # Check if file or dir is present in local repo

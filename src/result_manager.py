@@ -76,7 +76,7 @@ def validate_result(result_path):
                                 glob.lib.rel_path(result_path) + ". It seems the benchmark failed to run.\nWas dry_run=True?")
         return "failed", None
 
-    glob.log.debug("Looking for valid result in " + glob.output_path)
+    glob.lib.msg.log("Looking for valid result in " + glob.output_path)
 
     # Run expr collection
     if glob.report_dict['result']['method'] == 'expr':
@@ -86,11 +86,11 @@ def validate_result(result_path):
 
         # Run validation expression on output file
         try:
-            glob.log.debug("Running: '" + glob.report_dict['result']['expr'] + "'")
+            glob.lib.msg.log("Running: '" + glob.report_dict['result']['expr'] + "'")
             cmd = subprocess.run(glob.report_dict['result']['expr'], shell=True,
                                          check=True, capture_output=True, universal_newlines=True)
             result_str = cmd.stdout.strip()
-            glob.log.debug("Pulled result from " + glob.output_path + ":  " + result_str + \
+            glob.lib.msg.log("Pulled result from " + glob.output_path + ":  " + result_str + \
                             " " + glob.report_dict['result']['unit'])
 
         except subprocess.CalledProcessError as e:
@@ -108,11 +108,11 @@ def validate_result(result_path):
 
         # Run validation script on output file
         try:
-            glob.log.debug("Running: '" + result_script + " " + glob.output_path + "'")
+            glob.lib.msg.log("Running: '" + result_script + " " + glob.output_path + "'")
             cmd = subprocess.run(result_script + " " + glob.output_path, shell=True,
                                 check=True, capture_output=True, universal_newlines=True)
             result_str = cmd.stdout.strip()
-            glob.log.debug("Pulled result from " + glob.output_path + ":  " + result_str + " " + \
+            glob.lib.msg.log("Pulled result from " + glob.output_path + ":  " + result_str + " " + \
                             glob.report_dict['result']['unit'])
 
         except subprocess.CalledProcessError as e:
@@ -135,7 +135,7 @@ def validate_result(result_path):
         glob.lib.msg.warning("result extracted from " + glob.lib.rel_path(glob.output_path) + " is '0.0'.")
         return "failed", None
 
-    glob.log.debug("Successfully found result '" + str(result) + " " + glob.report_dict['result']['unit'] + " for result " + \
+    glob.lib.msg.log("Successfully found result '" + str(result) + " " + glob.report_dict['result']['unit'] + " for result " + \
                     glob.lib.rel_path(result_path))
 
     # Return valid result and unit
@@ -270,15 +270,15 @@ def make_remote_dir(dest_dir):
     # Check that SSH key exists
     try:
         expr = "ssh -i " + glob.stg['ssh_key_path'] +" " + glob.stg['ssh_user'] + "@" + glob.stg['db_host'] + " -t mkdir -p " + dest_dir
-        glob.log.debug("Running: '" + expr + "'")
+        glob.lib.msg.log("Running: '" + expr + "'")
         # ssh -i [key] [user]@[db_host] -t mkdir -p [dest_dir]
         cmd = subprocess.run(expr, shell=True, check=True, capture_output=True, universal_newlines=True)
 
-        glob.log.debug("Directory " + dest_dir  + " created on " + glob.stg['db_host'])
+        glob.lib.msg.log("Directory " + dest_dir  + " created on " + glob.stg['db_host'])
 
     except subprocess.CalledProcessError as e:
         glob.lib.msg.low(e)
-        glob.log.debug("Failed to create directory " + dest_dir + " on " + glob.stg['db_host'])
+        glob.lib.msg.log("Failed to create directory " + dest_dir + " on " + glob.stg['db_host'])
         return False
 
     return True
@@ -289,15 +289,15 @@ def scp_files(src_dir, dest_dir):
     # Check that SSH key exists 
     try:
         expr = "scp -i " + glob.stg['ssh_key_path'] + " -r " + src_dir + " " + glob.stg['ssh_user'] + "@" + glob.stg['db_host'] + ":" + dest_dir + "/"
-        glob.log.debug("Running: '" + expr + "'")
+        glob.lib.msg.log("Running: '" + expr + "'")
         # scp -i [key] -r [src_dir] [user]@[server]:[dest_dir]
         cmd = subprocess.run(expr, shell=True, check=True, capture_output=True, universal_newlines=True)
 
-        glob.log.debug("Copied " + src_dir + " to " + glob.stg['db_host'] + ":" + dest_dir)
+        glob.lib.msg.log("Copied " + src_dir + " to " + glob.stg['db_host'] + ":" + dest_dir)
 
     except subprocess.CalledProcessError as e:
         glob.lib.msg.low(e)
-        glob.log.debug("Failed to copy " + src_dir + " to " + glob.stg['db_host'] + "+" + dest_dir)
+        glob.lib.msg.log("Failed to copy " + src_dir + " to " + glob.stg['db_host'] + "+" + dest_dir)
         return False    
 
     return True
@@ -358,7 +358,7 @@ def send_files(result_dir, dest_dir):
         glob.lib.files.copy(copy_path, glob.output_path, "", False)
 
         # Copy matching files to server
-        search_substrings = ["*.err", "*.out", "*.sched", "*.batch", "*.txt", "*.log"]
+        search_substrings = ["*.err", "*.out", "*.sched", "*.job", "*.txt", "*.log"]
         for substring in search_substrings:
             matching_files = gb.glob(os.path.join(glob.result_path, substring))
             for match in matching_files:

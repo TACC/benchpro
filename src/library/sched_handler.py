@@ -156,7 +156,7 @@ class init(object):
     # Submit script to scheduler
     def submit(self):
 
-        script_path = os.path.join(self.glob.config['metadata']['working_path'], self.glob.script_file)
+        script_path = os.path.join(self.glob.config['metadata']['working_path'], self.glob.job_file)
         self.glob.lib.msg.low(["Job script:",
                                 ">  " + self.glob.lib.rel_path(script_path),
                                 "",

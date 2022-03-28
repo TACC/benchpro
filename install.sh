@@ -18,9 +18,13 @@ SSH_KEY=""
 if [ "$1" = "" ]; then
     printf "Enter path to SSH key:\n"
     read SSH_KEY
-    if [ $? != 0 ]; then quit "\nProvided SSH key not found.\nQuitting.\n\n"; fi
 else
-    SSH_KEY=$1    
+    SSH_KEY=$1
+fi
+
+# Check if SSH key exists
+if [ ! -f "$SSH_KEY" ]; then
+    quit "\nProvided SSH key not found.\nQuitting.\n\n";
 fi
 
 # Clean up env & build/install directories
@@ -96,6 +100,7 @@ if [ $? != 0 ]; then quit "\nVersion check failed, quitting.\n\n"; fi
 ${WORKING_DIR}/dev/clean.sh
 
 # Check SSH connection
+printf "Testing Connection to DB...\n"
 ssh -i ${SSH_KEY} ${DB_USER}@${DB_HOST} -t "echo 'Connection test'" > /dev/null 2>&1
 if [ $? != 0 ]; then quit "\nSSH connection failed, quitting.\n\n"; fi
 

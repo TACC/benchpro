@@ -120,23 +120,27 @@ class settings(object):
         else: 
             return value
 
-    # Read in settings.ini file
-    def read_settings(self, bp_home):
-
-        self.bp_home = self.resolve_path(bp_home)
-
-        settings_ini    = os.path.join(self.bp_home, "settings.ini")
-        settings_parser = configparser.RawConfigParser(allow_no_value=True)
-        settings_parser.read(settings_ini)
+    # Read ini file and return configparser obj
+    def read_ini(self, ini_file):
 
         # Check user files are present
-        if not os.path.isfile(settings_ini):
-            print("$BP_HOME/settings.ini file not found, did you install required user files?")
+        if not os.path.isfile(ini_file):
+            print(ini_file + " file not found, did you install required user files?")
             print("If not, do so now with:")
             print("git clone https://github.com/TACC/benchpro.git $HOME/benchpro")
             print("Quitting for now...")
             sys.exit(1)
-    
+
+        ini_parser = configparser.RawConfigParser(allow_no_value=True)
+        ini_parser.read(ini_file)
+
+        return ini_parser
+
+    # Read in settings.ini file
+    def read_settings(self):
+
+        settings_parser = self.read_ini(os.path.join(self.bp_home, "settings.ini"))
+
         # Read contents of settings.ini into dict
         for section in settings_parser:
             if not section == "DEFAULT":
@@ -144,19 +148,17 @@ class settings(object):
                     # Convert values to correct datatype
                     self.stg[key] = self.process(key, settings_parser[section][key])
 
-        # Read suites into own dict
-        self.suite = dict(settings_parser.items('suites'))
-
         # Preserve enviroment variable labels
         self.stg['project_env']         = self.stg['home_path'] 
         self.stg['app_env']             = self.stg['build_path'] 
         self.stg['result_env']          = self.stg['bench_path'] 
 
         # Resolve paths
-        self.stg['home_path']            = self.resolve_path(self.stg['home_path'])
-        self.stg['build_path']           = self.resolve_path(self.stg['build_path'])
-        self.stg['bench_path']           = self.resolve_path(self.stg['bench_path'])
+        self.stg['home_path']           = self.resolve_path(self.stg['home_path'])
+        self.stg['build_path']          = self.resolve_path(self.stg['build_path'])
+        self.stg['bench_path']          = self.resolve_path(self.stg['bench_path'])
 
+        # 
         self.stg['ssh_key_path']        = self.resolve_path(self.stg['ssh_key'])
         self.stg['config_path']         = self.resolve_path(self.stg['config_dir'])
         self.stg['template_path']       = self.resolve_path(self.stg['template_dir'])
@@ -168,7 +170,7 @@ class settings(object):
         self.stg['module_dir']          = "modulefiles"
         self.stg['build_dir']           = os.path.basename(self.stg['build_path']) 
         self.stg['log_path']            = os.path.join(self.bp_home, self.stg['log_dir'])
-        self.stg['pending_path']       = os.path.join(self.stg['bench_path'], self.stg['pending_subdir'])
+        self.stg['pending_path']        = os.path.join(self.stg['bench_path'], self.stg['pending_subdir'])
         self.stg['captured_path']       = os.path.join(self.stg['bench_path'], self.stg['captured_subdir'])
         self.stg['failed_path']         = os.path.join(self.stg['bench_path'], self.stg['failed_subdir'])
         self.stg['module_path']         = os.path.join(self.stg['build_path'], self.stg['module_dir'])
@@ -176,11 +178,24 @@ class settings(object):
         self.stg['script_path']         = os.path.join(self.stg['resource_path'], self.stg['script_subdir'])
         self.stg['rules_path']          = os.path.join(self.stg['config_path'], self.stg['rules_dir'])
 
+    def read_suites(self):
+
+        suite_parser = self.read_ini(os.path.join(self.bp_home, "suites.ini"))
+
+        # Read suites into own dict
+        self.suite = dict(suite_parser.items('suites'))
+
     # Initialize the global object, settings and libraries
     def __init__(self, bp_home):
 
+        # Resolve $BP_HOME and store in instance
+        self.bp_home = self.resolve_path(bp_home)
+
         # Parse settings.ini
-        self.read_settings(bp_home) 
+        self.read_settings() 
+
+        # Parse suites.ini
+        self.read_suites()
 
         # Get system label
         self.system['system'] = self.resolve_path(self.stg['system_env'])

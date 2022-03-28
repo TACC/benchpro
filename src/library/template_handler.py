@@ -138,7 +138,7 @@ class init(object):
 
     # Contextualizes template script with variables from a list of config dicts
     def populate_template(self, cfg_dicts, template_obj):
-        self.glob.log.debug("Populating template file " + self.glob.tmp_script)
+        self.glob.log.debug("Populating template file " + self.glob.tmp_job_file)
         # For each config dict
         for cfg in cfg_dicts:
             # For each key, find and replace <<<key>>> in template file
@@ -163,7 +163,7 @@ class init(object):
             # Error and exit
             else:
                # Write file to disk
-                self.glob.lib.files.write_list_to_file(template_obj, self.glob.tmp_script)
+                self.glob.lib.files.write_list_to_file(template_obj, self.glob.tmp_job_file)
                 self.glob.lib.msg.error("Missing parameters were found after populating '" + self.glob.lib.rel_path(template_file) + "' and exit_on_missing=True in settings.ini: " + ' '.join(unfilled_keys))
         else:
             self.glob.log.debug("All build parameters were filled, continuing")
@@ -171,8 +171,8 @@ class init(object):
     # Get template files required to constuct build script
     def set_build_files(self):
         # Temp build script
-        self.glob.script_file = "build.batch"
-        self.glob.tmp_script = os.path.join(self.glob.bp_home, "tmp." + self.glob.script_file)
+        self.glob.job_file = self.glob.stg['build_job_file']
+        self.glob.tmp_job_file = os.path.join(self.glob.bp_home, "tmp." + self.glob.stg['build_job_file'])
 
         if self.glob.stg['build_mode'] == "sched":
             self.glob.sched['template'] = self.glob.lib.files.find_exact(self.glob.sched['sched']['type'] + ".template", self.glob.stg['template_path'])
@@ -258,17 +258,17 @@ class init(object):
 
         # Test for missing parameters
         self.glob.lib.msg.low("Validating template...")
-        self.test_template(self.glob.tmp_script, template_obj)
+        self.test_template(self.glob.tmp_job_file, template_obj)
 
         # Write populated script to file
         self.glob.lib.msg.low(["Writing template... ", ""])
-        self.glob.lib.files.write_list_to_file(template_obj, self.glob.tmp_script)
+        self.glob.lib.files.write_list_to_file(template_obj, self.glob.tmp_job_file)
 
     # Get template files required to construct bench script
     def set_bench_files(self):
         # Temp job script 
-        self.glob.script_file = "bench.batch"
-        self.glob.tmp_script = os.path.join(self.glob.bp_home, "tmp." + self.glob.script_file) 
+        self.glob.job_file = self.glob.stg['bench_job_file']
+        self.glob.tmp_job_file = os.path.join(self.glob.bp_home, "tmp." + self.glob.stg['bench_job_file']) 
     
         # Scheduler template file
         if self.glob.stg['bench_mode'] == "sched":
@@ -409,9 +409,9 @@ class init(object):
 
         self.glob.lib.msg.low("Validating template...")
         # Test for missing parameters
-        self.test_template(self.glob.tmp_script, template_obj)
+        self.test_template(self.glob.tmp_job_file, template_obj)
 
         # Write populated script to file
         self.glob.lib.msg.low(["Writing template... ", ""])
-        self.glob.lib.files.write_list_to_file(template_obj, self.glob.tmp_script)
+        self.glob.lib.files.write_list_to_file(template_obj, self.glob.tmp_job_file)
 

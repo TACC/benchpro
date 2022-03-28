@@ -12,7 +12,7 @@ required_packages = [x.strip() for x in all_reqs if ('git+' not in x) and (
 
 setup (
     name='benchpro',
-    version='1.3.2',
+    version='1.3.5',
     description="Tool for building apps, running benchmarks and collecting results.",
     packages = find_packages(),
     include_package_data=True,

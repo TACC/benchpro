@@ -9,6 +9,7 @@ class init(object):
 
     # Sets the dicts to search for matching keys, depending on build/bench operation
     def set_search_space(self):
+
         if self.glob.args.build:
             self.search_space = [self.glob.config['general'], self.glob.config['config'], self.glob.sched['sched'], self.glob.system]
         # Running bench
@@ -42,6 +43,7 @@ class init(object):
 
     # Look for key in multiple dicts, return value or error
     def get_existing_value(self, key):
+
         # For each dict in list
         for search_dict in self.search_space:
             if search_dict:
@@ -60,11 +62,11 @@ class init(object):
 
     # Replace variables
     def resolve_vars(self, dict_value):
-        # Get list of {variables}
-        var_list = re.findall('\{([^}]+)',str(dict_value))
+        # Get list of <<<variables>>>
+        var_list = re.findall('\<<<([^>>>]+)',str(dict_value))
         # Replace all vars in each dict value
         for var in var_list:
-            dict_value = dict_value.replace("{"+var+"}", str(self.get_existing_value(var)))
+            dict_value = dict_value.replace("<<<"+var+">>>", str(self.get_existing_value(var)))
 
         return dict_value
 
@@ -121,6 +123,7 @@ class init(object):
 
     # Evaluate a rule's condition, apply updates 
     def eval_rule(self, rule):
+
         rule = rule.replace("AND", "and")
         rule = rule.replace("OR", "or")
         condition = rule.split(":")[0].replace('"', '\'')
@@ -160,7 +163,7 @@ class init(object):
         # System rules file exists
         if rules_file:
 
-            # Set search space
+            # Set variable search space
             self.set_search_space()
             
             # Read rules from file

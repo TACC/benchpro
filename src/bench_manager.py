@@ -26,9 +26,13 @@ def get_code_info(input_label, search_dict):
         glob.lib.msg.warning("No installed application meeting benchmark requirements: '" + "', '".join([i + "=" + search_dict[i] for i in search_dict.keys() if i]) + "'") 
         glob.lib.msg.high("Attempting to build now...")
 
-        glob.args.build = search_dict
-        glob.quiet_build = True
-        build_manager.init(copy.deepcopy(glob))
+        # Set build args
+        build_glob = copy.deepcopy(glob)
+        build_glob.args.build = search_dict
+        build_glob.args.bench = None
+        build_glob.quiet_build = True
+
+        build_manager.init(build_glob)
 
         if glob.stg['dry_run']:
             glob.config['metadata']['build_running'] = False
@@ -136,7 +140,7 @@ def start_task():
     # Make bench path and move tmp bench script file
     
     glob.lib.files.create_dir(glob.config['metadata']['working_path'])
-    glob.lib.files.copy(glob.config['metadata']['working_path'], glob.tmp_script, None, True)
+    glob.lib.files.copy(glob.config['metadata']['working_path'], glob.tmp_job_file, None, True)
 
     # Copy bench cfg & template files to bench dir
     provenance_path = os.path.join(glob.config['metadata']['working_path'], "bench_files")
@@ -157,7 +161,7 @@ def start_task():
     # dry_run = True
     if glob.stg['dry_run']:
         glob.lib.msg.low(["This was a dryrun, skipping exec step. Script created at:",
-                        ">  " + glob.lib.rel_path(os.path.join(glob.config['metadata']['working_path'], glob.script_file))])
+                        ">  " + glob.lib.rel_path(os.path.join(glob.config['metadata']['working_path'], glob.job_file))])
         glob.task_id = "dry_run"
 
     # dry_run = False
