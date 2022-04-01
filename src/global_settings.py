@@ -33,6 +33,7 @@ class settings(object):
     config['requirements'] = {}
     config['runtime'] = {}
     config['result'] = {}
+    config['files'] = {}
     # Scheduler key-values
     sched       = {}
     sched['sched'] = {}

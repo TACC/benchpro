@@ -58,7 +58,7 @@ class init(object):
                     "bin_dir        = "+ self.glob.config['config']['bin_dir'],
                     "exe_file       = "+ self.glob.config['config']['exe'],
                     "build_prefix   = "+ self.glob.config['metadata']['working_path'],
-                    "build_date     = "+ str(datetime.now()),
+                    "submit_time    = "+ str(datetime.now()),
                     "script         = "+ self.glob.job_file,
                     "exec_mode      = "+ self.glob.stg['build_mode'],
                     "task_id        = "+ str(self.glob.task_id),

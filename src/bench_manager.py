@@ -340,7 +340,9 @@ def init(glob):
         # Get a copy of the global object for use in this benchmark session
         glob_copy = copy.deepcopy(glob)
         glob_copy.overload_dict = copy.deepcopy(glob.overload_dict)
-
         # Start benchmark session and collect number of runs
         glob.counter = run_bench(glob.lib.parse_bench_str(inp), glob_copy)
+
+        # Reset stage ops list because deepcopy is unreliable
+        glob.stage_ops = []
 

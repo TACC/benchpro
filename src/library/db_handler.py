@@ -142,8 +142,5 @@ class init(object):
         for tup in col_names:
             columns += [ tup[0] ]
 
-        # Pop default id field
-        columns.remove('id')
-
         return columns
 
