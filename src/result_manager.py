@@ -481,9 +481,6 @@ def query_db(glob_obj):
 
     glob.model_fields = glob.lib.db.get_table_fields(glob.stg['result_table'])
 
-
-    print("*", glob.args.dbResult)
-
     # Get sql query statement 
     search_str = "SELECT * FROM " + glob.stg['result_table'] + " " + parse_input_str(glob.args.dbResult)
 
@@ -510,13 +507,14 @@ def query_db(glob_obj):
                     "-"*col_width[3] +"+"+ \
                     "-"*col_width[4] +"+"+ \
                     "-"*col_width[5] +"|")
+
         for result in query_results:
-            print(  "|"+ result[1].center(col_width[0]) +\
-                    "|"+ result[2].center(col_width[1]) +\
-                    "|"+ str(result[4]).center(col_width[2]) +\
-                    "|"+ str(result[18]).center(col_width[3]) +\
-                    "|"+ str(result[8]).center(col_width[4]) +\
-                    "|"+ (str(result[9])+" "+str(result[10])).center(col_width[5]) +"|")
+            print(  "|"+ result[0].center(col_width[0]) +\
+                    "|"+ result[1].center(col_width[1]) +\
+                    "|"+ str(result[3]).center(col_width[2]) +\
+                    "|"+ str(result[17]).center(col_width[3]) +\
+                    "|"+ str(result[7]).center(col_width[4]) +\
+                    "|"+ (str(result[8])+" "+str(result[9])).center(col_width[5]) +"|")
 
         # Export to csv
         if glob.args.export:
@@ -756,7 +754,7 @@ def print_app_from_table(glob_obj):
             print("No application found matching app_id='" + glob.args.dbApp + "'")
             sys.exit(0)
 
-        app = app[0][1:]
+        app = app[0][0:]
 
         labels = [  "Code", 
                     "Version", 
