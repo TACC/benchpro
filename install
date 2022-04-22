@@ -16,8 +16,8 @@ if [ $? != 0 ]; then quit "\nCan't source ${SOURCE_FILE}, quitting.\n\n"; fi
 # Get path to SSH key - not stored in repo
 SSH_KEY=""
 if [ "$1" = "" ]; then
-    printf "Enter path to SSH key:\n"
-    read SSH_KEY
+    printf "WARNING: No SSH key provided, will attempt to continue with default user key..."
+    SSH_KEY=$HOME/.ssh/id_rsa
 else
     SSH_KEY=$1
 fi
@@ -80,7 +80,7 @@ ln -s benchpro-${BP_VERSION}-py${PY_VERSION}.egg/ ${BP_SITE}/python/lib/python${
 YOUR_BP=$(eval echo $BP_HOME)
 
 if [ ! -d $YOUR_BP ]; then
-    git clone git@github.com:TACC/benchpro.git $YOUR_BP
+    git clone https://github.com/TACC/benchpro.git $YOUR_BP
 else
     git -C $YOUR_BP pull 
 fi
