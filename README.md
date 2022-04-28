@@ -46,7 +46,7 @@ benchpro --validate
 ```
 NOTE: Some of the hardware data collection functionality provided by BenchPRO requires root access, you can either run the permissions script below to privilege said scripts, or manage without this data collection feature.
 ```
-sudo -E $BP_HOME/resources/scripts/change_permissions.sh
+sudo -E $BP_HOME/resources/scripts/change_permissions
 ```
 4 Print help & version information:
 ```
