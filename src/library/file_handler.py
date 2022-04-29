@@ -1,6 +1,7 @@
 # System imports
 import cgi
 import configparser as cp
+from ftplib import FTP
 import glob as gb
 import os
 import pwd
@@ -264,7 +265,9 @@ class init(object):
     def stage_local(self, file_list):
 
         for filename in file_list:
+
             filename  = filename.strip()
+            self.glob.log.debug("Staging local file " + filename)
 
             # Locate file
             if self.glob.stg['sync_staging']: 
@@ -279,20 +282,41 @@ class init(object):
             else:
                 self.cp_file(file_path)
 
+    def get_ftp_server(self, url):
+        return "ftp." + url.split("ftp.")[1].split("/")[0]
+
     # Extract filename from URL 
     def get_url_filename(self, url):
 
-        try:
-            remotefile = urlopen(url)
-            value, params = cgi.parse_header(remotefile.info()['Content-Disposition'])
-            return params["filename"]
+        # Test if URL is FTP
+        if "ftp" in url:
 
-        except Exception as e:
-            print(e)
-            self.glob.lib.msg.error("Unable to reach URL " + url)
+            try:
+                # Check server is reachable
+                ftp = FTP(self.get_ftp_server(url))
+                ftp.login()
+
+            except Exception as e:
+                print(e)
+                self.glob.lib.msg.error("Unable to reach URL " + url)
+
+            # Return filename 
+            return url.split("/")[-1]
+
+        # Assume HTTP
+        else:
+            try:
+                remotefile = urlopen(url)
+                value, params = cgi.parse_header(remotefile.info()['Content-Disposition'])
+                return params["filename"]
+
+            except Exception as e:
+                print(e)
+                self.glob.lib.msg.error("Unable to reach URL " + url)
 
     # Check if file or dir is present in local repo
     def in_local_repo(self, filename):
+
         if os.path.isfile(os.path.join(self.glob.stg['local_repo'], filename)) \
         or os.path.isdir(os.path.join(self.glob.stg['local_repo'], filename)):
             return True
@@ -324,6 +348,8 @@ class init(object):
             local_copy = False
             # Clean up list elem
             url = url.strip()
+            self.glob.log.debug("Staging URL: " + str(url))
+
             # Get filename from URL
             filename = self.get_url_filename(url)
 

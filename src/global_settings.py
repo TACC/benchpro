@@ -158,14 +158,13 @@ class settings(object):
         self.stg['home_path']           = self.resolve_path(self.stg['home_path'])
         self.stg['build_path']          = self.resolve_path(self.stg['build_path'])
         self.stg['bench_path']          = self.resolve_path(self.stg['bench_path'])
-
-        # 
-        self.stg['ssh_key_path']        = self.resolve_path(self.stg['ssh_key'])
+        self.stg['log_path']            = self.resolve_path(self.stg['log_dir'])
         self.stg['config_path']         = self.resolve_path(self.stg['config_dir'])
         self.stg['template_path']       = self.resolve_path(self.stg['template_dir'])
-        self.stg['resource_path']       = self.resolve_path(self.stg['resource_dir'])
+        self.stg['ssh_key_path']        = self.resolve_path(self.stg['ssh_key'])
         self.stg['local_repo']          = self.resolve_path(self.stg['local_repo_env'])
         self.stg['collection_path']     = self.resolve_path(self.stg['collection_path'])
+        self.stg['resource_path']       = self.resolve_path(self.stg['resource_dir']) 
 
         # Derived variables
         self.stg['module_dir']          = "modulefiles"
@@ -179,12 +178,24 @@ class settings(object):
         self.stg['script_path']         = os.path.join(self.stg['resource_path'], self.stg['script_subdir'])
         self.stg['rules_path']          = os.path.join(self.stg['config_path'], self.stg['rules_dir'])
 
+    # Read suites.ini
     def read_suites(self):
 
         suite_parser = self.read_ini(os.path.join(self.bp_home, "suites.ini"))
 
         # Read suites into own dict
         self.suite = dict(suite_parser.items('suites'))
+
+    # Get $TACC_SYSTEM
+    def get_system_label(self):
+
+        # Get system label
+        self.system['system'] = self.resolve_path(self.stg['system_env'])
+
+        # Check its set
+        if not self.system['system']:
+            print("ERROR: " + self.stg['system_env'] + " not set.")
+            exit(1)
 
     # Initialize the global object, settings and libraries
     def __init__(self, bp_home):
@@ -199,12 +210,7 @@ class settings(object):
         self.read_suites()
 
         # Get system label
-        self.system['system'] = self.resolve_path(self.stg['system_env'])
-
-        # Check its set
-        if not self.system['system']:
-            print("ERROR: " + self.stg['system_env'] + " not set.")
-            exit(1)
+        self.get_system_label()
 
         # Init function library
         self.lib = lib.init(self)

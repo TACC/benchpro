@@ -392,13 +392,14 @@ def capture_result(glob_obj):
         glob.lib.msg.high("No new results found in " + glob.lib.rel_path(glob.stg['pending_path']))
 
     else:
+        glob.log.debug("Capturing " + str(len(results)) + " results")
         captured = 0
         if len(results) == 1: glob.lib.msg.heading("Starting capture for " + str(len(results)) + " new result.")
         else: glob.lib.msg.heading("Starting capture for " + str(len(results)) + " new results.")
 
         for result_dir in results:
             # Capture application profile for this result to db if not already present
-
+            glob.log.debug("Capturing " + result_dir)
             glob.lib.db.capture_application(os.path.join(glob.stg['pending_path'], result_dir))
 
             glob.result_path = os.path.join(glob.stg['pending_path'], result_dir)

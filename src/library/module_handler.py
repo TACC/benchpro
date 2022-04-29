@@ -95,9 +95,9 @@ class init(object):
         if self.glob.config['general']['module_use']:
 
             # Handle env vars in module path
-            if self.glob.config['general']['module_use'].startswith(self.glob.stg['project_env_var']):
+            if self.glob.config['general']['module_use'].startswith(self.glob.stg['project_env']):
 
-                project = self.glob.stg['project_env_var'].strip("$")
+                project = self.glob.stg['project_env'].strip("$")
 
                 mod_obj.append("local " + project + " = os.getenv(\"" + project + "\") or \"\"\n")
                 mod_obj.append("prepend_path(\"MODULEPATH\", pathJoin(" + project + ", \"" + self.glob.config['general']['module_use'][len(project)+2:] + "\"))\n")
@@ -166,7 +166,7 @@ class init(object):
         # Populuate template with config params
         mod_obj = self.populate_mod_template(mod_obj)
         # Test module template
-        tmp_mod_file = "tmp." + mod_file
+        tmp_mod_file = os.path.join(self.glob.bp_home, "tmp." + mod_file)
         self.glob.lib.template.test_template(tmp_mod_file, mod_obj)
         # Write module template to file
         self.glob.lib.files.write_list_to_file(mod_obj, tmp_mod_file)

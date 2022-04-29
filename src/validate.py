@@ -164,9 +164,9 @@ def check_setup(glob_obj):
     check_benchpro_version(glob)
 
     # Sys envs
-    project_env = glob.stg['project_env_var'].strip("$")
-    app_env     = glob.stg['app_env_var'].strip("$")
-    result_env  = glob.stg['result_env_var'].strip("$")
+    project_env = glob.stg['project_env'].strip("$")
+    app_env     = glob.stg['app_env'].strip("$")
+    result_env  = glob.stg['result_env'].strip("$")
     system_env  = glob.stg['system_env'].strip("$")
 
     check_env_vars([system_env, 

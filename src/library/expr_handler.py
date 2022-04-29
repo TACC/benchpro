@@ -27,6 +27,8 @@ class init(object):
 
     # Evaulate arithamtic in string 
     def evaluate_arithmatic(self, expr):
+
+        self.glob.log.debug("Evaluating arithmatic: " + str(expr) )
         try:
             return int(eval(expr.replace("\\", "")))
         except:
@@ -96,7 +98,9 @@ class init(object):
        return expr.split("=")[1].strip()
 
     # Evaluate logical expression
-    def eval_expr(self, expr):
+    def eval_logic_expr(self, expr):
+
+        self.glob.log.debug("Evaluating logical " +  str(expr))
         try:
             return eval(expr)
         except:
@@ -105,7 +109,7 @@ class init(object):
     # Replace variable in condition with existing value from search space, then evaluate expression
     def eval_cond(self, cond):
         key = self.extract_key(cond)
-        return self.eval_expr(self.replace_key(cond, key, self.get_existing_value(key)))
+        return self.eval_logic_expr(self.replace_key(cond, key, self.get_existing_value(key)))
 
     # Update dict value with rule value
     def apply_rule(self, action):
@@ -123,6 +127,8 @@ class init(object):
 
     # Evaluate a rule's condition, apply updates 
     def eval_rule(self, rule):
+
+        self.glob.log.debug("Evaluating rule: " + str(rule))
 
         rule = rule.replace("AND", "and")
         rule = rule.replace("OR", "or")
@@ -148,7 +154,7 @@ class init(object):
             condition = condition.replace(cond, str(self.eval_cond(cond)))
 
         # Evaluate whole expression 
-        if self.eval_expr(condition):
+        if self.eval_logic_expr(condition):
             self.apply_rule(action)
 
     # Apply system rules

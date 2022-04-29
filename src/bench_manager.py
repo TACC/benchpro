@@ -300,8 +300,9 @@ def run_bench(input_dict, glob_copy):
             for gpu in gpu_list:
                 glob.config['runtime']['gpus'] = gpu
 
-                # Apply system rules
-                glob.lib.expr.apply_system_rules()
+                # Apply system rules if not running locally
+                if not glob.stg['bench_mode'] == "local":
+                    glob.lib.expr.apply_system_rules()
 
                 # Generate bench script
                 gen_bench_script()
