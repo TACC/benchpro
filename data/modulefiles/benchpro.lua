@@ -44,7 +44,7 @@ prepend_path("MODULEPATH" ,  pathJoin(bp_apps, "modulefiles" ))
 if ( mode() == "load" and not isDir(bp_home) ) then
   LmodMessage(bp_home .. " not found")
   LmodMessage("Get BenchPRO user files with:")
-  LmodMessage("git clone git@github.com:TACC/benchpro.git $HOME/benchpro")
+  LmodMessage("git clone https://github.com/TACC/benchpro.git $HOME/benchpro")
   LmodMessage("")
 end
 

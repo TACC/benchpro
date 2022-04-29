@@ -9,7 +9,7 @@ set() {
 
 # SETUP
 set BP_SYSTEM $TACC_SYSTEM
-set BP_VERSION "1.3.5"
+set BP_VERSION "1.3.8"
 set PY_VERSION "3.`python3 --version | head -n 1 | cut -d '.' -f 2`"
 set BP_HOME '$HOME/benchpro'
 set BP_APPS '$SCRATCH/benchpro/apps'
@@ -41,6 +41,10 @@ fi
 if [ ! -z $BP_DEV ]; then
     set BP_SITE "${SCRATCH}/benchpro-dev"
 fi
+
+today=`date +%Y-%m-%d_%H-%M-%S`
+set BP_LOG "$BP_SITE/logs/build_${today}.log"
+touch $BP_LOG
 
 echo 
 return 0

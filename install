@@ -5,6 +5,21 @@ quit() {
     exit 1
 }
 
+install() {
+    python3 setup.py install --prefix=${BP_SITE}/python/ >> $BP_LOG
+    if [ $? != 0 ]; then quit "\nPackage installation failed, quitting.\n\n"; fi
+    # Change group permissions
+    chmod g+rX          ${BP_SITE}
+    chmod -R g+rX       ${BP_SITE}/python
+    chmod g+x           ${BP_SITE}/python/bin/benchpro
+    chmod g+rwx         ${BP_SITE}/collection
+    # Update symlink
+    ln -s python/lib/python${PY_VERSION}/site-packages/benchpro-latest/         ${BP_SITE}/package
+    ln -s benchpro-${BP_VERSION}-py${PY_VERSION}.egg/                           ${BP_SITE}/python/lib/python${PY_VERSION}/site-packages/benchpro-latest
+    printf "\nPackage installed...\n\n"
+}
+
+
 WORKING_DIR=`pwd`
 
 # Source site variables
@@ -18,6 +33,11 @@ SSH_KEY=""
 if [ "$1" = "" ]; then
     printf "WARNING: No SSH key provided, will attempt to continue with default user key..."
     SSH_KEY=$HOME/.ssh/id_rsa
+# Quick install
+elif [ "$1" = "-d" ]; then
+    printf "Debug mode"
+    install
+    exit 0
 else
     SSH_KEY=$1
 fi
@@ -29,10 +49,10 @@ fi
 
 # Clean up env & build/install directories
 ${WORKING_DIR}/dev/clean.sh
-rm -rf ${BP_SITE}/python/lib/python${PY_VERSION}/site-packages/benchpro-${BP_VERSION}*
-rm -f ${BP_SITE}/modulefiles/benchpro/*.lua
-rm -f ${BP_SITE}/package
-rm -f ${BP_SITE}/python/lib/python${PY_VERSION}/site-packages/benchpro-latest
+rm -rf  ${BP_SITE}/python/lib/python${PY_VERSION}/site-packages/benchpro-${BP_VERSION}*
+rm -f   ${BP_SITE}/modulefiles/benchpro/*.lua
+rm -f   ${BP_SITE}/package
+rm -f   ${BP_SITE}/python/lib/python${PY_VERSION}/site-packages/benchpro-latest
 
 # Setup
 mkdir -p ${BP_SITE}/logs
@@ -44,7 +64,7 @@ mkdir -p ${BP_SITE}/modulefiles/benchpro
 printf "\nCleaned up...\n\n"
 
 # Copy  and contextualize module file
-cp ${WORKING_DIR}/data/modulefiles/benchpro.lua                        ${BP_SITE}/modulefiles/benchpro/${BP_VERSION}.lua
+cp ${WORKING_DIR}/data/modulefiles/benchpro.lua                         ${BP_SITE}/modulefiles/benchpro/${BP_VERSION}.lua
 sed -i "/local bp_site/c\local bp_site = \"${BP_SITE}\""                ${BP_SITE}/modulefiles/benchpro/${BP_VERSION}.lua
 sed -i "/local bp_repo/c\local bp_repo = \"${BP_REPO}\""                ${BP_SITE}/modulefiles/benchpro/${BP_VERSION}.lua
 sed -i "/local tacc_scratch/c\local tacc_scratch = \"${TACC_SCRATCH}\"" ${BP_SITE}/modulefiles/benchpro/${BP_VERSION}.lua
@@ -53,6 +73,9 @@ sed -i "/local bp_apps/c\local bp_apps = \"${BP_APPS}\""                ${BP_SIT
 sed -i "/local bp_results/c\local bp_results = \"${BP_RESULTS}\""       ${BP_SITE}/modulefiles/benchpro/${BP_VERSION}.lua
 sed -i "/local bp_version/c\local bp_version = \"${BP_VERSION}\""       ${BP_SITE}/modulefiles/benchpro/${BP_VERSION}.lua
 sed -i "/local py_version/c\local py_version = \"${PY_VERSION}\""       ${BP_SITE}/modulefiles/benchpro/${BP_VERSION}.lua
+chmod -R g+rX                                                           ${BP_SITE}/modulefiles
+chmod g+w                                                               ${BP_SITE}/repo
+chmod -R g+rX                                                           ${BP_SITE}/repo
 
 ml use ${BP_SITE}/modulefiles
 ml benchpro
@@ -61,20 +84,7 @@ if [ $? != 0 ]; then quit "\nCan't load module, quitting.\n\n"; fi
 printf "\nModule loaded...\n\n"
 
 # Install python package
-python3 setup.py install --prefix=${BP_SITE}/python/ > /dev/null
-if [ $? != 0 ]; then quit "\nPackage installation failed, quitting.\n\n"; fi
-
-printf "\nPackage installed...\n\n"
-
-# Change group permissions
-chmod -R g+X ${BP_SITE}
-chmod -R g+r ${BP_SITE}
-chmod g+x ${BP_SITE}/python/bin/benchpro
-chmod -R g+w ${BP_SITE}/collection
-
-# Update symlink
-ln -s python/lib/python${PY_VERSION}/site-packages/benchpro-latest/ ${BP_SITE}/package 
-ln -s benchpro-${BP_VERSION}-py${PY_VERSION}.egg/ ${BP_SITE}/python/lib/python${PY_VERSION}/site-packages/benchpro-latest
+install
 
 # Install user files 
 YOUR_BP=$(eval echo $BP_HOME)
@@ -87,7 +97,7 @@ fi
 
 if [ $? != 0 ]; then quit "\nUser files install failed, quitting.\n\n"; fi
 
-benchpro --validate
+benchpro --validate | tee -a $BP_LOG
 if [ $? != 0 ]; then quit "\nValidation failed, quitting.\n\n"; fi
 
 printf "\nValidation complete...\n\n"
