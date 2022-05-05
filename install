@@ -72,6 +72,7 @@ sed -i "/local bp_home/c\local bp_home = \"${BP_HOME}\""                ${BP_SIT
 sed -i "/local bp_apps/c\local bp_apps = \"${BP_APPS}\""                ${BP_SITE}/modulefiles/benchpro/${BP_VERSION}.lua
 sed -i "/local bp_results/c\local bp_results = \"${BP_RESULTS}\""       ${BP_SITE}/modulefiles/benchpro/${BP_VERSION}.lua
 sed -i "/local bp_version/c\local bp_version = \"${BP_VERSION}\""       ${BP_SITE}/modulefiles/benchpro/${BP_VERSION}.lua
+sed -i "/local build_hash/c\local build_hash = \"${BUILD_HASH}\""       ${BP_SITE}/modulefiles/benchpro/${BP_VERSION}.lua
 sed -i "/local py_version/c\local py_version = \"${PY_VERSION}\""       ${BP_SITE}/modulefiles/benchpro/${BP_VERSION}.lua
 chmod -R g+rX                                                           ${BP_SITE}/modulefiles
 chmod g+w                                                               ${BP_SITE}/repo
