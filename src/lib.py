@@ -377,7 +377,7 @@ class init(object):
            
             if version.parse(site_version) > version.parse(local_version):
                 self.msg.warning(["You are using BenchPRO " + local_version + ", version " + site_version + " is available.", \
-                                "Run benchpro --update", \
+                                "Update with: git -C ~/benchpro pull", \
                                 "Continuing..."])
                 time.sleep(3)
 

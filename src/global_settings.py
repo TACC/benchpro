@@ -82,7 +82,7 @@ class settings(object):
         sys.exit(1)
 
     # Get the full version 
-    version_str =  os.getenv('BP_VERSION') + "-" + os.getenv('BP_BUILD_ID') 
+    version_str =  os.getenv('BP_VERSION') + "-" + str(os.getenv('BP_BUILD_ID')) 
 
     # Resolve relative paths and envvars in settings.ini
     def resolve_path(self, path):
