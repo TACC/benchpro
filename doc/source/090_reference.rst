@@ -9,64 +9,43 @@ This page provides a reference to the various input and file structure provided 
 Input Arguments 
 ---------------
 
-.. list-table::
-    :header-rows: 1
-
-    *   - Long Option
-        - Short Option
-        - Description                                                   
-    *   - \--help
-        - \-h
-        - Print usage info.                                             
-    *   - \--validate
-        - \-V 
-        - Confirm the installation is correctly configured.             
-    *   - \--clean                                               
-        - \-c
-        - Remove logs and other temp files left after an execption.
-    *   - \--avail                                               
-        - \-a
-        - Print the available application and benchmark profiles.       
-    *   - \--build [LABEL]                                       
-        - \-b
-        - Compile an available application.                             
-    *   - \--listApps                                            
-        - \-la
-        - Print a list of currently installed applications.             
-    *   - \--queryApp [LABEL]                                    
-        - \-qa
-        - Print compilation information for an installed app.           
-    *   - \--delApp [LABEL]                                      
-        - \-da
-        - Remove application installation matching inpout.              
-    *   - \--bench [LABEL]                                       
-        - \-B 
-        - Run a benchmark.                                              
-    *   - --sched [LABEL]                                       
-        - 
-        - Use with '--build' or '--bench' to specify a custom scheduler config file instead of the system default. 
-    *   - \--listResults [all/pending/captured/failed]   
-        - \-lr
-        - List all benchmark results in requested state.                
-    *   - \--queryResult [LABEL]                                 
-        - \-qr
-        - Print config and result of a benchmark run.                   
-    *   - \--capture                                             
-        - \-C
-        - Validate and capture all pending results to the database.     
-    *   - \--dbResult [all/LIST]                                 
-        - 
-        - Display either all results from DB or results matching comma delimited search list, e.g. "username=mcawood,dataset=ljmelt". 
-    *   - \--dbApp [APPID]                                       
-        -
-        - Display application details                                   
-    *   - \--delResult [all/captured/failed/LABEL]               
-        - \-dr
-        - Remove local benchmark results matching input criteria.       
-    *   - \--overload [LIST]                                     
-        - \-o
-        - Replace options in settings.ini or any config file, acceptes a comma delimited list, e.g. "dry_run=True,sync_staging=True". 
-
++-----------------------------------------------+---------------+-------------------------------------------------------------------------------+
+| Long Option                                   | Short Option  | Description                                                                   |
++===============================================+===============+===============================================================================+
+| --help                                        | -h            | Print usage info.                                                             |  
++-----------------------------------------------+---------------+-------------------------------------------------------------------------------+
+| --validate                                    | -V            | Confirm the installation is correctly configured.                             |
++-----------------------------------------------+---------------+-------------------------------------------------------------------------------+
+| --clean                                       | -c            | Remove logs and other temp files left after an execption.                     |
++-----------------------------------------------+---------------+-------------------------------------------------------------------------------+
+| --avail                                       | -a            | Print the available application and benchmark profiles.                       |
++-----------------------------------------------+---------------+-------------------------------------------------------------------------------+
+| --build [LABEL]                               | -b            | Compile an available application.                                             |
++-----------------------------------------------+---------------+-------------------------------------------------------------------------------+
+| --listApps                                    | -la           | Print a list of currently installed applications.                             |
++-----------------------------------------------+---------------+-------------------------------------------------------------------------------+
+| --queryApp [LABEL]                            | -qa           | Print compilation information for an installed app.                           |
++-----------------------------------------------+---------------+-------------------------------------------------------------------------------+
+| --delApp [LABEL]                              | -da           | Remove application installation matching inpout.                              |
++-----------------------------------------------+---------------+-------------------------------------------------------------------------------+
+| --bench [LABEL]                               | -B            | Run a benchmark.                                                              |
++-----------------------------------------------+---------------+-------------------------------------------------------------------------------+
+| --sched [LABEL]                               |               | Use with '--build' or '--bench' to specify a custom scheduler config file.    |
++-----------------------------------------------+---------------+-------------------------------------------------------------------------------+
+| --listResults [all/pending/captured/failed]   | -lr           | List all benchmark results in requested state.                                |
++-----------------------------------------------+---------------+-------------------------------------------------------------------------------+
+| --queryResult [LABEL]                         | -qr           | Print config and result of a benchmark run.                                   |
++-----------------------------------------------+---------------+-------------------------------------------------------------------------------+
+| --capture                                     | -C            | Validate and capture all pending results to the database.                     |
++-----------------------------------------------+---------------+-------------------------------------------------------------------------------+
+| --dbResult [all/LIST]                         |               | Display results matching comma delimited key-value search list.               |
++-----------------------------------------------+---------------+-------------------------------------------------------------------------------+
+| --dbApp [APPID]                               |               | Display application details                                                   |
++-----------------------------------------------+---------------+-------------------------------------------------------------------------------+
+| --delResult [all/captured/failed/LABEL]       | -dr           | Remove local benchmark results matching input criteria.                       |
++-----------------------------------------------+---------------+-------------------------------------------------------------------------------+
+| --overload [LIST]                             | -o            | Replace options read from file, acceptes a comma delimited list of key-values.|
++-----------------------------------------------+---------------+-------------------------------------------------------------------------------+
 
 Global settings
 ---------------
