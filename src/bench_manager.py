@@ -86,7 +86,7 @@ def get_code_info(input_label, search_dict):
                     glob.lib.msg.low("Application was built locally, skipping application exe check.")
             # check_exe=False
             else:
-                glob.lib.msg.low("'check_exe=False' in settings.ini, skipping application exe check.")
+                glob.lib.msg.low("'check_exe=False' in $BP_HOME/settings.ini, skipping application exe check.")
 
 # Generate the bench script
 def gen_bench_script():
@@ -130,7 +130,7 @@ def gen_bench_script():
                     ">  " + glob.lib.rel_path(glob.config['metadata']['working_path'])])
 
     # Copy input files
-    glob.lib.files.stage()
+    #glob.lib.files.stage()
 
     # Generate benchmark template
     glob.lib.template.generate_bench_script()
@@ -272,6 +272,9 @@ def run_bench(input_dict, glob_copy):
 
     # Print inputs to log
     glob.lib.send_inputs_to_log('Bencher')
+
+    # Stage input files
+    glob.lib.files.stage()
 
     glob.prev_task_id = glob.lib.sched.get_active_jobids('_bench')
     prev_pid = 0

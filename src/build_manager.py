@@ -35,7 +35,7 @@ def check_for_previous_install():
         else:
             glob.lib.msg.warning("Application already installed.") 
             glob.lib.msg.low(["Install path: " + glob.lib.rel_path(install_path),
-                            "The install directory already exists and 'overwrite=False' in settings.ini"])
+                            "The install directory already exists and 'overwrite=False' in $BP_HOME/settings.ini"])
             glob.lib.msg.high("Skipping build.")
             return True
     # Installation not found
@@ -159,7 +159,7 @@ def build_code(input_dict, glob_copy):
             try:
                 job_limit = int(glob.stg['max_build_jobs'])
             except:
-                glob.lib.msg.error("'max_build_jobs in settings.ini is not an integer")
+                glob.lib.msg.error("'max_build_jobs in $BP_HOME/settings.ini is not an integer")
 
             get_build_dep(job_limit)
 
@@ -198,7 +198,7 @@ def init(glob):
 
     #Check build_mode in set correctly
     if glob.stg['build_mode'] not in  ['sched', 'local']:
-        glob.lib.msg.error(["Unsupported build execution mode found: '" + glob.stg['bench_mode']+"' in settings.ini",
+        glob.lib.msg.error(["Unsupported build execution mode found: '" + glob.stg['bench_mode']+"' in $BP_HOME/settings.ini",
                                     "Please specify 'sched' or 'local'."])
 
     # ----------------- IF CODE LABEL IS A LIST (FROM USER INPUT) --------------------------

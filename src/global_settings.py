@@ -12,76 +12,77 @@ import src.lib as lib
 class settings(object):
 
     # Text formatting
-    warning     = '\033[1;33mWARNING \033[0m'
-    error       = '\033[0;31mERROR \033[0m'
-    success     = '\033[0;32mSUCCESS \033[0m'
-    note        = '\033[0;34mNOTE \033[0m'
-    bold        = '\033[1m'
-    end         = '\033[0m'
+    warning                     = '\033[1;33mWARNING \033[0m'
+    error                       = '\033[0;31mERROR \033[0m'
+    success                     = '\033[0;32mSUCCESS \033[0m'
+    note                        = '\033[0;34mNOTE \033[0m'
+    bold                        = '\033[1m'
+    end                         = '\033[0m'
 
     # Create logging obj
-    log = None
-    op = ""
+    log                         = None
+    op                          = ""
     # ===Global variable dicts===
-
-    # stg = settings.ini
-    stg         = {}
+    stg                         = {}
     # Cfg file key-values
-    config      = {}
-    config['general'] = {}
-    config['config'] = {}
-    config['requirements'] = {}
-    config['runtime'] = {}
-    config['result'] = {}
-    config['files'] = {}
+    config                      = {}
+    config['general']           = {}
+    config['config']            = {}
+    config['requirements']      = {}
+    config['runtime']           = {}
+    config['result']            = {}
+    config['files']             = {}
     # Scheduler key-values
-    sched       = {}
-    sched['sched'] = {}
+    sched                       = {}
+    sched['sched']              = {}
     # Compiler key-values
-    compiler    = {}
+    compiler                    = {}
     # Elems of [suite] from settings.ini
-    suite       = {}
+    suite                       = {}
     # System key-values
-    system      = {}
+    system                      = {}
     # List of staging command to add to script
-    stage_ops   = []
+    stage_ops                   = []
 
     # Report obj
-    build_report= None
+    build_report                = None
 
     # list of depency jobs
-    any_dep_list = []
-    ok_dep_list = []
-    prev_pid = 0
+    any_dep_list                = []
+    ok_dep_list                 = []
+    prev_pid                    = 0
 
     # Cfg lists
-    build_cfgs = []
-    bench_cfgs = [] 
+    build_cfgs                  = []
+    bench_cfgs                  = [] 
 
-    overload_dict = {}
-    quiet_build =  False 
+    overload_dict               = {}
+    quiet_build                 = False 
 
     # Files to cleanup on fail
-    cleanup = []
+    cleanup                     = []
 
     # Command history line
-    cmd = ""
+    cmd                         = ""
 
     # Context variables
-    user                = str(os.getlogin())
-    hostname            = str(socket.gethostname())
-    home                = os.path.expandvars("$HOME")
+    user                        = str(os.getlogin())
+    hostname                    = str(socket.gethostname())
+    home                        = os.path.expandvars("$HOME")
 
     if ("." in hostname):
-        hostname        = '.'.join(map(str, hostname.split('.')[0:2]))
+        hostname                = '.'.join(map(str, hostname.split('.')[0:2]))
 
     # Set basic vars
-    time_str            = datetime.now().strftime("%Y-%m-%dT%H-%M")
+    time_str                    = datetime.now().strftime("%Y-%m-%dT%H-%M")
     try:
-        cwd                 = os.getcwd()
+        cwd                     = os.getcwd()
     except:
         print("It seems your current working directory doesn't exist. Exitting.")
         sys.exit(1)
+
+    # Get the full version 
+    version_str =  os.getenv('BP_VERSION') + "-" + os.getenv('BP_BUILD_ID') 
 
     # Resolve relative paths and envvars in settings.ini
     def resolve_path(self, path):
@@ -107,7 +108,7 @@ class settings(object):
                     'ssh_key',
                     'collection_path']
         if key not in optional and not value:
-            print("Missing value for key '" + key + "' in settings.ini, check the documentation.")
+            print("Missing value for key '" + key + "' in $BP_HOME/settings.ini, check the documentation.")
             sys.exit(1)
         # Test if True
         elif value in  ["True", "true"]:

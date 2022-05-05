@@ -149,7 +149,7 @@ class init(object):
             no_mpi_hosts = self.glob.stg['mpi_blacklist'].split(',')
 
         except:
-            self.msg.error("unable to read list of MPI banned nodes (mpi_blacklist) in settings.ini")
+            self.msg.error("unable to read list of MPI banned nodes (mpi_blacklist) in $BP_HOME/settings.ini")
         # If hostname contains any of the blacklisted terms, return False
         if any(x in self.glob.hostname for x in no_mpi_hosts):
             return False
@@ -204,7 +204,7 @@ class init(object):
                 return False
             else:
                 self.msg.error(["No installed applications match your selection criteria: ", ", ".join([search_dict[key] for key in search_dict]),
-                                "And 'build_if_missing'=False in settings.ini",
+                                "And 'build_if_missing=False' in $BP_HOME/settings.ini",
                                 "Currently installed applications:"] + installed_list)
 
         # Multiple results
@@ -360,11 +360,20 @@ class init(object):
     def parse_bench_str(self, input_str):
         return self.parse_input_str(input_str, "bench_label")
 
+    def get_client_version(self):
+        return self.glob.lib.files.read_version()
+
+    def get_site_version(self):
+        return os.getenv("BP_VERSION")
+
+    def get_build_hash(self):
+        return os.getenv("BP_VERSION")
+
     # Check if the installed version is up-to-date with site version
     def check_version(self):
 
-            site_version = os.getenv("BP_VERSION")
-            local_version = self.glob.lib.files.read_version()
+            site_version = self.get_site_version()
+            local_version = self.get_client_version()
            
             if version.parse(site_version) > version.parse(local_version):
                 self.msg.warning(["You are using BenchPRO " + local_version + ", version " + site_version + " is available.", \

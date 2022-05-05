@@ -36,7 +36,6 @@ def main():
     cmd_parser.add_argument("--settings", default=False,
                             help="Provide .ini file with nonstandard install paths.")
 
-
     cmd_parser.add_argument("-b", "--build", default=False, nargs='+',
                             type=str, help="Name of the code config file to build, run --avail to check. Accepts space delimited list.")
     cmd_parser.add_argument("--sched", default="system",

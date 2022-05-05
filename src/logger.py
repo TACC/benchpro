@@ -26,6 +26,6 @@ def start_logging(log_label, log_file, glob):
     if not glob.quiet_build:
         stdout = splash.get_splash(glob)
         glob.lib.msg.high(stdout + 
-                    ["  ->Log          : " + os.path.join(glob.stg['project_env'], glob.stg['log_dir'], log_file)]
+                    ["  >Log       : " + glob.lib.rel_path(os.path.join(glob.stg['log_path'], log_file))]
                     +["------------------------------------------------------------------"])
     

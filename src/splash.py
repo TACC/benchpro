@@ -6,8 +6,8 @@ def get_splash(glob):
             " |  _ \|  _| |  \| | |   | |_| | |_) | |_) | | | |",
             " | |_) | |___| |\  | |___|  _  |  __/|  _ <| |_| |",
             " |____/|_____|_| \_|\____|_| |_|_|   |_| \_\\\\___/", 
-            "  ->User         : " + glob.user,
-            "  ->System       : " + glob.hostname,
-            "  ->$BENCHTOOL   : " + glob.bp_home,
-            "  ->Date         : " + glob.time_str]
+            "  >User      : " + glob.user,
+            "  >System    : " + glob.hostname,
+            "  >Version   : " + glob.version_str,
+            "  >$BP_HOME  : " + glob.bp_home]
 

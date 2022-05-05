@@ -164,6 +164,7 @@ class init(object):
         self.check_dict_key(    cfg_dict['metadata']['cfg_file'], cfg_dict, 'modules', 'mpi')
 
         self.check_dict_section(cfg_dict['metadata']['cfg_file'], cfg_dict, 'config')
+        self.check_dict_key(    cfg_dict['metadata']['cfg_file'], cfg_dict, 'config', 'exe')
 
         # Instantiate missing optional parameters
         if not 'system'           in cfg_dict['general'].keys():  cfg_dict['general']['system']         = self.glob.system['system']
@@ -172,7 +173,6 @@ class init(object):
         if not 'module_use'       in cfg_dict['general'].keys():  cfg_dict['general']['module_use']     = ""
         if not 'sched_cfg'        in cfg_dict['general'].keys():  cfg_dict['general']['sched_cfg']      = ""
 
-        if not 'exe'              in cfg_dict['config'].keys():    cfg_dict['config']['exe']              = ""
         if not 'arch'             in cfg_dict['config'].keys():    cfg_dict['config']['arch']             = ""
         if not 'opt_flags'        in cfg_dict['config'].keys():    cfg_dict['config']['opt_flags']        = ""  
         if not 'build_label'      in cfg_dict['config'].keys():    cfg_dict['config']['build_label']      = ""
@@ -186,8 +186,17 @@ class init(object):
         # Convert dtypes
         self.get_val_types(cfg_dict)
 
+        compiler_str = cfg_dict['modules']['compiler'].split('/')
+
         # Extract compiler type from label by splitting by / and removing ints
-        cfg_dict['config']['compiler_type'] = re.sub("\d", "", cfg_dict['modules']['compiler'].split('/')[0])
+        cfg_dict['config']['compiler_type'] = re.sub("\d", "", compiler_str[0])
+
+        # Add special version check: intel > 20 = oneapi
+        try:
+            if (compiler_str[0] == "intel") and (int(compiler_str[1].split('.')[0]) > 20):
+                cfg_dict['config']['compiler_type'] = "oneapi"
+        except:
+            pass
 
         # Path to application's data directory
         cfg_dict['config']['local_repo'] = self.glob.stg['local_repo']
@@ -214,7 +223,7 @@ class init(object):
             else:
                 cfg_dict['config']['script_additions'] = os.path.join(self.glob.stg['template_path'], cfg_dict['config']['script_additions'])
         
-        # Check requested modules exist, and if so, result full module names
+        # Check requested modules exist, and if so, resolve full module names
         if self.glob.stg['check_modules']:
             self.glob.lib.module.check_exists(cfg_dict['modules'], cfg_dict['general']['module_use'])
 
@@ -245,7 +254,12 @@ class init(object):
         # Get default optimization flags based on system arch
         if not cfg_dict['config']['opt_flags']:
             try:
-                cfg_dict['config']['opt_flags'] = arch_dict[cfg_dict['config']['arch']][cfg_dict['config']['compiler_type']]
+                # Convert oneAPI compiler type to intel when checking arch file
+                comp_type = cfg_dict['config']['compiler_type']
+                if comp_type == "oneapi":
+                    comp_type = "intel"
+                
+                cfg_dict['config']['opt_flags'] = arch_dict[cfg_dict['config']['arch']][comp_type]
             except:
                 self.glob.lib.msg.warning("Unable to determine default optimization flags for '" + \
                                         cfg_dict['config']['compiler_type'] + "' compiler " + \
@@ -399,7 +413,7 @@ class init(object):
         #Check bench_mode in set correctly
         if self.glob.stg['bench_mode'] not in  ["sched", "local"]:
             self.glob.lib.msg.error("Unsupported benchmark execution mode found: '"+glob.stg['bench_mode']+ \
-                                    "' in settings.ini, please specify 'sched' or 'local'.")
+                                    "' in $BP_HOME/settings.ini, please specify 'sched' or 'local'.")
     
         # Check for hostfile/hostlist if exec_mode is local (mpirun)
         if self.glob.stg['bench_mode'] == "local":
@@ -419,7 +433,7 @@ class init(object):
     
             # Error if neither is set
             else:
-                self.glob.lib.msg.error("if using 'bench_mode=local' in settings.ini, " + \
+                self.glob.lib.msg.error("if using 'bench_mode=local' in $BP_HOME/settings.ini, " + \
                                         "provide either a 'hostfile' or 'hostlist' under [runtime] in " + \
                                         self.glob.lib.rel_path(cfg_dict['metadata']['cfg_file']))
     

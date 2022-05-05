@@ -71,7 +71,7 @@ class init(object):
 
             if self.glob.stg['overwrite']:
                 self.glob.lib.msg.warning("Deleting old module in " + self.glob.lib.rel_path(mod_path) +
-                                                " because 'overwrite=True' in settings.ini")
+                                                " because 'overwrite=True' in $BP_HOME/settings.ini")
                 su.rmtree(mod_path)
                 os.makedirs(mod_path)
 

@@ -7,6 +7,7 @@ import os
 import pwd
 import shutil as su
 import tarfile
+import time
 from urllib.request import urlopen
 from urllib.request import urlretrieve
 
@@ -262,7 +263,7 @@ class init(object):
            self.glob.stage_ops.append("cp -r " + src_path + " " + self.glob.config['metadata']['copy_path']) 
 
     # Process local file depending on type
-    def stage_local(self, file_list):
+    def prep_local(self, file_list):
 
         for filename in file_list:
 
@@ -276,7 +277,9 @@ class init(object):
             else:
                 file_path = os.path.join(self.glob.stg['local_repo'], filename)
 
-            # Check if compressed
+    def stage_local(self, file_path):
+
+        # Check if compressed
             if any(x in filename for x in ['tar', 'tgz', 'bgz']):
                 self.untar_file(file_path)
             else:
@@ -305,14 +308,23 @@ class init(object):
 
         # Assume HTTP
         else:
-            try:
-                remotefile = urlopen(url)
-                value, params = cgi.parse_header(remotefile.info()['Content-Disposition'])
-                return params["filename"]
 
-            except Exception as e:
-                print(e)
-                self.glob.lib.msg.error("Unable to reach URL " + url)
+            retries = 0
+            while retries < 3:
+
+                try:
+                    remotefile = urlopen(url)
+                    value, params = cgi.parse_header(remotefile.info()['Content-Disposition'])
+                    return params["filename"]
+                except:
+                    pass
+                
+                self.glob.lib.msg.warning("Retrying URL...")
+                time.sleep(2)
+                retries += 1
+
+            # Failed to query URL after 3 tries
+            self.glob.lib.msg.error("Unable to reach URL " + url)
 
     # Check if file or dir is present in local repo
     def in_local_repo(self, filename):
@@ -343,7 +355,7 @@ class init(object):
             self.glob.stage_ops.append("wget -O " + dest + " " + url)
 
     # Download list of URLs
-    def stage_urls(self, url_list):
+    def prep_urls(self, url_list):
         for url in url_list:
             local_copy = False
             # Clean up list elem
@@ -355,20 +367,22 @@ class init(object):
 
             # Prefer local files & file in local repo
             if self.glob.stg['prefer_local_files'] and self.in_local_repo(filename):
+                self.glob.lib.msg.low("Using " + filename + " located in " + self.glob.stg['local_repo_env'])
                 local_copy = True
 
             # No local copy - download
             if not local_copy:
+                self.glob.lib.msg.low("Collecting " + filename)
                 self.wget_file(url, filename)
             
             # Process downloaded file
-            self.stage_local([filename])
+            self.prep_local([filename])
 
     # Stage files listed in cfg under [files]
     def stage(self):
       
         # Create working dir
-        self.create_dir(self.glob.config['metadata']['copy_path'])
+        #self.create_dir(self.glob.config['metadata']['copy_path'])
 
         # Check section exists
         if 'files' in self.glob.config.keys():
@@ -383,9 +397,9 @@ class init(object):
             for op in self.glob.config['files'].keys():
 
                 if op == 'local':
-                    self.stage_local(self.glob.config['files'][op].split(','))
+                    self.prep_local(self.glob.config['files'][op].split(','))
                 elif op == 'download':
-                    self.stage_urls(self.glob.config['files'][op].split(','))
+                    self.prep_urls(self.glob.config['files'][op].split(','))
                 else:
                     self.glob.lib.msg.error(["Unsupported file stage operation selected: '" + op + "'.", 
                                             "Supported operations = 'download' or 'local'"])

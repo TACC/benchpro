@@ -113,7 +113,8 @@ class init(object):
 
         # Add sanity check
         if self.glob.config['config']['exe']:
-            template_obj.append("ldd " + os.path.join("${install_path}", self.glob.config['config']['bin_dir'], self.glob.config['config']['exe']) + " \n")
+            template_obj.append("ldd " + os.path.join("${install_path}", self.glob.config['config']['bin_dir'], \
+                                self.glob.config['config']['exe']) + " \n")
 
         # Add hardware collection script to job script
         self.collect_stats(template_obj)
@@ -158,13 +159,16 @@ class init(object):
         if len(unfilled_keys) > 0:
             # Conitue regardless
             if not self.glob.stg['exit_on_missing']:
-                self.glob.lib.msg.warning("Missing parameters were found in '" + self.glob.lib.rel_path(template_file) + "':" + ", ".join(unfilled_keys))
-                self.glob.lib.msg.warning("'exit_on_missing=False' in settings.ini so continuing anyway...")
+                self.glob.lib.msg.warning("Missing parameters were found in '" + self.glob.lib.rel_path(template_file) + \
+                                            "':" + ", ".join(unfilled_keys))
+                self.glob.lib.msg.warning("'exit_on_missing=False' in $BP_HOME/settings.ini so continuing anyway...")
             # Error and exit
             else:
                # Write file to disk
                 self.glob.lib.files.write_list_to_file(template_obj, self.glob.tmp_job_file)
-                self.glob.lib.msg.error("Missing parameters were found after populating '" + self.glob.lib.rel_path(template_file) + "' and exit_on_missing=True in settings.ini: " + ' '.join(unfilled_keys))
+                self.glob.lib.msg.error("Missing parameters were found after populating '" + \
+                                        self.glob.lib.rel_path(template_file) +              \
+                                        "' and exit_on_missing=True in $BP_HOME/settings.ini: " + ' '.join(unfilled_keys))
         else:
             self.glob.log.debug("All build parameters were filled, continuing")
 
@@ -175,7 +179,8 @@ class init(object):
         self.glob.tmp_job_file = os.path.join(self.glob.bp_home, "tmp." + self.glob.stg['build_job_file'])
 
         if self.glob.stg['build_mode'] == "sched":
-            self.glob.sched['template'] = self.glob.lib.files.find_exact(self.glob.sched['sched']['type'] + ".template", self.glob.stg['template_path'])
+            self.glob.sched['template'] = self.glob.lib.files.find_exact(self.glob.sched['sched']['type'] + \
+                                                                        ".template", self.glob.stg['template_path'])
 
         # Get application template file name from cfg, otherwise use cfg_label to look for it
         if self.glob.config['general']['template']:
@@ -184,12 +189,14 @@ class init(object):
             self.glob.config['template'] = self.glob.config['metadata']['cfg_label']
 
         # Search for application template file
-        build_template_search = self.glob.lib.files.find_partial(self.glob.config['template'], os.path.join(self.glob.stg['template_path'], self.glob.stg['build_tmpl_dir']))
+        build_template_search = self.glob.lib.files.find_partial(self.glob.config['template'], \
+                                        os.path.join(self.glob.stg['template_path'], self.glob.stg['build_tmpl_dir']))
 
         # Error if not found
         if not build_template_search:
             self.glob.lib.msg.error("failed to locate build template '" + self.glob.config['template'] + "' in " + \
-                                    self.glob.lib.rel_path(self.glob.stg['template_path'] + self.glob.stg['sl'] + self.glob.stg['build_tmpl_dir']))
+                                    self.glob.lib.rel_path(self.glob.stg['template_path'] + self.glob.stg['sl'] + \
+                                                            self.glob.stg['build_tmpl_dir']))
     
         self.glob.config['template'] = build_template_search
 
@@ -197,7 +204,8 @@ class init(object):
         known_compiler_type = True
         try:
             self.glob.compiler['common'] = self.glob.compiler[self.glob.config['config']['compiler_type']]
-            self.glob.compiler['template'] = self.glob.lib.files.find_exact(self.glob.stg['compile_tmpl_file'], self.glob.stg['template_path'])
+            self.glob.compiler['template'] = self.glob.lib.files.find_exact(self.glob.stg['compile_tmpl_file'], \
+                                                                            self.glob.stg['template_path'])
         except:
             known_compiler_type = False
             self.glob.compiler['template'] = None
@@ -272,7 +280,9 @@ class init(object):
     
         # Scheduler template file
         if self.glob.stg['bench_mode'] == "sched":
-            self.glob.sched['template'] = self.glob.lib.files.find_exact(self.glob.sched['sched']['type'] + ".template", os.path.join(self.glob.stg['template_path'], self.glob.stg['sched_tmpl_dir']))
+            self.glob.sched['template'] = self.glob.lib.files.find_exact(self.glob.sched['sched']['type'] + ".template", \
+                                                                        os.path.join(self.glob.stg['template_path'], \
+                                                                        self.glob.stg['sched_tmpl_dir']))
 
         # Set bench template to default, if set in bench.cfg: overload
         if self.glob.config['config']['template']:
@@ -280,7 +290,8 @@ class init(object):
         else:
             self.glob.config['template'] = self.glob.config['config']['bench_label']
 
-        matches = gb.glob(os.path.join(self.glob.stg['template_path'], self.glob.stg['bench_tmpl_dir'], "*" + self.glob.config['template'] + "*"))
+        matches = gb.glob(os.path.join(self.glob.stg['template_path'], self.glob.stg['bench_tmpl_dir'], "*" + \
+                                        self.glob.config['template'] + "*"))
         matches.sort()
 
         # If more than 1 template match found
@@ -289,28 +300,21 @@ class init(object):
 
         # if no template match found 
         if not matches:
-            self.glob.lib.msg.error("failed to locate bench template '" + self.glob.config['template'] + "' in " + self.glob.lib.rel_path(os.path.join(self.glob.stg['template_path'], self.glob.stg['bench_tmpl_dir'])))
+            self.glob.lib.msg.error("failed to locate bench template '" + self.glob.config['template'] + \
+                                    "' in " + self.glob.lib.rel_path(os.path.join(self.glob.stg['template_path'], \
+                                                                    self.glob.stg['bench_tmpl_dir'])))
         else:
             self.glob.config['template'] = matches[0]
 
-        self.glob.config['metadata']['job_script'] = self.glob.config['config']['bench_label'] + "-bench." + self.glob.stg['bench_mode']
+        self.glob.config['metadata']['job_script'] = self.glob.config['config']['bench_label'] + "-bench." + \
+                                                        self.glob.stg['bench_mode']
 
-    # If requested multiple runs, check for supporting syntax in template
-    def get_bench_pagmas(self, template):
-        # Get line number of @start and @end in benchmark template file
-        start = [i for i, s in enumerate(template) if '@start' in s]
-        end = [i for i, s in enumerate(template) if '@end' in s]
-
-        if not len(start) or not len(end):
-            self.glob.lib.msg.error("Multiple tasks per job were requested but '@start' and/or '@end' are missing from the benchmark template")
-
-        return start[0], end[0]
-  
     # Sets the mpi_exec string for schduler or local exec modes
     def set_mpi_exec_str(self):
 
         # Set total ranks for schduler\
-        self.glob.config['runtime']['ranks'] = int(self.glob.config['runtime']['ranks_per_node'])*int(self.glob.config['runtime']['nodes'])
+        self.glob.config['runtime']['ranks'] = int(self.glob.config['runtime']['ranks_per_node'])* \
+                                                int(self.glob.config['runtime']['nodes'])
 
         # Standard ibrun call
         if self.glob.stg['bench_mode'] == "sched":
@@ -369,7 +373,8 @@ class init(object):
 
         # Add custom additions if provided
         if self.glob.config['config']['script_additions']:
-            self.glob.lib.msg.low("Adding contents of '" + self.glob.lib.rel_path(self.glob.config['config']['script_additions']) + "' to benchmark script.")
+            self.glob.lib.msg.low("Adding contents of '" + self.glob.lib.rel_path(self.glob.config['config']['script_additions']) + \
+                                                            "' to benchmark script.")
             self.construct_template(template_obj, self.glob.config['config']['script_additions'])
             template_obj.append("\n")
 
