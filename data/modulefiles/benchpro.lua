@@ -8,6 +8,8 @@ local tacc_scratch = ""
 setenv("TACC_SCRATCH", tacc_scratch )
 local bp_version      = ""
 setenv("BP_VERSION",  bp_version)
+local build_hash      = ""
+setenv("BP_BUILD_ID", build_hash) 
 local py_version      = ""
 
 -- Resolve user environment variables, $HOME, $SCRATCH, etc
