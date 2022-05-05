@@ -1,4 +1,4 @@
-PKG_ROOT_DIR=${build_path}
+PKG_ROOT_DIR=${working_path}
 PKG_INSTALL_DIR=${install_path}
 PKG_SRC_FILE=gromacs-${version}
 

@@ -1,7 +1,7 @@
 export       mpilabel=<<<mpilabel>>>
 export      complabel=<<<complabel>>>
 
-mv ${build_path}/* ${install_path}
+mv ${working_path}/* ${install_path}
 
 cd ${install_path}/OpenFOAM-${version}
 

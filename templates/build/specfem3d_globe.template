@@ -3,8 +3,8 @@ export c_flags=<<<c_flags>>>
 export fc_flags=<<<fc_flags>>>
 export cxx_flags=<<<cxx_flags>>>
 
-builddir=${build_path}/specfem3d_globe-${version}
-datadir=${build_path}/specfem3d_globe_generalized_dataset
+builddir=${working_path}/specfem3d_globe-${version}
+datadir=${working_path}/specfem3d_globe_generalized_dataset
 
 # Compiler type
 config_comp=""
