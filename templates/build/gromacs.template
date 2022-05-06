@@ -36,7 +36,7 @@ env CC=icc CXX=icpc cmake .. \
 -DGMX_BUILD_SHARED_EXE=OFF \
 -DGMX_DEFAULT_SUFFIX=ON
 
-make -j 16
+make -j $threads
 make install
 
 # Single precision parallel version
@@ -72,7 +72,7 @@ env CC=mpicc CXX=mpicxx cmake .. \
 -DGMX_BINARY_SUFFIX=_mpi \
 -DGMX_LIBS_SUFFIX=_mpi
 
-make -j 16
+make -j $threads
 make install
 
 # Double precision MPI-enabled mdrun
@@ -109,7 +109,7 @@ env CC=mpicc CXX=mpicxx cmake .. \
 -DGMX_BINARY_SUFFIX=_mpi_d \
 -DGMX_LIBS_SUFFIX=_mpi_d
 
-make -j 16
+make -j $threads
 make install
 
 
