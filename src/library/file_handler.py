@@ -229,7 +229,7 @@ class init(object):
 
         # untar in script
         else:
-            self.glob.stage_ops.append("tar -xf " + src + " -C " + self.glob.config['metadata']['copy_path'])
+            self.glob.stage_ops.append("tar -xf " + src + " -C ${working_path}")
 
     # Copy file to working dir
     def cp_file(self, src):
@@ -270,12 +270,19 @@ class init(object):
             filename  = filename.strip()
             self.glob.log.debug("Staging local file " + filename)
 
-            # Locate file
-            if self.glob.stg['sync_staging']: 
-                file_path = self.find_in([self.glob.stg['local_repo'], self.glob.config['metadata']['copy_path']], filename, True)
+            ## Locate file
+            #if self.glob.stg['sync_staging']:
+            #    file_path = self.find_in([self.glob.stg['local_repo'], self.glob.config['metadata']['copy_path']], filename, True)
             # Assume will be in repo after download
+            #else:
+            file_path = os.path.join(self.glob.stg['local_repo'], filename)
+
+            # Add tar op to staged ops
+            if any(x in filename for x in ['tar', 'tgz', 'bgz']):
+                self.glob.stage_ops.append("tar -xf " + file_path + " -C ${working_path}")
+            # Add cp op to staged ops
             else:
-                file_path = os.path.join(self.glob.stg['local_repo'], filename)
+                self.glob.stage_ops.append("cp -r " + file_path + " $(working_path")
 
     def stage_local(self, file_path):
 

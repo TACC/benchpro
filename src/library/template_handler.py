@@ -93,8 +93,12 @@ class init(object):
     # Get input files asynchronously
     def stage_input_files(self, template_obj):
         template_obj.append("\n")
+
         for op in self.glob.stage_ops:
+            self.glob.log.debug("Adding file op to template: " + op + "...")
             template_obj.append(op + "\n")
+
+        template_obj.append("\n")
 
     # If the setting in enabled, add the provenance data collection script to the script
     def collect_stats(self, template_obj):
