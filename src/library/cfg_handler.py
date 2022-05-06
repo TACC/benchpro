@@ -149,9 +149,9 @@ class init(object):
 
     # Accept a 'sched' section in build/bench config file to overload sched settings like runtime
     def add_sched_overloads(self, cfg_dict):
-        if 'sched' in cfg_dict:
-            for key in cfg_dict['sched']:
-                self.glob.overload_dict[key] = cfg_dict['sched'][key]
+        if 'overload' in cfg_dict:
+            for key in cfg_dict['overload']:
+                self.glob.overload_dict[key] = cfg_dict['overload'][key]
 
     # Check build config file and add required fields
     def process_build_cfg(self, cfg_dict):
@@ -322,6 +322,9 @@ class init(object):
         if not 'version'            in cfg_dict['requirements'].keys():  cfg_dict['requirements']['version']    = ""
         if not 'build_label'        in cfg_dict['requirements'].keys():  cfg_dict['requirements']['build_label']= ""
         if not 'system'             in cfg_dict['requirements'].keys():  cfg_dict['requirements']['system']     = ""
+        if not 'compiler'           in cfg_dict['requirements'].keys():  cfg_dict['requirements']['compiler']   = ""
+        if not 'mpi'                in cfg_dict['requirements'].keys():  cfg_dict['requirements']['mpi']        = ""
+
 
         if not 'threads'            in cfg_dict['runtime'].keys():  cfg_dict['runtime']['threads']              = 0
         if not 'ranks_per_node'     in cfg_dict['runtime'].keys():  cfg_dict['runtime']['ranks_per_node']       = 0
