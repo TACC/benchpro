@@ -57,6 +57,9 @@ benchpro --version
 ```
 benchpro --defaults
 ```
+These defaults are set by the $BP_HOME/settings.ini 
+
+
 ### Build an Application
 This section will walk you through building your first application with BenchPRO using an included application profile.
 
