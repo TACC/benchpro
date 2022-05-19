@@ -1,7 +1,7 @@
 .. _user_setup:
 
 ============
-Client Setup
+User Setup
 ============
 
 The BenchPRO site package should already be installed on most TACC systems. If it is not, contact ``mcawood@tacc.utexas.edu`` or install it from the benchpro-site_ repository. Assuming the site package is available, you need to install a local copy of the configuration and template files to use BenchPRO.
@@ -33,12 +33,16 @@ Load the BenchPRO site package using the appropriate system path above, this mod
     ml use [module_path]
     ml benchpro
 
-You will likely get a warning stating you need to install missing user files. Follow the instructions to clone those files from this repository:
+You will likely get a warning stating you need to install missing user files. Follow the instructions to clone the user files from the repository:
 
 .. code-block::
 
     ml git
     git clone https://github.com/TACC/benchpro.git $HOME/benchpro
+
+.. note::
+
+    Refer to the :ref:`layout` diagram for more information about these user files.  
 
 Finally, you need to run a validation process to confirm that your system, environment and directory structures are correctly configured before using BenchPRO for the first time. Run this with:
 

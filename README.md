@@ -118,12 +118,13 @@ benchpro -qr ljmelt
 benchpro --last
 ```
 
-In this example, parameters in `$BP_HOME/config/bench/lammps_ljmelt.cfg` were used to contetualize the template `$BP_HOME/templates/bench/lammps.template`
+In this example, parameters in `$BP_HOME/config/bench/lammps_ljmelt.cfg` were used to contextualize the template `$BP_HOME/templates/bench/lammps.template`
 Much like the build process, a 'bench_report' was generated to store metadata associated with this benchmark run. It is stored in the benchmark result direcotry and will be used in the next step to capture the result to the database.
 
 ### Capture Benchmark Result
 
 A benchmark result exists in four states, during scheduler queueing and execution it is considered in `running` state, upon completion it will remain on the local system in a `complete` state, until it is captured it to the database when its state changes to `captured` or `failed`. 
+
 1 We can check on the status of all benchmark runs with:
 ```
 benchpro -lr 
@@ -140,9 +141,9 @@ benchpro --dbResult
 ```
 benchpro --dbResult username=$USER system=$TACC_SYSTEM submit_time=$(date +"%Y-%m-%d") --export
 ```
-Because your LAMMPS application was recently compiled and not present in the database, it was also added automatically.
+Because your LAMMPS application was recently compiled and not present in the database, it was added to the application table automatically. An identifier string is generated and assigned to each unique application instance when added to the database, this identifier [APPID] can be used to query the application.
 
-5 Query your application details using the [APPID] from above:
+5 Query your application details using the [APPID] displayed from the query in the previous step:
 ```
 benchpro --dbApp [APPID]
 ```
@@ -192,7 +193,7 @@ This file must be located in `$BP_HOME/config/build`, preferably with the naming
 
 ### 2. Build template file
 
-This template file is used to gerenate a contextualized build script which will executed to compile the application.
+This template file is used to gerenate a contextualized build script which is executed to compile the application.
 Variables are defined with `<<<[param]>>>` syntax and populated with the variables defined in the config file above.
 If a `<<<[param]>>>` in the build template in not successfully populated and `exit_on_missing=True` in settings.ini, an expection will be raised.
 You are able to make use of the `local_repo` variable defined in `$BP_HOME/settings.ini` to store and use files locally. 

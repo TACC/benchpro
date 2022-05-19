@@ -2,7 +2,92 @@
 File Format Reference
 =====================
 
-This page provides a reference to the various input and file structure provided by BenchPRO.
+This page provides a reference to the various input and file structures provided by BenchPRO.
+
+
+.. _layout:
+
+User files layout
+-----------------
+
+.. code-block::
+
+    ├── config
+    │   ├── architecture_defaults.cfg
+    │   ├── bench
+    │   │   ├── amber16_jac_npt.cfg
+    │   │   ├── amber16_jac_nve.cfg
+    │   │   ├── .....
+    │   │   ├── frontera
+    │   │   │   ├── milc_18x18x18x36.cfg
+    │   │   │   └── .....
+    │   │   ├── stampede2
+    │   │   │   └── milc_18x18x18x36.cfg
+    │   │   ├── .....
+    │   │   └── wrf_maria1km_large.cfg
+    │   ├── build
+    │   │   ├── amber20_x86.cfg
+    │   │   ├── frontera
+    │   │   │   ├── amber20_cuda_rtx.cfg
+    │   │   │   └── .....
+    │   │   ├── gpcnet.cfg
+    │   │   ├── gromacs.cfg
+    │   │   ├── lammps.cfg
+    │   │   ├── longhorn
+    │   │   │   └── amber20_cuda_power9.cfg
+    │   │   ├── ls6
+    │   │   │   └── amber20_x86.cfg
+    │   │   ├── milc.cfg
+    │   │   ├── stampede2
+    │   │   │   ├── swift_dmo_v0.9.0.cfg
+    │   │   │   ├── swift_eagle_v0.9.0.cfg
+    │   │   │   └── wrf_v4.2.cfg
+    │   │   └── stream_mpi.cfg
+    │   ├── compiler.cfg
+    │   ├── rules
+    │   │   └── frontera.cfg
+    │   ├── sched
+    │   │   ├── slurm_frontera_normal.cfg
+    │   │   ├── .....
+    │   │   └── slurm_stampede2_test1.cfg
+    │   └── system.cfg
+    ├── resources
+    │   ├── hw_utils
+    │   │   ├── cpuid
+    │   │   ├── ibnetdiscover
+    │   │   ├── lshw
+    │   │   ├── lspci
+    │   │   ├── rdmsr_all
+    │   │   └── TACC_HWP_set
+    │   ├── images
+    │   │   ├── benchpro_black.png
+    │   │   └── benchpro_white.png
+    │   ├── modulefiles
+    │   │   └── cuda
+    │   │       └── 11.0.lua
+    │   └── scripts
+    │       ├── change_permissions
+    │       ├── collect_hw_info
+    │       └── results
+    │           ├── read_hpl_flops.sh
+    │           ├── read_quant_timing.sh
+    │           ├── read_swift_timing.py
+    │           └── read_wrf_timing.sh
+    ├── settings.ini
+    ├── suites.ini
+    └── templates
+    ├── bench
+    │   ├── amber_longhorn.template
+    │   ├── .....
+    │   └── wrf.template
+    ├── build
+    │   ├── amber20.template
+    │   ├── .....
+    │   └── wrf_v4.2.template
+    ├── compiler.template
+    ├── pid_dependency.template
+    └── sched
+        └── slurm.template
 
 .. _arguments:
 
