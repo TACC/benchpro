@@ -1,0 +1,52 @@
+
+export HDF5_HOME=$TACC_HDF5_DIR
+export LD_LIBRARY_PATH=$install_path/lib/:$LD_LIBRARY_PATH
+export PATH=$install_path/bin:$PATH
+export ZFP=$install_path
+export HDF5ZFP=$install_path
+export HDF5_PLUGIN_PATH=$install_path
+
+echo `env` | grep path
+
+
+wget "https://github.com/LLNL/zfp/releases/download/0.5.5/zfp-<<<zfp_version>>>.tar.gz"
+wget "https://github.com/LLNL/H5Z-ZFP/archive/refs/tags/v<<<h5z_zfp_version>>>.tar.gz"
+
+tar xfvz zfp-<<<zfp_version>>>.tar.gz
+tar xfvz v<<<h5z_zfp_version>>>.tar.gz
+
+git clone https://github.com/leighorf/cm1<<<version>>>-LOFS.git
+
+
+# Make and Install ZFP
+cd zfp-<<<zfp_version>>>
+# Fix default int size
+sed -i '1s/^/DEFS += -DBIT_STREAM_WORD_TYPE=uint8\n/' Config
+mkdir build
+cd build
+cmake -DSHARED_LIBS_SUPPORTED=NO -DCMAKE_INSTALL_PREFIX=$install_path ../
+make install
+
+ln -s $install_path/lib64 $install_path/lib
+
+
+# Make and install H5Z-ZFP
+cd $working_path/H5Z-ZFP-<<<h5z_zfp_version>>>
+make CC=mpiicc ZFP_HOME=$install_path PREFIX=$install_path all
+make CC=mpiicc ZFP_HOME=$install_path PREFIX=$install_path install
+
+
+# Make and install CM1
+cd $working_path/cm1<<<version>>>-LOFS/src
+echo `pwd`
+
+# Fix install paths
+sed -i "s|^ZFP=.*|ZFP=${install_path}|" Makefile
+sed -i "s|^HDF5ZFP=.*|HDF5ZFP=${install_path}|" Makefile
+make -j
+make
+
+cd ..
+mv run $install_path
+
+
