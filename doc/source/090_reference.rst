@@ -12,6 +12,7 @@ User files layout
 
 .. code-block::
 
+    ./benchpro
     ├── config
     │   ├── architecture_defaults.cfg
     │   ├── bench
