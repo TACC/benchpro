@@ -39,7 +39,7 @@ This file staging process occurs in 1 of 2 ways, depending on the state of :code
 
 .. note::
    
-   A detailed list of config fields are provided here:ref:`here <app_config_fields>`
+   A detailed list of config fields are provided :ref:`here <app_config_fields>`
 
 Build template file
 -------------------
