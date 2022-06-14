@@ -15,6 +15,7 @@ from urllib.request import urlretrieve
 class init(object):
     def __init__(self, glob):
         self.glob = glob
+        self.get_client_version()
 
     # Read non-cfg file into list
     def read(self, file_path):
@@ -41,9 +42,9 @@ class init(object):
                     elif os.path.isdir(f):
                         self.prune_tree(f)
 
-                    self.glob.log.debug("Successfully removed tmp object " + self.glob.lib.rel_path(f))
+                    self.glob.lib.msg.log("Successfully removed tmp object " + self.glob.lib.rel_path(f))
                 except Exception as e :
-                    self.glob.log.debug("Failed to remove tmp object " + self.glob.lib.rel_path(f))
+                    self.glob.lib.msg.log("Failed to remove tmp object " + self.glob.lib.rel_path(f))
 
     # Remove created files if we are crashing
     def rollback(self):
@@ -200,7 +201,7 @@ class init(object):
                 su.copyfile(src, os.path.join(dest, new_name))
             else:
                 su.copytree(src, os.path.join(dest, new_name))
-            self.glob.log.debug("Copied file " + src + " into " + dest)
+            self.glob.lib.msg.log("Copied file " + src + " into " + dest)
         except IOError as e:
             self.glob.lib.msg.high(e)
             self.glob.lib.msg.error(
@@ -268,7 +269,7 @@ class init(object):
         for filename in file_list:
 
             filename  = filename.strip()
-            self.glob.log.debug("Staging local file " + filename)
+            self.glob.lib.msg.log("Staging local file " + filename)
 
             ## Locate file
             #if self.glob.stg['sync_staging']:
@@ -282,7 +283,7 @@ class init(object):
                 self.glob.stage_ops.append("tar -xf " + file_path + " -C ${working_path}")
             # Add cp op to staged ops
             else:
-                self.glob.stage_ops.append("cp -r " + file_path + " $(working_path")
+                self.glob.stage_ops.append("cp -r " + file_path + " ${working_path}")
 
     def stage_local(self, file_path):
 
@@ -367,7 +368,7 @@ class init(object):
             local_copy = False
             # Clean up list elem
             url = url.strip()
-            self.glob.log.debug("Staging URL: " + str(url))
+            self.glob.lib.msg.log("Staging URL: " + str(url))
 
             # Get filename from URL
             filename = self.get_url_filename(url)
@@ -394,7 +395,7 @@ class init(object):
         # Check section exists
         if 'files' in self.glob.config.keys():
 
-            self.glob.lib.msg.high("Staging input files...")
+            self.glob.lib.msg.low("Staging input files...")
 
             # Evaluate expressions in [config] and [files] sections of cfg file 
             self.glob.lib.expr.eval_dict(self.glob.config['config'])
@@ -410,11 +411,6 @@ class init(object):
                 else:
                     self.glob.lib.msg.error(["Unsupported file stage operation selected: '" + op + "'.", 
                                             "Supported operations = 'download' or 'local'"])
-
-    # Read version number from file
-    def read_version(self):
-        with open(os.path.join(self.glob.bp_home, ".version"), 'r') as f:
-            return f.readline().split(" ")[-1][1:].strip()
 
     # Write module to file
     def write_list_to_file(self, list_obj, output_file):
@@ -467,4 +463,10 @@ class init(object):
 
         return cfg_dict
 
-
+    # Read client version number from file
+    def get_client_version(self):
+        try:
+            with open(os.path.join(self.glob.bp_home, ".version"), 'r') as f:
+                self.glob.version_client = f.readline().split(" ")[-1][1:].strip()
+        except:
+            self.glob.lib.msg.error("Failed to read version info from $BP_HOME/.version")    

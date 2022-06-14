@@ -382,7 +382,7 @@ def capture_result(glob_obj):
     glob = glob_obj
 
     # Start logger
-    logger.start_logging("CAPTURE", glob.stg['results_log_file'] + "_" + glob.time_str + ".log", glob)
+    logger.start_logging("CAPTURE", glob.stg['results_log_file'] + "_" + glob.stg['time_str'] + ".log", glob)
 
     # Get list of results in $BP_RESULTS/complete with a COMPLETE job state
     results = glob.lib.get_completed_results(glob.lib.get_pending_results(), True)
@@ -392,14 +392,14 @@ def capture_result(glob_obj):
         glob.lib.msg.high("No new results found in " + glob.lib.rel_path(glob.stg['pending_path']))
 
     else:
-        glob.log.debug("Capturing " + str(len(results)) + " results")
+        glob.lib.msg.log("Capturing " + str(len(results)) + " results")
         captured = 0
         if len(results) == 1: glob.lib.msg.heading("Starting capture for " + str(len(results)) + " new result.")
         else: glob.lib.msg.heading("Starting capture for " + str(len(results)) + " new results.")
 
         for result_dir in results:
             # Capture application profile for this result to db if not already present
-            glob.log.debug("Capturing " + result_dir)
+            glob.lib.msg.log("Capturing " + result_dir)
             glob.lib.db.capture_application(os.path.join(glob.stg['pending_path'], result_dir))
 
             glob.result_path = os.path.join(glob.stg['pending_path'], result_dir)
@@ -519,7 +519,7 @@ def query_db(glob_obj):
 
         # Export to csv
         if glob.args.export:
-            csvFile = os.path.join(glob.bp_home, "dbquery_"+ glob.time_str + ".csv")
+            csvFile = os.path.join(glob.bp_home, "dbquery_"+ glob.stg['time_str'] + ".csv")
             print()
             print("Exporting to csv file: " + glob.lib.rel_path(csvFile))
 

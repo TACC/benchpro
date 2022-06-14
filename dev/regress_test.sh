@@ -1,6 +1,8 @@
 #!/bin/bash
 
+APP_LIST="lammps code=namd,build_label=x86 wrf openfoam milc gromacs code=amber,build_label=x86 code=swift,build_label=dmo qe"
 APP="lammps"
+BENCH_LIST="ljmelt namd_apoa1 new_conus12km SimpleBenchMarkLarge milc_18 gromacs_PEP STMV_NVE EAGLE_DMO_12 AUSURF112"
 BENCH="ljmelt"
 
 result(){
@@ -23,12 +25,12 @@ declare cases=( "help"
             "version" 
             "validate"
             "avail"
-            "build $APP --overload dry_run=True build_label=test"
+            "build $APP_LIST --overload dry_run=True"
             "listApps"
             "queryApp $APP"
-            "bench $BENCH --overload dry_run=True build_label=test"
+            "bench $BENCH_LIST --overload dry_run=True"
             "last"
-            "delApp $APP/test "
+            "delApp $APP_LIST "
             "capture"
             "listResults all"
             "dbResult dataset=$BENCH --export"
@@ -38,7 +40,7 @@ declare cases=( "help"
             ) 
 
 for c in "${cases[@]}"; do
-    benchpro --$c > /dev/null 2>&1
+    benchpro --$c > /dev/null 
     result $? $c
 done
 

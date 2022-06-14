@@ -3,178 +3,281 @@
 # System Imports
 import argparse
 import os
-import pprint as pp
-import signal
 import sys
+import traceback
 
 # Local Imports
 try:
     import src.bench_manager as bench_manager
-    import src.build_manager as build_manager 
+    import src.build_manager as build_manager
     import src.global_settings as global_settings
     import src.result_manager as result_manager
     import src.validate as validate
 
 # Catch import exception
 except ImportError as e:
-    print("You had an import error, you might be using Python2?")
-    print("Please make sure you loaded the benchpro module'")
+    print("Python import error!")
+    print("Is the BenchPRO module loaded?")
     print(e)
     sys.exit(1)
 
-# Catch user abort
-def signal_handler(sig, frame):
-    print('    Aborted.')
-    sys.exit(0)
+# Catch exception in a handler, write to log and quit
+def catch_major_exception(glob, e):
+    print()
+    print("It appears something has gone wrong!")
+    print(e)
+    print()
+    if glob.log:
+        glob.log.debug(traceback.format_exc())
+        print("Traceback written to log.")
+    else:
+        print(traceback.format_exc())
+    sys.exit(1)
 
-def main():
+# Get cmdline arguments
+def get_arguments():
+
     # Parse cmdline args
     cmd_parser = argparse.ArgumentParser(
         description='This is a benchmarking tool to automate the installation of applications, \
                     execution of benchmarks and collection of results.')
 
-    cmd_parser.add_argument("--settings", default=False,
-                            help="Provide .ini file with nonstandard install paths.")
+    cmd_parser.add_argument(
+        "--force",
+        default=False,
+        action='store_true',
+        help="Forcibly delete multiple applications/benchmarks meeting your selection criteria.")
 
-    cmd_parser.add_argument("-b", "--build", default=False, nargs='+',
-                            type=str, help="Name of the code config file to build, run --avail to check. Accepts space delimited list.")
-    cmd_parser.add_argument("--sched", default="system",
-                            type=str, help="Name of the scheduler config file, will use system default otherwise.")
+    cmd_parser.add_argument(
+        "--settings",
+        default=False,
+        help="Provide .ini file with nonstandard install paths.")
 
-    cmd_parser.add_argument("-B", "--bench", default=False, nargs='+',
-                            type=str, help="Name of benchmark config file to bench, run --avail to check. Accepts space delimited list.")
+    cmd_parser.add_argument(
+        "-b",
+        "--build",
+        default=False,
+        nargs='+',
+        type=str,
+        help="Name of the code config file to build, run --avail to check. Accepts list.")
 
-    cmd_parser.add_argument("-C", "--capture", default=False, action='store_true',
-                            help="Send results to database.")
-    cmd_parser.add_argument("-lr", "--listResults", nargs='?', const="all", type=str,
-                            help="Provide summary of benchmarks results. Default is 'all', also takes 'complete', 'complete', 'captured' or \
+    cmd_parser.add_argument(
+        "--sched",
+        default="system",
+        type=str,
+        help="Name of the scheduler config file, will use system default otherwise.")
+
+    cmd_parser.add_argument(
+        "-B",
+        "--bench",
+        default=False,
+        nargs='+',
+        type=str,
+        help="Name of benchmark config file to bench, run --avail to check. Accepts list.")
+
+    cmd_parser.add_argument(
+        "-C",
+        "--capture",
+        default=False,
+        action='store_true',
+        help="Send results to database.")
+
+    cmd_parser.add_argument(
+        "-lr",
+        "--listResults",
+        nargs='?',
+        const="all",
+        type=str,
+        help="Provide summary of benchmarks results. Default is 'all', also takes 'complete', 'complete', 'captured' or \
                                     'failed'")
-    cmd_parser.add_argument("-dr", "--delResult", default=False, nargs='+',
-                            help="Deletes benchmark result from local directory, takes space delimited benchmark label, 'captured', \
-                                    'failed' or 'all'")
-    
-    cmd_parser.add_argument("-c", "--clean", default=False, action='store_true',
-                            help="Cleanup temp and log files.")
-    cmd_parser.add_argument("-la", "--listApps", default=False, action='store_true',
-                            help="Show all installed applications.")
-    cmd_parser.add_argument("-a", "--avail", nargs='?', const="all", type=str,
-                            help="Show all available application profiles. Default is 'all', also accepts 'code', 'bench' or 'suite'.")
 
-    cmd_parser.add_argument("-d", "--defaults", default=False, action='store_true',
-                            help="Print default options for current system.")
+    cmd_parser.add_argument(
+        "-dr",
+        "--delResult",
+        default=False,
+        nargs='+',
+        help="Deletes benchmark result from local directory, takes benchmark label, 'captured', 'failed' or 'all'")
 
-    cmd_parser.add_argument("-da", "--delApp", default=False, nargs='+',
-                            help="Remove an installed application. Accepts space delimited list.")
+    cmd_parser.add_argument(
+        "-c",
+        "--clean",
+        default=False,
+        action='store_true',
+        help="Cleanup temp and log files.")
 
-    cmd_parser.add_argument("-qa", "--queryApp", default=False,
-                            help="Query build report of an installed application.")
-    cmd_parser.add_argument("-qr", "--queryResult", default=False,
-                            help="Query a local benchmark result for config info.")
-    cmd_parser.add_argument("--dbResult", nargs='?', const="all", type=str,
-                            help="Query database for benchmark results. Default is 'all'. Also accepts colon-delimited list \
-                                    of search criteria.")
-    cmd_parser.add_argument("--dbApp", default=False, type=str, help="Provide application ID to print info report from database.")
+    cmd_parser.add_argument(
+        "-la",
+        "--listApps",
+        default=False,
+        action='store_true',
+        help="Show all installed applications.")
 
-    cmd_parser.add_argument("--export", default=False, action='store_true',
-                            help="Export database query to .csv file dbquery_[date].csv")
+    cmd_parser.add_argument(
+        "-a",
+        "--avail",
+        nargs='?',
+        const="all",
+        type=str,
+        help="Show all available application profiles. Default is 'all', also accepts 'code', 'bench' or 'suite'.")
+
+    cmd_parser.add_argument(
+        "-d",
+        "--defaults",
+        default=False,
+        action='store_true',
+        help="Print default options for current system.")
+
+    cmd_parser.add_argument(
+        "-da",
+        "--delApp",
+        default=False,
+        nargs='+',
+        help="Remove an installed application. Accepts list.")
+
+    cmd_parser.add_argument(
+        "-qa",
+        "--queryApp",
+        default=False,
+        help="Query build report of an installed application.")
+
+    cmd_parser.add_argument(
+        "-qr",
+        "--queryResult",
+        default=False,
+        help="Query a local benchmark result for config info.")
+
+    cmd_parser.add_argument(
+        "--dbResult",
+        nargs='?',
+        const="all",
+        type=str,
+        help="Query database for benchmark results. Default is 'all'. Accepts comma delimited list \
+                                    of key-value pairs as search criteria (username=mcawood,system=frontera).")
+
+    cmd_parser.add_argument(
+        "--dbApp",
+        default=False,
+        type=str,
+        help="Provide application ID to print info report from database.")
+
+    cmd_parser.add_argument(
+        "--export",
+        default=False,
+        action='store_true',
+        help="Export database query to .csv file dbquery_[date].csv")
 
     cmd_parser.add_argument("--history", default=False, action='store_true',
-                                help="Print benchpro input history.")
+                            help="Print benchpro input history.")
 
     cmd_parser.add_argument("-L", "--last", nargs='?', const=1, type=int,
-                                help="Print query from last build or bench task.")
+                            help="Print query from last build or bench task.")
 
-    cmd_parser.add_argument("-o", "--overload", default=False, nargs='+',
-                            help="Override any setting read from cfg files. Accepts space delimited list of assignments.")
-    cmd_parser.add_argument("-V", "--validate", default=False, action='store_true',
-                            help="Run installation validator.")
+    cmd_parser.add_argument(
+        "-o",
+        "--overload",
+        default=False,
+        nargs='+',
+        help="Override any setting read from cfg files. OVERLOAD is a list of key-value pairs of the form key=value")
 
-    cmd_parser.add_argument("-v", "--version", default=False, action='store_true',
-                            help="Print version info.")
+    cmd_parser.add_argument(
+        "-V",
+        "--validate",
+        default=False,
+        action='store_true',
+        help="Run installation validator.")
 
-    args = cmd_parser.parse_args()
+    cmd_parser.add_argument(
+        "-v",
+        "--version",
+        default=False,
+        action='store_true',
+        help="Print version info.")
 
-    # User abort
-    signal.signal(signal.SIGINT, signal_handler)
+    return cmd_parser.parse_args()
 
-    # Installation directoy set by module
-    try:
-        bp_home = os.environ['BP_HOME']
-    except:
-        print("$BP_HOME not set. Load benchpro module. Aborting!")
-        sys.exit(1)
 
-    # Init global settings
-    glob = global_settings.settings(bp_home)
-    glob.args = args
+def main():
 
-    #Check version
+    # Init global object
+    glob = global_settings.setup()
+
+    # Store arguments from ArgumentParser in glob
+    glob.args = get_arguments()
+
+    # Check client/site versions match
     glob.lib.check_version()
 
     # Run validator script
-    if args.validate:
+    if glob.args.validate:
         validate.check_setup(glob)
-        sys.exit(0)
 
     # Check validated
-    if not os.path.isfile(os.path.join(bp_home, ".validated")):
-        print("Please run  benchpro --validate before continuing.")
-        print()
-        sys.exit(1)
-    
-    # Get overload dict
-    if args.overload:
-        glob.lib.overload.setup_dict(args.overload)
+    validate.check(glob.bp_home)
 
-    # Start builder
-    if args.build:
-        build_manager.init(glob)
-    # Start bencher
-    elif args.bench:
-        glob.op = "bench"
-        bench_manager.init(glob)
-    # Start capture
-    elif args.capture:
-        result_manager.capture_result(glob)
+    # Read overload inputs
+    if glob.args.overload:
+        glob.lib.overload.setup_dict()
+
+    # Start build manager
+    if glob.args.build:
+        try:
+            build_manager.init(glob)
+        except Exception as e:
+            catch_major_exception(glob, e)
+
+    # Start bench manager
+    elif glob.args.bench:
+        try:
+            bench_manager.init(glob)
+        except Exception as e:
+            catch_major_exception(glob, e)
+
+    # Start result manager
+    elif glob.args.capture:
+        try:
+            result_manager.capture_result(glob)
+        except Exception as e:
+            catch_major_exception(glob, e)
+
     # Cleanup and exit
-    elif args.clean:
+    elif glob.args.clean:
         glob.lib.misc.clean_temp_files()
     # Show installed and exit
-    elif args.listApps:
+    elif glob.args.listApps:
         glob.lib.misc.show_installed()
     # Print defaults settings
-    elif args.defaults:
+    elif glob.args.defaults:
         glob.lib.misc.print_defaults()
     # Show available and exit
-    elif args.avail:
+    elif glob.args.avail:
         glob.lib.misc.show_available()
     # Remove installation and exit
-    elif args.delApp:
+    elif glob.args.delApp:
         glob.lib.misc.remove_app()
     # Query installation and exit
-    elif args.queryApp:
-        glob.lib.misc.query_app(args.queryApp)
+    elif glob.args.queryApp:
+        glob.lib.misc.query_app(glob.args.queryApp)
     # Print cmd line history
-    elif args.history:
+    elif glob.args.history:
         glob.lib.misc.print_history()
     # Query db for results
-    elif args.dbResult:
+    elif glob.args.dbResult:
         result_manager.query_db(glob)
     # Query db for application
-    elif args.dbApp:
+    elif glob.args.dbApp:
         result_manager.print_app_from_table(glob)
     # Show results and exit
-    elif args.listResults:
+    elif glob.args.listResults:
         result_manager.list_results(glob)
     # Query result and exit
-    elif args.queryResult:
-        result_manager.query_result(glob, args.queryResult)
+    elif glob.args.queryResult:
+        result_manager.query_result(glob, glob.args.queryResult)
     # Remove result and exit
-    elif args.delResult:
+    elif glob.args.delResult:
         result_manager.remove_result(glob)
-    elif args.version:
+    elif glob.args.version:
         glob.lib.misc.print_version()
-    elif args.last:
+    elif glob.args.last:
         glob.lib.misc.print_last()
     # No seletion provided
     else:
@@ -183,6 +286,7 @@ def main():
 
     print()
     return 0
+
 
 if __name__ == "__main__":
     sys.exit(main())

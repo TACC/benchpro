@@ -148,7 +148,7 @@ def build_code(input_dict, glob_copy):
 
     # If dry_run
     if glob.stg['dry_run']:
-        glob.lib.msg.low(["This was a dryrun, skipping build step. Script created at:",
+        glob.lib.msg.high(["This was a dryrun, skipping build step. Script created at:",
                         ">  " + glob.lib.rel_path(os.path.join(glob.config['metadata']['working_path'], glob.job_file))])
         glob.task_id = "dry_run"
 
@@ -184,13 +184,13 @@ def build_code(input_dict, glob_copy):
 def init(glob):
 
     # Init logger
-    logger.start_logging("BUILD", glob.stg['build_log_file'] + "_" + glob.time_str + ".log", glob)
+    logger.start_logging("BUILD", glob.stg['build_log_file'] + "_" + glob.stg['time_str'] + ".log", glob)
 
     # Get list of avail cfgs
     glob.lib.set_build_cfg_list()
 
     # Overload settings.ini with cmd line args
-    glob.lib.overload.replace(glob.stg)
+    glob.lib.overload.replace()
 
     # Check for new results
     if not glob.quiet_build:

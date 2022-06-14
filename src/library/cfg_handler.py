@@ -8,12 +8,11 @@ class init(object):
     def __init__(self, glob):
         self.glob = glob
 
-
     # Search path of cfg files for unique match of search list
     def search_cfg_with_list(self, search_list, search_path):
 
         if os.path.isdir(search_path):
-            self.glob.log.debug("Looking for config file in " + self.glob.lib.rel_path(search_path) + "...")
+            self.glob.lib.msg.log("Looking for config file in " + self.glob.lib.rel_path(search_path) + "...")
             cfg_list = gb.glob(os.path.join(search_path, "*"))
 
             # For every cfg file in directory
@@ -66,7 +65,6 @@ class init(object):
             return matching_cfgs[0]
 
         else:
-
             for cfg in matching_cfgs:
                 print("    " + cfg['metadata']['cfg_label'])
             self.glob.lib.msg.error("Multiple config files found matching search criteria '" + ",".join([key + "=" + search_dict[key] for key in search_dict.keys()]) + "'")
@@ -84,8 +82,6 @@ class init(object):
                                             cfg_name, True)
             if cfg_found:
                 return cfg_found
-
-        # Use search list to look in expected places
 
         # Search cfg dir
         search_path = self.glob.stg['config_path'] + self.glob.stg['sl'] 
@@ -147,11 +143,15 @@ class init(object):
                     elif cfg_dict[sect][key].isdigit():
                         cfg_dict[sect][key] =  int(cfg_dict[sect][key])
 
-    # Accept a 'sched' section in build/bench config file to overload sched settings like runtime
-    def add_sched_overloads(self, cfg_dict):
-        if 'overload' in cfg_dict:
-            for key in cfg_dict['overload']:
-                self.glob.overload_dict[key] = cfg_dict['overload'][key]
+    # Accept a 'overload' section in build/bench config file to overload global settings
+    def add_overloads(self, overloads):
+
+        # Add key-values to overload dict
+        for key in overloads:
+            self.glob.overload_dict[key] = str(overloads[key])
+
+        # Run overload search
+        self.glob.lib.overload.replace()
 
     # Check build config file and add required fields
     def process_build_cfg(self, cfg_dict):
@@ -180,11 +180,21 @@ class init(object):
         if not 'collect_stats'    in cfg_dict['config'].keys():    cfg_dict['config']['collect_stats']    = False
         if not 'script_additions' in cfg_dict['config'].keys():    cfg_dict['config']['script_additions'] = ""
 
-        # Add [files] section if missing
+        # Add sections if missing
+        if not 'requirements'     in cfg_dict.keys():              cfg_dict['requirements'] = {}
+        if not 'runtime'          in cfg_dict.keys():              cfg_dict['runtime'] = {}
+        if not 'result'           in cfg_dict.keys():              cfg_dict['result'] = {}
         if not 'files'            in cfg_dict.keys():              cfg_dict['files'] = {}
+        if not 'overload'         in cfg_dict.keys():              cfg_dict['overload'] = {}
+
+        # Evaluate expressions in [general]
+        self.glob.lib.expr.eval_dict(cfg_dict['general'])
 
         # Convert dtypes
         self.get_val_types(cfg_dict)
+
+        # Add overload params to overload dict
+        self.add_overloads(cfg_dict['overload'])
 
         compiler_str = cfg_dict['modules']['compiler'].split('/')
 
@@ -201,12 +211,12 @@ class init(object):
         # Path to application's data directory
         cfg_dict['config']['local_repo'] = self.glob.stg['local_repo']
 
-        self.glob.lib.overload.replace(cfg_dict)
+        #self.glob.lib.overload.replace(cfg_dict)
 
         # Get system from env if not defined
         if not cfg_dict['general']['system']:
-            self.glob.log.debug("WARNING: 'system' not defined in " + self.glob.lib.rel_path(cfg_dict['metadata']['cfg_file']))
-            self.glob.log.debug("WARNING: getting system label from :" + self.glob.stg['system_env'] + " " + self.glob.system['system'])
+            self.glob.lib.msg.log("WARNING: 'system' not defined in " + self.glob.lib.rel_path(cfg_dict['metadata']['cfg_file']))
+            self.glob.lib.msg.log("WARNING: getting system label from :" + self.glob.stg['system_env'] + " " + self.glob.system['system'])
             cfg_dict['general']['system'] = self.glob.system['system']
             if not cfg_dict['general']['system']:
                 self.glob.lib.msg.error(self.glob.stg['system_env'] + " not set, unable to continue. Please define 'system' in " + \
@@ -234,7 +244,7 @@ class init(object):
         # Get core count for system
         try:
             cfg_dict['config']['cores'] = self.glob.system['cores_per_node']
-            self.glob.log.debug("Core count for " + cfg_dict['general']['system'] + " = " + cfg_dict['config']['cores'])
+            self.glob.lib.msg.log("Core count for " + cfg_dict['general']['system'] + " = " + cfg_dict['config']['cores'])
 
         except:
             self.glob.lib.msg.error("system profile '" + cfg_dict['general']['system'] + \
@@ -243,7 +253,7 @@ class init(object):
         # If arch requested = 'system', get default arch for this system
         if cfg_dict['config']['arch'] == 'system' or not cfg_dict['config']['arch']:
             cfg_dict['config']['arch'] = self.glob.system['default_arch']
-            self.glob.log.debug("Requested build arch='default'. Using system default for " + cfg_dict['general']['system'] + \
+            self.glob.lib.msg.log("Requested build arch='default'. Using system default for " + cfg_dict['general']['system'] + \
                             " = " + cfg_dict['config']['arch'])
 
         # If using custom opt_flags, must provide build_label
@@ -286,13 +296,12 @@ class init(object):
         # Get build and install subdirs
         cfg_dict['metadata']['build_path']   = os.path.join(cfg_dict['metadata']['working_path'], self.glob.stg['build_subdir'])
         cfg_dict['metadata']['install_path'] = os.path.join(cfg_dict['metadata']['working_path'], self.glob.stg['install_subdir'])
-        
 
         # Path to copy files to
         cfg_dict['metadata']['copy_path']    = cfg_dict['metadata']['build_path']
 
         # Overload params from cmdline
-        self.glob.lib.overload.replace(cfg_dict)
+        self.glob.lib.overload.replace()
 
         # Set sched nodes to 1 for build jobs
         cfg_dict['config']['nodes'] = 1
@@ -301,30 +310,30 @@ class init(object):
         cfg_dict['config']['stdout'] = "stdout.log"
         cfg_dict['config']['stderr'] = "stderr.log"
 
-        # Add sched params to overload dict
-        self.add_sched_overloads(cfg_dict)
-
     # Check bench config file and add required fields
     def process_bench_cfg(self, cfg_dict):
         # Check for missing essential parameters
+
+        self.check_dict_section(cfg_dict['metadata']['cfg_file'], cfg_dict, 'requirements')
+
         self.check_dict_section(cfg_dict['metadata']['cfg_file'], cfg_dict, 'runtime')
         self.check_dict_key(    cfg_dict['metadata']['cfg_file'], cfg_dict, 'runtime', 'nodes')
 
         self.check_dict_section(cfg_dict['metadata']['cfg_file'], cfg_dict, 'config')
+        self.check_dict_key(    cfg_dict['metadata']['cfg_file'], cfg_dict, 'config', 'dataset')
+        self.check_dict_key(    cfg_dict['metadata']['cfg_file'], cfg_dict, 'config', 'bench_label')
 
         self.check_dict_section(cfg_dict['metadata']['cfg_file'], cfg_dict, 'result')
         self.check_dict_key(    cfg_dict['metadata']['cfg_file'], cfg_dict, 'result', 'method')
         self.check_dict_key(    cfg_dict['metadata']['cfg_file'], cfg_dict, 'result', 'unit')
 
         # Instantiate missing optional parameters
-
         if not 'code'               in cfg_dict['requirements'].keys():  cfg_dict['requirements']['code']       = ""
         if not 'version'            in cfg_dict['requirements'].keys():  cfg_dict['requirements']['version']    = ""
         if not 'build_label'        in cfg_dict['requirements'].keys():  cfg_dict['requirements']['build_label']= ""
         if not 'system'             in cfg_dict['requirements'].keys():  cfg_dict['requirements']['system']     = ""
         if not 'compiler'           in cfg_dict['requirements'].keys():  cfg_dict['requirements']['compiler']   = ""
         if not 'mpi'                in cfg_dict['requirements'].keys():  cfg_dict['requirements']['mpi']        = ""
-
 
         if not 'threads'            in cfg_dict['runtime'].keys():  cfg_dict['runtime']['threads']              = 0
         if not 'ranks_per_node'     in cfg_dict['runtime'].keys():  cfg_dict['runtime']['ranks_per_node']       = 0
@@ -333,9 +342,7 @@ class init(object):
         if not 'hostfile'           in cfg_dict['runtime'].keys():  cfg_dict['runtime']['hostfile']             = ""
         if not 'hostlist'           in cfg_dict['runtime'].keys():  cfg_dict['runtime']['hostlist']             = ""
 
-        if not 'dataset'            in cfg_dict['config'].keys():    cfg_dict['config']['dataset']              = ""
         if not 'exe'                in cfg_dict['config'].keys():    cfg_dict['config']['exe']                  = ""
-        if not 'bench_label'        in cfg_dict['config'].keys():    cfg_dict['config']['bench_label']          = ""
         if not 'template'           in cfg_dict['config'].keys():    cfg_dict['config']['template']             = ""
         if not 'collect_stats'      in cfg_dict['config'].keys():    cfg_dict['config']['collect_stats']        = False
         if not 'script_additions'   in cfg_dict['config'].keys():    cfg_dict['config']['script_additions']     = ""
@@ -344,11 +351,19 @@ class init(object):
         if not 'description'        in cfg_dict['result'].keys():   cfg_dict['result']['description']           = ""
         if not 'output_file'        in cfg_dict['result'].keys():   cfg_dict['result']['output_file']           = ""
 
+        # Add sections if missing
+        if not 'general'          in cfg_dict.keys():              cfg_dict['general'] = {}
+        if not 'files'            in cfg_dict.keys():              cfg_dict['files'] = {}
+        if not 'overload'         in cfg_dict.keys():              cfg_dict['overload'] = {}
+
         # Convert cfg keys to correct datatype
         self.get_val_types(cfg_dict)
 
+        # Add overload params to overload dict
+        self.add_overloads(cfg_dict['overload'])
+
         # Overload params from cmdline
-        self.glob.lib.overload.replace(cfg_dict)
+        self.glob.lib.overload.replace()
 
         # Path to data directory
         cfg_dict['config']['local_repo'] = self.glob.stg['local_repo']
@@ -371,7 +386,6 @@ class init(object):
 
             else:
                 cfg_dict['config']['script_additions'] = os.path.join(self.glob.stg['template_path'], cfg_dict['config']['script_additions'])
-
         # Expression method
         if cfg_dict['result']['method'] == "expr":
             if not 'expr' in cfg_dict['result']:
@@ -452,9 +466,6 @@ class init(object):
         if not cfg_dict['result']['output_file']:
             cfg_dict['result']['output_file'] = cfg_dict['config']['stdout']
 
-        # Add sched params to overload dict
-        self.add_sched_overloads(cfg_dict)
-
     # Check sched config file and add required fields
     def process_sched_cfg(self, cfg_dict):
         # Check for missing essential parameters
@@ -465,16 +476,15 @@ class init(object):
     
         # Instantiate missing optional parameters
         if not 'reservation' in    cfg_dict['sched'].keys():   cfg_dict['sched']['reservation']   = ""
-    
-        self.glob.lib.overload.replace(cfg_dict)
-    
+   
+        self.glob.lib.overload.replace()
         # Fill missing parameters
         if not cfg_dict['sched']['runtime']:
             cfg_dict['sched']['runtime'] = '02:00:00'
-            self.glob.log.debug("Set runtime = " + cfg_dict['sched']['runtime'])
+            self.glob.lib.msg.log("Set runtime = " + cfg_dict['sched']['runtime'])
         if not cfg_dict['sched']['threads']:
             cfg_dict['sched']['threads'] = 1
-            self.glob.log.debug("Set threads = " + cfg_dict['sched']['threads'])
+            self.glob.lib.msg.log("Set threads = " + cfg_dict['sched']['threads'])
     
     # Read input param config and test 
     def ingest(self, cfg_type, search_dict):
@@ -482,14 +492,14 @@ class init(object):
         # Process and store build cfg 
         if cfg_type == 'build':
             cfg_dict = self.search_cfg_with_dict(search_dict, self.glob.build_cfgs, True)
-            self.glob.log.debug("Starting build cfg processing.")
+            self.glob.lib.msg.log("Starting build cfg processing.")
             self.process_build_cfg(cfg_dict)
             self.glob.config = cfg_dict
     
         # Process and store bench cfg 
         elif cfg_type == 'bench':
             cfg_dict = self.search_cfg_with_dict(search_dict, self.glob.bench_cfgs, False)
-            self.glob.log.debug("Starting bench cfg processing.")
+            self.glob.lib.msg.log("Starting bench cfg processing.")
             self.process_bench_cfg(cfg_dict)
             self.glob.config = cfg_dict
     
@@ -497,7 +507,7 @@ class init(object):
         elif cfg_type == 'sched':
             cfg_file = self.find_cfg_file(cfg_type, search_dict)
             cfg_dict = self.glob.lib.files.read_cfg(cfg_file)
-            self.glob.log.debug("Starting sched cfg processing.")
+            self.glob.lib.msg.log("Starting sched cfg processing.")
             self.process_sched_cfg(cfg_dict)
             self.glob.sched = cfg_dict
     
@@ -506,5 +516,4 @@ class init(object):
             cfg_file = self.find_cfg_file(cfg_type, search_dict)
             cfg_dict = self.glob.lib.files.read_cfg(cfg_file)
             self.glob.compiler = cfg_dict
-    
     

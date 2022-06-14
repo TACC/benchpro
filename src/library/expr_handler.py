@@ -11,11 +11,19 @@ class init(object):
     def set_search_space(self):
 
         if self.glob.args.build:
-            self.search_space = [self.glob.config['general'], self.glob.config['config'], self.glob.sched['sched'], self.glob.system]
+            self.search_space = [       self.glob.config['general'], 
+                                        self.glob.config['config'], 
+                                        self.glob.sched['sched'], 
+                                        self.glob.system, 
+                                        self.glob.stg]
         # Running bench
         elif self.glob.args.bench:
-            self.search_space = [self.glob.config['requirements'], self.glob.config['runtime'], \
-                                self.glob.config['config'], self.glob.config['result'], self.glob.sched['sched'], self.glob.system]
+            self.search_space = [       self.glob.config['requirements'], 
+                                        self.glob.config['runtime'],
+                                        self.glob.config['config'], 
+                                        self.glob.config['result'], 
+                                        self.glob.sched['sched'], 
+                                        self.glob.system]
 
     # Return True if operators are found in string
     def has_arithmatic(self, expr):
@@ -28,7 +36,7 @@ class init(object):
     # Evaulate arithamtic in string 
     def evaluate_arithmatic(self, expr):
 
-        self.glob.log.debug("Evaluating arithmatic: " + str(expr) )
+        self.glob.lib.msg.log("Evaluating arithmatic: " + str(expr) )
         try:
             return int(eval(expr.replace("\\", "")))
         except:
@@ -100,7 +108,7 @@ class init(object):
     # Evaluate logical expression
     def eval_logic_expr(self, expr):
 
-        self.glob.log.debug("Evaluating logical " +  str(expr))
+        self.glob.lib.msg.log("Evaluating logical " +  str(expr))
         try:
             return eval(expr)
         except:
@@ -128,7 +136,7 @@ class init(object):
     # Evaluate a rule's condition, apply updates 
     def eval_rule(self, rule):
 
-        self.glob.log.debug("Evaluating rule: " + str(rule))
+        self.glob.lib.msg.log("Evaluating rule: " + str(rule))
 
         rule = rule.replace("AND", "and")
         rule = rule.replace("OR", "or")

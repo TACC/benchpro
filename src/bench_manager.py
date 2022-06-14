@@ -13,32 +13,35 @@ import src.logger as logger
 glob = glob_master = None
 
 # Get code info
-def get_code_info(input_label, search_dict):
+def get_app_info():
 
     # Evaluate any expressions in the requirements section
     glob.lib.expr.eval_dict(glob.config['requirements'])
 
     # Check if code is installed
-    glob.config['metadata']['code_path'] = glob.lib.check_if_installed(search_dict)
+    glob.config['metadata']['code_path'] = glob.lib.check_if_installed(glob.config['requirements'])
 
     # If application is not installed, check if cfg file is available to build
     if not glob.config['metadata']['code_path']:
-        glob.lib.msg.warning("No installed application meeting benchmark requirements: '" + "', '".join([i + "=" + search_dict[i] for i in search_dict.keys() if i]) + "'") 
+        glob.lib.msg.warning("No installed application meeting benchmark requirements: '" + "', '".join([i + "=" + glob.config['requirements'][i] for i in glob.config['requirements'].keys() if i]) + "'") 
         glob.lib.msg.high("Attempting to build now...")
 
         # Set build args
         build_glob = copy.deepcopy(glob)
-        build_glob.args.build = search_dict
+        build_glob.args.build = glob.config['requirements']
         build_glob.args.bench = None
         build_glob.quiet_build = True
 
+        # Run build manager
         build_manager.init(build_glob)
 
         if glob.stg['dry_run']:
             glob.config['metadata']['build_running'] = False
         else:
             glob.config['metadata']['build_running'] = True
-        glob.config['metadata']['code_path'] = glob.lib.check_if_installed(search_dict)
+
+        # Recheck that app is installed
+        glob.config['metadata']['code_path'] = glob.lib.check_if_installed(glob.config['requirements'])
 
     # Code is built
     else:
@@ -116,7 +119,7 @@ def gen_bench_script():
     # Working Dir
     glob.config['metadata']['working_dir'] =  glob.system['system'] + "_" + \
                                             glob.config['config']['bench_label'] + "_" + \
-                                            glob.time_str + "_" + str(glob.config['runtime']['nodes']).zfill(3) + "N_" + \
+                                            glob.stg['time_str'] + "_" + str(glob.config['runtime']['nodes']).zfill(3) + "N_" + \
                                             str(glob.config['runtime']['ranks_per_node']).zfill(2) + "R_" + \
                                             str(glob.config['runtime']['threads']).zfill(2) + "T_" + \
                                             gpu_path_str
@@ -128,9 +131,6 @@ def gen_bench_script():
 
     glob.lib.msg.low(["Benchmark working directory:",
                     ">  " + glob.lib.rel_path(glob.config['metadata']['working_path'])])
-
-    # Copy input files
-    #glob.lib.files.stage()
 
     # Generate benchmark template
     glob.lib.template.generate_bench_script()
@@ -160,7 +160,7 @@ def start_task():
     glob.lib.msg.high(glob.success)
     # dry_run = True
     if glob.stg['dry_run']:
-        glob.lib.msg.low(["This was a dryrun, skipping exec step. Script created at:",
+        glob.lib.msg.high(["This was a dryrun, skipping exec step. Script created at:",
                         ">  " + glob.lib.rel_path(os.path.join(glob.config['metadata']['working_path'], glob.job_file))])
         glob.task_id = "dry_run"
 
@@ -210,7 +210,7 @@ def start_task():
     glob.lib.files.write_cmd_history()
 
 # Main function to check for installed application, setup benchmark and run it
-def run_bench(input_dict, glob_copy):
+def run_bench(input_str, glob_copy):
 
     global glob
     glob = glob_copy
@@ -219,7 +219,8 @@ def run_bench(input_dict, glob_copy):
     glob.any_dep_list = []
     glob.ok_dep_list = []
 
-    input_str = ", ".join([i + "=" + input_dict[i] for i in input_dict])
+    # Convert string to dict
+    input_dict = glob.lib.parse_bench_str(input_str)
 
     # History entry
     glob.cmd = "benchpro -B " + input_str
@@ -230,18 +231,19 @@ def run_bench(input_dict, glob_copy):
 
     # Get benchmark params from cfg file
     glob.lib.cfg.ingest('bench', input_dict)
-
-    # Get application search list for this benchmark
-    search_dict = glob.config['requirements']
-
-    glob.lib.msg.low(["Found matching benchmark config file:",
-                    ">  " + glob.lib.rel_path(glob.config['metadata']['cfg_file'])]) 
-
+    
     # Directory to add to MODULEPATH
     glob.config['metadata']['base_mod'] = glob.stg['module_path']
 
-    if glob.lib.needs_code(search_dict):
-        get_code_info(input_dict, search_dict)
+    glob.lib.msg.low(["Found matching benchmark config file:",
+                    ">  " + glob.lib.rel_path(glob.config['metadata']['cfg_file'])])
+
+    # Add search elements to requirements dict
+    glob.lib.generate_requirements(input_dict)    
+
+    # Get application info if there are >0 requirements 
+    if glob.lib.needs_code(glob.config['requirements']):
+        get_app_info()
 
     else:    
         glob.lib.msg.high("No appication required!") 
@@ -288,7 +290,7 @@ def run_bench(input_dict, glob_copy):
 
     # for each nodes in list
     for node in node_list:
-        glob.log.debug("Write script for " + node + " nodes")
+        glob.lib.msg.log("Write script for " + node + " nodes")
 
         # Iterate over thread/rank pairs
         for i in range(len(thread_list)):
@@ -321,7 +323,7 @@ def init(glob):
     glob.counter = 1
 
     # Start logger
-    logger.start_logging("RUN", glob.stg['bench_log_file'] + "_" + glob.time_str + ".log", glob)
+    logger.start_logging("RUN", glob.stg['bench_log_file'] + "_" + glob.stg['time_str'] + ".log", glob)
 
     # Get list of avail cfgs
     glob.lib.set_bench_cfg_list()
@@ -330,7 +332,7 @@ def init(glob):
     glob.lib.msg.new_results()
 
     # Overload settings.ini with cmd line args
-    glob.lib.overload.replace(glob.stg)
+    glob.lib.overload.replace()
 
     # Input is benchmark suite
     input_list = glob.args.bench
@@ -345,7 +347,7 @@ def init(glob):
         glob_copy = copy.deepcopy(glob)
         glob_copy.overload_dict = copy.deepcopy(glob.overload_dict)
         # Start benchmark session and collect number of runs
-        glob.counter = run_bench(glob.lib.parse_bench_str(inp), glob_copy)
+        glob.counter = run_bench(inp, glob_copy)
 
         # Reset stage ops list because deepcopy is unreliable
         glob.stage_ops = []

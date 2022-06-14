@@ -126,7 +126,7 @@ class init(object):
         pop_dict = {**mod, **self.glob.config['metadata'], **self.glob.config['general'], **self.glob.config['config']}
 
         for key in pop_dict:
-            self.glob.log.debug("replace " + "<<<" + key + ">>> with " + str(pop_dict[key]))
+            self.glob.lib.msg.log("replace " + "<<<" + key + ">>> with " + str(pop_dict[key]))
             mod_obj = [line.replace("<<<" + str(key) + ">>>", str(pop_dict[key])) for line in mod_obj]
         
         return mod_obj
@@ -140,7 +140,7 @@ class init(object):
     # Make module for compiled appliation
     def make_mod(self):
 
-        self.glob.log.debug("Creating module file for " + self.glob.config['general']['code'])
+        self.glob.lib.msg.log("Creating module file for " + self.glob.config['general']['code'])
 
         # Get module file path
         mod_path = os.path.join(self.glob.stg['module_path'], self.glob.config['general']['system'], self.glob.config['config']['arch'], self.get_label(self.glob.config['modules']['compiler']), \
@@ -158,7 +158,7 @@ class init(object):
             self.glob.lib.msg.low("Module template '" + template_filename + "' not found, generating a generic module.")
             module_template = os.path.join(self.glob.stg['template_path'], self.glob.stg['build_tmpl_dir'], "generic.module")
 
-        self.glob.log.debug("Using module template file: " + module_template)
+        self.glob.lib.msg.log("Using module template file: " + module_template)
 
         # Copy base module template to 
         mod_obj = self.copy_mod_template(module_template)

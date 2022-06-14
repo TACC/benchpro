@@ -310,7 +310,6 @@ class init(object):
                     app[6].ljust(lengths[6]) + "| " +
                     self.get_status_str(app[7]))
 
-
     # Get run string for given config file
     def get_cmd_string(self, keys, config_dict):
         cmd_str = []
@@ -325,7 +324,6 @@ class init(object):
                         cmd_str.append(key+"="+config_dict[sect][key])
         return ",".join(cmd_str)
 
-
     # Print list of code strings
     def print_config(self, atype, config_list):
         config_list.sort()
@@ -335,18 +333,20 @@ class init(object):
         for config in config_list:
             contents = self.glob.lib.files.read_cfg(config)
 
+            # Column width
             column = 30
-
+            
+            # App config
             if atype == "application":
                 print("| " + contents['metadata']['cfg_label'].ljust(column) + "| -b " + \
                         self.get_cmd_string([['general', 'code'], ['general', 'version'], ['general', 'system'], ['config', 'build_label']], \
                         contents))
 
+            # Bench config
             else:
                 print("| " + contents['metadata']['cfg_label'].ljust(column) + "| -B " + \
-                self.get_cmd_string([['requirements', 'code'], ['requirements', 'version'], ['requirements', 'build_label'], ['config', 'bench_label']], \
-                contents))
-
+                        self.get_cmd_string([['requirements', 'code'], ['requirements', 'version'], ['requirements', 'build_label'], ['config', 'bench_label']], \
+                        contents))
 
     # Print applications that can be installed from available cfg files
     def print_avail_type(self, atype, search_path):
@@ -450,7 +450,7 @@ class init(object):
 
     # Print version file and quit
     def print_version(self):
-        with open(os.path.join(self.glob.bp_home, ".version")) as f:
+        with open(os.path.join(self.glob.bp_home, ".version"), 'r' ) as f:
             print(f.read())
 
     # Return the last line of the .outputs file
@@ -460,7 +460,7 @@ class init(object):
             print("No previous outputs found.")
             sys.exit(0)
 
-        with open(os.path.join(self.glob.bp_home, ".history"), "r") as f:
+        with open(os.path.join(self.glob.bp_home, ".history"), 'r') as f:
             lines = f.readlines()
             if len(lines) == 0:
                 print("No previous outputs found.")    

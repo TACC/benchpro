@@ -9,27 +9,35 @@ class init(object):
 
     # Catch user interrupt
     def signal_handler(self, sig, frame):
-        # Write to log
-        if self.glob.log:
+
+        # Print raw error in dev mode
+        if self.glob.dev_mode:
+            print(sig)
+        # Send to log
+        elif self.glob.log:
             self.high('    Writing to log, cleaning up and aborting...')
-            self.glob.log.debug("Caught user interrupt, exitting.")
-            self.glob.lib.files.rollback()
+            self.glob.lib.msg.log("Caught user interrupt, exitting.")
         else:
             print("    Aborting.")
-        sys.exit(0)
+
+        # Remove files
+        self.glob.lib.files.rollback()
+        sys.exit(1)
 
     def __init__(self, glob):
         self.glob = glob
         # Init interrupt handler
         signal.signal(signal.SIGINT, self.signal_handler) 
-        
-    # Convert strings to lists
+    
+    # Convert strings to lists: str -> [str], list -> list
     def listify(self, message):
         if not isinstance(message, list):
             return [message]
         return message
-
+   
+    # Write message to log 
     def log(self, message):
+        # If initialized
         if self.glob.log:
             self.glob.log.debug(message)
 
@@ -37,11 +45,12 @@ class init(object):
     def log_and_print(self, message, priority):
         message = self.listify(message)
 
-        # Log and print if priority
+        # For each line of message
         for line in message:
             if line:
-                if self.glob.log:
-                    self.log(line)
+                # Write to log 
+                self.log(line)
+                # Print to stdout if debug=True or high priority message
                 if self.glob.stg['debug'] or priority: 
                     print(line)
 

@@ -167,8 +167,8 @@ class init(object):
         if not success:
             self.glob.lib.msg.error(["failed to submit job to scheduler:", stdout, stderr])
 
-        self.glob.log.debug(stdout)
-        self.glob.log.debug(stderr)
+        self.glob.lib.msg.log(stdout)
+        self.glob.lib.msg.log(stderr)
 
         jobid = None
         jobid_line = "Submitted batch job"
@@ -192,8 +192,8 @@ class init(object):
                     ">  "+ self.glob.lib.rel_path(
                         os.path.join(self.glob.config['metadata']['working_path'], self.glob.config['config']['stderr']))])
 
-        self.glob.log.debug(stdout)
-        self.glob.log.debug(stderr)
+        self.glob.lib.msg.log(stdout)
+        self.glob.lib.msg.log(stderr)
 
         # Store jobid in shared global object
         self.glob.task_id = jobid

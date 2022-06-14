@@ -13,7 +13,7 @@ class init(object):
     def read_template(self, input_template):
         # Check template file is defined - handles None type (in case of unknown compiler type = None compiler template)
         if input_template:
-            self.glob.log.debug("Reading template file " + input_template)
+            self.glob.lib.msg.log("Reading template file " + input_template)
             # Test if input template file exists
             if not os.path.exists(input_template):
                 self.glob.lib.msg.error("failed to locate template file '" + input_template + "' in " + self.glob.lib.rel_path(self.glob.stg['template_path'])  + ".")
@@ -48,9 +48,13 @@ class init(object):
         header_template = os.path.join(self.glob.stg['template_path'], self.glob.stg['build_tmpl_dir'], self.glob.stg['header_file'])
         self.construct_template(template_obj, header_template)
 
+        # Add config key-values
+        for key in self.glob.config['config']:
+            template_obj.append("export "+ key.rjust(20) + "=" + str(self.glob.config['config'][key]) + "\n")
+
         # export module names
         for mod in self.glob.config['modules']:
-            template_obj.append("export" + mod.rjust(15) + "=" + self.glob.config['modules'][mod] + "\n")
+            template_obj.append("export" + mod.rjust(20) + "=" + self.glob.config['modules'][mod] + "\n")
 
         template_obj.append("\n")
         template_obj.append("# Load modules \n")
@@ -95,7 +99,7 @@ class init(object):
         template_obj.append("\n")
 
         for op in self.glob.stage_ops:
-            self.glob.log.debug("Adding file op to template: " + op + "...")
+            self.glob.lib.msg.log("Adding file op to template: " + op + "...")
             template_obj.append(op + "\n")
 
         template_obj.append("\n")
@@ -143,13 +147,13 @@ class init(object):
 
     # Contextualizes template script with variables from a list of config dicts
     def populate_template(self, cfg_dicts, template_obj):
-        self.glob.log.debug("Populating template file " + self.glob.tmp_job_file)
+        self.glob.lib.msg.log("Populating template file " + self.glob.tmp_job_file)
         # For each config dict
         for cfg in cfg_dicts:
             # For each key, find and replace <<<key>>> in template file
             for key in cfg:
                 template_obj = [line.replace("<<<" + str(key) + ">>>", str(cfg[key])) for line in template_obj]
-                self.glob.log.debug("Replacing " + "<<<" + str(key) + ">>> with " + str(cfg[key]))
+                self.glob.lib.msg.log("Replacing " + "<<<" + str(key) + ">>> with " + str(cfg[key]))
 
         return template_obj
 
@@ -174,7 +178,7 @@ class init(object):
                                         self.glob.lib.rel_path(template_file) +              \
                                         "' and exit_on_missing=True in $BP_HOME/settings.ini: " + ' '.join(unfilled_keys))
         else:
-            self.glob.log.debug("All build parameters were filled, continuing")
+            self.glob.lib.msg.log("All build parameters were filled, continuing")
 
     # Get template files required to constuct build script
     def set_build_files(self):

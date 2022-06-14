@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
-#System Imports
+# System Imports
 import configparser as cp
-import os 
+import os
 from packaging import version
 import shutil as sh
 import subprocess
@@ -16,7 +16,7 @@ try:
 except ImportError:
     db = False
     print("No psycopg2 module available, db access will not be available!")
-    
+
 glob = None
 
 # ANSI escape squence for text color
@@ -27,10 +27,10 @@ class bcolors:
     SET = '\033[94mSET:\033[0m'
     WARN = '\033[1;33mWARNING \033[0m'
 
-# Check python version 
+# Check python version
 def check_python_version():
     ver = sys.version.split(" ")[0]
-    if (ver[0] ==  3) and (ver[1] < 5):
+    if (ver[0] == 3) and (ver[1] < 5):
         print(bcolors.FAIL, "Python version: " + ver)
         sys.exit(1)
     else:
@@ -41,7 +41,7 @@ def create_path(path):
     try:
         os.makedirs(path, exist_ok=True)
         print(bcolors.CREATE, path)
-    except:
+    except BaseException:
         print(bcolors.FAIL, "cannot create", path)
         sys.exit(1)
 
@@ -88,10 +88,10 @@ def check_env_vars(var_list):
             print(bcolors.FAIL, var, "not set")
             print("Is benchpro module loaded?")
             sys.exit(1)
-    
+
 # Test write access to dir
 def check_write_priv(path):
-    if os.access(path, os.W_OK | os.X_OK): 
+    if os.access(path, os.W_OK | os.X_OK):
         print(bcolors.PASS, path, "is writable")
     else:
         print(bcolors.FAIL, path, "is not writable")
@@ -109,50 +109,77 @@ def check_file_perm(filename, perm):
 def check_db_access(glob):
 
     if glob.stg['db_host']:
+        # Test connection
         try:
-            status = subprocess.getstatusoutput("ping -c 1 " + glob.stg['db_host'])
+            status = subprocess.getstatusoutput(
+                "ping -c 1 " + glob.stg['db_host'])
+            # Pass
             if status[0] == 0:
                 print(bcolors.PASS, "connected to", glob.stg['db_host'])
 
+            # Fail
             else:
-                print(bcolors.WARN, "Unable to access " + glob.stg['db_host'] + " from this server")
+                print(
+                    bcolors.WARN,
+                    "Unable to access " +
+                    glob.stg['db_host'] +
+                    " from this server")
 
+        # Fail
         except subprocess.CalledProcessError as e:
-            print(bcolors.WARN, "Unable to access " + glob.stg['db_host'] + " from this server")
+            print(
+                bcolors.WARN,
+                "Unable to access " +
+                glob.stg['db_host'] +
+                " from this server")
 
+    # Fail
     else:
-        print(bcolors.WARN, "Unable to access " + glob.stg['db_host'] + " from this server")
+        print(
+            bcolors.WARN,
+            "Unable to access " +
+            glob.stg['db_host'] +
+            " from this server")
 
+# Confirm database connection
 def check_db_connect(glob):
     try:
         conn = psycopg2.connect(
-            dbname =    glob.stg['db_name'],
-            user =      glob.stg['db_user'],
-            host =      glob.stg['db_host'],
-            password =  glob.stg['db_passwd']
+            dbname=glob.stg['db_name'],
+            user=glob.stg['db_user'],
+            host=glob.stg['db_host'],
+            password=glob.stg['db_passwd']
         )
     except Exception as err:
-        print(bcolors.WARN, "unable to connect to " + glob.stg['db_name'] + " from this server")
+        print(
+            bcolors.WARN,
+            "unable to connect to " +
+            glob.stg['db_name'] +
+            " from this server")
         print("    This server is not on the database access whitelist, contact your maintainer.")
-            
-        return 
+
+        return
 
     print(bcolors.PASS, "connected to", glob.stg['db_name'])
 
-
+# Ensure client and site versions match
 def check_benchpro_version(glob):
 
-    site_version = os.getenv("BP_VERSION")
-    local_version = glob.lib.files.read_version()
-
-    if version.parse(site_version) > version.parse(local_version):
-        print(bcolors.FAIL, "version mismatch, site version='" + site_version + "', your version='"+local_version+"'")
+    # Check client/site versions match
+    if not glob.lib.version_match():
+        print(
+            bcolors.FAIL,
+            "version mismatch, site version='" +
+            glob.version_site +
+            "', your version='" +
+            glob.version_client +
+            "'")
         print("run git -C $BP_HOME pull")
         sys.exit(1)
     else:
-        print(bcolors.PASS, "BenchPRO version " + site_version)
+        print(bcolors.PASS, "BenchPRO version " + glob.version_site)
 
-# Validate setup 
+# Validate setup
 def check_setup(glob_obj):
     global glob
     glob = glob_obj
@@ -165,13 +192,13 @@ def check_setup(glob_obj):
 
     # Sys envs
     project_env = glob.stg['project_env'].strip("$")
-    app_env     = glob.stg['app_env'].strip("$")
-    result_env  = glob.stg['result_env'].strip("$")
-    system_env  = glob.stg['system_env'].strip("$")
+    app_env = glob.stg['app_env'].strip("$")
+    result_env = glob.stg['result_env'].strip("$")
+    system_env = glob.stg['system_env'].strip("$")
 
-    check_env_vars([system_env, 
-                    project_env, 
-                    app_env, 
+    check_env_vars([system_env,
+                    project_env,
+                    app_env,
                     result_env,
                     'BP_VERSION',
                     'LMOD_VERSION'])
@@ -181,15 +208,15 @@ def check_setup(glob_obj):
     check_write_priv(project_dir)
 
     # Check paths
-    confirm_path_exists([glob.stg['log_path'], 
-                        glob.stg['build_path'], 
-                        glob.stg['bench_path'], 
+    confirm_path_exists([glob.stg['log_path'],
+                        glob.stg['build_path'],
+                        glob.stg['bench_path'],
                         glob.stg['pending_path'],
-                        glob.stg['captured_path'], 
+                        glob.stg['captured_path'],
                         glob.stg['failed_path']])
 
-    ensure_path_exists([glob.stg['local_repo'], 
-                        glob.stg['config_path'], 
+    ensure_path_exists([glob.stg['local_repo'],
+                        glob.stg['config_path'],
                         glob.stg['template_path']])
 
     # Check exe
@@ -201,9 +228,18 @@ def check_setup(glob_obj):
     # Check db connection
     if db:
         check_db_connect(glob)
-    else: 
+    else:
         print(bcolors.WARN, "database access check disabled")
 
     # Create validate file
-    with open(os.path.join(glob.bp_home, ".validated"), 'w'): pass 
+    with open(os.path.join(glob.bp_home, ".validated"), 'w'):
+        pass
     print("Done.")
+    sys.exit(0)
+
+# Check if validation has been run
+def check(bp_home):
+    if not os.path.isfile(os.path.join(bp_home, ".validated")):
+        print("Please run  benchpro --validate before continuing.")
+        print()
+        sys.exit(1)

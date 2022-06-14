@@ -1,24 +1,25 @@
 #!/bin/bash
 
+# Print error and exit
 quit() {
     printf "$1"
     exit 1
 }
 
+# Install Python package and set group permissions
 install() {
     python3 setup.py install --prefix=${BP_SITE}/python/ >> $BP_LOG
     if [ $? != 0 ]; then quit "\nPackage installation failed, quitting.\n\n"; fi
     # Change group permissions
-    chmod g+rX          ${BP_SITE}
-    chmod -R g+rX       ${BP_SITE}/python
-    chmod g+x           ${BP_SITE}/python/bin/benchpro
-    chmod g+rwx         ${BP_SITE}/collection
+    chmod a+rX          ${BP_SITE}
+    chmod -R a+rX       ${BP_SITE}/python
+    chmod a+x           ${BP_SITE}/python/bin/benchpro
+    chmod a+rwx         ${BP_SITE}/collection
     # Update symlink
-    ln -s python/lib/python${PY_VERSION}/site-packages/benchpro-latest/         ${BP_SITE}/package
-    ln -s benchpro-${BP_VERSION}-py${PY_VERSION}.egg/                           ${BP_SITE}/python/lib/python${PY_VERSION}/site-packages/benchpro-latest
+    ln -s python/lib/python${PY_VERSION}/site-packages/benchpro-latest/ ${BP_SITE}/package
+    ln -s benchpro-${BP_VERSION}-py${PY_VERSION}.egg/ ${BP_SITE}/python/lib/python${PY_VERSION}/site-packages/benchpro-latest
     printf "\nPackage installed...\n\n"
 }
-
 
 WORKING_DIR=`pwd`
 
@@ -74,9 +75,9 @@ sed -i "/local bp_results/c\local bp_results = \"${BP_RESULTS}\""       ${BP_SIT
 sed -i "/local bp_version/c\local bp_version = \"${BP_VERSION}\""       ${BP_SITE}/modulefiles/benchpro/${BP_VERSION}.lua
 sed -i "/local build_hash/c\local build_hash = \"${BUILD_HASH}\""       ${BP_SITE}/modulefiles/benchpro/${BP_VERSION}.lua
 sed -i "/local py_version/c\local py_version = \"${PY_VERSION}\""       ${BP_SITE}/modulefiles/benchpro/${BP_VERSION}.lua
-chmod -R g+rX                                                           ${BP_SITE}/modulefiles
-chmod g+w                                                               ${BP_SITE}/repo
-chmod -R g+rX                                                           ${BP_SITE}/repo
+chmod -R a+rX                                                           ${BP_SITE}/modulefiles
+chmod a+w                                                               ${BP_SITE}/repo
+chmod -R a+rX                                                           ${BP_SITE}/repo
 
 ml use ${BP_SITE}/modulefiles
 ml benchpro
@@ -89,7 +90,6 @@ install
 
 # Install user files 
 YOUR_BP=$(eval echo $BP_HOME)
-
 if [ ! -d $YOUR_BP ]; then
     git clone https://github.com/TACC/benchpro.git $YOUR_BP
 else
@@ -115,17 +115,21 @@ printf "Testing Connection to DB...\n"
 ssh -i ${SSH_KEY} ${DB_USER}@${DB_HOST} -t "echo 'Connection test'" > /dev/null 2>&1
 if [ $? != 0 ]; then quit "\nSSH connection failed, quitting.\n\n"; fi
 
-echo
-echo "------------------------------------------------"
-echo "Benchtool successfully installed into $BP_SITE"
-echo "User files installed into $BP_HOME for testing"
-echo "To use, load site module with:"
-echo "ml use $BP_SITE/modulefiles"
-echo "ml benchpro"
-echo
-echo "------------------------------------------------"
-echo "Add the following lines to your crontab:"
-echo "* 5 * * * * /bin/rsync --remove-source-files -av -e \"ssh -i $SSH_KEY\" $BP_SITE/collection/* $DB_USER@$DB_HOST:$REMOTE_PATH/ | tee -a $BP_SITE/logs/collect_\`date +\\%Y\\-%m-%d\`.log"
-echo "0 0 * * * /bin/rsync -av /home1/06280/mcawood/work2/repo_backup/ $BP_SITE/repo/ | tee -a $BP_SITE/logs/repo_\`date +\\%Y\\-%m-%d\`.log"
-echo 
+if [ -z $BP_DEV ]; then 
 
+    echo
+    echo "------------------------------------------------"
+    echo "Benchtool successfully installed into $BP_SITE"
+    echo "User files installed into $BP_HOME for testing"
+    echo "To use, load site module with:"
+    echo "ml use $BP_SITE/modulefiles"
+    echo "ml benchpro"
+    echo
+    echo "------------------------------------------------"
+    echo "Add the following lines to your crontab:"
+    echo "5 * * * * /bin/rsync --remove-source-files -av -e \"ssh -i $SSH_KEY\" $BP_SITE/collection/* $DB_USER@$DB_HOST:$REMOTE_PATH/ >> $BP_SITE/logs/collect_\`date +\\%Y\\-%m-%d\`.log 2>&1"
+    echo "0 0 * * * /bin/rsync -av /home1/06280/mcawood/work2/repo_backup/ $BP_SITE/repo/ | tee -a $BP_SITE/logs/repo_\`date +\\%Y\\-%m-%d\`.log"
+    echo 
+fi
+
+echo "Done."

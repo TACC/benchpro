@@ -9,7 +9,7 @@ set() {
 
 # SETUP
 set BP_SYSTEM $TACC_SYSTEM
-set BP_VERSION "1.3.9"
+set BP_VERSION "1.4.2"
 set BUILD_HASH `echo $RANDOM | md5sum | head -c 8`
 set VERSION_STR "${BP_VERSION}-${BUILD_HASH}"
 set PY_VERSION "3.`python3 --version | head -n 1 | cut -d '.' -f 2`"

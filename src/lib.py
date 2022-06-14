@@ -133,14 +133,14 @@ class init(object):
         # List of global dicts containing input data
         cfg_list = [self.glob.config, self.glob.sched, self.glob.compiler]
 
-        self.glob.log.debug(label + " started with the following inputs:")
-        self.glob.log.debug("======================================")
+        self.glob.lib.msg.log(label + " started with the following inputs:")
+        self.glob.lib.msg.log("======================================")
         for cfg in cfg_list:
             for seg in cfg:
-                self.glob.log.debug("[" + seg + "]")
+                self.glob.lib.msg.log("[" + seg + "]")
                 for line in cfg[seg]:
-                    self.glob.log.debug("  " + str(line) + "=" + str(cfg[seg][line]))
-        self.glob.log.debug("======================================")
+                    self.glob.lib.msg.log("  " + str(line) + "=" + str(cfg[seg][line]))
+        self.glob.lib.msg.log("======================================")
 
     # Check if host can run mpiexec
     def check_mpi_allowed(self):
@@ -169,6 +169,23 @@ class init(object):
                 match = False
 
         return match
+
+    # Add fields to application search dict
+    def generate_requirements(self, input_dict):
+
+        # 1. CMDline arguments 
+
+        # For each input
+        for key in input_dict:
+            # If in requirements
+            if key in self.glob.config['requirements']:
+                # If not set
+                if not self.glob.config['requirements'][key]:
+                    # Replace
+                    self.glob.config['requirements'][key] = input_dict[key]
+
+        # 2. Overloads
+        self.overload.replace() 
 
     # Check if the requirements in bench.cfg need a built code 
     def needs_code(self, search_dict):
@@ -209,7 +226,7 @@ class init(object):
 
         # Multiple results
         elif len(results) > 1:
-            self.msg.error(["Multiple installed applications match your selection critera: " + ", ".join([key+"="+search_dict[key] for key in search_dict if search_dict[key]])] + results + ["Please be more specific."])
+            self.msg.error(["Multiple installed applications match your selection critera: " + ", ".join([key+"="+search_dict[key] for key in search_dict if search_dict[key]])] + [self.glob.stg['app_env'] + "/" + result for result in results] + ["Please be more specific."])
 
     # Read every build config file and construct a list with format [[cfg_file, code, version, build_label],...]
     def get_avail_codes(self):
@@ -360,25 +377,18 @@ class init(object):
     def parse_bench_str(self, input_str):
         return self.parse_input_str(input_str, "bench_label")
 
-    def get_client_version(self):
-        return self.glob.lib.files.read_version()
+    def version_match(self):
+        # Compare versions
+        if version.parse(self.glob.version_site) > version.parse(self.glob.version_client):
+            return False
+        return True
 
-    def get_site_version(self):
-        return os.getenv("BP_VERSION")
-
-    def get_build_hash(self):
-        return os.getenv("BP_VERSION")
-
-    # Check if the installed version is up-to-date with site version
+    # Check if the client version is up-to-date with site version
     def check_version(self):
-
-            site_version = self.get_site_version()
-            local_version = self.get_client_version()
-           
-            if version.parse(site_version) > version.parse(local_version):
+            if not self.version_match():
                 self.msg.warning(["You are using BenchPRO " + local_version + ", version " + site_version + " is available.", \
-                                "Update with: git -C ~/benchpro pull", \
-                                "Continuing..."])
+                                 "Update with: git -C ~/benchpro pull", \
+                                 "Continuing..."])
                 time.sleep(3)
 
 

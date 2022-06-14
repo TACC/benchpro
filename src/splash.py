@@ -8,6 +8,6 @@ def get_splash(glob):
             " |____/|_____|_| \_|\____|_| |_|_|   |_| \_\\\\___/", 
             "  >User      : " + glob.user,
             "  >System    : " + glob.hostname,
-            "  >Version   : " + glob.version_str,
+            "  >Version   : " + glob.version_site_full,
             "  >$BP_HOME  : " + glob.bp_home]
 
