@@ -386,9 +386,9 @@ class init(object):
     # Check if the client version is up-to-date with site version
     def check_version(self):
             if not self.version_match():
-                self.msg.warning(["You are using BenchPRO " + local_version + ", version " + site_version + " is available.", \
+                self.msg.warning(["You are using BenchPRO " + self.glob.version_client + ", the site package is using " + self.glob.version_site + ".", \
                                  "Update with: git -C ~/benchpro pull", \
                                  "Continuing..."])
-                time.sleep(3)
+                time.sleep(self.glob.stg['timeout'])
 
 
