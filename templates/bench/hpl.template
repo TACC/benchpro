@@ -1,6 +1,7 @@
 
-cp -r $MKLROOT/benchmarks/mp_linpack .
 cd mp_linpack
+
+export PATH=`pwd`:$PATH
 
 # Check file exists
 if [ ! -f "HPL.dat" ]; then
@@ -12,7 +13,6 @@ fi
 # These consts give a GB/node -> problem size (N) equation accurate to +-2 GB, tested over range 8GB-180GB/node
 const1=2
 const2=0.5
-export HPL_EXE=${exe}
 export I_MPI_DAPL_DIRECT_COPY_THRESHOLD=655360
 export MPI_PER_NODE=2
 export MPI_PROC_NUM=$(bc <<< ${nodes}*${MPI_PER_NODE})
@@ -70,6 +70,6 @@ ls -l xhpl_intel64_dynamic
 echo "Environment variables: "
 env
 
-${mpi_exec} ./runme_intel64_prv "$@"
+${mpi_exec} ${exe} "$@"
 
 
