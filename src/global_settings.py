@@ -62,6 +62,7 @@ class setup(object):
     bench_cfgs                  = []
     # dict for storing overload key-values
     overload_dict               = {}
+    overloaded                  = [] 
     # Suppress build manager output
     quiet_build                 = False
     # Files to cleanup on fail

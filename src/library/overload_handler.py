@@ -48,6 +48,8 @@ class init(object):
 
             self.glob.lib.msg.high("Overloading " + overload_key + ": '" + str(old) + "' -> '" + \
                                         str(search_dict[overload_key]) + "'")
+            # Add to list of overloaded keys
+            self.glob.overloaded += [overload_key]
             # Remove key from overload dict
             self.glob.overload_dict.pop(overload_key)
             # Match found

@@ -123,7 +123,12 @@ class init(object):
     def apply_rule(self, action):
         key = self.extract_key(action)
         value = action.split("=")[1].strip().replace('"', '').replace("'", "")
-    
+   
+        # If this value has already been overloaded - don't change it a 2nd time (rules < user_overload)
+        if key in self.glob.overloaded:
+            self.glob.lib.msg.low("Skipping conflicting system rule: " + key + "='" + value + "'")
+            return
+
         # Search dicts for matching key
         for search_dict in self.search_space:
             if key in search_dict.keys():
