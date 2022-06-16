@@ -116,6 +116,7 @@ def check_db_access(glob):
             # Pass
             if status[0] == 0:
                 print(bcolors.PASS, "connected to", glob.stg['db_host'])
+                return True
 
             # Fail
             else:
@@ -124,6 +125,7 @@ def check_db_access(glob):
                     "Unable to access " +
                     glob.stg['db_host'] +
                     " from this server")
+                return False
 
         # Fail
         except subprocess.CalledProcessError as e:
@@ -132,6 +134,7 @@ def check_db_access(glob):
                 "Unable to access " +
                 glob.stg['db_host'] +
                 " from this server")
+            return False
 
     # Fail
     else:
@@ -140,6 +143,7 @@ def check_db_access(glob):
             "Unable to access " +
             glob.stg['db_host'] +
             " from this server")
+        return False
 
 # Confirm database connection
 def check_db_connect(glob):
@@ -223,10 +227,10 @@ def check_setup(glob_obj):
     check_exe(['benchpro', 'sinfo', 'sacct'])
 
     # Check db host access
-    check_db_access(glob)
+    connection = check_db_access(glob)
 
     # Check db connection
-    if db:
+    if db and connection:
         check_db_connect(glob)
     else:
         print(bcolors.WARN, "database access check disabled")
