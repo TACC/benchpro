@@ -1,5 +1,8 @@
 
-cd bin
+
+cd hpcg/bin
+
+export PATH=`pwd`:$PATH
 
 ARRAY_SIZE=<<<array_size>>>
 
