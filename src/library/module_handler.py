@@ -8,20 +8,34 @@ class init(object):
     def __init__(self, glob):
         self.glob = glob
 
-    # Get list of default modules
-    def get_default(self, cmd_prefix):
-    
-        # Find default version of module 
+    # Execute an LMOD command
+    def lmod_query(self, args):
+
+        # Cast to list
+        if not type(args) == list:
+            args = [args]
+
         try:
-            cmd = subprocess.run(cmd_prefix +"ml -t -d av  2>&1", shell=True,
-                                check=True, capture_output=True, universal_newlines=True)
+            proc = subprocess.Popen([os.path.join(os.environ.get('LMOD_DIR'),'lmod')] + args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            status         = proc.returncode
+            stdout, stderr = proc.communicate()
+            err_out        = sys.stderr
+            if (os.environ.get('LMOD_REDIRECT','@redirect@') != 'no'):
+                err_out=sys.stdout
         except subprocess.CalledProcessError as e:
-            self.glob.lib.msg.error(["unable to execute 'ml -t -d av'", e])
+            self.glob.lib.msg.error(["unable to execute \"lmod " + ' '.join(args) + "\'", e])
 
-        defaults = cmd.stdout.split("\n")
+        return stderr.decode()
 
-        # Return list of default modules
-        return defaults
+    # Get list of default modules
+    def get_default_module_list(self, module_use):
+
+        # Append 'module use' to MODULEPATH
+        if module_use:
+            os.environ["MODULEPATH"] = module_use + ":" + os.environ["MODULEPATH"]
+
+        return self.lmod_query(['-t', '-d', 'av']).split("\n")
+
 
     # Gets full module name of default module, eg: 'intel' -> 'intel/18.0.2'
     def get_full_name(self, module, default_modules):
@@ -38,30 +52,23 @@ class init(object):
             return module
 
     # Check if module is available on the system
-    def check_exists(self, module_dict, module_use):
-
-        # Preload custom module path if needed
-        cmd_prefix = "ml " + module_dict['compiler'] + "; "
-        if module_use:
-            cmd_prefix = "ml use " + module_use + "; " + cmd_prefix
+    def check_module_exists(self, module_dict, module_use):
 
         # Get list of default system modules
-        default_modules = self.get_default(cmd_prefix)
+        default_modules = self.get_default_module_list(module_use)
 
         # Confirm defined modules exist on this system and extract full module name if necessary
         for module in module_dict:
             # If module is non Null
             if module_dict[module]:
-                try:
-                    cmd = subprocess.run(cmd_prefix + "module spider " + module_dict[module], shell=True,
-                                        check=True, capture_output=True, universal_newlines=True)
-
-                except subprocess.CalledProcessError as e:
-                    self.glob.lib.msg.error(module + " module '" + module_dict[module] \
-                                                            + "' not available on this system")
-
-                # Update module with full label
-                module_dict[module] = self.get_full_name(module_dict[module], default_modules)
+                # Module exists
+                if (self.lmod_query(['show', module])):
+                    # Update module with full label
+                    module_dict[module] = self.get_full_name(module_dict[module], default_modules)
+            # Remove Null valued keys
+            else:
+                self.glob.lib.msg.warning("Ignoring module " + module + " = \"\"")
+                module_dict.pop(module)
 
     # Check inputs for module creation
     def check_for_previous_module(self, mod_path, mod_file):

@@ -107,17 +107,20 @@ class init(object):
 
     # Get list of uncaptured results and print note to user
     def new_results(self):
-        self.log_and_print(["Checking for uncaptured results..."], False)
-        # Uncaptured results + job complete
-        complete_results = self.glob.lib.get_completed_results(self.glob.lib.get_pending_results(), True)
-        if complete_results:
-            self.log_and_print([self.glob.note,
-                                "There are " + str(len(complete_results)) + " uncaptured results found in " + 
-                                self.glob.lib.rel_path(self.glob.stg['pending_path']),
-                                "Run 'benchpro --capture' to send to database."], False)
-        else:
-            self.log_and_print(["No new results found.",
-                                ""], False)
+
+        if not self.glob.stg['skip_result_check']:
+
+            self.log_and_print(["Checking for uncaptured results..."], False)
+            # Uncaptured results + job complete
+            complete_results = self.glob.lib.get_completed_results(self.glob.lib.get_pending_results(), True)
+            if complete_results:
+                self.log_and_print([self.glob.note,
+                                    "There are " + str(len(complete_results)) + " uncaptured results found in " + 
+                                    self.glob.lib.rel_path(self.glob.stg['pending_path']),
+                                    "Run 'benchpro --capture' to send to database."], False)
+            else:
+                self.log_and_print(["No new results found.",
+                                    ""], False)
 
 
     # Print message about application exe file

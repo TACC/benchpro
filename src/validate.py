@@ -204,7 +204,7 @@ def check_setup(glob_obj):
                     project_env,
                     app_env,
                     result_env,
-                    'BP_VERSION',
+                    'BP_SITE_VERSION',
                     'LMOD_VERSION'])
 
     # Check priv

@@ -450,8 +450,12 @@ class init(object):
 
     # Print version file and quit
     def print_version(self):
-        with open(os.path.join(self.glob.bp_home, ".version"), 'r' ) as f:
-            print(f.read())
+        print("Client version: ")
+        print(self.glob.version_client + " (" + self.glob.version_client_date + ")" )
+        print()
+        print("Site package version:")
+        print(self.glob.version_site_full + " (" + self.glob.version_site_date + ")")
+        print()
 
     # Return the last line of the .outputs file
     def get_last_history(self):

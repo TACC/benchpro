@@ -42,7 +42,7 @@ The user files repository was installed as part of the process described above f
 
 ### Version Control
 
-The user repository version number in $BP_HOME/.version is tested against the package version number $BP_VERSION to ensure compatibility between the two repositories. If users are running an old version, they will be prompted to update when using the utility. If changes are made to this repository, the version should be updated with the provided script:
+The user repository version number in $BP_HOME/.version is tested against the package version number $BP_SITE_VERSION to ensure compatibility between the two repositories. If users are running an old version, they will be prompted to update when using the utility. If changes are made to this repository, the version should be updated with the provided script:
 ```
 ./dev/version.sh [x.y.z]
 ```

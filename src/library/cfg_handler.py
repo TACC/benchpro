@@ -235,7 +235,7 @@ class init(object):
         
         # Check requested modules exist, and if so, resolve full module names
         if self.glob.stg['check_modules']:
-            self.glob.lib.module.check_exists(cfg_dict['modules'], cfg_dict['general']['module_use'])
+            self.glob.lib.module.check_module_exists(cfg_dict['modules'], cfg_dict['general']['module_use'])
 
         # Parse architecture defaults config file 
         arch_file = self.find_cfg_file('arch', self.glob.stg['config_path'] + self.glob.stg['sl'] + self.glob.stg['arch_cfg_file'])

@@ -468,5 +468,7 @@ class init(object):
         try:
             with open(os.path.join(self.glob.bp_home, ".version"), 'r') as f:
                 self.glob.version_client = f.readline().split(" ")[-1][1:].strip()
+                self.glob.version_client_date = f.readline().strip()
+
         except:
             self.glob.lib.msg.error("Failed to read version info from $BP_HOME/.version")    

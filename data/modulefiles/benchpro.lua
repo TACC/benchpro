@@ -1,5 +1,7 @@
 -- BenchPRO module
 
+local bp_dev = 1
+setenv("BP_DEV", bp_dev)
 local bp_site = ""
 setenv("BP_SITE", bp_site)
 local bp_repo = ""
@@ -7,9 +9,11 @@ setenv("BP_REPO", bp_repo)
 local tacc_scratch = ""
 setenv("TACC_SCRATCH", tacc_scratch )
 local bp_version      = ""
-setenv("BP_VERSION",  bp_version)
+setenv("BP_SITE_VERSION",  bp_version)
 local build_hash      = ""
 setenv("BP_BUILD_ID", build_hash) 
+local build_date      = ""
+setenv("BP_BUILD_DATE", build_date)
 local py_version      = ""
 
 -- Resolve user environment variables, $HOME, $SCRATCH, etc

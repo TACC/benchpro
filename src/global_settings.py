@@ -20,9 +20,11 @@ class setup(object):
     end                         = '\033[0m'
 
     # Get dev_mode from environ
-    dev_mode                    = False
-    if "BP_DEV" in os.environ:
-        dev_mode                = True
+    dev_mode                    = True
+    dev_str                     = "[DEV]"
+    if os.environ.get("BP_DEV") == 0:
+        dev_mode                = False
+        dev_str                 = "[PRODUCTION]"
 
     # Create log obj
     log                         = None
@@ -68,7 +70,7 @@ class setup(object):
     # Files to cleanup on fail
     cleanup                     = []
     # Command line history
-    cmd                         = ""
+    cmd                         = None
 
     # Context variables
     user                        = str(os.getlogin())
@@ -85,9 +87,13 @@ class setup(object):
         print("It seems your current working directory doesn't exist. Exitting.")
         sys.exit(1)
 
-    # Get versions
-    version_site                = os.getenv('BP_VERSION')
-    version_site_full           = version_site + "-" + os.getenv('BP_BUILD_ID')
+    # Client version info is populated by lib.files.init
+    version_client              = None
+    version_client_date         = None
+    version_site                = os.getenv('BP_SITE_VERSION')
+    version_site_full           = version_site + "-" + os.getenv('BP_BUILD_ID') + " " + dev_str
+    version_site_date           = os.getenv("BP_BUILD_DATE")
+    
 
     # Resolve relative paths and EVs in $BP_HOME/settings.ini
     def resolve(self, ev):
