@@ -40,6 +40,9 @@ printf "Reading ${SOURCE_FILE}...\n"
 source $SOURCE_FILE
 [[ $? != 0 ]] && quit "\nCan't source ${SOURCE_FILE}, quitting.\n\n"
 
+# Test that BP_SITE is writable
+mkdir -p $BP_SITE && prinf "We have write permission.\n" || quit "\nCan't write to ${BP_SITE}, quitting.\n\n" 
+
 # Get path to SSH key - not stored in repo
 SSH_KEY=""
 if [[ "$1" = "" ]]; then
