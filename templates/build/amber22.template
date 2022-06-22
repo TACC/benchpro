@@ -1,0 +1,56 @@
+cd amber${version}_src
+
+export AMBERHOME=`pwd`
+
+
+AMBERBUILDFLAGS=''
+if [[ "${ipo}" == "no" ]]; then
+  AMBERBUILDFLAGS='-no-ip -no-ipo'
+fi
+
+# Compiler type
+config_comp=""
+if [[ "${compiler}" == *"intel"* ]]; then
+  config_comp="-mkl intel" 
+elif [[ "${compiler}" == *"gcc"* ]]; then
+  config_comp="gnu"
+else
+  echo "Unknown compiler type: ${compiler}"
+  exit -1
+fi
+
+# MPI type
+config_mpi=""
+if [[ "${mpi}" == *"impi"* ]] && [[ "${compiler}" == *"intel"* ]]; then
+  config_mpi="-intelmpi"
+elif [[ "${mpi}" == *"impi"* ]] && [[ "${compiler}" == *"gcc"* ]]; then
+  config_mpi="-mpi"
+elif [[ "${mpi}" == *"mvapich"* ]]; then
+  config_mpi="-mpi"
+else
+  echo "Unknown MPI type: ${mpi}"
+  exit -1
+fi
+
+# Build serial
+echo "n" | ./configure -noX11 --skip-python -nofftw3 ${config_comp}
+source amber.sh
+make -j${threads} AMBERBUILDFLAGS=$AMBERBUILDFLAGS install
+
+# Build MPI
+if [ ! -z ${mpi} ]; then
+  echo "n" | ./configure -noX11 --skip-python -nofftw3 ${config_mpi} ${config_comp}
+  source amber.sh
+  make -j${threads} AMBERBUILDFLAGS=$AMBERBUILDFLAGS install
+fi
+
+# Build CUDA + MPI
+if [ ! -z ${mpi} ] && [ ! -z ${cuda} ]; then
+  export CUDA_HOME=$TACC_CUDA_DIR
+  echo "n" | ./configure -noX11 --skip-python -nofftw3 -cuda ${config_mpi} ${config_comp}
+  source amber.sh
+  make -j${threads} AMBERBUILDFLAGS=$AMBERBUILDFLAGS install
+fi
+
+mkdir -p ${install_path}
+cp -r bin ${install_path}/
