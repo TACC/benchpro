@@ -22,7 +22,7 @@ class setup(object):
     # Get dev_mode from environ
     dev_mode                    = True
     dev_str                     = "[DEV]"
-    if os.environ.get("BP_DEV") == 0:
+    if os.environ.get("BP_DEV") == "0":
         dev_mode                = False
         dev_str                 = "[PRODUCTION]"
 
