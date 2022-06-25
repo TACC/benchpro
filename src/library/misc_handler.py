@@ -216,7 +216,7 @@ class init(object):
                 if self.glob.lib.files.exists(report_dict['build']['exe_file'], os.path.join(install_path, report_dict['build']['bin_dir'])):
                     print(("File "+report_dict['build']['exe_file']+": ").ljust(gap) + "\033[0;32mFOUND\033[0m")
                 else:
-                    print(("File "+report_dict['build']['exe_file']+": ").ljust(gap) + ")\033[0;31mMISSING\033[0m")
+                    print(("File "+report_dict['build']['exe_file']+": ").ljust(gap) + "\033[0;31mMISSING\033[0m")
                     self.glob.lib.msg.print_file_tail(os.path.join(report_dict['build']['build_prefix'], report_dict['build']['stderr']))
 
     # Get usable string of application status
