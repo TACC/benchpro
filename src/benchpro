@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+# Main executable file for BenchPRO utility
+# Performs argument handling, inits glob data structure and starts the appropriate task handler
+# Matthew Cawod
+# June 2022
+
 # System Imports
 import argparse
 import os
@@ -8,11 +13,12 @@ import traceback
 
 # Local Imports
 try:
-    import src.bench_manager as bench_manager
-    import src.build_manager as build_manager
-    import src.global_settings as global_settings
-    import src.result_manager as result_manager
-    import src.validate as validate
+    import src.bench_manager    as bench_manager
+    import src.build_manager    as build_manager
+    import src.global_settings  as global_settings
+    import src.result_manager   as result_manager
+    import src.splash           as splash
+    import src.validate         as validate
 
 # Catch import exception
 except ImportError as e:
@@ -196,20 +202,30 @@ def get_arguments():
     return cmd_parser.parse_args()
 
 
-def main():
-
+# 
+def init_glob():
     # Init global object
     glob = global_settings.setup()
-
     # Store arguments from ArgumentParser in glob
     glob.args = get_arguments()
+    return glob
+
+def main():
+
+    try:
+        glob = init_glob()
+    except Exception as e:
+        catch_major_exception(glob, e)
 
     # Check client/site versions match
     glob.lib.check_version()
 
     # Run validator script
     if glob.args.validate:
-        validate.check_setup(glob)
+        try:
+            validate.check_setup(glob)
+        except Exception as e:
+            catch_major_exception(glob, e)
 
     # Check validated
     validate.check(glob.bp_home)
@@ -279,10 +295,9 @@ def main():
         glob.lib.misc.print_version()
     elif glob.args.last:
         glob.lib.misc.print_last()
-    # No seletion provided
-    else:
-        print("Invalid input")
-        print("Try 'benchpro --help' for more information.")
+    # No seletion provided - print splash
+    else:    
+        glob.lib.msg.high(splash.get_splash(glob))
 
     print()
     return 0

@@ -10,20 +10,22 @@ class init(object):
 
     # Select which dicts are searchable when applying overloads
     def set_search_space(self):
-        self.search_space = [self.glob.stg,
-                            self.glob.config['general'],
-                            self.glob.config['config'],
-                            self.glob.config['requirements'],
-                            self.glob.config['runtime'],
-                            self.glob.config['result'],
-                            self.glob.sched['sched'],
-                            self.glob.system
+        self.search_space = [   self.glob.stg,
+                                self.glob.config['general'],
+                                self.glob.config['config'],
+                                self.glob.config['files'],
+                                self.glob.config['requirements'],
+                                self.glob.config['runtime'],
+                                self.glob.config['result'],
+                                self.glob.sched['sched'],
+                                self.glob.system
                             ]
 
     # Replace dict values with overloaded values
     def update(self, overload_key, search_dict):
         # If found matching key
-        if overload_key in search_dict:
+
+        if overload_key in search_dict.keys():
 
             self.glob.lib.msg.log("Overload key '" + overload_key + "' found in dict!")
             old = search_dict[overload_key]
@@ -60,10 +62,14 @@ class init(object):
             return False
 
     # Scan searchable dicts for matching key to overload
-    def replace(self):
+    def replace(self, search_space):
 
         # Init dicts to search
-        self.set_search_space()
+        if not search_space:
+            self.set_search_space()
+        else:
+            self.search_space = [search_space]
+        
 
         # For each overload key
         for overload_key in list(self.glob.overload_dict):
@@ -96,7 +102,7 @@ class init(object):
             if not len(pair) == 2:
                 print("Invalid overload [key]=[value] pair detected: ", setting)
                 sys.exit(1)
-            self.glob.overload_dict[pair[0].strip()] = pair[1].strip()
+            self.glob.overload_dict[pair[0].strip().lower()] = pair[1].strip()
 
     # Catch overload keys that are incompatible with local exec mode before checking for missed keys
     def catch_incompatible(self):
@@ -115,7 +121,7 @@ class init(object):
     def check_for_unused(self):
 
         # Last chance to make replacements
-        self.replace()
+        self.replace(None)
 
         # First check for overloaded params that are incompatible with exec mode
         self.catch_incompatible()

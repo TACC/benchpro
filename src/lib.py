@@ -1,26 +1,27 @@
 # System Imports
 import configparser as cp
 import copy
-import glob as gb
+import glob         as gb
 import hashlib
-from packaging import version
+from packaging      import version
+from operator       import itemgetter
 import os
 import sys
 import time
 
 # Local Imports
-import src.library.cfg_handler as cfg_handler
-import src.library.db_handler as db_handler
-import src.library.expr_handler as expr_handler
-import src.library.file_handler as file_handler
-import src.library.misc_handler as misc_handler
-import src.library.module_handler as module_handler
-import src.library.msg_handler as msg_handler
-import src.library.overload_handler as overload_handler
-import src.library.process_handler as proc_handler
-import src.library.report_handler as report_handler
-import src.library.sched_handler as sched_handler
-import src.library.template_handler as template_handler
+import src.library.cfg_handler          as cfg_handler
+import src.library.db_handler           as db_handler
+import src.library.expr_handler         as expr_handler
+import src.library.file_handler         as file_handler
+import src.library.misc_handler         as misc_handler
+import src.library.module_handler       as module_handler
+import src.library.msg_handler          as msg_handler
+import src.library.overload_handler     as overload_handler
+import src.library.process_handler      as proc_handler
+import src.library.report_handler       as report_handler
+import src.library.sched_handler        as sched_handler
+import src.library.template_handler     as template_handler
 
 # Contains several useful functions, mostly used by bench_manager and build_manager
 class init(object):
@@ -62,16 +63,43 @@ class init(object):
         # if not any of the above
         return path
 
+    # Convert key-less application list to dict 
+    def app_list_to_dict(self, app_list):
+        return {"code":     app_list[5], 
+                "version":  app_list[6],
+                "system":   app_list[1],
+                "arch":     app_list[2],
+                "compiler": app_list[3],
+                "mpi":      app_list[4]}
+
     # Get list of installed apps
-    def get_installed(self):
+    def set_installed_apps(self):
+
+        # Reset 
+        self.glob.installed_app_list  = []
+        self.glob.installed_app_paths = []
+        installed_apps                = []
+
         app_dir = self.glob.stg['build_path']
         start = app_dir.count(self.glob.stg['sl'])
-        # Send empty list to search function 
-        installed_list = []
-        self.files.search_tree(installed_list, app_dir, start, start, start + self.glob.stg['tree_depth'])
-        installed_list.sort()
 
-        return installed_list
+        # Get directory paths
+        self.files.search_tree(installed_apps, app_dir, start, start, start + self.glob.stg['tree_depth'])
+
+        # Split app path into catagories and add status
+        for path in installed_apps:
+            status = self.glob.lib.sched.get_status_str(path)
+            idx = self.report.get_task_id("build", path) 
+            # Job status could not be determined
+            self.glob.installed_app_paths.append(path)
+            self.glob.installed_app_list.append([idx] +  path.split(self.glob.stg['sl']) + [status])
+
+        # Sort by code
+        self.glob.installed_app_list = sorted(self.glob.installed_app_list, key=itemgetter(5)) 
+
+        # Add ID column
+        #for i in range(0,len(self.glob.installed_app_list)):
+        #   self.glob.installed_app_list[i] = [str(i+1)] + self.glob.installed_app_list[i]
 
     # Get results in $BP_RESULTS/pending
     def get_pending_results(self):
@@ -131,7 +159,7 @@ class init(object):
     # Log cfg contents
     def send_inputs_to_log(self, label):
         # List of global dicts containing input data
-        cfg_list = [self.glob.config, self.glob.sched, self.glob.compiler]
+        cfg_list = [self.glob.config, self.glob.modules, self.glob.sched, self.glob.compiler]
 
         self.glob.lib.msg.log(label + " started with the following inputs:")
         self.glob.lib.msg.log("======================================")
@@ -185,7 +213,7 @@ class init(object):
                     self.glob.config['requirements'][key] = input_dict[key]
 
         # 2. Overloads
-        self.overload.replace() 
+        self.overload.replace(None) 
 
     # Check if the requirements in bench.cfg need a built code 
     def needs_code(self, search_dict):
@@ -204,11 +232,11 @@ class init(object):
     # Check if search_list returns unique installed application
     def check_if_installed(self, search_dict):
 
-        # Get list of installed applications
-        installed_list = self.get_installed()
+        # Set list of installed applications
+        self.set_installed_apps()
 
         # For each installed code
-        results = [code_path for code_path in installed_list if self.search_with_dict(search_dict, code_path)]
+        results = [code_path for code_path in self.glob.installed_app_paths if self.search_with_dict(search_dict, code_path)]
 
         # Unique result
         if len(results) == 1:
@@ -222,7 +250,7 @@ class init(object):
             else:
                 self.msg.error(["No installed applications match your selection criteria: ", ", ".join([search_dict[key] for key in search_dict]),
                                 "And 'build_if_missing=False' in $BP_HOME/settings.ini",
-                                "Currently installed applications:"] + installed_list)
+                                "Currently installed applications:"] + self.glob.installed_app_paths)
 
         # Multiple results
         elif len(results) > 1:

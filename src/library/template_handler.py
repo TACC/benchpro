@@ -26,7 +26,11 @@ class init(object):
             return template             
 
     # Combines list of input templates to single script file
-    def construct_template(self, template_obj, input_template):
+    def append_to_template(self, template_obj, input_template):
+
+        if not input_template:
+            self.glob.lib.msg.error("A template addition was not generated successfully.")
+
         # Copy input template file to temp obj
         with open(input_template, 'r') as fd:
             template_obj.extend(self.read_template(input_template))
@@ -34,7 +38,7 @@ class init(object):
     # Add user defined section of template
     def add_user_section(self, template_obj, input_template):
         template_obj.append("#------USER SECTION------\n")
-        self.construct_template(template_obj, input_template)
+        self.append_to_template(template_obj, input_template)
         template_obj.append("#------------------------\n")
 
     # Add sched reservation
@@ -46,35 +50,49 @@ class init(object):
     def add_standard_build_definitions(self, template_obj):
     
         header_template = os.path.join(self.glob.stg['template_path'], self.glob.stg['build_tmpl_dir'], self.glob.stg['header_file'])
-        self.construct_template(template_obj, header_template)
+        self.append_to_template(template_obj, header_template)
 
         # Add config key-values
+        template_obj.append("\n# [config]\n")
         for key in self.glob.config['config']:
             template_obj.append("export "+ key.rjust(20) + "=" + str(self.glob.config['config'][key]) + "\n")
 
+        template_obj.append("\n# [modules]\n")
         # export module names
         for mod in self.glob.config['modules']:
             template_obj.append("export" + mod.rjust(20) + "=" + self.glob.config['modules'][mod] + "\n")
 
         template_obj.append("\n")
+
+        # Stage input files
+        if not self.glob.stg['sync_staging']:
+            template_obj.append("# [files]\n")
+            self.stage_input_files(template_obj)
+
+        # Add module loads
         template_obj.append("# Load modules \n")
         template_obj.append("ml reset \n")
-        
+    
         # add 'module use' if set
         if self.glob.config['general']['module_use']:
             template_obj.append("ml use " + self.glob.config['general']['module_use'] + "\n")
 
         # Add non Null modules 
-        for mod in self.glob.config['modules']:
-            if self.glob.config['modules'][mod]:
-                template_obj.append("ml $" + mod + "\n")
-
+        for mod in self.glob.modules:
+            if self.glob.modules[mod]['full']:
+                template_obj.append("ml " + self.glob.modules[mod]['full'] + "\n")
         template_obj.append("ml \n")
+
+        # Compiler variables
+        template_obj.append("\n# Compiler variables")
+        self.append_to_template(template_obj, self.glob.compiler['template'])
+
+        template_obj.append("\n")
 
     # Add standard lines to bench template
     def add_standard_bench_definitions(self, template_obj):
         header_template = os.path.join(self.glob.stg['template_path'], self.glob.stg['bench_tmpl_dir'], self.glob.stg['header_file'])
-        self.construct_template(template_obj, header_template)
+        self.append_to_template(template_obj, header_template)
 
         # add parameters from [config] section of cfg file to script
         for key in self.glob.config['config']:
@@ -96,7 +114,6 @@ class init(object):
 
     # Get input files asynchronously
     def stage_input_files(self, template_obj):
-        template_obj.append("\n")
 
         for op in self.glob.stage_ops:
             self.glob.lib.msg.log("Adding file op to template: " + op + "...")
@@ -208,16 +225,15 @@ class init(object):
     
         self.glob.config['template'] = build_template_search
 
-        # Get compiler cmds for gcc/intel/pgi, otherwise compiler type is unknown
-        known_compiler_type = True
-        try:
-            self.glob.compiler['common'] = self.glob.compiler[self.glob.config['config']['compiler_type']]
-            self.glob.compiler['template'] = self.glob.lib.files.find_exact(self.glob.stg['compile_tmpl_file'], \
-                                                                            self.glob.stg['template_path'])
-        except:
-            known_compiler_type = False
-            self.glob.compiler['template'] = None
 
+        # Error if compiler type not recongnized
+        if not self.glob.modules['compiler']['type'] in self.glob.compiler.keys():
+            self.glob.lib.msg.error("Unrecognized compiler type '" + self.glob.modules['compiler']['type']  + "'")
+
+        # Get compiler cmds for gcc/intel/pgi, otherwise compiler type is unknown
+        self.glob.compiler['common'] = self.glob.compiler[self.glob.modules['compiler']['type']]
+        self.glob.compiler['template'] = self.glob.lib.files.find_exact(self.glob.stg['compile_tmpl_file'], \
+                                                                            self.glob.stg['template_path'])
     # Combine template files and populate
     def generate_build_script(self):
 
@@ -236,7 +252,7 @@ class init(object):
             self.glob.sched['sched']['job_label'] = self.glob.config['general']['code'] + "_build"
 
             # Take multiple input template files and combine them to generate unpopulated script
-            self.construct_template(template_obj, self.glob.sched['template'])
+            self.append_to_template(template_obj, self.glob.sched['template'])
 
             # Add reservation line to SLURM params if set
             self.add_reservation(template_obj)
@@ -248,12 +264,6 @@ class init(object):
         self.add_standard_build_definitions(template_obj)
 
         # Copy user portion of build template
-        self.construct_template(template_obj, self.glob.compiler['template'])
-
-        # Stage files
-        if not self.glob.stg['sync_staging']:
-            self.stage_input_files(template_obj)
-
         self.add_user_section(template_obj, self.glob.config['template'])
 
         self.build_epilog(template_obj)
@@ -339,13 +349,13 @@ class init(object):
     def add_bench(self, template_obj):
 
         # Get template file contents
-        template = self.read_template(self.glob.config['template']) 
+        user_script = self.read_template(self.glob.config['template']) 
 
         # Add start time line
-        template_obj.append("#-------USER SECTION------\n")
-        template_obj.extend(template)
+        template_obj.append("#-------USER SECTION------\n\n")
+        template_obj.extend(user_script)
         # Add end time line
-        template_obj.append("#-------------------------\n")
+        template_obj.append("#-------------------------\n\n")
 
         return template_obj
 
@@ -369,7 +379,7 @@ class init(object):
 
         # If generate sched script
         if self.glob.stg['bench_mode'] == "sched":
-            self.construct_template(template_obj, self.glob.sched['template'])
+            self.append_to_template(template_obj, self.glob.sched['template'])
             self.glob.sched['sched']['job_label'] = self.glob.config['config']['bench_label']
             self.add_reservation(template_obj)
 
@@ -383,7 +393,7 @@ class init(object):
         if self.glob.config['config']['script_additions']:
             self.glob.lib.msg.low("Adding contents of '" + self.glob.lib.rel_path(self.glob.config['config']['script_additions']) + \
                                                             "' to benchmark script.")
-            self.construct_template(template_obj, self.glob.config['config']['script_additions'])
+            self.append_to_template(template_obj, self.glob.config['config']['script_additions'])
             template_obj.append("\n")
 
         # Stage files

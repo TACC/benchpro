@@ -1,4 +1,5 @@
 # System Imports
+import copy
 import glob as gb
 import os
 import re
@@ -151,7 +152,50 @@ class init(object):
             self.glob.overload_dict[key] = str(overloads[key])
 
         # Run overload search
-        self.glob.lib.overload.replace()
+        self.glob.lib.overload.replace(None)
+
+    # Generate module metadata from user input
+    def setup_module_dict(self, cfg_dict):
+
+        comp_input = cfg_dict['modules']['compiler'] 
+        mpi_input = cfg_dict['modules']['mpi']
+
+        # Generate list of default modules
+        self.glob.lib.module.set_default_module_list(cfg_dict['general']['module_use'])
+
+        # Process each module
+        for key in cfg_dict['modules']:
+
+            mod = cfg_dict['modules'][key]
+    
+            # Skip if value = NULL
+            if not mod:
+                self.glob.lib.msg.warning("Ignoring Null module key '" + key + "'")
+                continue
+
+            self.glob.modules[key]  = { 'input':    mod,
+                                        'full':     self.glob.lib.module.check_module_exists(key, mod)
+                                      }
+
+            # Get filesystem safe module name from full version
+            self.glob.modules[key]['safe']  = self.glob.lib.module.get_label(self.glob.modules[key]['full']) 
+            
+            # Check name was resolved successfully - fail if compiler or mpi (required)
+            if not self.glob.modules[key]['full']:
+                self.glob.lib.msg.error("Failed to identify module '" + self.glob.modules[key]['input'] + "'")
+
+            # Store module version
+            self.glob.modules[key]['version'] = self.glob.modules[key]['full'].split('/')[-1]
+
+            # Set type for compiler
+            if key == "compiler":
+                self.glob.modules[key]['type'] =  self.glob.modules[key]['full'].split('/')[0]
+                self.glob.modules[key]['family'] = self.glob.modules[key]['full'].split('/')[0]
+
+                # Add special version check: intel > 20: type += oneapi
+                if (self.glob.modules[key]['type'] == "intel") and (int(self.glob.modules[key]['version'].split('.')[0]) > 20):
+                    # Prioritize oneapi
+                    self.glob.modules[key]['type'] = "oneapi"
 
     # Check build config file and add required fields
     def process_build_cfg(self, cfg_dict):
@@ -187,6 +231,8 @@ class init(object):
         if not 'files'            in cfg_dict.keys():              cfg_dict['files'] = {}
         if not 'overload'         in cfg_dict.keys():              cfg_dict['overload'] = {}
 
+        # --- Apply defaults ---
+
         # Evaluate expressions in [general]
         self.glob.lib.expr.eval_dict(cfg_dict['general'])
 
@@ -196,22 +242,16 @@ class init(object):
         # Add overload params to overload dict
         self.add_overloads(cfg_dict['overload'])
 
-        compiler_str = cfg_dict['modules']['compiler'].split('/')
+        # ------ Apply overloads -------
+        # Need to apply overloads before compiler parsing
 
-        # Extract compiler type from label by splitting by / and removing ints
-        cfg_dict['config']['compiler_type'] = re.sub("\d", "", compiler_str[0])
+        self.glob.lib.overload.replace(cfg_dict['general'])
 
-        # Add special version check: intel > 20 = oneapi
-        try:
-            if (compiler_str[0] == "intel") and (int(compiler_str[1].split('.')[0]) > 20):
-                cfg_dict['config']['compiler_type'] = "oneapi"
-        except:
-            pass
+        # Process requested modules
+        self.setup_module_dict(cfg_dict)
 
         # Path to application's data directory
         cfg_dict['config']['local_repo'] = self.glob.stg['local_repo']
-
-        #self.glob.lib.overload.replace(cfg_dict)
 
         # Get system from env if not defined
         if not cfg_dict['general']['system']:
@@ -233,10 +273,6 @@ class init(object):
             else:
                 cfg_dict['config']['script_additions'] = os.path.join(self.glob.stg['template_path'], cfg_dict['config']['script_additions'])
         
-        # Check requested modules exist, and if so, resolve full module names
-        if self.glob.stg['check_modules']:
-            self.glob.lib.module.check_module_exists(cfg_dict['modules'], cfg_dict['general']['module_use'])
-
         # Parse architecture defaults config file 
         arch_file = self.find_cfg_file('arch', self.glob.stg['config_path'] + self.glob.stg['sl'] + self.glob.stg['arch_cfg_file'])
         arch_dict = self.glob.lib.files.read_cfg(arch_file)
@@ -263,31 +299,34 @@ class init(object):
 
         # Get default optimization flags based on system arch
         if not cfg_dict['config']['opt_flags']:
-            try:
-                # Convert oneAPI compiler type to intel when checking arch file
-                comp_type = cfg_dict['config']['compiler_type']
-                if comp_type == "oneapi":
-                    comp_type = "intel"
-                
-                cfg_dict['config']['opt_flags'] = arch_dict[cfg_dict['config']['arch']][comp_type]
-            except:
+
+            # if comp_type available for this architecture
+            if self.glob.modules['compiler']['family'] in arch_dict[cfg_dict['config']['arch']].keys():
+                    cfg_dict['config']['opt_flags'] = arch_dict[cfg_dict['config']['arch']][self.glob.modules['compiler']['family']]
+
+            # Print warning if no matching compiler key not set for this archicture
+            else:
                 self.glob.lib.msg.warning("Unable to determine default optimization flags for '" + \
-                                        cfg_dict['config']['compiler_type'] + "' compiler " + \
+                                        self.glob.modules['compiler']['type'] + "' compiler label(s) " + \
                                         "on arch '" + cfg_dict['config']['arch'] + "'")
 
         # Set default build label
         if not cfg_dict['config']['build_label']:
             cfg_dict['config']['build_label'] = 'default'
 
+        # ----- Generate metadata ------
+
         # Generate default build path if one is not defined
         if not cfg_dict['general']['build_prefix']:
-            cfg_dict['metadata']['working_path'] = os.path.join(self.glob.stg['build_path'], \
-                                                                cfg_dict['general']['system'], \
-                                                                cfg_dict['config']['arch'],\
-                                                                self.glob.lib.module.get_label(cfg_dict['modules']['compiler']), \
-                                                                self.glob.lib.module.get_label(cfg_dict['modules']['mpi']), \
-                                                                cfg_dict['general']['code'], str(cfg_dict['general']['version']), \
+            cfg_dict['metadata']['working_dir']  = os.path.join(cfg_dict['general']['system'],
+                                                                cfg_dict['config']['arch'],
+                                                                self.glob.modules['compiler']['safe'],
+                                                                self.glob.modules['mpi']['safe'],
+                                                                cfg_dict['general']['code'], str(cfg_dict['general']['version']),
                                                                 cfg_dict['config']['build_label'])
+
+            cfg_dict['metadata']['working_path'] = os.path.join(self.glob.stg['build_path'], 
+                                                                cfg_dict['metadata']['working_dir'])
 
         # Translate 'build_prefix' to 'working_path' for better readability
         else:
@@ -299,9 +338,6 @@ class init(object):
 
         # Path to copy files to
         cfg_dict['metadata']['copy_path']    = cfg_dict['metadata']['build_path']
-
-        # Overload params from cmdline
-        self.glob.lib.overload.replace()
 
         # Set sched nodes to 1 for build jobs
         cfg_dict['config']['nodes'] = 1
@@ -363,7 +399,7 @@ class init(object):
         self.add_overloads(cfg_dict['overload'])
 
         # Overload params from cmdline
-        self.glob.lib.overload.replace()
+        self.glob.lib.overload.replace(cfg_dict['requirements'])
 
         # Path to data directory
         cfg_dict['config']['local_repo'] = self.glob.stg['local_repo']
@@ -477,7 +513,7 @@ class init(object):
         # Instantiate missing optional parameters
         if not 'reservation' in    cfg_dict['sched'].keys():   cfg_dict['sched']['reservation']   = ""
    
-        self.glob.lib.overload.replace()
+        self.glob.lib.overload.replace(cfg_dict)
         # Fill missing parameters
         if not cfg_dict['sched']['runtime']:
             cfg_dict['sched']['runtime'] = '02:00:00'

@@ -205,10 +205,6 @@ def start_task():
     # Generate bench report
     glob.lib.report.bench()
 
-    # Add bench output to history file
-    glob.cmd += " | " + glob.config['metadata']['working_dir']
-    glob.lib.files.write_cmd_history()
-
 # Main function to check for installed application, setup benchmark and run it
 def run_bench(input_str, glob_copy):
 
@@ -221,11 +217,6 @@ def run_bench(input_str, glob_copy):
 
     # Convert string to dict
     input_dict = glob.lib.parse_bench_str(input_str)
-
-    # History entry
-    glob.cmd = "benchpro -B " + input_str
-    if glob.args.overload:
-        glob.cmd += " -o " + " ".join(glob.args.overload)
 
     glob.lib.msg.heading("Starting benchmark with criteria '" + input_str + "'")
 
@@ -312,6 +303,8 @@ def run_bench(input_str, glob_copy):
                 # Generate bench script
                 gen_bench_script()
                 start_task()
+                # Write to history file
+                glob.lib.files.write_cmd_history()
                 glob.lib.msg.brk()
 
     # Return number of tasks compeleted for this benchmark 
@@ -332,7 +325,7 @@ def init(glob):
     glob.lib.msg.new_results()
 
     # Overload settings.ini with cmd line args
-    glob.lib.overload.replace()
+    glob.lib.overload.replace(None)
 
     # Input is benchmark suite
     input_list = glob.args.bench

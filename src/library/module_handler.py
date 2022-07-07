@@ -7,6 +7,13 @@ import sys
 class init(object):
     def __init__(self, glob):
         self.glob = glob
+        self.sanitize_modulepath()
+
+    # Remove BenchPRO references in MODULEPATH (to avoid module search finding benchpro modules)
+    def sanitize_modulepath(self):
+        paths = os.environ["MODULEPATH"].split(":")
+        [paths.remove(path) for path in paths if "benchpro" in path]
+        os.environ["MODULEPATH"] = ":".join(paths)
 
     # Execute an LMOD command
     def lmod_query(self, args):
@@ -14,9 +21,9 @@ class init(object):
         # Cast to list
         if not type(args) == list:
             args = [args]
-
+       
         try:
-            proc = subprocess.Popen([os.path.join(os.environ.get('LMOD_DIR'),'lmod')] + args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            proc = subprocess.Popen(([os.path.join(os.environ.get('LMOD_DIR'),'lmod')] + args), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             status         = proc.returncode
             stdout, stderr = proc.communicate()
             err_out        = sys.stderr
@@ -28,47 +35,45 @@ class init(object):
         return stderr.decode()
 
     # Get list of default modules
-    def get_default_module_list(self, module_use):
+    def set_default_module_list(self, module_use):
 
         # Append 'module use' to MODULEPATH
         if module_use:
             os.environ["MODULEPATH"] = module_use + ":" + os.environ["MODULEPATH"]
 
-        return self.lmod_query(['-t', '-d', 'av']).split("\n")
+        self.glob.default_module_list = self.lmod_query(['-t', '-d', 'av']).split("\n")
 
 
     # Gets full module name of default module, eg: 'intel' -> 'intel/18.0.2'
-    def get_full_name(self, module, default_modules):
+    def get_full_name(self, module):
 
-        if not '/' in module:
-            # Get default module version from
-            for line in default_modules:
-                if line.startswith(module):
-                    return line
+        # No slashes and no digits = short form module
+        if (not '/' in module) or all(not char.isdigit() for char in module):
+            # Get default module version from lmod
+            for default in self.glob.default_module_list:
+                if module+"/" in default:
+                    return default
             else:
-                self.glob.lib.msg.error("failed to process module '" + module + "'")
-
+                self.glob.lib.msg.error("module '" + module + "': format error.")
         else:
             return module
 
     # Check if module is available on the system
-    def check_module_exists(self, module_dict, module_use):
+    def check_module_exists(self, key, value):
 
-        # Get list of default system modules
-        default_modules = self.get_default_module_list(module_use)
+        # Module check enabled
+        if self.glob.stg['check_modules']:
 
-        # Confirm defined modules exist on this system and extract full module name if necessary
-        for module in module_dict:
             # If module is non Null
-            if module_dict[module]:
+            if value:
                 # Module exists
-                if (self.lmod_query(['show', module])):
-                    # Update module with full label
-                    module_dict[module] = self.get_full_name(module_dict[module], default_modules)
-            # Remove Null valued keys
-            else:
-                self.glob.lib.msg.warning("Ignoring module " + module + " = \"\"")
-                module_dict.pop(module)
+                if self.lmod_query(['show', value]):
+                    # Return full module name
+                    return self.get_full_name(value) 
+
+        else: 
+            return value
+           
 
     # Check inputs for module creation
     def check_for_previous_module(self, mod_path, mod_file):
@@ -83,7 +88,7 @@ class init(object):
                 os.makedirs(mod_path)
 
             else:
-                self.glob.lib.msg.error("Module path already exists.")
+                self.glob.lib.msg.error("Module path already exists: " + mod_path)
 
     # Convert module name to usable directory name, Eg: intel/18.0.2 -> intel18
     def get_label(self, module):
@@ -130,7 +135,7 @@ class init(object):
         # Get capitalized code name for env var
         mod['caps_code'] = self.glob.config['general']['code'].upper().replace("-", "_")
 
-        pop_dict = {**mod, **self.glob.config['metadata'], **self.glob.config['general'], **self.glob.config['config']}
+        pop_dict = {**mod, **self.glob.config['metadata'], **self.glob.config['general'], **self.glob.config['config'], **{'site_path': self.glob.site_path}}
 
         for key in pop_dict:
             self.glob.lib.msg.log("replace " + "<<<" + key + ">>> with " + str(pop_dict[key]))
@@ -150,8 +155,13 @@ class init(object):
         self.glob.lib.msg.log("Creating module file for " + self.glob.config['general']['code'])
 
         # Get module file path
-        mod_path = os.path.join(self.glob.stg['module_path'], self.glob.config['general']['system'], self.glob.config['config']['arch'], self.get_label(self.glob.config['modules']['compiler']), \
-                                self.get_label(self.glob.config['modules']['mpi']), self.glob.config['general']['code'], str(self.glob.config['general']['version']))
+        mod_path = os.path.join(    self.glob.stg['module_path'], 
+                                    self.glob.config['general']['system'], 
+                                    self.glob.config['config']['arch'], 
+                                    self.glob.modules['compiler']['safe'], 
+                                    self.glob.modules['mpi']['safe'], 
+                                    self.glob.config['general']['code'], 
+                                    str(self.glob.config['general']['version']))
 
         mod_file = self.glob.config['config']['build_label'] + ".lua"
     

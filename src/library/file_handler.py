@@ -279,11 +279,11 @@ class init(object):
             file_path = os.path.join(self.glob.stg['local_repo'], filename)
 
             # Add tar op to staged ops
-            if any(x in filename for x in ['tar', 'tgz', 'bgz']):
-                self.glob.stage_ops.append("tar -xf " + file_path + " -C ${working_path}")
+            #if any(x in filename for x in ['tar', 'tgz', 'bgz']):
+            self.glob.stage_ops.append("stage " + file_name)
             # Add cp op to staged ops
-            else:
-                self.glob.stage_ops.append("cp -r " + file_path + " ${working_path}")
+            #else:
+            #    self.glob.stage_ops.append("cp -r " + file_path + " ${working_path}")
 
     def stage_local(self, file_path):
 
@@ -386,6 +386,7 @@ class init(object):
             # Process downloaded file
             self.prep_local([filename])
 
+
     # Stage files listed in cfg under [files]
     def stage(self):
       
@@ -404,13 +405,21 @@ class init(object):
             # Parse through supported file operations - local, download
             for op in self.glob.config['files'].keys():
 
-                if op == 'local':
-                    self.prep_local(self.glob.config['files'][op].split(','))
-                elif op == 'download':
-                    self.prep_urls(self.glob.config['files'][op].split(','))
-                else:
-                    self.glob.lib.msg.error(["Unsupported file stage operation selected: '" + op + "'.", 
-                                            "Supported operations = 'download' or 'local'"])
+                assets = self.glob.config['files'][op].split(',')
+                [self.glob.stage_ops.append("stage " + asset) for asset in assets]
+
+#                # Copy local file [from BP_REPO or local path]
+#                if op == 'local':
+#                    self.prep_local(self.glob.config['files'][op].split(','))
+#                # Download generic URL
+#                elif op == 'download':
+#                    self.prep_urls(self.glob.config['files'][op].split(','))
+#                # Download from gdrive with API
+#                elif op == 'gdrive'
+#                    self.prep_gdrive(self.glob.config['files'][op].split(','))
+#                else:
+#                    self.glob.lib.msg.error(["Unsupported file stage operation selected: '" + op + "'.", 
+#                                            "Supported operations = 'download' or 'local'"])
 
     # Write module to file
     def write_list_to_file(self, list_obj, output_file):
@@ -422,7 +431,7 @@ class init(object):
     def write_cmd_history(self):
         history_file = os.path.join(self.glob.bp_home, ".history")
         with open(history_file, "a") as hist:
-            hist.write(self.glob.cmd + "\n")
+            hist.write(self.glob.lib.misc.get_input_str() + "\n")
 
     # Get list of config files by type
     def get_cfg_list(self, cfg_type):

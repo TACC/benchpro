@@ -19,6 +19,9 @@ class setup(object):
     bold                        = '\033[1m'
     end                         = '\033[0m'
 
+    white                       = '\033[1;30m'
+    grey                        = '\033[1,33m'
+
     # Get dev_mode from environ
     dev_mode                    = True
     dev_str                     = "[DEV]"
@@ -35,6 +38,7 @@ class setup(object):
     config                      = {}
     config['general']           = {}
     config['config']            = {}
+    config['modules']           = {}
     config['requirements']      = {}
     config['runtime']           = {}
     config['result']            = {}
@@ -48,7 +52,8 @@ class setup(object):
     suite                       = {}
     # System dict
     system                      = {}
-
+    # Module dict
+    modules                     = {}
     # List of staging command to add to script
     stage_ops                   = []
     # Report obj
@@ -65,6 +70,9 @@ class setup(object):
     # dict for storing overload key-values
     overload_dict               = {}
     overloaded                  = [] 
+    # List populated with appliction info
+    installed_app_list          = []
+    installed_app_paths         = []
     # Suppress build manager output
     quiet_build                 = False
     # Files to cleanup on fail
@@ -87,13 +95,14 @@ class setup(object):
         print("It seems your current working directory doesn't exist. Exitting.")
         sys.exit(1)
 
-    # Client version info is populated by lib.files.init
+    # Version info is populated by lib.files.init
     version_client              = None
     version_client_date         = None
     version_site                = os.getenv('BP_SITE_VERSION')
     version_site_full           = version_site + "-" + os.getenv('BP_BUILD_ID') + " " + dev_str
     version_site_date           = os.getenv("BP_BUILD_DATE")
     
+    site_path                   = os.getenv("BP_SITE")
 
     # Resolve relative paths and EVs in $BP_HOME/settings.ini
     def resolve(self, ev):

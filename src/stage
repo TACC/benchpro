@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+
+# Executable utility to stage input files for BenchPRO during script execution
+# Matthew Cawood
+# June 2022
+
+# Test inputs
+if [[ -z $1 ]]; then
+    echo "Invalid input."
+    exit 1
+fi
+
+DEST=`pwd` 
+ARG=$1
+SRC=$BP_REPO/$ARG
+function is_archive() { 
+    file $ARG | grep -E 'compressed|tar archive' >> /dev/null && return 0 || return 1 
+}
+
+function update_src() {
+    ARG=`ls -rt  | tail -n 1`
+    SRC=$ARG
+}
+
+function in_repo() {
+    if [[ -f $SRC ]] || [[ -d $SRC ]]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+function copy_asset() { 
+    echo "Copying asset '$SRC' to $DEST/..."
+    cp -r $SRC $DEST/ 
+}
+
+function untar_asset() { 
+    echo "Extracting asset '$SRC' to $DEST/..."
+    tar -xzf $SRC -C $DEST/ 
+}
+
+function get_asset() { 
+    (is_archive) && untar_asset || copy_asset 
+}
+
+function download_asset() {
+    echo "Downloadling asset '$ARG' to $DEST/..."
+    gdown $ARG -O $DEST/ --quiet
+}
+
+# 1. Input is in $BP_REPO
+
+if (in_repo); then
+    get_asset
+# 2. If not present, fetch to $BP_REPO
+else
+    download_asset 
+    # Extract
+    update_src
+    (is_archive) && untar_asset
+        
+fi
+exit 0

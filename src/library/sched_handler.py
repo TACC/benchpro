@@ -36,10 +36,11 @@ class init(object):
 
             # Query Slurm accounting with job ID
             success, stdout, stderr = self.slurm_exec("sacct -j " + jobid + " --format State")
-    
+
             if success:
                 # Strip out bad chars from job state
-                return ''.join(c for c in stdout.split("\n")[2] if c not in [' ', '*', '+'])
+                if (len(stdout.split("\n")) > 2):
+                    return ''.join(c for c in stdout.split("\n")[2] if c not in [' ', '*', '+'])
             
             return "UNKNOWN"
 
@@ -198,3 +199,53 @@ class init(object):
         # Store jobid in shared global object
         self.glob.task_id = jobid
 
+    # Get usable string of application status
+    def get_status_str(self, app):
+
+        # Get execution mode (sched or local) from application report file
+        exec_mode = self.glob.lib.report.get_exec_mode("build", app)
+
+        # Handle dry run applications
+        if exec_mode == "dry_run":
+            return '\033[1;33mDRYRUN\033[0m'
+
+        # Get Jobid from report file and check if status = COMPLETED
+        task_id = self.glob.lib.report.get_task_id("build", app)
+
+        # Unable to get task ID from report file
+        if not task_id:
+            self.glob.lib.msg.warning("Unable read build report file for " + str(app))
+            return '\033[0;32mUNKNONWN\033[0m' 
+
+        if task_id == "dry_run":
+            return "\033[1;33mDRY RUN\033[0m"
+
+        status = None
+        if exec_mode == "sched":
+            status = self.glob.lib.sched.get_job_status(task_id)
+
+        elif exec_mode == "local":
+            # Check if PID is running
+            if self.glob.lib.proc.pid_running(task_id):
+                return "\033[1;33mPID STILL RUNNING\033[0m"
+            else:
+                status = "COMPLETED"
+
+        # Complete state
+        if status == "COMPLETED":
+
+            bin_dir, exe = self.glob.lib.report.build_exe(app)
+            if exe:
+                if self.glob.lib.files.exists(exe, os.path.join(self.glob.stg['build_path'], app, self.glob.stg['install_subdir'], bin_dir)):
+                    return '\033[0;32mEXE FOUND\033[0m'
+
+            return '\033[0;31mEXE NOT FOUND\033[0m'
+
+        # Failed state
+        if status in ["FAILED", "TIMEOUT"]:
+            return '\033[0;31mJOB '+status+'\033[0m'
+
+        # Status not found
+        if not status:
+            self.glob.lib.msg.warning("Unable to determine status of job ID " + str(task_id))
+            return '\033[0;32mUNKNONWN\033[0m'

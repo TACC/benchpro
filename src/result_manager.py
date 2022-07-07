@@ -424,11 +424,11 @@ def capture_result(glob_obj):
                 capture_failed(glob.result_path)
                 continue
 
-            # 2. Insert dict into db
+            # 2. Insert result into db
             glob.lib.msg.low("Inserting into database...")
             glob.lib.db.capture_result(insert_dict)
 
-            # 3. Send files to db server
+            # 3. Copy files to collection dir
             glob.lib.msg.low("Sending provenance data...")
             send_files(glob.result_path, insert_dict['resource_path'])
 

@@ -65,11 +65,6 @@ def build_code(input_dict, glob_copy):
 
     input_str = ",".join([key + "=" + input_dict[key] for key in input_dict.keys() if key])
 
-    # Line for history file
-    glob.cmd = "benchpro -b " + input_str
-    if glob.args.overload:
-        glob.cmd += " -o " + " ".join(glob.args.overload)
-
     glob.lib.msg.heading("Building application:  '" + input_str + "'")
 
     # Parse config input files
@@ -172,12 +167,12 @@ def build_code(input_dict, glob_copy):
             #Store PID for report
             glob.task_id = glob.prev_pid
 
+    # Write to history file
+    glob.lib.files.write_cmd_history()
+
     # Generate build report
     glob.lib.report.build()
 
-    # Add build dict to history file
-    glob.cmd += " | " + glob.config['general']['code'] + "/" + str(glob.config['general']['version']) + "/" + glob.config['config']['build_label']
-    glob.lib.files.write_cmd_history()
     glob.lib.msg.high("Done.") 
 
 # Setup contants and get build label
@@ -190,7 +185,7 @@ def init(glob):
     glob.lib.set_build_cfg_list()
 
     # Overload settings.ini with cmd line args
-    glob.lib.overload.replace()
+    glob.lib.overload.replace(None)
 
     # Check for new results
     if not glob.quiet_build:

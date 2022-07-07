@@ -4,6 +4,7 @@ import copy
 import os
 import signal
 import sys
+import time
 
 class init(object):
 
@@ -142,12 +143,57 @@ class init(object):
             self.glob.lib.msg.error("File not found: " + self.glob.lib.rel_path(file_path))
 
         print()
-        print("==> " + self.glob.lib.rel_path(file_path) + " <==")
+        print("=====> " + self.glob.lib.rel_path(file_path) + " <=====")
         print("...")
 
         # Print last 20 lines
         with open(file_path, 'r') as fd:
                 lines = fd.readlines()
-                [print(x.strip()) for x in lines[max(-50, (len(lines)*-1)):]]
+                [print(x.strip()) for x in lines[max(-30, (len(lines)*-1)):]]
 
+        print("=====> " + self.glob.lib.rel_path(file_path) + " <=====")
+
+    # Print the list of installed applications
+    def print_app_table(self):
+
+        # Get list of apps 
+        apps = self.glob.installed_app_list
+        # Reorder columns
+        order = [0, 5, 6, 1, 2, 3, 4, 7, 8]
+
+        # Add header row
+        apps = [["TASK ID", "SYSTEM", "ARCH", "COMPILER", "MPI", "CODE", "VERSION", "LABEL", "\x1b[0;37mSTATUS\x1b[0m"]] + apps
+        cols = len(apps[0])
+
+        # Check header has same num cols and content
+        if len(apps[0]) != (len(apps[1])):
+            self.glob.lib.msg.error("Mismatched number of table columns.")
+
+        # Get max length of each table column (for spacing)
+        padding = [0] * cols
+        for i in range(cols):
+            for app in apps:
+                if len(str(app[i])) > padding[i]:
+                    padding[i] = len(str(app[i]))
+
+        # Buffer each column 2 chars
+        padding = [i + 2 for i in padding]
+
+        # Print contents
+        for idx in range(0,len(apps)): 
+            text_col = self.glob.white
+            if (idx % 2) == 0:
+                text_col = self.glob.grey
+
+            print("| ", end='')
+            for column in range(cols):
+                print(text_col + str(apps[idx][order[column]]).ljust(padding[order[column]]) + self.glob.end + "| ", end='')
+            print()
+
+    # Print timing
+    def wait(self, secs):
+        for i in range(secs):
+            print(".", end='')
+            time.sleep(1)
+        print()
 
