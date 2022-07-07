@@ -1,6 +1,6 @@
 #!/bin/bash
 
-APP_LIST="lammps code=namd,build_label=x86 wrf openfoam milc gromacs code=amber,build_label=x86 code=swift,build_label=dmo qe"
+APP_LIST="lammps code=namd,build_label=x86 wrf openfoam milc gromacs code=amber,version=22,build_label=x86 code=swift,build_label=dmo qe"
 APP="lammps"
 BENCH_LIST="ljmelt namd_apoa1 new_conus12km SimpleBenchMarkLarge milc_18 gromacs_PEP STMV_NVE EAGLE_DMO_12 AUSURF112"
 BENCH="ljmelt"
