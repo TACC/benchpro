@@ -19,16 +19,18 @@ quit() {
 
 # Install Python package and set group permissions
 install() {
-    python3 setup.py install --prefix=${BP_SITE}/python/ >> $BP_LOG
-    if [ $? != 0 ]; then quit "\nPackage installation failed, quitting.\n\n"; fi
+    python3 setup.py install --prefix=${BP_SITE}/python/ &>> $BP_LOG
+
+    [[ ${PIPESTATUS[0]} -ne 0 ]] && quit "\nPackage installation failed, quitting.\n\n"
     # Change group permissions
-    chmod a+rX          ${BP_SITE}
-    chmod -R a+rX       ${BP_SITE}/python
-    chmod a+x           ${BP_SITE}/python/bin/benchpro
-    chmod a+rwx         ${BP_SITE}/collection
+    #chmod a+rX                                                         ${BP_SITE}
+
+    chmod -R a+rX                                                       ${BP_SITE}/python
+    chmod a+x                                                           ${BP_SITE}/python/bin/benchpro
+    #chmod a+rwx                                                        ${BP_SITE}/collection
     # Update symlink
     ln -s python/lib/python${PY_VERSION}/site-packages/benchpro-latest/ ${BP_SITE}/package
-    ln -s benchpro-${BP_SITE_VERSION}-py${PY_VERSION}.egg/ ${BP_SITE}/python/lib/python${PY_VERSION}/site-packages/benchpro-latest
+    ln -s benchpro-${BP_SITE_VERSION}-py${PY_VERSION}.egg/              ${BP_SITE}/python/lib/python${PY_VERSION}/site-packages/benchpro-latest
     printf "\nPackage installed...\n\n"
 }
 
@@ -38,7 +40,7 @@ WORKING_DIR=`pwd`
 SOURCE_FILE="$WORKING_DIR/site.sh"
 printf "Reading ${SOURCE_FILE}...\n"
 source $SOURCE_FILE
-[[ $? != 0 ]] && quit "\nCan't source ${SOURCE_FILE}, quitting.\n\n"
+[[ ${PIPESTATUS[0]} -ne 0 ]] && quit "\nCan't source ${SOURCE_FILE}, quitting.\n\n"
 
 # Test that BP_SITE is writable
 mkdir -p $BP_SITE && printf "We have write permission.\n" || quit "\nCan't write to ${BP_SITE}, quitting.\n\n" 
@@ -62,17 +64,19 @@ fi
 
 # Clean up env & build/install directories
 ${WORKING_DIR}/dev/clean.sh
-rm -rf  ${BP_SITE}/python/lib/python${PY_VERSION}/site-packages/benchpro-${BP_SITE_VERSION}*
-rm -f   ${BP_SITE}/modulefiles/benchpro/*.lua
-rm -f   ${BP_SITE}/package
-rm -f   ${BP_SITE}/python/lib/python${PY_VERSION}/site-packages/benchpro-latest
+rm -rf                                                                  ${BP_SITE}/python/lib/python${PY_VERSION}/site-packages/benchpro-${BP_SITE_VERSION}*
+rm -f                                                                   ${BP_SITE}/modulefiles/benchpro/*.lua
+rm -f                                                                   ${BP_SITE}/package
+rm -f                                                                   ${BP_SITE}/python/lib/python${PY_VERSION}/site-packages/benchpro-latest
 
 # Setup
-mkdir -p ${BP_SITE}/logs
-mkdir -p ${BP_SITE}/repo
-mkdir -p ${BP_SITE}/collection
-mkdir -p ${BP_SITE}/python/lib/python${PY_VERSION}/site-packages
-mkdir -p ${BP_SITE}/modulefiles/benchpro
+mkdir -p                                                                ${BP_SITE}/logs
+mkdir -p                                                                ${BP_SITE}/repo
+mkdir -p                                                                ${BP_SITE}/collection
+setfacl -d -m group::rwX,other::rwX                                     ${BP_SITE}/collection
+chmod a+w                                                               ${BP_SITE}/collection
+mkdir -p                                                                ${BP_SITE}/python/lib/python${PY_VERSION}/site-packages
+mkdir -p                                                                ${BP_SITE}/modulefiles/benchpro
 
 printf "\nCleaned up...\n\n"
 
@@ -81,6 +85,7 @@ cp ${WORKING_DIR}/data/modulefiles/benchpro.lua                         ${BP_SIT
 sed -i "/local bp_dev/c\local bp_dev = \"${BP_DEV}\""                   ${BP_SITE}/modulefiles/benchpro/${BP_SITE_VERSION}.lua
 sed -i "/local bp_site/c\local bp_site = \"${BP_SITE}\""                ${BP_SITE}/modulefiles/benchpro/${BP_SITE_VERSION}.lua
 sed -i "/local bp_repo/c\local bp_repo = \"${BP_REPO}\""                ${BP_SITE}/modulefiles/benchpro/${BP_SITE_VERSION}.lua
+sed -i "/local bp_collect/c\local bp_collect = \"${BP_COLLECT}\""       ${BP_SITE}/modulefiles/benchpro/${BP_SITE_VERSION}.lua
 sed -i "/local tacc_scratch/c\local tacc_scratch = \"${TACC_SCRATCH}\"" ${BP_SITE}/modulefiles/benchpro/${BP_SITE_VERSION}.lua
 sed -i "/local bp_home/c\local bp_home = \"${BP_HOME}\""                ${BP_SITE}/modulefiles/benchpro/${BP_SITE_VERSION}.lua
 sed -i "/local bp_apps/c\local bp_apps = \"${BP_APPS}\""                ${BP_SITE}/modulefiles/benchpro/${BP_SITE_VERSION}.lua
@@ -90,10 +95,11 @@ sed -i "/local build_hash/c\local build_hash = \"${BUILD_HASH}\""       ${BP_SIT
 sed -i "/local build_date/c\local build_date = \"${BUILD_DATE}\""       ${BP_SITE}/modulefiles/benchpro/${BP_SITE_VERSION}.lua
 sed -i "/local py_version/c\local py_version = \"${PY_VERSION}\""       ${BP_SITE}/modulefiles/benchpro/${BP_SITE_VERSION}.lua
 chmod -R a+rX                                                           ${BP_SITE}/modulefiles
-chmod a+w                                                               ${BP_SITE}/repo
-chmod -R a+rX                                                           ${BP_SITE}/repo
+chmod a+w                                                               ${BP_REPO}
+#chmod -R a+rX                                                           ${BP_REPO}
+setfacl -d -m other::rX                                                 ${BP_REPO}
 
-ml use ${BP_SITE}/modulefiles
+ml use                                                                  ${BP_SITE}/modulefiles
 ml benchpro || quit "\nCan't load module, quitting.\n\n"
 
 printf "\nModule loaded...\n\n"
@@ -104,15 +110,16 @@ install
 # Install user files 
 YOUR_BP=$(eval echo $BP_HOME)
 [[ ! -d $YOUR_BP ]] && git clone https://github.com/TACC/benchpro.git $YOUR_BP || git -C $YOUR_BP pull 
+[[ ${PIPESTATUS[2]} -ne 0 ]] && quit "\nUser files install failed, quitting.\n\n"
 
-[[ $? != 0 ]] && quit "\nUser files install failed, quitting.\n\n"
-
-benchpro --validate | tee -a $BP_LOG || quit "\nValidation failed, quitting.\n\n"
+benchpro --validate | tee -a $BP_LOG 
+[[ ${PIPESTATUS[0]} -ne  0 ]] && quit "\nValidation failed, quitting.\n\n"
 
 printf "\nValidation complete...\n\n"
 
 # Check version
-benchpro --version || quit "\nVersion check failed, quitting.\n\n"
+benchpro --version | tee -a $BP_LOG 
+[[ ${PIPESTATUS[0]} -ne  0 ]] && quit "\nVersion check failed, quitting.\n\n"
 
 # Clean build files
 ${WORKING_DIR}/dev/clean.sh
@@ -120,7 +127,7 @@ ${WORKING_DIR}/dev/clean.sh
 # Check SSH connection
 printf "Testing Connection to DB...\n"
 ssh -i ${SSH_KEY} ${DB_USER}@${DB_HOST} -t "echo 'Connection test'" > /dev/null 2>&1
-[[ $? != 0 ]] && quit "\nSSH connection failed, quitting.\n\n"
+[[ ${PIPESTATUS[0]} -ne 0 ]] && quit "\nSSH connection failed, quitting.\n\n"
 
 if [[ -z $BP_DEV ]]; then 
 
@@ -135,7 +142,7 @@ if [[ -z $BP_DEV ]]; then
     echo "------------------------------------------------"
     echo "Add the following lines to your crontab:"
     echo "5 * * * * /bin/rsync --remove-source-files -av -e \"ssh -i $SSH_KEY\" $BP_SITE/collection/* $DB_USER@$DB_HOST:$REMOTE_PATH/ >> $BP_SITE/logs/collect_\`date +\\%Y\\-%m-%d\`.log 2>&1"
-    echo "0 0 * * * /bin/rsync -av /home1/06280/mcawood/work2/repo_backup/ $BP_SITE/repo/ | tee -a $BP_SITE/logs/repo_\`date +\\%Y\\-%m-%d\`.log"
+    echo "0 0 * * * /bin/rsync -av /home1/06280/mcawood/work2/repo_backup/ $BP_REPO/ | tee -a $BP_SITE/logs/repo_\`date +\\%Y\\-%m-%d\`.log"
     echo 
 fi
 

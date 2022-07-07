@@ -13,14 +13,14 @@ required_packages = [x.strip() for x in all_reqs if ('git+' not in x) and (
 setup (
     name='benchpro',
     version='1.4.5',
-    description="Tool for building apps, running benchmarks and collecting results.",
+    description="A utility that automates building applications, running benchmarks and collecting results.",
     packages = find_packages(),
     include_package_data=True,
     zip_safe=False,
     install_requires = required_packages,
     python_requires='>=3.6',
     author = "Matthew Cawood",
-    keywords = "benchmarks, complication, performance results",
+    keywords = "automation, performance benchmarking, compilation, provenance data",
     long_description = open('README.md').read(),
     license='MIT',
     url='https://github.com/TACC/benchpro-package',
@@ -30,5 +30,5 @@ setup (
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.6',
     ],
-    scripts=['src/benchpro'],
+    scripts=['src/benchpro', 'src/stage'],
 )
