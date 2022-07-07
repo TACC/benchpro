@@ -6,6 +6,8 @@ local bp_site = ""
 setenv("BP_SITE", bp_site)
 local bp_repo = ""
 setenv("BP_REPO", bp_repo)
+local bp_collect = ""
+setenv("BP_COLLECT", bp_collect)
 local tacc_scratch = ""
 setenv("TACC_SCRATCH", tacc_scratch )
 local bp_version      = ""
