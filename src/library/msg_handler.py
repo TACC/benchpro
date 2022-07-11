@@ -197,3 +197,15 @@ class init(object):
             time.sleep(1)
         print()
 
+	# Print random hint
+	def print_hint(self):
+	"""
+
+	"""
+
+		if self.glob.stg['print_hint']:
+		    with open(os.path.join(bp_site, "hints.txt")) as hint_file:
+		        hints = hint_file.readlines()
+
+	    	hint = hints[rand(0:len(hints))]
+			print(hint)
