@@ -173,7 +173,7 @@ class init(object):
 
         # No matches found
         if not app_dir:
-            self.glob.lib.mgs.error("Application '" + arg + "' is not installed.")
+            self.glob.lib.msg.error("Application '" + arg + "' is not installed.")
 
         app_path = os.path.join(self.glob.stg['build_path'], self.glob.lib.check_if_installed(search_dict))
         build_report = os.path.join(app_path, self.glob.stg['build_report_file'])
