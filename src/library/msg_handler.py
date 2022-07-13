@@ -2,6 +2,7 @@
 # System imports
 import copy
 import os
+import random
 import signal
 import sys
 import time
@@ -71,25 +72,26 @@ class init(object):
     def warning(self, message):
         self.log_and_print([self.glob.warning] + self.listify(message), True)
 
+    def exit(self, message, failed):
+        self.log_and_print(message, True)
+
+        if failed:
+            # Clean tmp files
+            if self.glob.stg['clean_on_fail']:
+                self.log_and_print("Cleaning up tmp files...", True)
+                self.glob.lib.files.rollback()
+
+                self.log_and_print(["Quitting", ""], True)
+                sys.exit(1)
+
+        sys.exit(0)
+
     # Print message to log and stdout then quit
     def error(self, message):
-        message = self.listify(message)
+        self.exit(self.listify(message), True)
 
-        self.log_and_print(["", 
-                            ""] + 
-                            [self.glob.error] + 
-                            self.listify(message) +
-                            ["Check log for details."],
-                            True)
-
-        # Clean tmp files
-        if self.glob.stg['clean_on_fail']:
-            self.log_and_print("Cleaning up tmp files...", True)
-            self.glob.lib.files.rollback()
-
-        self.log_and_print(["Quitting", ""], True)
-
-        sys.exit(1)
+    def success(self, message):
+        self.exit(self.listify(message), False)
 
     # Print heading text in bold
     def heading(self, message):
@@ -104,7 +106,6 @@ class init(object):
     def brk(self):
         print("---------------------------")
         print()
-
 
     # Get list of uncaptured results and print note to user
     def new_results(self):
@@ -158,6 +159,10 @@ class init(object):
 
         # Get list of apps 
         apps = self.glob.installed_app_list
+
+        if not apps:
+            self.glob.lib.msg.success("No applications installed.")
+
         # Reorder columns
         order = [0, 5, 6, 1, 2, 3, 4, 7, 8]
 
@@ -197,15 +202,13 @@ class init(object):
             time.sleep(1)
         print()
 
-	# Print random hint
-	def print_hint(self):
-	"""
+    # Print random hint
+    def print_hint(self):
 
-	"""
 
-		if self.glob.stg['print_hint']:
-		    with open(os.path.join(bp_site, "hints.txt")) as hint_file:
-		        hints = hint_file.readlines()
+        if self.glob.stg['print_hint']:
+            with open(os.path.join(self.glob.stg['resource_path'], "hints.txt")) as hint_file:
+                hints = hint_file.readlines()
 
-	    	hint = hints[rand(0:len(hints))]
-			print(hint)
+            hint = random.choice(hints)
+            print(hint)
