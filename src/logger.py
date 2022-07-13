@@ -8,8 +8,10 @@ import src.splash as splash
 # Start logger and return obj
 def start_logging(log_label, log_file, glob):
 
+    glob.log_file = log_file
+
     # Log file location
-    log_path = os.path.join(glob.stg['log_path'], log_file)
+    log_path = os.path.join(glob.stg['log_path'], glob.log_file)
 
     formatter = lg.Formatter("{0}: ".format(log_label) + glob.user + "@" + glob.hostname + ": " +
                              "%(asctime)s: %(filename)s;%(funcName)s();%(lineno)d: %(message)s")
@@ -24,11 +26,8 @@ def start_logging(log_label, log_file, glob):
     glob.log.addHandler(file_handler)
     glob.log.debug(log_label + " log started")
 
-    # Print info
-    if not glob.quiet_build:
+    # Print splash
+    splash.print_splash(glob)
 
-        stdout = splash.get_splash(glob)
-        glob.lib.msg.high(stdout +
-                          ["  >Log       : " +
-                           glob.lib.rel_path(os.path.join(glob.stg['log_path'], log_file))]
-                          + ["------------------------------------------------------------------"])
+    # Print hint
+    glob.msg.print_hint()
