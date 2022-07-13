@@ -2,9 +2,12 @@
 
 # System Imports
 import configparser as cp
+import grp
 import os
 from packaging import version
+from pathlib import Path
 import shutil as sh
+import stat
 import subprocess
 import sys
 import time
@@ -45,8 +48,82 @@ def create_path(path):
         print(bcolors.FAIL, "cannot create", path)
         sys.exit(1)
 
+# Check that the user belongs to the 'gid' they provided 
+def check_group_membership():
+
+    if glob.stg['set_gid']:
+        gid = glob.stg['gid']
+        if not gid[0].isdigit(): 
+            gid = int(gid.split('-')[1])
+        
+        grouplist = os.getgrouplist(os.environ.get('USER'), 100)
+        if not gid in grouplist:
+            print(bcolors.FAIL, "you don't belong to gid " + glob.stg['gid'] + " (" + gid + ")")
+            sys.exit(1)
+
+# Walk FS and recursively chown everything (i.e. chgrp -R) (yes, there is no function for this)
+def chgrp(path, group):
+
+    gid = grp.getgrnam(group).gr_gid
+
+    if os.path.isdir(path):
+        # Chgrp on top dir
+        os.chown(path, -1, gid)
+    
+        try:
+
+            for curDir,subDirs,subFiles in os.walk(path):
+                # Chgrp on subFiles
+                for file in subFiles:
+                    absPath = os.path.join(curDir,file)
+                    os.chown(absPath,-1,gid)
+                # Recurse through subDirs
+                for dir in subDirs:
+                    chgrp(os.path.join(curDir,dir), group)
+        except:
+            pass
+
+# Set group set bit 
+def sticky_bit(path):
+    os.chmod(path, 0o3775) 
+    try:
+        subprocess.call(['setfacl', '-d', '-m', 'group::rX', path])
+    except:
+        print(bcolors.FAIL, "Can't execute setfacl...")
+        sys.exit(1)
+
+    print(bcolors.SET, path, "ACLs")
+
+# Open group access
+def group_access(path_list):
+
+    for path in path_list:
+        try:
+            os.chmod(path, 0o750)
+            print(bcolors.SET, path, "750")
+            parent = str(Path(path).parent.absolute())
+            group_access([parent])
+        except Exception as e:
+            pass
+
+# Set perms on output dirs
+def set_permissions(path_list):
+
+    # Check user belongs to gid specified
+    check_group_membership()
+
+    for path in path_list:
+        if glob.stg['set_gid']:
+            chgrp(path, glob.stg['gid'])
+            sticky_bit(path)
+            print(bcolors.SET, path, glob.stg['gid'])
+        
 # Create path if not present
 def confirm_path_exists(path_list):
+
+    # Check user belongs to gid specified
+    check_group_membership()
+
     for path in path_list:
         if not os.path.isdir(path):
             create_path(path)
@@ -200,6 +277,7 @@ def check_setup(glob_obj):
     result_env = glob.stg['result_env'].strip("$")
     system_env = glob.stg['system_env'].strip("$")
 
+    # check EVs set
     check_env_vars([system_env,
                     project_env,
                     app_env,
@@ -211,6 +289,9 @@ def check_setup(glob_obj):
     project_dir = os.getenv(project_env)
     check_write_priv(project_dir)
 
+    # Check group memebership
+    check_group_membership()
+
     # Check paths
     confirm_path_exists([glob.stg['log_path'],
                         glob.stg['build_path'],
@@ -219,12 +300,21 @@ def check_setup(glob_obj):
                         glob.stg['captured_path'],
                         glob.stg['failed_path']])
 
+    # Set access
+    group_access([glob.stg['build_path'],
+                     glob.stg['bench_path']])
+
+    # Set perms
+    set_permissions([glob.stg['build_path'],
+                     glob.stg['bench_path']])
+
+    # Error if dir not found
     ensure_path_exists([glob.stg['local_repo'],
                         glob.stg['config_path'],
                         glob.stg['template_path']])
 
     # Check exe
-    check_exe(['benchpro', 'sinfo', 'sacct'])
+    check_exe(['benchpro', 'stage', 'sinfo', 'sacct'])
 
     # Check db host access
     connection = check_db_access(glob)
@@ -236,14 +326,26 @@ def check_setup(glob_obj):
         print(bcolors.WARN, "database access check disabled")
 
     # Create validate file
-    with open(os.path.join(glob.bp_home, ".validated"), 'w'):
-        pass
+    with open(os.path.join(glob.bp_home, ".validated"), 'w') as val:
+        val.write(os.environ.get("BP_SITE_VERSION_STR").split(".")[-1])
     print("Done.")
     sys.exit(0)
 
 # Check if validation has been run
 def check(bp_home):
-    if not os.path.isfile(os.path.join(bp_home, ".validated")):
-        print("Please run  benchpro --validate before continuing.")
-        print()
-        sys.exit(1)
+
+    if os.path.isfile(os.path.join(bp_home, ".validated")):
+        with open(os.path.join(bp_home, ".validated"), 'r') as f:
+            your_ver = f.read().strip()
+
+        req_ver = os.environ.get("BP_SITE_VERSION_STR").split(".")[-1]
+    
+
+        print("your", your_ver, "req", req_ver)
+
+        if your_ver == req_ver:
+            return
+
+    print("Please run  benchpro --validate before continuing.")
+    print()
+    sys.exit(1)

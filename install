@@ -81,25 +81,26 @@ mkdir -p                                                                ${BP_SIT
 printf "\nCleaned up...\n\n"
 
 # Copy  and contextualize module file
-cp ${WORKING_DIR}/data/modulefiles/benchpro.lua                         ${BP_SITE}/modulefiles/benchpro/${BP_SITE_VERSION}.lua
-sed -i "/local bp_dev/c\local bp_dev = \"${BP_DEV}\""                   ${BP_SITE}/modulefiles/benchpro/${BP_SITE_VERSION}.lua
-sed -i "/local bp_site/c\local bp_site = \"${BP_SITE}\""                ${BP_SITE}/modulefiles/benchpro/${BP_SITE_VERSION}.lua
-sed -i "/local bp_repo/c\local bp_repo = \"${BP_REPO}\""                ${BP_SITE}/modulefiles/benchpro/${BP_SITE_VERSION}.lua
-sed -i "/local bp_collect/c\local bp_collect = \"${BP_COLLECT}\""       ${BP_SITE}/modulefiles/benchpro/${BP_SITE_VERSION}.lua
-sed -i "/local tacc_scratch/c\local tacc_scratch = \"${TACC_SCRATCH}\"" ${BP_SITE}/modulefiles/benchpro/${BP_SITE_VERSION}.lua
-sed -i "/local bp_home/c\local bp_home = \"${BP_HOME}\""                ${BP_SITE}/modulefiles/benchpro/${BP_SITE_VERSION}.lua
-sed -i "/local bp_apps/c\local bp_apps = \"${BP_APPS}\""                ${BP_SITE}/modulefiles/benchpro/${BP_SITE_VERSION}.lua
-sed -i "/local bp_results/c\local bp_results = \"${BP_RESULTS}\""       ${BP_SITE}/modulefiles/benchpro/${BP_SITE_VERSION}.lua
-sed -i "/local bp_version/c\local bp_version = \"${BP_SITE_VERSION}\""  ${BP_SITE}/modulefiles/benchpro/${BP_SITE_VERSION}.lua
-sed -i "/local build_hash/c\local build_hash = \"${BUILD_HASH}\""       ${BP_SITE}/modulefiles/benchpro/${BP_SITE_VERSION}.lua
-sed -i "/local build_date/c\local build_date = \"${BUILD_DATE}\""       ${BP_SITE}/modulefiles/benchpro/${BP_SITE_VERSION}.lua
-sed -i "/local py_version/c\local py_version = \"${PY_VERSION}\""       ${BP_SITE}/modulefiles/benchpro/${BP_SITE_VERSION}.lua
-chmod -R a+rX                                                           ${BP_SITE}/modulefiles
-chmod a+w                                                               ${BP_REPO}
+cp ${WORKING_DIR}/data/modulefiles/benchpro.lua                             ${BP_SITE}/modulefiles/benchpro/${BP_SITE_VERSION}.lua
+sed -i "/local bp_dev/c\local bp_dev = \"${BP_DEV}\""                       ${BP_SITE}/modulefiles/benchpro/${BP_SITE_VERSION}.lua
+sed -i "/local bp_site/c\local bp_site = \"${BP_SITE}\""                    ${BP_SITE}/modulefiles/benchpro/${BP_SITE_VERSION}.lua
+sed -i "/local bp_repo/c\local bp_repo = \"${BP_REPO}\""                    ${BP_SITE}/modulefiles/benchpro/${BP_SITE_VERSION}.lua
+sed -i "/local bp_collect/c\local bp_collect = \"${BP_SITE_COLLECT}\""      ${BP_SITE}/modulefiles/benchpro/${BP_SITE_VERSION}.lua
+sed -i "/local tacc_scratch/c\local tacc_scratch = \"${TACC_SCRATCH}\""     ${BP_SITE}/modulefiles/benchpro/${BP_SITE_VERSION}.lua
+sed -i "/local bp_home/c\local bp_home = \"${BP_HOME}\""                    ${BP_SITE}/modulefiles/benchpro/${BP_SITE_VERSION}.lua
+sed -i "/local bp_apps/c\local bp_apps = \"${BP_APPS}\""                    ${BP_SITE}/modulefiles/benchpro/${BP_SITE_VERSION}.lua
+sed -i "/local bp_results/c\local bp_results = \"${BP_RESULTS}\""           ${BP_SITE}/modulefiles/benchpro/${BP_SITE_VERSION}.lua
+sed -i "/local bp_version/c\local bp_version = \"${BP_SITE_VERSION}\""      ${BP_SITE}/modulefiles/benchpro/${BP_SITE_VERSION}.lua
+sed -i "/local bp_ver_str/c\local bp_ver_str = \"${BP_SITE_VERSION_STR}\""  ${BP_SITE}/modulefiles/benchpro/${BP_SITE_VERSION}.lua
+sed -i "/local build_hash/c\local build_hash = \"${BUILD_HASH}\""           ${BP_SITE}/modulefiles/benchpro/${BP_SITE_VERSION}.lua
+sed -i "/local build_date/c\local build_date = \"${BUILD_DATE}\""           ${BP_SITE}/modulefiles/benchpro/${BP_SITE_VERSION}.lua
+sed -i "/local py_version/c\local py_version = \"${PY_VERSION}\""           ${BP_SITE}/modulefiles/benchpro/${BP_SITE_VERSION}.lua
+chmod -R a+rX                                                               ${BP_SITE}/modulefiles
+chmod a+w                                                                   ${BP_REPO}
 #chmod -R a+rX                                                           ${BP_REPO}
-setfacl -d -m other::rX                                                 ${BP_REPO}
+setfacl -d -m other::rX                                                     ${BP_REPO}
 
-ml use                                                                  ${BP_SITE}/modulefiles
+ml use                                                                      ${BP_SITE}/modulefiles
 ml benchpro || quit "\nCan't load module, quitting.\n\n"
 
 printf "\nModule loaded...\n\n"
