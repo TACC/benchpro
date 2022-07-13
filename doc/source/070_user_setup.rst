@@ -21,7 +21,7 @@ TACC system site installs
     * - Stampede2
       - /scratch/hpc_tools/benchpro/modulefiles
     * - Lonestar6
-      - /scratch/projects/benchtool/modulefiles
+      - /scratch/projects/benchpro/modulefiles
     * - Longhorn
       - TBD
 

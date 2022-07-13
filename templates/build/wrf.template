@@ -17,8 +17,6 @@ git fetch --all --tags
 git checkout tags/v${version}
 git pull
 
-mv * ${install_path} && cd ${install_path}
-
 #configure step
 if [ -z "${config_file}" ]; then
     printf "${config_opt}\n${nest_opt}\n" | ./configure 
@@ -28,3 +26,9 @@ else
 fi
 
 ./compile -j ${threads} em_real
+
+if [ -f "main/${exe}" ]; then
+    cp -r main run ${install_path}
+fi
+
+
