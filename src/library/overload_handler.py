@@ -102,7 +102,7 @@ class init(object):
             if not len(pair) == 2:
                 print("Invalid overload [key]=[value] pair detected: ", setting)
                 sys.exit(1)
-            self.glob.overload_dict[pair[0].strip().lower()] = pair[1].strip()
+            self.glob.overload_dict[pair[0].strip()] = pair[1].strip()
 
     # Catch overload keys that are incompatible with local exec mode before checking for missed keys
     def catch_incompatible(self):
