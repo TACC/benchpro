@@ -124,10 +124,7 @@ class setup(object):
     # Process each key-value in $BP_HOME/settings.ini, check for null values
     def process(self, key, value):
         # List of optional keys exempted from NULL check
-        optional = ['scp_path',
-                    'ssh_user',
-                    'ssh_key',
-                    'collection_path']
+        optional = ['collection_path']
 
         # Throw exception if required value is NULL
         if key not in optional and not value:
@@ -193,7 +190,6 @@ class setup(object):
         self.stg['log_path']            = self.resolve(self.stg['log_dir'])
         self.stg['config_path']         = self.resolve(self.stg['config_dir'])
         self.stg['template_path']       = self.resolve(self.stg['template_dir'])
-        self.stg['ssh_key_path']        = self.resolve(self.stg['ssh_key'])
         self.stg['local_repo']          = self.resolve(self.stg['local_repo_env'])
         self.stg['collection_path']     = self.resolve(self.stg['collection_path'])
         self.stg['resource_path']       = self.resolve(self.stg['resource_dir'])
