@@ -1,0 +1,15 @@
+#sed -i "/run_hours/c\ run_hours                           = ${run_hours}" namelist.input.${dataset}
+#sed -i "/interval_seconds/c\ interval_seconds                    = ${interval_seconds}" namelist.input.${dataset}
+pwd
+date
+
+
+
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${CM1_LOFS_DIR}/lib
+ZFP_HOME=${CM1_LOFS_DIR}
+unset HDF5_PLUGIN_PATH
+
+cp ${dataset}/input_sounding ./
+
+echo "${mpi_exec} ${exe} ${dataset}/namelist.input.${bench_run} history.${bench_run} ${bench_run} restart_file >${bench_run}.out"
+${mpi_exec} ${exe} ${dataset}/namelist.input.${bench_run} history.${bench_run} ${bench_run} restart_file >${bench_run}.out
