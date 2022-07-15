@@ -254,7 +254,10 @@ class init(object):
 
         # Multiple results
         elif len(results) > 1:
-            self.msg.error(["Multiple installed applications match your selection critera: " + ", ".join([key+"="+search_dict[key] for key in search_dict if search_dict[key]])] + [self.glob.stg['app_env'] + "/" + result for result in results] + ["Please be more specific."])
+
+            self.msg.high("Multiple applications match your criteria: " + ", ".join([key + "=" + search_dict[key] for key in search_dict if search_dict[key]]))
+            self.msg.print_app_table(results) 
+            self.msg.error("Please be more specific (use task_ID)")
 
     # Read every build config file and construct a list with format [[cfg_file, code, version, build_label],...]
     def get_avail_codes(self):
