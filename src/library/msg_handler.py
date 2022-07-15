@@ -155,13 +155,14 @@ class init(object):
         print("=====> " + self.glob.lib.rel_path(file_path) + " <=====")
 
     # Print the list of installed applications
-    def print_app_table(self):
+    def print_app_table(self, apps):
 
-        # Get list of apps 
-        apps = self.glob.installed_app_list
-
+        # If sent empty list, print everything
         if not apps:
-            self.glob.lib.msg.success("No applications installed.")
+            # Get list of apps 
+            apps = self.glob.installed_app_list
+            if not apps:
+                self.glob.lib.msg.success("No applications installed.")
 
         # Reorder columns
         order = [0, 5, 6, 1, 2, 3, 4, 7, 8]
@@ -169,6 +170,9 @@ class init(object):
         # Add header row
         apps = [["TASK ID", "SYSTEM", "ARCH", "COMPILER", "MPI", "CODE", "VERSION", "LABEL", "\x1b[0;37mSTATUS\x1b[0m"]] + apps
         cols = len(apps[0])
+
+        print("HEADING=", len(apps[0]))
+        print("INPUT=", len(apps[1]))
 
         # Check header has same num cols and content
         if len(apps[0]) != (len(apps[1])):
@@ -211,4 +215,4 @@ class init(object):
                 hints = hint_file.readlines()
 
             hint = random.choice(hints)
-            print(hint)
+            print("HINT: " + hint)

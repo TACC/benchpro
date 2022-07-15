@@ -71,7 +71,7 @@ class init(object):
 
         # Add module loads
         template_obj.append("# Load modules \n")
-        template_obj.append("ml reset \n")
+#        template_obj.append("ml reset \n")
     
         # add 'module use' if set
         if self.glob.config['general']['module_use']:

@@ -340,9 +340,6 @@ def check(bp_home):
 
         req_ver = os.environ.get("BP_SITE_VERSION_STR").split(".")[-1]
     
-
-        print("your", your_ver, "req", req_ver)
-
         if your_ver == req_ver:
             return
 

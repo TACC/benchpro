@@ -262,7 +262,7 @@ class init(object):
         self.glob.lib.set_installed_apps()
         # Print table
         print("Installed applications:")
-        self.glob.lib.msg.print_app_table()
+        self.glob.lib.msg.print_app_table(None)
 
     # Get run string for given config file
     def get_cmd_string(self, keys, config_dict):

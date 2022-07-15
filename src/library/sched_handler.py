@@ -224,7 +224,7 @@ class init(object):
         if exec_mode == "sched":
             status = self.glob.lib.sched.get_job_status(task_id)
 
-        elif exec_mode == "local":
+        if exec_mode == "local":
             # Check if PID is running
             if self.glob.lib.proc.pid_running(task_id):
                 return "\033[1;33mPID STILL RUNNING\033[0m"
@@ -240,6 +240,10 @@ class init(object):
                     return '\033[0;32mEXE FOUND\033[0m'
 
             return '\033[0;31mEXE NOT FOUND\033[0m'
+
+        if status in ["RUNNING","PENDING"]:
+            return '\033[0;33mJOB '+status+'\033[0m'
+
 
         # Failed state
         if status in ["FAILED", "TIMEOUT"]:
