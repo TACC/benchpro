@@ -30,4 +30,4 @@ def start_logging(log_label, log_file, glob):
     splash.print_splash(glob)
 
     # Print hint
-    glob.msg.print_hint()
+    glob.lib.msg.print_hint()
