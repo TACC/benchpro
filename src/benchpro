@@ -29,16 +29,23 @@ except ImportError as e:
 
 # Catch exception in a handler, write to log and quit
 def catch_major_exception(glob, e):
-    print()
-    print("It appears something has gone wrong!")
-    print(e)
-    print()
-    if glob.log:
-        glob.log.debug(traceback.format_exc())
-        print("Traceback written to log.")
-    else:
+
+    if not glob.stg['debug']:
+        print()
+        print("It appears something has gone wrong!")
+        print(e)
+        print()
+        if glob.log:
+            glob.log.debug(traceback.format_exc())
+            print("Traceback written to log.")
+        else:
+            print(traceback.format_exc())
+        sys.exit(1)
+
+    else: 
         print(traceback.format_exc())
-    sys.exit(1)
+        print(e)
+        sys.exit(1)
 
 # Get cmdline arguments
 def get_arguments():
