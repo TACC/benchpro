@@ -17,7 +17,7 @@ class init(object):
     def find_matching_files(self, search_list):
         file_list = []
         for search in search_list:
-            file_list += gb.glob(os.path.join(self.glob.bp_home, search))
+            file_list += gb.glob(os.path.join(self.glob.ev['BP_HOME'], search))
         return file_list
 
     # Delete matching files
@@ -64,7 +64,7 @@ class init(object):
         
         # Get module dir from app dir, by adding 'modulefiles' prefix and stripping [version] suffix
         mod_dir = os.path.join(self.glob.stg['module_path'],  self.glob.stg['sl'].join(path.split(self.glob.stg['sl'])[:-1]))
-        app_dir = os.path.join(self.glob.stg['build_path'], path)
+        app_dir = os.path.join(self.glob.ev['BP_APPS'], path)
 
         print("/".join(app_dir.split("/")[-3:]) + ":")
         # Delete application dir
@@ -175,7 +175,7 @@ class init(object):
         if not app_dir:
             self.glob.lib.msg.error("Application '" + arg + "' is not installed.")
 
-        app_path = os.path.join(self.glob.stg['build_path'], self.glob.lib.check_if_installed(search_dict))
+        app_path = os.path.join(self.glob.ev['BP_APPS'], self.glob.lib.check_if_installed(search_dict))
         build_report = os.path.join(app_path, self.glob.stg['build_report_file'])
         install_path = os.path.join(app_path, self.glob.stg['install_subdir'])
 
@@ -421,7 +421,7 @@ class init(object):
 
         sched_cfg = self.glob.lib.get_sched_cfg()
         try:
-            with open(os.path.join(self.glob.stg['config_path'], self.glob.stg['sched_cfg_dir'], sched_cfg)) as f:
+            with open(os.path.join(self.glob.base_path, "system/config/sched", sched_cfg)) as f:
                 print("Scheduler defaults for " + self.glob.system['system'] + ":")
                 for line in f.readlines():
                     if "=" in line:
@@ -437,7 +437,7 @@ class init(object):
 
     # Print command line history file
     def print_history(self):
-        history_file = os.path.join(self.glob.bp_home, ".history")
+        history_file = os.path.join(self.glob.ev['BP_HOME'], ".history")
         if os.path.isfile(history_file):
             with open(history_file, "r") as hist:
                 content = hist.read()
@@ -456,11 +456,11 @@ class init(object):
     # Return the last line of the .outputs file
     def get_last_history(self):
 
-        if not os.path.isfile(os.path.join(self.glob.bp_home, ".history")):
+        if not os.path.isfile(os.path.join(self.glob.ev['BP_HOME'], ".history")):
             print("No previous outputs found.")
             sys.exit(0)
 
-        with open(os.path.join(self.glob.bp_home, ".history"), 'r') as f:
+        with open(os.path.join(self.glob.ev['BP_HOME'], ".history"), 'r') as f:
             lines = f.readlines()
             if len(lines) == 0:
                 print("No previous outputs found.")    

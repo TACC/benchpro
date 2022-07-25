@@ -103,7 +103,7 @@ class init(object):
         # Add module loads if application must be loaded
         if self.glob.config['metadata']['app_mod']:
             template_obj.append("# Load Modules \n")
-            template_obj.append("ml reset \n")
+#            template_obj.append("ml reset \n")
             template_obj.append("ml use ${base_module} \n")
             template_obj.append("ml ${app_module} \n")
             template_obj.append("ml \n")
@@ -201,7 +201,7 @@ class init(object):
     def set_build_files(self):
         # Temp build script
         self.glob.job_file = self.glob.stg['build_job_file']
-        self.glob.tmp_job_file = os.path.join(self.glob.bp_home, "tmp." + self.glob.stg['build_job_file'])
+        self.glob.tmp_job_file = os.path.join(self.glob.ev['BP_HOME'], "tmp." + self.glob.stg['build_job_file'])
 
         if self.glob.stg['build_mode'] == "sched":
             self.glob.sched['template'] = self.glob.lib.files.find_exact(self.glob.sched['sched']['type'] + \
@@ -294,7 +294,7 @@ class init(object):
     def set_bench_files(self):
         # Temp job script 
         self.glob.job_file = self.glob.stg['bench_job_file']
-        self.glob.tmp_job_file = os.path.join(self.glob.bp_home, "tmp." + self.glob.stg['bench_job_file']) 
+        self.glob.tmp_job_file = os.path.join(self.glob.ev['BP_HOME'], "tmp." + self.glob.stg['bench_job_file']) 
     
         # Scheduler template file
         if self.glob.stg['bench_mode'] == "sched":

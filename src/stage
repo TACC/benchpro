@@ -10,55 +10,117 @@ if [[ -z $1 ]]; then
     exit 1
 fi
 
-DEST=`pwd` 
-ARG=$1
-SRC=$BP_REPO/$ARG
-function is_archive() { 
-    file $ARG | grep -E 'compressed|tar archive' >> /dev/null && return 0 || return 1 
+DEST=`pwd`
+# Custom output dir
+
+if [ ! -z "$2" ]; then
+    DEST=$2
+fi 
+
+ASSET=$1
+FILENAME="tmp"
+URL=""
+
+REPO_SRC=$BP_REPO/$ASSET
+LOOKUP_FILE=$BP_REPO/.urllookup
+
+function update_lookup() {
+    URL_MATCH=`grep $URL $LOOKUP_FILE`
+    # Add to lookup file if not present
+    if [[ -z $URL_MATCH ]]; then
+        echo "$URL $FILENAME" >> $LOOKUP_FILE
+    fi
 }
 
-function update_src() {
-    ARG=`ls -rt  | tail -n 1`
-    SRC=$ARG
+function is_archive() { 
+    file $1 | grep -E 'compressed|tar archive' >> /dev/null && return 0 || return 1 
+}
+
+function get_filename() {
+    FILENAME=`ls -rt . | tail -n 1`
+    SRC="`pwd`/$FILENAME"
+    DEST=$BP_REPO
 }
 
 function in_repo() {
-    if [[ -f $SRC ]] || [[ -d $SRC ]]; then
+    # Matching filename
+    if [[ -f $1 ]] || [[ -d $1 ]]; then
+        FILENAME=$ASSET
         return 0
     else
+        # Martching URL in .urllookup
+        URL=$ASSET
+        URL_MATCH=`grep $URL $LOOKUP_FILE`
+        # In .urllookup
+        if [[ ! -z $URL_MATCH ]]; then
+            # Unconfirm filename of asset
+            NEW_FILENAME=`echo $URL_MATCH | cut -d ' ' -f 2`
+            if [[ -f "$BP_REPO/$NEW_FILENAME" ]]; then
+                echo "Found '$NEW_FILENAME' in \$BP_REPO"
+                # Confirmed - file exists
+                FILENAME=$NEW_FILENAME
+                REPO_SRC=$BP_REPO/$FILENAME
+                return 0
+            else
+                echo "Removing stale entry '$URL_MATCH' from \$BP_REPO/.urllookup"               
+                sed -i "/$URL/d" $LOOKUP_FILE
+                return 1
+            fi
+        fi
         return 1
     fi
 }
 
 function copy_asset() { 
-    echo "Copying asset '$SRC' to $DEST/..."
-    cp -r $SRC $DEST/ 
+    echo "Copying asset '$1' to $2"
+    if [[ -f $2/$3 ]]; then
+        echo "Skipping copy, already present."
+        return 1
+    else
+        cp -r $1 $2/ 
+        return 0
+    fi
+}
+
+function move_asset() {
+    echo "Moving asset '$1' to $2"
+    if [[ -f $2/$3 ]]; then
+        echo "Skipping move, already present."
+        return 1
+    else
+        mv $1 $2/
+        return 0
+    fi
 }
 
 function untar_asset() { 
-    echo "Extracting asset '$SRC' to $DEST/..."
-    tar -xzf $SRC -C $DEST/ 
+    echo "Extracting asset '$1' to $2"
+    tar -xzf $1 -C $2/ 
 }
 
 function get_asset() { 
-    (is_archive) && untar_asset || copy_asset 
+    (is_archive $1) && untar_asset $1 $2 || copy_asset $1 $2 $3
 }
 
 function download_asset() {
-    echo "Downloadling asset '$ARG' to $DEST/..."
-    gdown $ARG -O $DEST/ --quiet
+    echo "Downloadling asset '$1' to $2"
+    gdown $1 --quiet
 }
 
-# 1. Input is in $BP_REPO
-
-if (in_repo); then
-    get_asset
-# 2. If not present, fetch to $BP_REPO
-else
-    download_asset 
+# 1. If not present, fetch to $BP_REPO
+if ! in_repo $REPO_SRC; then
+    download_asset $ASSET $DEST
+    # Check asset filename
+    get_filename
     # Extract
-    update_src
-    (is_archive) && untar_asset
-        
-fi
+    if (is_archive $SRC ); then
+        untar_asset $SRC . 
+    fi
+    move_asset $SRC $DEST $FILENAME
+    update_lookup
+
+# 2. Copy from repo
+else
+    get_asset $REPO_SRC $DEST $ASSET
+fi    
 exit 0

@@ -109,6 +109,8 @@ class init(object):
 
     # Get list of uncaptured results and print note to user
     def new_results(self):
+    
+        print("HERE", self.glob.stg['skip_result_check'], type(self.glob.stg['skip_result_check']))
 
         if not self.glob.stg['skip_result_check']:
 
@@ -145,7 +147,6 @@ class init(object):
 
         print()
         print("=====> " + self.glob.lib.rel_path(file_path) + " <=====")
-        print("...")
 
         # Print last 20 lines
         with open(file_path, 'r') as fd:
@@ -155,48 +156,45 @@ class init(object):
         print("=====> " + self.glob.lib.rel_path(file_path) + " <=====")
 
     # Print the list of installed applications
-    def print_app_table(self, apps):
+    def print_app_table(self, table_contents):
 
         # If sent empty list, print everything
-        if not apps:
+        if not table_contents:
             # Get list of apps 
-            apps = self.glob.installed_app_list
-            if not apps:
+            table_contents = [app['table'] for app in self.glob.installed_apps]
+            if not table_contents:
                 self.glob.lib.msg.success("No applications installed.")
 
         # Reorder columns
         order = [0, 5, 6, 1, 2, 3, 4, 7, 8]
 
         # Add header row
-        apps = [["TASK ID", "SYSTEM", "ARCH", "COMPILER", "MPI", "CODE", "VERSION", "LABEL", "\x1b[0;37mSTATUS\x1b[0m"]] + apps
-        cols = len(apps[0])
-
-        print("HEADING=", len(apps[0]))
-        print("INPUT=", len(apps[1]))
+        table_contents = [["TASK ID", "SYSTEM", "ARCH", "COMPILER", "MPI", "CODE", "VERSION", "LABEL", "\x1b[0;37mSTATUS\x1b[0m"]] + table_contents
+        cols = len(table_contents[0])
 
         # Check header has same num cols and content
-        if len(apps[0]) != (len(apps[1])):
+        if len(table_contents[0]) != (len(table_contents[1])):
             self.glob.lib.msg.error("Mismatched number of table columns.")
 
         # Get max length of each table column (for spacing)
         padding = [0] * cols
         for i in range(cols):
-            for app in apps:
-                if len(str(app[i])) > padding[i]:
-                    padding[i] = len(str(app[i]))
+            for row in table_contents:
+                if len(str(row[i])) > padding[i]:
+                    padding[i] = len(str(row[i]))
 
         # Buffer each column 2 chars
         padding = [i + 2 for i in padding]
 
         # Print contents
-        for idx in range(0,len(apps)): 
+        for idx in range(0,len(table_contents)): 
             text_col = self.glob.white
             if (idx % 2) == 0:
                 text_col = self.glob.grey
 
             print("| ", end='')
             for column in range(cols):
-                print(text_col + str(apps[idx][order[column]]).ljust(padding[order[column]]) + self.glob.end + "| ", end='')
+                print(text_col + str(table_contents[idx][order[column]]).ljust(padding[order[column]]) + self.glob.end + "| ", end='')
             print()
 
     # Print timing

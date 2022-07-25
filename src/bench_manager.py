@@ -16,7 +16,7 @@ glob = glob_master = None
 def get_app_info():
 
     # Evaluate any expressions in the requirements section
-    glob.lib.expr.eval_dict(glob.config['requirements'])
+    glob.lib.expr.eval_dict(glob.config['requirements'], False)
 
     # Check if code is installed
     glob.config['metadata']['code_path'] = glob.lib.check_if_installed(glob.config['requirements'])
@@ -57,7 +57,10 @@ def get_app_info():
     glob.config['metadata']['app_mod'] = glob.config['metadata']['code_path']
 
     # Get app info from build report
-    install_path = os.path.join(glob.stg['build_path'], glob.config['metadata']['code_path'])
+
+    print("HERE", glob.ev['BP_APPS'], glob.config['metadata']['code_path'])
+
+    install_path = os.path.join(glob.ev['BP_APPS'], glob.config['metadata']['code_path'])
     glob.build_report = glob.lib.report.read(os.path.join(install_path, glob.stg['build_report_file']))['build']
 
     # If not set, add exe file label from build report in bench cfg for populating template later
@@ -96,11 +99,11 @@ def gen_bench_script():
 
     # Evaluate math in cfg dict -
     glob.args.build = None
-    for sect in ['config', 'runtime', 'files', 'result']:
-        glob.lib.expr.eval_dict(glob.config[sect])
+    for sect in ['config','runtime', 'files', 'result']:
+        glob.lib.expr.eval_dict(glob.config[sect], True)
 
     # Update GPU default if arch=cuda
-    if glob.config['config']['arch'] == "cuda":
+    if (glob.config['config']['arch'] == "cuda") and not glob.config['runtime']['gpus']:
         glob.config['runtime']['gpus'] = 1
 
     gpu_path_str = ""
@@ -157,6 +160,7 @@ def start_task():
     # Delete tmp job script
     glob.lib.files.cleanup([])
 
+    glob.lib.msg.brk()
     glob.lib.msg.high(glob.success)
     # dry_run = True
     if glob.stg['dry_run']:

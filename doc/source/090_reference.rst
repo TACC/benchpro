@@ -429,11 +429,11 @@ Environment Variables
 +----------------------------+--------------------------------------------------+
 | Variable                   | Description                                      |
 +============================+==================================================+
-| $BP_VERSION                | Version information.                             |
+| $BPS_VERSION               | Version information.                             |
 +----------------------------+--------------------------------------------------+
 | $BP_HOME                   | User file directory [Default= $HOME/benchpro].   |          
 +----------------------------+--------------------------------------------------+
-| $BP_SITE                   | Site installation directroy.                     |
+| $BPS_SITE                  | Site installation directroy.                     |
 +----------------------------+--------------------------------------------------+
 | $BP_REPO                   | Local file repository directory.                 |
 +----------------------------+--------------------------------------------------+
@@ -441,7 +441,7 @@ Environment Variables
 +----------------------------+--------------------------------------------------+               
 | $BP_RESULTS                | User benchmark results root directory.           |
 +----------------------------+--------------------------------------------------+
-| $BP_COLLECTION             | Result collection black-hole directory.          |
+| $BPS_COLLECT               | Result collection black-hole directory.          |
 +----------------------------+--------------------------------------------------+
 
 Directory structure

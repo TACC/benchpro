@@ -70,7 +70,6 @@ class init(object):
         else:
             self.search_space = [search_space]
         
-
         # For each overload key
         for overload_key in list(self.glob.overload_dict):
             self.glob.lib.msg.log("Overloading key " + overload_key + "...")            
@@ -84,18 +83,12 @@ class init(object):
     # Generate dict from commandline params
     def setup_dict(self):
 
-        user_input = self.glob.args.overload
+        user_input = self.glob.user_settings
+        # Overloads from $BP_HOME/settings.ini first, then CLI
+        if self.glob.args.overload:
+            user_input += self.glob.args.overload
 
-        # Check if input is a file?
-        overload_file = self.glob.lib.files.find_in([self.glob.stg['config_path']], user_input[0]+"*", False) 
-        if overload_file:
-            # Remove first element (filename)
-            user_input.pop(0)
-            # Add file values to param list
-            with open(overload_file, 'r') as f:
-                user_input.extend(f.readlines())
-
-        # Read key-values into dict
+        # Iterate overload list
         for setting in user_input:
             pair = setting.split('=')
             # Test key-value pair

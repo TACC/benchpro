@@ -15,7 +15,6 @@ from urllib.request import urlretrieve
 class init(object):
     def __init__(self, glob):
         self.glob = glob
-        self.get_client_version()
 
     # Read non-cfg file into list
     def read(self, file_path):
@@ -30,7 +29,7 @@ class init(object):
         
         # Clean default *.tmp files
         if not clean_list:
-            clean_list = gb.glob(os.path.join(self.glob.bp_home, 'tmp.*'))
+            clean_list = gb.glob(os.path.join(self.glob.ev['BP_HOME'], 'tmp.*'))
 
         if clean_list:
             for f in clean_list:
@@ -88,7 +87,7 @@ class init(object):
     def find_in(self, paths, filename, error_if_missing):
 
         # Add some default locations to the search path list
-        paths.extend(["", self.glob.bp_home, self.glob.cwd, self.glob.home])
+        paths.extend(["", self.glob.ev['BP_HOME'], self.glob.cwd, self.glob.home])
         file_path = self.look(paths, filename) 
 
         if file_path:
@@ -133,7 +132,8 @@ class init(object):
             self.glob.lib.msg.error("Directory '" + base + "' not found, did you run --validate?")
 
     # Recursive function to scan app directory, called by 'get_installed'
-    def search_tree(self, installed_list, app_dir, start_depth, current_depth, max_depth):
+    def search_tree(self, app_dir, start_depth, current_depth, max_depth):
+        installed_list = []
         for d in self.get_subdirs(app_dir):
             if d != self.glob.stg['module_dir']:
                 new_dir = os.path.join(app_dir, d)
@@ -142,7 +142,8 @@ class init(object):
                     installed_list.append(self.glob.stg['sl'].join(new_dir.split(self.glob.stg['sl'])[start_depth + 1:]))
                 # Else continue to search tree
                 else:
-                    self.search_tree(installed_list, new_dir, start_depth,current_depth + 1, max_depth)
+                    installed_list = self.search_tree(new_dir, start_depth,current_depth + 1, max_depth)
+        return installed_list
 
     # Prune dir tree until not unique
     def prune_tree(self, path):
@@ -399,8 +400,8 @@ class init(object):
             self.glob.lib.msg.low("Staging input files...")
 
             # Evaluate expressions in [config] and [files] sections of cfg file 
-            self.glob.lib.expr.eval_dict(self.glob.config['config'])
-            self.glob.lib.expr.eval_dict(self.glob.config['files'])
+            self.glob.lib.expr.eval_dict(self.glob.config['config'], False)
+            self.glob.lib.expr.eval_dict(self.glob.config['files'], False)
 
             # Parse through supported file operations - local, download
             for op in self.glob.config['files'].keys():
@@ -429,7 +430,7 @@ class init(object):
 
     # Write command line to history file
     def write_cmd_history(self):
-        history_file = os.path.join(self.glob.bp_home, ".history")
+        history_file = os.path.join(self.glob.ev['BP_HOME'], ".history")
         with open(history_file, "a") as hist:
             hist.write(self.glob.lib.misc.get_input_str() + "\n")
 
@@ -475,9 +476,22 @@ class init(object):
     # Read client version number from file
     def get_client_version(self):
         try:
-            with open(os.path.join(self.glob.bp_home, ".version"), 'r') as f:
+            with open(os.path.join(self.glob.ev['BP_HOME'], ".version"), 'r') as f:
                 self.glob.version_client = f.readline().split(" ")[-1][1:].strip()
                 self.glob.version_client_date = f.readline().strip()
 
         except:
             self.glob.lib.msg.error("Failed to read version info from $BP_HOME/.version")    
+
+    # Delete all user files
+    def purge(self):
+        purge_paths = [ self.glob.ev['BP_HOME'],
+                        self.glob.ev['BP_APPS'],
+                        self.glob.ev['BP_RESULTS']]
+
+        # clean up
+        for path in purge_paths:
+            print("Purging " + path)
+            self.prune_tree(path)
+
+        print("Done.")

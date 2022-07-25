@@ -260,10 +260,7 @@ def check_benchpro_version(glob):
     else:
         print(bcolors.PASS, "BenchPRO version " + glob.version_site)
 
-# Validate setup
-def check_setup(glob_obj):
-    global glob
-    glob = glob_obj
+def validate_setup():
 
     # Python version
     check_python_version()
@@ -272,49 +269,50 @@ def check_setup(glob_obj):
     check_benchpro_version(glob)
 
     # Sys envs
-    project_env = glob.stg['project_env'].strip("$")
+    home_env = glob.stg['home_env'].strip("$")
     app_env = glob.stg['app_env'].strip("$")
     result_env = glob.stg['result_env'].strip("$")
     system_env = glob.stg['system_env'].strip("$")
 
     # check EVs set
     check_env_vars([system_env,
-                    project_env,
+                    home_env,
                     app_env,
                     result_env,
-                    'BP_SITE_VERSION',
+                    'BPS_VERSION',
                     'LMOD_VERSION'])
 
     # Check priv
-    project_dir = os.getenv(project_env)
+    project_dir = os.getenv(home_env)
     check_write_priv(project_dir)
 
     # Check group memebership
     check_group_membership()
 
     # Check paths
-    confirm_path_exists([glob.stg['log_path'],
-                        glob.stg['build_path'],
-                        glob.stg['bench_path'],
+    confirm_path_exists([glob.ev['BP_HOME'],
+                        glob.stg['config_path'],
+                        glob.stg['template_path'],
+                        glob.stg['log_path'],
+                        glob.ev['BP_APPS'],
+                        glob.ev['BP_RESULTS'],
                         glob.stg['pending_path'],
                         glob.stg['captured_path'],
                         glob.stg['failed_path']])
 
     # Set access
-    group_access([glob.stg['build_path'],
-                     glob.stg['bench_path']])
+    group_access([glob.ev['BP_APPS'],
+                     glob.ev['BP_RESULTS']])
 
     # Set perms
-    set_permissions([glob.stg['build_path'],
-                     glob.stg['bench_path']])
+    set_permissions([glob.ev['BP_APPS'],
+                     glob.ev['BP_RESULTS']])
 
     # Error if dir not found
-    ensure_path_exists([glob.stg['local_repo'],
-                        glob.stg['config_path'],
-                        glob.stg['template_path']])
+    ensure_path_exists([glob.stg['local_repo']])
 
     # Check exe
-    check_exe(['benchpro', 'stage', 'sinfo', 'sacct'])
+    check_exe(['benchpro', 'benchset', 'stage', 'sinfo', 'sacct', 'git'])
 
     # Check db host access
     connection = check_db_access(glob)
@@ -326,23 +324,31 @@ def check_setup(glob_obj):
         print(bcolors.WARN, "database access check disabled")
 
     # Create validate file
-    with open(os.path.join(glob.bp_home, ".validated"), 'w') as val:
-        val.write(os.environ.get("BP_SITE_VERSION_STR").split(".")[-1])
+    with open(os.path.join(glob.ev['BP_HOME'], ".validated"), 'w') as val:
+        val.write(os.environ.get("BPS_VERSION_STR").split(".")[-1])
     print("Done.")
-    sys.exit(0)
+    return
 
-# Check if validation has been run
-def check(bp_home):
-
-    if os.path.isfile(os.path.join(bp_home, ".validated")):
-        with open(os.path.join(bp_home, ".validated"), 'r') as f:
+# Test if our validation is out to date
+def we_need_to_validate():
+    if os.path.isfile(os.path.join(glob.ev['BP_HOME'], ".validated")):
+        # File exists
+        with open(os.path.join(glob.ev['BP_HOME'], ".validated"), 'r') as f:
             your_ver = f.read().strip()
 
-        req_ver = os.environ.get("BP_SITE_VERSION_STR").split(".")[-1]
-    
-        if your_ver == req_ver:
-            return
+        req_ver = os.environ.get("BPS_VERSION_STR").split(".")[-1]
+        # Compare validation versions
+        if str(your_ver) == str(req_ver):
+            return False
 
-    print("Please run  benchpro --validate before continuing.")
-    print()
-    sys.exit(1)
+    return True
+
+# Check if validation has been run
+def check(glob_obj):
+
+    global glob
+    glob = glob_obj
+
+    if we_need_to_validate():
+        validate_setup()
+

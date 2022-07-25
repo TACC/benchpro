@@ -9,19 +9,13 @@ class init(object):
         self.glob = glob
         self.sanitize_modulepath()
 
-    # Remove BenchPRO references in MODULEPATH (to avoid module search finding benchpro modules)
-    def sanitize_modulepath(self):
-        paths = os.environ["MODULEPATH"].split(":")
-        [paths.remove(path) for path in paths if "benchpro" in path]
-        os.environ["MODULEPATH"] = ":".join(paths)
-
     # Execute an LMOD command
     def lmod_query(self, args):
 
         # Cast to list
         if not type(args) == list:
             args = [args]
-       
+
         try:
             proc = subprocess.Popen(([os.path.join(os.environ.get('LMOD_DIR'),'lmod')] + args), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             status         = proc.returncode
@@ -34,12 +28,27 @@ class init(object):
 
         return stderr.decode()
 
+    # Remove BenchPRO references in MODULEPATH (to avoid module search finding benchpro modules)
+    def sanitize_modulepath(self):
+        paths = os.environ["MODULEPATH"].split(":")
+        [paths.remove(path) for path in paths if "benchpro" in path]
+        os.environ["MODULEPATH"] = ":".join(paths)
+
     # Get list of default modules
     def set_default_module_list(self, module_use):
 
-        # Append 'module use' to MODULEPATH
+        if os.path.isdir(self.glob.stg['user_mod_path']):
+            module_use += [self.glob.stg['user_mod_path']] 
+
+        # Append 'module use' elements to MODULEPATH, support comma delimited list of paths
         if module_use:
-            os.environ["MODULEPATH"] = module_use + ":" + os.environ["MODULEPATH"]
+            for module in module_use.split(","):
+                module_path = module.strip()
+                if not os.path.isdir(module_path):
+                    self.glob.lib.msg.warning("ml use path not found: " + module_path)
+
+                os.environ["MODULEPATH"] = module_use + ":" + os.environ["MODULEPATH"]
+
 
         self.glob.default_module_list = self.lmod_query(['-t', '-d', 'av']).split("\n")
 
@@ -107,9 +116,9 @@ class init(object):
         if self.glob.config['general']['module_use']:
 
             # Handle env vars in module path
-            if self.glob.config['general']['module_use'].startswith(self.glob.stg['project_env']):
+            if self.glob.config['general']['module_use'].startswith(self.glob.stg['home_env']):
 
-                project = self.glob.stg['project_env'].strip("$")
+                project = self.glob.stg['home_env'].strip("$")
 
                 mod_obj.append("local " + project + " = os.getenv(\"" + project + "\") or \"\"\n")
                 mod_obj.append("prepend_path(\"MODULEPATH\", pathJoin(" + project + ", \"" + self.glob.config['general']['module_use'][len(project)+2:] + "\"))\n")
@@ -135,7 +144,7 @@ class init(object):
         # Get capitalized code name for env var
         mod['caps_code'] = self.glob.config['general']['code'].upper().replace("-", "_")
 
-        pop_dict = {**mod, **self.glob.config['metadata'], **self.glob.config['general'], **self.glob.config['config'], **{'site_path': self.glob.site_path}}
+        pop_dict = {**mod, **self.glob.config['metadata'], **self.glob.config['general'], **self.glob.config['config'], **{'site_path': self.glob.ev['BPS_SITE']}}
 
         for key in pop_dict:
             self.glob.lib.msg.log("replace " + "<<<" + key + ">>> with " + str(pop_dict[key]))
@@ -183,7 +192,7 @@ class init(object):
         # Populuate template with config params
         mod_obj = self.populate_mod_template(mod_obj)
         # Test module template
-        tmp_mod_file = os.path.join(self.glob.bp_home, "tmp." + mod_file)
+        tmp_mod_file = os.path.join(self.glob.ev['BP_HOME'], "tmp." + mod_file)
         self.glob.lib.template.test_template(tmp_mod_file, mod_obj)
         # Write module template to file
         self.glob.lib.files.write_list_to_file(mod_obj, tmp_mod_file)

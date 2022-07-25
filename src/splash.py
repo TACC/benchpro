@@ -14,12 +14,13 @@ def print_splash(glob):
                             "  >User      : " + glob.user,
                             "  >System    : " + glob.hostname,
                             "  >Version   : " + glob.version_site_full,
-                            "  >$BP_HOME  : " + glob.bp_home])
-
-        if glob.log_file:
-        
+                            "  >$BP_HOME  : " + glob.ev['BP_HOME']])
+        try:
             glob.lib.msg.high("  >Log       : " +
                            glob.lib.rel_path(os.path.join(glob.stg['log_path'], glob.log_file)))
+
+        except:
+            pass
 
         glob.lib.msg.brk();
 

@@ -236,7 +236,7 @@ class init(object):
 
             bin_dir, exe = self.glob.lib.report.build_exe(app)
             if exe:
-                if self.glob.lib.files.exists(exe, os.path.join(self.glob.stg['build_path'], app, self.glob.stg['install_subdir'], bin_dir)):
+                if self.glob.lib.files.exists(exe, os.path.join(self.glob.ev['BP_APPS'], app, self.glob.stg['install_subdir'], bin_dir)):
                     return '\033[0;32mEXE FOUND\033[0m'
 
             return '\033[0;31mEXE NOT FOUND\033[0m'

@@ -234,7 +234,7 @@ class init(object):
         # --- Apply defaults ---
 
         # Evaluate expressions in [general]
-        self.glob.lib.expr.eval_dict(cfg_dict['general'])
+        self.glob.lib.expr.eval_dict(cfg_dict['general'], False)
 
         # Convert dtypes
         self.get_val_types(cfg_dict)
@@ -325,7 +325,7 @@ class init(object):
                                                                 cfg_dict['general']['code'], str(cfg_dict['general']['version']),
                                                                 cfg_dict['config']['build_label'])
 
-            cfg_dict['metadata']['working_path'] = os.path.join(self.glob.stg['build_path'], 
+            cfg_dict['metadata']['working_path'] = os.path.join(self.glob.ev['BP_APPS'], 
                                                                 cfg_dict['metadata']['working_dir'])
 
         # Translate 'build_prefix' to 'working_path' for better readability
@@ -370,6 +370,7 @@ class init(object):
         if not 'system'             in cfg_dict['requirements'].keys():  cfg_dict['requirements']['system']     = ""
         if not 'compiler'           in cfg_dict['requirements'].keys():  cfg_dict['requirements']['compiler']   = ""
         if not 'mpi'                in cfg_dict['requirements'].keys():  cfg_dict['requirements']['mpi']        = ""
+        if not 'task_id'            in cfg_dict['requirements'].keys():  cfg_dict['requirements']['task_id']    = ""
 
         if not 'threads'            in cfg_dict['runtime'].keys():  cfg_dict['runtime']['threads']              = 0
         if not 'ranks_per_node'     in cfg_dict['runtime'].keys():  cfg_dict['runtime']['ranks_per_node']       = 0

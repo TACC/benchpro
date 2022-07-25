@@ -139,6 +139,7 @@ def build_code(input_dict, glob_copy):
     # Clean up tmp files
     glob.lib.files.cleanup([])
 
+    glob.lib.msg.brk()
     glob.lib.msg.high(glob.success)
 
     # If dry_run

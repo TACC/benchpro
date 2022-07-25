@@ -1,37 +1,58 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Main installation script for the BenchPRO site package. 
 # System parameters are read from ./site.sh 
 
 trap ctrl_c INT
+MYID=""
 
 function ctrl_c() {
     printf "\nQuitting.\n"
+    if $MYID; then
+        kill -9 $MYID >/dev/null 2>&1
+    fi
     exit 1
 }
 
+progress() {
+    while true; do
+        printf "."
+        sleep 1
+    done
+}
 
 # Print error and exit
 quit() {
     printf "$1"
-    exit 1
+    ctrl_c
+}
+
+patch_wrapper() {
+    WRAPPER="$BPS_SITE/python/bin/benchpro" 
+    sed -i '3 i try:' $WRAPPER
+    sed -i '4s;^;\t;' $WRAPPER
+    sed -i '5s;^;\t;' $WRAPPER
+    printf "except Exception as e:\n" >> $WRAPPER
+    printf "\traise Exception(\"BenchPRO module not loaded\") from e\n" >> $WRAPPER 
 }
 
 # Install Python package and set group permissions
 install() {
-    python3 setup.py install --prefix=${BP_SITE}/python/ &>> $BP_LOG
+    python3 -m pip uninstall -y benchpro  &>> $BP_LOG
+    python3 setup.py install --prefix=${BPS_SITE}/python/ &>> $BP_LOG
 
-    [[ ${PIPESTATUS[0]} -ne 0 ]] && quit "\nPackage installation failed, quitting.\n\n"
+    [[ ${PIPESTATUS[0]} -ne 0 ]] && quit "\nPackage installation failed\n"
     # Change group permissions
-    #chmod a+rX                                                         ${BP_SITE}
+    #chmod a+rX                                                         ${BPS_SITE}
 
-    chmod -R a+rX                                                       ${BP_SITE}/python
-    chmod a+x                                                           ${BP_SITE}/python/bin/benchpro
-    #chmod a+rwx                                                        ${BP_SITE}/collection
+    chmod -R a+rX                                                       ${BPS_SITE}/python
+    chmod a+x                                                           ${BPS_SITE}/python/bin/benchpro
+    #chmod a+rwx                                                        ${BPS_SITE}/collection
     # Update symlink
-    ln -s python/lib/python${PY_VERSION}/site-packages/benchpro-latest/ ${BP_SITE}/package
-    ln -s benchpro-${BP_SITE_VERSION}-py${PY_VERSION}.egg/              ${BP_SITE}/python/lib/python${PY_VERSION}/site-packages/benchpro-latest
-    printf "\nPackage installed...\n\n"
+    ln -s python/lib/python${PY_VERSION}/site-packages/benchpro-latest/ ${BPS_SITE}/package
+    ln -s benchpro-${BPS_SITE_VERSION}-py${PY_VERSION}.egg/              ${BPS_SITE}/python/lib/python${PY_VERSION}/site-packages/benchpro-latest
+
+    patch_wrapper   
 }
 
 WORKING_DIR=`pwd`
@@ -40,15 +61,14 @@ WORKING_DIR=`pwd`
 SOURCE_FILE="$WORKING_DIR/site.sh"
 printf "Reading ${SOURCE_FILE}...\n"
 source $SOURCE_FILE
-[[ ${PIPESTATUS[0]} -ne 0 ]] && quit "\nCan't source ${SOURCE_FILE}, quitting.\n\n"
+[[ ${PIPESTATUS[0]} -ne 0 ]] && quit "\nCan't source ${SOURCE_FILE}\n"
 
-# Test that BP_SITE is writable
-mkdir -p $BP_SITE && printf "We have write permission.\n" || quit "\nCan't write to ${BP_SITE}, quitting.\n\n" 
+# Test that BPS_SITE is writable
+mkdir -p $BPS_SITE && printf "\nWe have write permission.\n" || quit "\nCan't write to ${BPS_SITE}\n" 
 
 # Get path to SSH key - not stored in repo
 SSH_KEY=""
 if [[ "$1" = "" ]]; then
-    printf "WARNING: No SSH key provided, will attempt to continue with default user key..."
     SSH_KEY=$HOME/.ssh/id_rsa
 # Quick install
 elif [[ "$1" = "-d" ]]; then
@@ -60,90 +80,100 @@ else
 fi
 
 # Check if SSH key exists
-[[ ! -f "$SSH_KEY" ]] && quit "\nProvided SSH key not found.\nQuitting.\n\n"
+[[ ! -f "$SSH_KEY" ]] && quit "\nProvided SSH key not found.\n"
 
+printf "\nCleaning up old files...\n"
 # Clean up env & build/install directories
-${WORKING_DIR}/dev/clean.sh
-rm -rf                                                                  ${BP_SITE}/python/lib/python${PY_VERSION}/site-packages/benchpro-${BP_SITE_VERSION}*
-rm -f                                                                   ${BP_SITE}/modulefiles/benchpro/*.lua
-rm -f                                                                   ${BP_SITE}/package
-rm -f                                                                   ${BP_SITE}/python/lib/python${PY_VERSION}/site-packages/benchpro-latest
+${WORKING_DIR}/clean
+rm -rf                                                                  ${BPS_SITE}/python/lib/python${PY_VERSION}/site-packages/benchpro-${BPS_SITE_VERSION}*
+rm -f                                                                   ${BPS_SITE}/modulefiles/benchpro/*.lua
+rm -f                                                                   ${BPS_SITE}/package
+rm -f                                                                   ${BPS_SITE}/python/lib/python${PY_VERSION}/site-packages/benchpro-latest
 
+
+printf "Done.\n"
+
+#--------------------CREATE SITE PATHS---------------------------
+printf "\nCreating BPS_SITE...\n"
 # Setup
-mkdir -p                                                                ${BP_SITE}/logs
-mkdir -p                                                                ${BP_SITE}/repo
-mkdir -p                                                                ${BP_SITE}/collection
-setfacl -d -m group::rwX,other::rwX                                     ${BP_SITE}/collection
-chmod a+w                                                               ${BP_SITE}/collection
-mkdir -p                                                                ${BP_SITE}/python/lib/python${PY_VERSION}/site-packages
-mkdir -p                                                                ${BP_SITE}/modulefiles/benchpro
+mkdir -p                                                                ${BPS_SITE}/logs
+mkdir -p                                                                ${BPS_SITE}/repo
+mkdir -p                                                                ${BPS_SITE}/collection
+setfacl -d -m group::rwX,other::rwX                                     ${BPS_SITE}/collection
+chmod a+w                                                               ${BPS_SITE}/collection
+mkdir -p                                                                ${BPS_SITE}/python/lib/python${PY_VERSION}/site-packages
+mkdir -p                                                                ${BPS_SITE}/modulefiles
+printf "Done.\n"
 
-printf "\nCleaned up...\n\n"
+# Install python package
+
+progress &
+MYID=$!
+printf "\nInstalling Package."
+install
+# Kill progress
+kill -9 $MYID > /dev/null
+
+printf "\nDone.\n"
+#--------------------MODULE FILE---------------------------------
+printf "\nGenerating site module...\n"
 
 # Copy  and contextualize module file
-cp ${WORKING_DIR}/data/modulefiles/benchpro.lua                             ${BP_SITE}/modulefiles/benchpro/${BP_SITE_VERSION}.lua
-sed -i "/local bp_dev/c\local bp_dev = \"${BP_DEV}\""                       ${BP_SITE}/modulefiles/benchpro/${BP_SITE_VERSION}.lua
-sed -i "/local bp_site/c\local bp_site = \"${BP_SITE}\""                    ${BP_SITE}/modulefiles/benchpro/${BP_SITE_VERSION}.lua
-sed -i "/local bp_repo/c\local bp_repo = \"${BP_REPO}\""                    ${BP_SITE}/modulefiles/benchpro/${BP_SITE_VERSION}.lua
-sed -i "/local bp_collect/c\local bp_collect = \"${BP_SITE_COLLECT}\""      ${BP_SITE}/modulefiles/benchpro/${BP_SITE_VERSION}.lua
-sed -i "/local tacc_scratch/c\local tacc_scratch = \"${TACC_SCRATCH}\""     ${BP_SITE}/modulefiles/benchpro/${BP_SITE_VERSION}.lua
-sed -i "/local bp_home/c\local bp_home = \"${BP_HOME}\""                    ${BP_SITE}/modulefiles/benchpro/${BP_SITE_VERSION}.lua
-sed -i "/local bp_apps/c\local bp_apps = \"${BP_APPS}\""                    ${BP_SITE}/modulefiles/benchpro/${BP_SITE_VERSION}.lua
-sed -i "/local bp_results/c\local bp_results = \"${BP_RESULTS}\""           ${BP_SITE}/modulefiles/benchpro/${BP_SITE_VERSION}.lua
-sed -i "/local bp_version/c\local bp_version = \"${BP_SITE_VERSION}\""      ${BP_SITE}/modulefiles/benchpro/${BP_SITE_VERSION}.lua
-sed -i "/local bp_ver_str/c\local bp_ver_str = \"${BP_SITE_VERSION_STR}\""  ${BP_SITE}/modulefiles/benchpro/${BP_SITE_VERSION}.lua
-sed -i "/local build_hash/c\local build_hash = \"${BUILD_HASH}\""           ${BP_SITE}/modulefiles/benchpro/${BP_SITE_VERSION}.lua
-sed -i "/local build_date/c\local build_date = \"${BUILD_DATE}\""           ${BP_SITE}/modulefiles/benchpro/${BP_SITE_VERSION}.lua
-sed -i "/local py_version/c\local py_version = \"${PY_VERSION}\""           ${BP_SITE}/modulefiles/benchpro/${BP_SITE_VERSION}.lua
-chmod -R a+rX                                                               ${BP_SITE}/modulefiles
+cp ${WORKING_DIR}/modulefiles/benchpro.lua                                  ${BPS_SITE}/modulefiles/benchpro/${BPS_SITE_VERSION}.lua
+
+function update_mod() {
+    # Check val is set
+    [[ -z $2 ]] && echo "$1 not set" && exit 1
+    sed -i "3 i setenv(\"$1\", \"$2\")" ${BPS_SITE}/modulefiles/benchpro/${BPS_SITE_VERSION}.lua
+}
+
+# Copy current 'BP_' EVs to modulefile
+while IFS='=' read -r -d '' n v; do
+    if [[ "$n" == "BP"* ]]; then
+        update_mod $n $v
+    fi
+done < <(env -0)
+
+chmod -R a+rX                                                               ${BPS_SITE}/modulefiles
 chmod a+w                                                                   ${BP_REPO}
 #chmod -R a+rX                                                           ${BP_REPO}
 setfacl -d -m other::rX                                                     ${BP_REPO}
+touch                                                                       ${BP_REPO}/.urllookup
+chmod a+rw                                                                  ${BP_REPO}/.urllookup
 
-ml use                                                                      ${BP_SITE}/modulefiles
-ml benchpro || quit "\nCan't load module, quitting.\n\n"
+printf "Done.\n"
+printf "\nLoading module...\n"
 
-printf "\nModule loaded...\n\n"
+ml use                                                                      ${BPS_SITE}/modulefiles
+ml benchpro || quit "\nCan't load module\n"
 
-# Install python package
-install
-
-# Install user files 
-YOUR_BP=$(eval echo $BP_HOME)
-[[ ! -d $YOUR_BP ]] && git clone https://github.com/TACC/benchpro.git $YOUR_BP || git -C $YOUR_BP pull 
-[[ ${PIPESTATUS[2]} -ne 0 ]] && quit "\nUser files install failed, quitting.\n\n"
-
-benchpro --validate | tee -a $BP_LOG 
-[[ ${PIPESTATUS[0]} -ne  0 ]] && quit "\nValidation failed, quitting.\n\n"
-
-printf "\nValidation complete...\n\n"
-
-# Check version
-benchpro --version | tee -a $BP_LOG 
-[[ ${PIPESTATUS[0]} -ne  0 ]] && quit "\nVersion check failed, quitting.\n\n"
+printf "Done.\n"
+#----------------------CLEAN BUILD FILES------------------------------
 
 # Clean build files
-${WORKING_DIR}/dev/clean.sh
+${WORKING_DIR}/clean >/dev/null 
 
+
+#----------------------TEST DB CONNECTION------------------------------
 # Check SSH connection
-printf "Testing Connection to DB...\n"
+printf "\nTesting Connection to DB...\n"
 ssh -i ${SSH_KEY} ${DB_USER}@${DB_HOST} -t "echo 'Connection test'" > /dev/null 2>&1
-[[ ${PIPESTATUS[0]} -ne 0 ]] && quit "\nSSH connection failed, quitting.\n\n"
+[[ ${PIPESTATUS[0]} -ne 0 ]] && quit "\nSSH connection failed\n"
 
 if [[ -z $BP_DEV ]]; then 
 
     echo
     echo "------------------------------------------------"
-    echo "Benchtool successfully installed into $BP_SITE"
+    echo "Benchtool successfully installed into $BPS_SITE"
     echo "User files installed into $BP_HOME for testing"
     echo "To use, load site module with:"
-    echo "ml use $BP_SITE/modulefiles"
+    echo "ml use $BPS_SITE/modulefiles"
     echo "ml benchpro"
     echo
     echo "------------------------------------------------"
     echo "Add the following lines to your crontab:"
-    echo "5 * * * * /bin/rsync --remove-source-files -av -e \"ssh -i $SSH_KEY\" $BP_SITE/collection/* $DB_USER@$DB_HOST:$REMOTE_PATH/ >> $BP_SITE/logs/collect_\`date +\\%Y\\-%m-%d\`.log 2>&1"
-    echo "0 0 * * * /bin/rsync -av /home1/06280/mcawood/work2/repo_backup/ $BP_REPO/ | tee -a $BP_SITE/logs/repo_\`date +\\%Y\\-%m-%d\`.log"
+    echo "5 * * * * /bin/rsync --remove-source-files -av -e \"ssh -i $SSH_KEY\" $BPS_SITE/collection/* $DB_USER@$DB_HOST:$REMOTE_PATH/ >> $BPS_SITE/logs/collect_\`date +\\%Y\\-%m-%d\`.log 2>&1"
+    echo "0 0 * * * /bin/rsync -av /home1/06280/mcawood/work2/repo_backup/ $BP_REPO/ | tee -a $BPS_SITE/logs/repo_\`date +\\%Y\\-%m-%d\`.log"
     echo 
 fi
 

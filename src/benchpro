@@ -11,6 +11,32 @@ import os
 import sys
 import traceback
 
+
+# Check benchpro is loaded
+def check_module_loaded():
+    if not os.environ.get("BPS_SITE"):
+        print("It seems the benchpro module is not loaded.")
+        sys_dict = { 'frontera' : "/scratch1/hpc_tools/benchpro/modulefiles",
+                     'stampede2': "/scratch/hpc_tools/benchpro/modulefiles",
+                     'ls6'      : "/scratch/projects/benchtool/modulefiles"
+                }
+        if os.environ.get('TACC_SYSTEM') in sys_dict:
+            print("Load with:")
+            print("ml use " + sys_dict[os.environ.get('TACC_SYSTEM')])
+            print("ml benchpro")
+        else:
+            print("This system doesn't look familiar, contact support to get the BenchPRO module path.")
+        print()
+        print("HINT: You can load BenchPRO automatically next time by adding it to your default module collection:")
+        print("ml save")
+        sys.exit(1)
+
+check_module_loaded()
+
+# Synchronize the user's benchpro repo with this site version
+import src.sync_handler     as sync
+sync.resync()
+
 # Local Imports
 try:
     import src.bench_manager    as bench_manager
@@ -23,12 +49,19 @@ try:
 # Catch import exception
 except ImportError as e:
     print("Python import error!")
-    print("Is the BenchPRO module loaded?")
+    print(traceback.format_exc())
     print(e)
     sys.exit(1)
 
 # Catch exception in a handler, write to log and quit
 def catch_major_exception(glob, e):
+
+
+    if not glob:
+        print("Failed to create glob object")
+        print(traceback.format_exc())
+        print(e)
+        sys.exit(1)
 
     if not glob.stg['debug']:
         print()
@@ -192,6 +225,13 @@ def get_arguments():
         nargs='+',
         help="Override any setting read from cfg files. OVERLOAD is a list of key-value pairs of the form key=value")
 
+
+    cmd_parser.add_argument(
+        "--purge",
+        default=False,
+        action='store_true',
+        help="Delete all local user files, forever (!)")
+
     cmd_parser.add_argument(
         "-V",
         "--validate",
@@ -212,12 +252,12 @@ def get_arguments():
 # 
 def init_glob():
     # Init global object
-    glob = global_settings.setup()
-    # Store arguments from ArgumentParser in glob
-    glob.args = get_arguments()
+    glob = global_settings.setup(get_arguments())
     return glob
 
 def main():
+
+    glob = None
 
     try:
         glob = init_glob()
@@ -225,21 +265,10 @@ def main():
         catch_major_exception(glob, e)
 
     # Check client/site versions match
-    glob.lib.check_version()
-
-    # Run validator script
-    if glob.args.validate:
-        try:
-            validate.check_setup(glob)
-        except Exception as e:
-            catch_major_exception(glob, e)
+#    glob.lib.check_version()
 
     # Check validated
-    validate.check(glob.bp_home)
-
-    # Read overload inputs
-    if glob.args.overload:
-        glob.lib.overload.setup_dict()
+    validate.check(glob)
 
     # Start build manager
     if glob.args.build:
@@ -298,13 +327,16 @@ def main():
     # Remove result and exit
     elif glob.args.delResult:
         result_manager.remove_result(glob)
+    # Purge user files 
+    elif glob.args.purge:
+        glob.lib.files.purge()
     elif glob.args.version:
         glob.lib.misc.print_version()
     elif glob.args.last:
         glob.lib.misc.print_last()
     # No seletion provided - print splash
     else:    
-        glob.lib.msg.high(splash.get_splash(glob))
+        splash.print_splash(glob)
 
     print()
     return 0
