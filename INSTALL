@@ -8,8 +8,8 @@ MYID=""
 
 function ctrl_c() {
     printf "\nQuitting.\n"
-    if $MYID; then
-        kill -9 $MYID >/dev/null 2>&1
+    if [[ ! -z $MYID ]]; then
+        kill -9 $MYID > /dev/null
     fi
     exit 1
 }
@@ -50,15 +50,15 @@ install() {
     #chmod a+rwx                                                        ${BPS_SITE}/collection
     # Update symlink
     ln -s python/lib/python${PY_VERSION}/site-packages/benchpro-latest/ ${BPS_SITE}/package
-    ln -s benchpro-${BPS_SITE_VERSION}-py${PY_VERSION}.egg/              ${BPS_SITE}/python/lib/python${PY_VERSION}/site-packages/benchpro-latest
+    ln -s benchpro-${BPS_VERSION}-py${PY_VERSION}.egg/              ${BPS_SITE}/python/lib/python${PY_VERSION}/site-packages/benchpro-latest
 
     patch_wrapper   
 }
 
-WORKING_DIR=`pwd`
+SRC_PATH=`pwd`
 
 # Source site variables
-SOURCE_FILE="$WORKING_DIR/site.sh"
+SOURCE_FILE="$SRC_PATH/site.sh"
 printf "Reading ${SOURCE_FILE}...\n"
 source $SOURCE_FILE
 [[ ${PIPESTATUS[0]} -ne 0 ]] && quit "\nCan't source ${SOURCE_FILE}\n"
@@ -84,8 +84,8 @@ fi
 
 printf "\nCleaning up old files...\n"
 # Clean up env & build/install directories
-${WORKING_DIR}/clean
-rm -rf                                                                  ${BPS_SITE}/python/lib/python${PY_VERSION}/site-packages/benchpro-${BPS_SITE_VERSION}*
+${SRC_PATH}/clean
+rm -rf                                                                  ${BPS_SITE}/python/lib/python${PY_VERSION}/site-packages/benchpro-${BPS_VERSION}*
 rm -f                                                                   ${BPS_SITE}/modulefiles/benchpro/*.lua
 rm -f                                                                   ${BPS_SITE}/package
 rm -f                                                                   ${BPS_SITE}/python/lib/python${PY_VERSION}/site-packages/benchpro-latest
@@ -97,34 +97,34 @@ printf "Done.\n"
 printf "\nCreating BPS_SITE...\n"
 # Setup
 mkdir -p                                                                ${BPS_SITE}/logs
-mkdir -p                                                                ${BPS_SITE}/repo
-mkdir -p                                                                ${BPS_SITE}/collection
-setfacl -d -m group::rwX,other::rwX                                     ${BPS_SITE}/collection
-chmod a+w                                                               ${BPS_SITE}/collection
+mkdir -p                                                                ${BP_REPO}
+mkdir -p                                                                ${BPS_COLLECT}
+setfacl -d -m group::rwX,other::rwX                                     ${BPS_COLLECT}
+chmod a+w                                                               ${BPS_COLLECT}
 mkdir -p                                                                ${BPS_SITE}/python/lib/python${PY_VERSION}/site-packages
 mkdir -p                                                                ${BPS_SITE}/modulefiles
 printf "Done.\n"
 
 # Install python package
 
-progress &
-MYID=$!
-printf "\nInstalling Package."
+#progress &
+#MYID=$!
+printf "\nInstalling Package..."
 install
 # Kill progress
-kill -9 $MYID > /dev/null
+#kill -9 $MYID > /dev/null
 
 printf "\nDone.\n"
 #--------------------MODULE FILE---------------------------------
 printf "\nGenerating site module...\n"
 
 # Copy  and contextualize module file
-cp ${WORKING_DIR}/modulefiles/benchpro.lua                                  ${BPS_SITE}/modulefiles/benchpro/${BPS_SITE_VERSION}.lua
+cp ${SRC_PATH}/modulefiles/benchpro.lua                                  ${BPS_SITE}/modulefiles/benchpro/${BPS_VERSION}.lua
 
 function update_mod() {
     # Check val is set
     [[ -z $2 ]] && echo "$1 not set" && exit 1
-    sed -i "3 i setenv(\"$1\", \"$2\")" ${BPS_SITE}/modulefiles/benchpro/${BPS_SITE_VERSION}.lua
+    sed -i "3 i setenv(\"$1\", \"$2\")" ${BPS_SITE}/modulefiles/benchpro/${BPS_VERSION}.lua
 }
 
 # Copy current 'BP_' EVs to modulefile
@@ -134,9 +134,16 @@ while IFS='=' read -r -d '' n v; do
     fi
 done < <(env -0)
 
+# Add py_version
+sed -i "/local bp_home/c\local bp_home = \"${BP_HOME}\""                    ${BPS_SITE}/modulefiles/benchpro/${BPS_VERSION}.lua
+sed -i "/local bp_apps/c\local bp_apps = \"${BP_APPS}\""                    ${BPS_SITE}/modulefiles/benchpro/${BPS_VERSION}.lua
+sed -i "/local bp_results/c\local bp_results = \"${BP_RESULTS}\""           ${BPS_SITE}/modulefiles/benchpro/${BPS_VERSION}.lua
+sed -i "/local py_version/c\local py_version = \"${PY_VERSION}\""           ${BPS_SITE}/modulefiles/benchpro/${BPS_VERSION}.lua
+sed -i "/local bps_site/c\local bps_site = \"${BPS_SITE}\""                 ${BPS_SITE}/modulefiles/benchpro/${BPS_VERSION}.lua
+
 chmod -R a+rX                                                               ${BPS_SITE}/modulefiles
 chmod a+w                                                                   ${BP_REPO}
-#chmod -R a+rX                                                           ${BP_REPO}
+chmod --silent g+r                                                          ${BP_REPO}/*
 setfacl -d -m other::rX                                                     ${BP_REPO}
 touch                                                                       ${BP_REPO}/.urllookup
 chmod a+rw                                                                  ${BP_REPO}/.urllookup
@@ -151,7 +158,7 @@ printf "Done.\n"
 #----------------------CLEAN BUILD FILES------------------------------
 
 # Clean build files
-${WORKING_DIR}/clean >/dev/null 
+${SRC_PATH}/clean >/dev/null 
 
 
 #----------------------TEST DB CONNECTION------------------------------

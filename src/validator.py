@@ -95,36 +95,37 @@ def sticky_bit(path):
     print(bcolors.SET, path, "ACLs")
 
 # Open group access
-def group_access(path_list):
+def give_group_access(path_list):
 
     for path in path_list:
         try:
             os.chmod(path, 0o750)
             print(bcolors.SET, path, "750")
             parent = str(Path(path).parent.absolute())
-            group_access([parent])
+            give_group_access([parent])
         except Exception as e:
             pass
 
 # Set perms on output dirs
 def set_permissions(path_list):
-
-    # Check user belongs to gid specified
-    check_group_membership()
-
-    for path in path_list:
-        if glob.stg['set_gid']:
+    if glob.stg['set_gid']:
+        for path in path_list:
             chgrp(path, glob.stg['gid'])
             sticky_bit(path)
             print(bcolors.SET, path, glob.stg['gid'])
         
 # Create path if not present
 def confirm_path_exists(path_list):
-
-    # Check user belongs to gid specified
-    check_group_membership()
-
     for path in path_list:
+        # We got a path list 
+        if isinstance(path, list): 
+            # Assume [0] = user, [1] = site
+            path = path[0]
+
+        if path[0:2] == "./":
+            path = os.path.join(glob.ev['BP_HOME'], path[2:])
+            print("path", path)
+            sys.exit(1)
         if not os.path.isdir(path):
             create_path(path)
         else:
@@ -167,12 +168,13 @@ def check_env_vars(var_list):
             sys.exit(1)
 
 # Test write access to dir
-def check_write_priv(path):
-    if os.access(path, os.W_OK | os.X_OK):
-        print(bcolors.PASS, path, "is writable")
-    else:
-        print(bcolors.FAIL, path, "is not writable")
-        sys.exit(1)
+def check_write_priv(path_list):
+    for path in path_list:
+        if os.access(path, os.W_OK | os.X_OK):
+            print(bcolors.PASS, path, "is writable")
+        else:
+            print(bcolors.FAIL, path, "is not writable")
+            sys.exit(1)
 
 # Check file permissions
 def check_file_perm(filename, perm):
@@ -260,56 +262,69 @@ def check_benchpro_version(glob):
     else:
         print(bcolors.PASS, "BenchPRO version " + glob.version_site)
 
-def validate_setup():
+def run():
 
     # Python version
     check_python_version()
 
+
     # Check benchpro version
-    check_benchpro_version(glob)
+    #check_benchpro_version(glob)
 
     # Sys envs
-    home_env = glob.stg['home_env'].strip("$")
-    app_env = glob.stg['app_env'].strip("$")
-    result_env = glob.stg['result_env'].strip("$")
+    home_env   = glob.stg['home_env'].strip("$")
+    site_env    = glob.stg['site_env'].strip("$")
+    apps_env    = glob.stg['apps_env'].strip("$")
+    results_env = glob.stg['results_env'].strip("$")
     system_env = glob.stg['system_env'].strip("$")
 
     # check EVs set
-    check_env_vars([system_env,
-                    home_env,
-                    app_env,
-                    result_env,
+    check_env_vars([home_env,
+                    site_env,
+                    apps_env,
+                    results_env,
+                    system_env,
                     'BPS_VERSION',
                     'LMOD_VERSION'])
 
     # Check priv
-    project_dir = os.getenv(home_env)
-    check_write_priv(project_dir)
 
     # Check group memebership
     check_group_membership()
 
     # Check paths
     confirm_path_exists([glob.ev['BP_HOME'],
-                        glob.stg['config_path'],
-                        glob.stg['template_path'],
-                        glob.stg['log_path'],
                         glob.ev['BP_APPS'],
                         glob.ev['BP_RESULTS'],
+                        glob.stg['build_tmpl_path'],
+                        glob.stg['build_cfg_path'],
+                        glob.stg['bench_tmpl_path'],
+                        glob.stg['bench_cfg_path'],
+                        glob.stg['user_bin_path'],
+                        glob.stg['resource_path'],
+                        glob.stg['log_path'],
                         glob.stg['pending_path'],
                         glob.stg['captured_path'],
                         glob.stg['failed_path']])
 
+    # Check user write access
+    check_write_priv([glob.ev['BP_HOME'],
+                    glob.ev['BP_APPS'],
+                    glob.ev['BP_RESULTS']])
+
+
     # Set access
-    group_access([glob.ev['BP_APPS'],
-                     glob.ev['BP_RESULTS']])
+    give_group_access([glob.ev['BP_APPS'],
+                       glob.ev['BP_RESULTS']])
 
     # Set perms
     set_permissions([glob.ev['BP_APPS'],
                      glob.ev['BP_RESULTS']])
 
     # Error if dir not found
-    ensure_path_exists([glob.stg['local_repo']])
+    ensure_path_exists([glob.ev['BPS_SITE'],
+                        glob.ev['BP_REPO'],
+                        glob.ev['BPS_COLLECT']])
 
     # Check exe
     check_exe(['benchpro', 'benchset', 'stage', 'sinfo', 'sacct', 'git'])
@@ -344,11 +359,11 @@ def we_need_to_validate():
     return True
 
 # Check if validation has been run
-def check(glob_obj):
+def check(glob_obj, force):
 
     global glob
     glob = glob_obj
 
-    if we_need_to_validate():
-        validate_setup()
+    if we_need_to_validate() or force:
+        run()
 

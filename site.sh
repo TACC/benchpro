@@ -9,17 +9,17 @@ set() {
 
 # SETUP
 set BPS_SYSTEM $TACC_SYSTEM
-set BPS_SITE_VERSION "1.5.2"
+set BPS_VERSION "1.6.0"
 [[ -z BP_DEV ]] && set BP_DEV 1
 set BUILD_HASH `echo $RANDOM | md5sum | head -c 8`
 
-# Enforce re-validate with higher number
+# Enforce client re-validate with higher number
 set VALIDATOR_VER "2"
 
 set BUILD_DATE "$(date +'%Y-%m-%d %H:%m:%S')"
-set BPS_SITE_VERSION_STR "${BPS_SITE_VERSION}-${BUILD_HASH}.${VALIDATOR_VER}"
+set BPS_VERSION_STR "${BPS_VERSION}-${BUILD_HASH}.${VALIDATOR_VER}"
 set PY_VERSION "3.`python3 --version | head -n 1 | cut -d '.' -f 2`"
-set BP_HOME '$HOME/.benchpro'
+set BP_HOME '$HOME/benchpro'
 set BP_APPS '$SCRATCH/benchpro/apps'
 set BP_RESULTS '$SCRATCH/benchpro/results'
 
@@ -60,7 +60,7 @@ fi
 
 set BPS_SITE "${SITE}"
 set BPS_COLLECT "${BPS_SITE}/collection"
-set BP_INC "${BPS_SITE}/package/benchpro"
+set BPS_INC "${BPS_SITE}/package/benchpro"
 
 today=`date +%Y-%m-%d_%H-%M-%S`
 set BP_LOG "${BPS_SITE}/logs/build_${today}.log"
