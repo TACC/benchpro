@@ -70,7 +70,6 @@ class init(object):
         else:
             self.search_space = [search_space]
         
-
         # For each overload key
         for overload_key in list(self.glob.overload_dict):
             self.glob.lib.msg.log("Overloading key " + overload_key + "...")            
@@ -84,25 +83,23 @@ class init(object):
     # Generate dict from commandline params
     def setup_dict(self):
 
-        user_input = self.glob.args.overload
+        user_input = self.glob.user_settings
+        # Overloads from $BP_HOME/settings.ini first, then CLI
+        if self.glob.args.overload:
+            user_input += self.glob.args.overload
 
-        # Check if input is a file?
-        overload_file = self.glob.lib.files.find_in([self.glob.stg['config_path']], user_input[0]+"*", False) 
-        if overload_file:
-            # Remove first element (filename)
-            user_input.pop(0)
-            # Add file values to param list
-            with open(overload_file, 'r') as f:
-                user_input.extend(f.readlines())
-
-        # Read key-values into dict
+        # Iterate overload list
         for setting in user_input:
+            if not isinstance(setting, str):
+                continue
             pair = setting.split('=')
+            if len (pair) != 2:
+                continue
             # Test key-value pair
-            if not len(pair) == 2:
+            if not len(pair) == 2 and setting != '':
                 print("Invalid overload [key]=[value] pair detected: ", setting)
                 sys.exit(1)
-            self.glob.overload_dict[pair[0].strip().lower()] = pair[1].strip()
+            self.glob.overload_dict[pair[0].strip()] = pair[1].strip()
 
     # Catch overload keys that are incompatible with local exec mode before checking for missed keys
     def catch_incompatible(self):

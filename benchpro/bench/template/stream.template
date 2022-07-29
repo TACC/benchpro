@@ -1,0 +1,13 @@
+
+CORES_PER_NODE=<<<cores_per_node>>>
+NUMA_DOMAINS=`numactl --hardware | grep available | cut -d ' ' -f 2`
+CORES_PER_DOMAIN=$(( CORES_PER_NODE / NUMA_DOMAINS ))
+
+export OMP_NUM_THREADS=$(( CORES_PER_DOMAIN < threads ? CORES_PER_DOMAIN : threads ))
+
+export OMP_PROC_BIND=true
+echo "MPI RANKS=$NUMA_DOMAINS"
+echo "OMP_NUM_THREADS=$OMP_NUM_THREADS"
+
+mpirun -n $NUMA_DOMAINS bind_rank.exe
+

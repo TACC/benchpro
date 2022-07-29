@@ -112,7 +112,7 @@ class init(object):
     def get_exec_mode(self, job_type, report_file):
 
         # Path to job report file
-        report_path = os.path.join(self.glob.stg['build_path'], report_file, self.glob.stg['build_report_file'])
+        report_path = os.path.join(self.glob.ev['BP_APPS'], report_file, self.glob.stg['build_report_file'])
 
         if job_type == "bench":
             # Path to bench report file
@@ -127,7 +127,7 @@ class init(object):
     def get_task_id(self, job_type, report_file):
 
         # Path to job report file
-        report_path = os.path.join(self.glob.stg['build_path'], report_file, self.glob.stg['build_report_file'])
+        report_path = os.path.join(self.glob.ev['BP_APPS'], report_file, self.glob.stg['build_report_file'])
         if job_type == "bench":
             # Path to bench report file
             report_path = os.path.join(self.glob.stg['pending_path'], report_file, self.glob.stg['bench_report_file'])
@@ -139,7 +139,7 @@ class init(object):
 
     # Return the binary executable value from provided build path
     def build_exe(self, build_path):
-        report_path = os.path.join(self.glob.stg['build_path'], build_path, self.glob.stg['build_report_file'])
+        report_path = os.path.join(self.glob.ev['BP_APPS'], build_path, self.glob.stg['build_report_file'])
 
         if os.path.isfile(report_path):
             return self.read(report_path)['build']['bin_dir'], self.read(report_path)['build']['exe_file']

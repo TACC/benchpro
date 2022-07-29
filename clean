@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+# Clean build files
+rm -rf benchpro.egg-info
+rm -rf build
+rm -rf dist
+#rm -rf src/__pycache__
+#rm -rf src/library/__pycache__

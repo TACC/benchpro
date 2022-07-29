@@ -52,7 +52,7 @@ class init(object):
             return False, ""
 
     # Look for key in multiple dicts, return value or error
-    def get_existing_value(self, key):
+    def get_dict_value(self, key):
 
         # For each dict in list
         for search_dict in self.search_space:
@@ -71,23 +71,35 @@ class init(object):
         self.glob.lib.msg.error("Unable to resolve variable '" + key + "'")
 
     # Replace variables
-    def resolve_vars(self, dict_value):
+    def resolve_vars(self, dict_value, runtime_keys):
         # Get list of <<<variables>>>
         var_list = re.findall('\<<<([^>>>]+)',str(dict_value))
-        # Replace all vars in each dict value
+
+        # For each found variable
         for var in var_list:
-            dict_value = dict_value.replace("<<<"+var+">>>", str(self.get_existing_value(var)))
+
+            # Skip runtime keys for now
+            if runtime_keys and (var in runtime_keys):
+                break 
+
+            new_value = str(self.get_dict_value(var))
+            dict_value = dict_value.replace("<<<" + var + ">>>", new_value)
+            self.glob.lib.msg.log("Replacing <<<" + var + ">>> with " + new_value)
 
         return dict_value
 
     # Check dict for vars, resolve them and then evaluate for arithmatic
-    def eval_dict(self, cfg_dict):
+    def eval_dict(self, cfg_dict, eval_runtime_vars):
 
         self.set_search_space()
 
+        runtime_keys = None
+        if eval_runtime_vars:
+            runtime_keys = self.glob.config['runtime'].keys()
+
         for key in cfg_dict:
             # Resolve variables
-            cfg_dict[key] = self.resolve_vars(cfg_dict[key])
+            cfg_dict[key] = self.resolve_vars(cfg_dict[key], runtime_keys) 
             
             # If operators are present
             if self.has_arithmatic(cfg_dict[key]):
@@ -117,7 +129,7 @@ class init(object):
     # Replace variable in condition with existing value from search space, then evaluate expression
     def eval_cond(self, cond):
         key = self.extract_key(cond)
-        return self.eval_logic_expr(self.replace_key(cond, key, self.get_existing_value(key)))
+        return self.eval_logic_expr(self.replace_key(cond, key, self.get_dict_value(key)))
 
     # Update dict value with rule value
     def apply_rule(self, action):

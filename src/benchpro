@@ -11,6 +11,39 @@ import os
 import sys
 import traceback
 
+# MODULE NOT LOADED
+def check_module_loaded():
+    if not os.environ.get("BPS_SITE"):
+        print("It seems the benchpro module is not loaded.")
+        sys_dict = { 'frontera' : "/scratch1/hpc_tools/benchpro/modulefiles",
+                     'stampede2': "/scratch/hpc_tools/benchpro/modulefiles",
+                     'ls6'      : "/scratch/projects/benchtool/modulefiles"
+                }
+        if os.environ.get('TACC_SYSTEM') in sys_dict:
+            print("Load with:")
+            print("ml use " + sys_dict[os.environ.get('TACC_SYSTEM')])
+            print("ml benchpro")
+        else:
+            print("This system doesn't look familiar, contact support to get the BenchPRO module path.")
+        print()
+        print("HINT: You can load BenchPRO automatically next time by adding it to your default module collection:")
+        print("ml save")
+        sys.exit(1)
+
+check_module_loaded()
+
+# Print urgent (terminating) and non-urgent messages
+import src.notices as notices
+
+# VERSION MISMATCH
+if os.environ.get("BPS_VERSION") != "1.6.0":
+    print("Please ml the newest benchpro module (1.6.0)")
+    sys.exit(1)
+
+# Synchronize the user's benchpro repo with this site version
+#import src.sync_handler     as sync
+#sync.resync()
+
 # Local Imports
 try:
     import src.bench_manager    as bench_manager
@@ -18,27 +51,41 @@ try:
     import src.global_settings  as global_settings
     import src.result_manager   as result_manager
     import src.splash           as splash
-    import src.validate         as validate
+    import src.validator        as validator
 
 # Catch import exception
 except ImportError as e:
     print("Python import error!")
-    print("Is the BenchPRO module loaded?")
+    print(traceback.format_exc())
     print(e)
     sys.exit(1)
 
 # Catch exception in a handler, write to log and quit
 def catch_major_exception(glob, e):
-    print()
-    print("It appears something has gone wrong!")
-    print(e)
-    print()
-    if glob.log:
-        glob.log.debug(traceback.format_exc())
-        print("Traceback written to log.")
-    else:
+
+
+    if not glob:
+        print("Failed to create glob object")
         print(traceback.format_exc())
-    sys.exit(1)
+        print(e)
+        sys.exit(1)
+
+    if not glob.stg['debug']:
+        print()
+        print("It appears something has gone wrong!")
+        print(e)
+        print()
+        if glob.log:
+            glob.log.debug(traceback.format_exc())
+            print("Traceback written to log.")
+        else:
+            print(traceback.format_exc())
+        sys.exit(1)
+
+    else: 
+        print(traceback.format_exc())
+        print(e)
+        sys.exit(1)
 
 # Get cmdline arguments
 def get_arguments():
@@ -69,7 +116,7 @@ def get_arguments():
 
     cmd_parser.add_argument(
         "--sched",
-        default="system",
+        default=False,
         type=str,
         help="Name of the scheduler config file, will use system default otherwise.")
 
@@ -185,6 +232,13 @@ def get_arguments():
         nargs='+',
         help="Override any setting read from cfg files. OVERLOAD is a list of key-value pairs of the form key=value")
 
+
+    cmd_parser.add_argument(
+        "--purge",
+        default=False,
+        action='store_true',
+        help="Delete all local user files, forever (!)")
+
     cmd_parser.add_argument(
         "-V",
         "--validate",
@@ -205,34 +259,48 @@ def get_arguments():
 # 
 def init_glob():
     # Init global object
-    glob = global_settings.setup()
-    # Store arguments from ArgumentParser in glob
-    glob.args = get_arguments()
+    glob = global_settings.setup(get_arguments())
     return glob
 
 def main():
 
+    glob = None
+    args = get_arguments()
+
+    # This is dumb
+    if args.avail != "None" \
+    and not args.bench \
+    and not args.build \
+    and not args.capture \
+    and not args.clean \
+    and not args.dbApp \
+    and args.dbResult != "None" \
+    and not args.defaults \
+    and not args.delApp \
+    and not args.delResult \
+    and not args.history \
+    and args.last != "None" \
+    and not args.listApps \
+    and args.listResults != "None" \
+    and not args.purge \
+    and not args.queryApp \
+    and not args.queryResult \
+    and not args.validate \
+    and not args.version:
+        notices.print_notices()    
+        sys.exit(0)
+
+    # Create glob obj
     try:
         glob = init_glob()
     except Exception as e:
         catch_major_exception(glob, e)
 
-    # Check client/site versions match
-    glob.lib.check_version()
+    # Add args to glob
+    glob.args = args
 
-    # Run validator script
-    if glob.args.validate:
-        try:
-            validate.check_setup(glob)
-        except Exception as e:
-            catch_major_exception(glob, e)
-
-    # Check validated
-    validate.check(glob.bp_home)
-
-    # Read overload inputs
-    if glob.args.overload:
-        glob.lib.overload.setup_dict()
+    # Run validator checker, with --validate as 2nd arg. Forces if True
+    validator.check(glob, glob.args.validate) 
 
     # Start build manager
     if glob.args.build:
@@ -291,17 +359,15 @@ def main():
     # Remove result and exit
     elif glob.args.delResult:
         result_manager.remove_result(glob)
+    # Purge user files 
+    elif glob.args.purge:
+        glob.lib.files.purge()
     elif glob.args.version:
         glob.lib.misc.print_version()
     elif glob.args.last:
         glob.lib.misc.print_last()
-    # No seletion provided - print splash
-    else:    
-        glob.lib.msg.high(splash.get_splash(glob))
 
-    print()
-    return 0
-
+    notices.print_notices() 
 
 if __name__ == "__main__":
     sys.exit(main())

@@ -1,0 +1,75 @@
+
+cd mp_linpack
+
+export PATH=`pwd`:$PATH
+
+# Check file exists
+if [ ! -f "HPL.dat" ]; then
+  echo "File HPL.dat not found" 
+  echo "Run this script in HPL dir."
+  exit 1
+fi
+
+# These consts give a GB/node -> problem size (N) equation accurate to +-2 GB, tested over range 8GB-180GB/node
+const1=2
+const2=0.5
+export I_MPI_DAPL_DIRECT_COPY_THRESHOLD=655360
+export MPI_PER_NODE=2
+export MPI_PROC_NUM=$(bc <<< ${nodes}*${MPI_PER_NODE})
+N=$(bc <<< "scale=0; (sqrt((${GB_PER_NODE}*1024*1024*1024*${nodes})/${const1})*${const2})/${NB}*${NB}")
+
+cp -f HPL.dat HPL.dat.bak
+
+# Get P & Q if not set
+if [ -z $Q ] || [ -z $P ]; then
+
+    mapfile -t facts < <( factor ${MPI_PROC_NUM} )
+
+    # Get list of factor
+    factors=$(factor ${MPI_PROC_NUM} | cut -d ':' -f 2)
+    while :
+    do
+      # Get largest factor
+      fact=$(echo $factors | rev | cut -d ' ' -f 1 | rev)
+      # Add fact to Q/P
+      if [ ${Q} -le ${P}  ]; then
+        Q=$(( Q * fact ))
+      else
+        P=$(( P * fact ))
+      fi
+      # Done last factor
+      if [ $(echo $factors | wc -w) -eq 1 ]; then
+          break
+      fi
+      # Remove largest factor from list
+      factors=$(echo $factors | rev | cut -d ' ' -f 2- | rev)
+    done
+
+    # Swap Q & P if P < Q
+    if [ ${Q} -lt ${P} ]; then
+      tmp=${Q}
+      Q=${P}
+      P=${tmp}
+    fi
+fi
+
+
+# Set N, NB, P, Q
+sed -i "6s/.*/${N}     Ns/"  HPL.dat
+sed -i "8s/.*/${NB}    NBs/" HPL.dat
+sed -i "11s/.*/${P}    Ps/"  HPL.dat
+sed -i "12s/.*/${Q}    Qs/"  HPL.dat
+
+
+# Start HPL
+
+echo "HPL.dat: "
+cat HPL.dat
+echo "Binary name: "
+ls -l xhpl_intel64_dynamic 
+echo "Environment variables: "
+env
+
+${mpi_exec} ${exe} "$@"
+
+

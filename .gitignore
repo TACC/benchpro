@@ -8,7 +8,6 @@ __pycache__/
 
 # Distribution / packaging
 .Python
-benchpro/
 .history
 .outputs
 develop-eggs/

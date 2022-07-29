@@ -1,0 +1,6 @@
+cd ${dataset}
+
+sed -i "/electron_maxstep/c\    electron_maxstep = ${electron_maxstep}" ausurf.in
+
+${mpi_exec} ${exe} -i ${input} 
+

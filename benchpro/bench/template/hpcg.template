@@ -1,0 +1,15 @@
+
+
+cd hpcg/bin
+
+export PATH=`pwd`:$PATH
+
+ARRAY_SIZE=<<<array_size>>>
+
+sed -i "3s/.*/${ARRAY_SIZE}/" hpcg.dat
+sed -i "4s/.*/300/" hpcg.dat
+
+export KMP_AFFINITY=granularity=fine,compact,1,0 
+export I_MPI_ADJUST_ALLREDUCE=5
+
+${mpi_exec} ${exe}

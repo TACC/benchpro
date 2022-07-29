@@ -2,9 +2,12 @@
 # System imports
 import copy
 import os
+import random
 import signal
 import sys
 import time
+
+import src.library.misc_handler       as misc_handler
 
 class init(object):
 
@@ -29,7 +32,9 @@ class init(object):
         self.glob = glob
         # Init interrupt handler
         signal.signal(signal.SIGINT, self.signal_handler) 
-    
+
+        self.misc     = misc_handler.init(self.glob) 
+
     # Convert strings to lists: str -> [str], list -> list
     def listify(self, message):
         if not isinstance(message, list):
@@ -71,25 +76,26 @@ class init(object):
     def warning(self, message):
         self.log_and_print([self.glob.warning] + self.listify(message), True)
 
+    def exit(self, message, failed):
+        self.log_and_print(message, True)
+
+        if failed:
+            # Clean tmp files
+            if self.glob.stg['clean_on_fail']:
+                self.log_and_print("Cleaning up tmp files...", True)
+                self.glob.lib.files.rollback()
+
+                self.log_and_print(["Quitting", ""], True)
+                sys.exit(1)
+
+        sys.exit(0)
+
     # Print message to log and stdout then quit
     def error(self, message):
-        message = self.listify(message)
+        self.exit(self.listify(message), True)
 
-        self.log_and_print(["", 
-                            ""] + 
-                            [self.glob.error] + 
-                            self.listify(message) +
-                            ["Check log for details."],
-                            True)
-
-        # Clean tmp files
-        if self.glob.stg['clean_on_fail']:
-            self.log_and_print("Cleaning up tmp files...", True)
-            self.glob.lib.files.rollback()
-
-        self.log_and_print(["Quitting", ""], True)
-
-        sys.exit(1)
+    def success(self, message):
+        self.exit(self.listify(message), False)
 
     # Print heading text in bold
     def heading(self, message):
@@ -105,10 +111,9 @@ class init(object):
         print("---------------------------")
         print()
 
-
     # Get list of uncaptured results and print note to user
     def new_results(self):
-
+    
         if not self.glob.stg['skip_result_check']:
 
             self.log_and_print(["Checking for uncaptured results..."], False)
@@ -144,50 +149,58 @@ class init(object):
 
         print()
         print("=====> " + self.glob.lib.rel_path(file_path) + " <=====")
-        print("...")
 
         # Print last 20 lines
         with open(file_path, 'r') as fd:
                 lines = fd.readlines()
-                [print(x.strip()) for x in lines[max(-30, (len(lines)*-1)):]]
+                [print(x.strip()) for x in lines[max(-15, (len(lines)*-1)):]]
 
         print("=====> " + self.glob.lib.rel_path(file_path) + " <=====")
 
     # Print the list of installed applications
-    def print_app_table(self):
+    def print_app_table(self, table_contents):
 
-        # Get list of apps 
-        apps = self.glob.installed_app_list
+        # If sent empty list, print everything
+        if not table_contents:
+
+            self.glob.lib.set_installed_apps()
+
+            # Get list of apps 
+            table_contents = [app['table'] for app in self.glob.installed_apps]
+
+            if not table_contents:
+                self.glob.lib.msg.success("No applications installed.")
+
         # Reorder columns
         order = [0, 5, 6, 1, 2, 3, 4, 7, 8]
 
         # Add header row
-        apps = [["TASK ID", "SYSTEM", "ARCH", "COMPILER", "MPI", "CODE", "VERSION", "LABEL", "\x1b[0;37mSTATUS\x1b[0m"]] + apps
-        cols = len(apps[0])
+        table_contents = [["TASK ID", "SYSTEM", "ARCH", "COMPILER", "MPI", "CODE", "VERSION", "LABEL", "\x1b[0;37mSTATUS\x1b[0m"]] + table_contents
+        cols = len(table_contents[0])
 
         # Check header has same num cols and content
-        if len(apps[0]) != (len(apps[1])):
+        if len(table_contents[0]) != (len(table_contents[1])):
             self.glob.lib.msg.error("Mismatched number of table columns.")
 
         # Get max length of each table column (for spacing)
         padding = [0] * cols
         for i in range(cols):
-            for app in apps:
-                if len(str(app[i])) > padding[i]:
-                    padding[i] = len(str(app[i]))
+            for row in table_contents:
+                if len(str(row[i])) > padding[i]:
+                    padding[i] = len(str(row[i]))
 
         # Buffer each column 2 chars
         padding = [i + 2 for i in padding]
 
         # Print contents
-        for idx in range(0,len(apps)): 
+        for idx in range(0,len(table_contents)): 
             text_col = self.glob.white
             if (idx % 2) == 0:
                 text_col = self.glob.grey
 
             print("| ", end='')
             for column in range(cols):
-                print(text_col + str(apps[idx][order[column]]).ljust(padding[order[column]]) + self.glob.end + "| ", end='')
+                print(text_col + str(table_contents[idx][order[column]]).ljust(padding[order[column]]) + self.glob.end + "| ", end='')
             print()
 
     # Print timing
@@ -197,15 +210,26 @@ class init(object):
             time.sleep(1)
         print()
 
-	# Print random hint
-	def print_hint(self):
-	"""
+    # Print random hint
+    def print_hint(self):
 
-	"""
 
-		if self.glob.stg['print_hint']:
-		    with open(os.path.join(bp_site, "hints.txt")) as hint_file:
-		        hints = hint_file.readlines()
+        if self.glob.stg['print_hint']:
+            with open(os.path.join(self.glob.stg['resource_path'], "hints.txt")) as hint_file:
+                hints = hint_file.readlines()
 
-	    	hint = hints[rand(0:len(hints))]
-			print(hint)
+            hint = random.choice(hints)
+            print("HINT: " + hint)
+
+    # Print info
+    def info(self):
+
+        print("Welcome to BenchPRO, are you new?")
+        print("You may want to read the documentation: https://benchpro.readthedocs.io/en/latest/")
+        print("")
+        print("You can view all available applications with bp -a")
+        print("You can list all installed applcations with bp -la")
+        print("Build the included LAMMPS code with bp -b lammps")
+        print("export BP_NOTICES=1 for more help.")
+
+        self.misc.print_version()

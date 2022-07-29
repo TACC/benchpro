@@ -2,9 +2,12 @@
 
 # System Imports
 import configparser as cp
+import grp
 import os
 from packaging import version
+from pathlib import Path
 import shutil as sh
+import stat
 import subprocess
 import sys
 import time
@@ -45,9 +48,84 @@ def create_path(path):
         print(bcolors.FAIL, "cannot create", path)
         sys.exit(1)
 
+# Check that the user belongs to the 'gid' they provided 
+def check_group_membership():
+
+    if glob.stg['set_gid']:
+        gid = glob.stg['gid']
+        if not gid[0].isdigit(): 
+            gid = int(gid.split('-')[1])
+        
+        grouplist = os.getgrouplist(os.environ.get('USER'), 100)
+        if not gid in grouplist:
+            print(bcolors.FAIL, "you don't belong to gid " + glob.stg['gid'] + " (" + gid + ")")
+            sys.exit(1)
+
+# Walk FS and recursively chown everything (i.e. chgrp -R) (yes, there is no function for this)
+def chgrp(path, group):
+
+    gid = grp.getgrnam(group).gr_gid
+
+    if os.path.isdir(path):
+        # Chgrp on top dir
+        os.chown(path, -1, gid)
+    
+        try:
+
+            for curDir,subDirs,subFiles in os.walk(path):
+                # Chgrp on subFiles
+                for file in subFiles:
+                    absPath = os.path.join(curDir,file)
+                    os.chown(absPath,-1,gid)
+                # Recurse through subDirs
+                for dir in subDirs:
+                    chgrp(os.path.join(curDir,dir), group)
+        except:
+            pass
+
+# Set group set bit 
+def sticky_bit(path):
+    os.chmod(path, 0o3775) 
+    try:
+        subprocess.call(['setfacl', '-d', '-m', 'group::rX', path])
+    except:
+        print(bcolors.FAIL, "Can't execute setfacl...")
+        sys.exit(1)
+
+    print(bcolors.SET, path, "ACLs")
+
+# Open group access
+def give_group_access(path_list):
+
+    for path in path_list:
+        try:
+            os.chmod(path, 0o750)
+            print(bcolors.SET, path, "750")
+            parent = str(Path(path).parent.absolute())
+            give_group_access([parent])
+        except Exception as e:
+            pass
+
+# Set perms on output dirs
+def set_permissions(path_list):
+    if glob.stg['set_gid']:
+        for path in path_list:
+            chgrp(path, glob.stg['gid'])
+            sticky_bit(path)
+            print(bcolors.SET, path, glob.stg['gid'])
+        
 # Create path if not present
 def confirm_path_exists(path_list):
     for path in path_list:
+        # We got a path list 
+        if isinstance(path, list): 
+            # Assume [0] = user, [1] = site
+            path = path[0]
+
+        if path[0:2] == "./":
+            path = os.path.join(glob.ev['BP_HOME'], path[2:])
+            print("path", path)
+            sys.exit(1)
         if not os.path.isdir(path):
             create_path(path)
         else:
@@ -90,12 +168,13 @@ def check_env_vars(var_list):
             sys.exit(1)
 
 # Test write access to dir
-def check_write_priv(path):
-    if os.access(path, os.W_OK | os.X_OK):
-        print(bcolors.PASS, path, "is writable")
-    else:
-        print(bcolors.FAIL, path, "is not writable")
-        sys.exit(1)
+def check_write_priv(path_list):
+    for path in path_list:
+        if os.access(path, os.W_OK | os.X_OK):
+            print(bcolors.PASS, path, "is writable")
+        else:
+            print(bcolors.FAIL, path, "is not writable")
+            sys.exit(1)
 
 # Check file permissions
 def check_file_perm(filename, perm):
@@ -183,48 +262,72 @@ def check_benchpro_version(glob):
     else:
         print(bcolors.PASS, "BenchPRO version " + glob.version_site)
 
-# Validate setup
-def check_setup(glob_obj):
-    global glob
-    glob = glob_obj
+def run():
 
     # Python version
     check_python_version()
 
+
     # Check benchpro version
-    check_benchpro_version(glob)
+    #check_benchpro_version(glob)
 
     # Sys envs
-    project_env = glob.stg['project_env'].strip("$")
-    app_env = glob.stg['app_env'].strip("$")
-    result_env = glob.stg['result_env'].strip("$")
+    home_env   = glob.stg['home_env'].strip("$")
+    site_env    = glob.stg['site_env'].strip("$")
+    apps_env    = glob.stg['apps_env'].strip("$")
+    results_env = glob.stg['results_env'].strip("$")
     system_env = glob.stg['system_env'].strip("$")
 
-    check_env_vars([system_env,
-                    project_env,
-                    app_env,
-                    result_env,
-                    'BP_SITE_VERSION',
+    # check EVs set
+    check_env_vars([home_env,
+                    site_env,
+                    apps_env,
+                    results_env,
+                    system_env,
+                    'BPS_VERSION',
                     'LMOD_VERSION'])
 
     # Check priv
-    project_dir = os.getenv(project_env)
-    check_write_priv(project_dir)
+
+    # Check group memebership
+    check_group_membership()
 
     # Check paths
-    confirm_path_exists([glob.stg['log_path'],
-                        glob.stg['build_path'],
-                        glob.stg['bench_path'],
+    confirm_path_exists([glob.ev['BP_HOME'],
+                        glob.ev['BP_APPS'],
+                        glob.ev['BP_RESULTS'],
+                        glob.stg['build_tmpl_path'],
+                        glob.stg['build_cfg_path'],
+                        glob.stg['bench_tmpl_path'],
+                        glob.stg['bench_cfg_path'],
+                        glob.stg['user_bin_path'],
+                        glob.stg['resource_path'],
+                        glob.stg['log_path'],
                         glob.stg['pending_path'],
                         glob.stg['captured_path'],
                         glob.stg['failed_path']])
 
-    ensure_path_exists([glob.stg['local_repo'],
-                        glob.stg['config_path'],
-                        glob.stg['template_path']])
+    # Check user write access
+    check_write_priv([glob.ev['BP_HOME'],
+                    glob.ev['BP_APPS'],
+                    glob.ev['BP_RESULTS']])
+
+
+    # Set access
+    give_group_access([glob.ev['BP_APPS'],
+                       glob.ev['BP_RESULTS']])
+
+    # Set perms
+    set_permissions([glob.ev['BP_APPS'],
+                     glob.ev['BP_RESULTS']])
+
+    # Error if dir not found
+    ensure_path_exists([glob.ev['BPS_SITE'],
+                        glob.ev['BP_REPO'],
+                        glob.ev['BPS_COLLECT']])
 
     # Check exe
-    check_exe(['benchpro', 'sinfo', 'sacct'])
+    check_exe(['benchpro', 'benchset', 'stage', 'sinfo', 'sacct', 'git'])
 
     # Check db host access
     connection = check_db_access(glob)
@@ -236,14 +339,31 @@ def check_setup(glob_obj):
         print(bcolors.WARN, "database access check disabled")
 
     # Create validate file
-    with open(os.path.join(glob.bp_home, ".validated"), 'w'):
-        pass
+    with open(os.path.join(glob.ev['BP_HOME'], ".validated"), 'w') as val:
+        val.write(os.environ.get("BPS_VERSION_STR").split(".")[-1])
     print("Done.")
-    sys.exit(0)
+    return
+
+# Test if our validation is out to date
+def we_need_to_validate():
+    if os.path.isfile(os.path.join(glob.ev['BP_HOME'], ".validated")):
+        # File exists
+        with open(os.path.join(glob.ev['BP_HOME'], ".validated"), 'r') as f:
+            your_ver = f.read().strip()
+
+        req_ver = os.environ.get("BPS_VERSION_STR").split(".")[-1]
+        # Compare validation versions
+        if str(your_ver) == str(req_ver):
+            return False
+
+    return True
 
 # Check if validation has been run
-def check(bp_home):
-    if not os.path.isfile(os.path.join(bp_home, ".validated")):
-        print("Please run  benchpro --validate before continuing.")
-        print()
-        sys.exit(1)
+def check(glob_obj, force):
+
+    global glob
+    glob = glob_obj
+
+    if we_need_to_validate() or force:
+        run()
+

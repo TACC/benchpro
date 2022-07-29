@@ -1,0 +1,66 @@
+#!/usr/bin/env python3
+#
+# BenchSET
+# A little tool to automatically apply changes to BenchPRO's settings files
+# Matthew Cawood
+# July 2022
+#
+
+import configparser
+import os
+import sys
+
+# Print a setting matching input, None == *
+def print_setting(select):
+    with open(os.path.join(os.environ.get("BP_HOME"), "settings.ini"), 'r') as settings:
+        for line in settings.readlines():
+            if not select or (select in line):
+                print(line.strip())
+
+# Update a setting
+def change_setting(setting, value):
+
+    # Read file
+    with open(os.path.join(os.environ.get("BP_HOME"), "settings.ini"), 'r') as settings :
+        filedata = settings.read()
+
+    # Replace the target string
+    lines = filedata.split("\n")
+
+    found = False
+    for n in range(len(lines)):
+        key = lines[n].split("=")[0].strip()
+        if key == setting:
+            print(key + ": " + lines[n].split("=")[1].strip() + " -> " + value)
+            lines[n] = key.ljust(24, " ") + "= " + value 
+            found = True
+            break
+
+    if not found:
+        print("No matches for '" + setting + "'")
+        sys.exit(1)
+
+    # Write the file out again
+    with open(os.path.join(os.environ.get("BP_HOME"), "settings.ini"), 'w') as file:
+        file.write("\n".join(lines))
+    print("Done.")
+
+def main():
+    
+    # Print list
+    if len(sys.argv) == 1:
+        print_setting(None)
+    # Print specific
+    elif len(sys.argv) == 2:
+        print_setting(sys.argv[1])
+    # Change value
+    elif len(sys.argv) == 3:
+        change_setting(sys.argv[1], sys.argv[2])        
+    else:
+        print ("Unknown input format.")
+        sys.exit(1)
+
+    sys.exit(0)
+
+if __name__ == "__main__":
+    sys.exit(main())

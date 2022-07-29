@@ -1,0 +1,50 @@
+#!/bin/bash 
+
+output_dir=$1
+
+if type lshw 
+if type foo >/dev/null 2>&1; then 
+    echo "HW scripts in PATH, is BenchPRO loaded? Aborting."; 
+    exit 1
+fi  
+
+if [[ "$(stat -c %U lshw)" != "root" ]]; then
+    printf "Script permissions not set. Aborting.\n"
+    exit 1
+fi
+
+if [[ -z $1 ]]; then 
+    printf "Provide output dir. Aborting\n"
+    exit 1
+fi
+
+mkdir -p ${output_dir}
+
+label=( "cpuid.all.raw" 
+        "cpuid.core0" 
+        "lshw" 
+        "TACC_HWP_set" 
+        "lspci" 
+        "rdmsr_all"
+        "rpm" 
+        "ml"
+        "lscpu"
+        ) 
+
+cmd=(   "cpuid -r"
+        "cpuid -1"
+        "lshw"
+        "TACC_HWP_set -v -s"
+        "lspci -xxx"
+        "rdmsr_all"
+        "rpm -qa"
+        "ml"
+        "lscpu"
+        )
+
+for ((i=0;i<${#label[@]};++i)); do
+    echo "Running ${label[i]}"
+    ${cmd[i]} &> ${output_dir}/${label[i]}
+done
+echo "Done."
+exit 0

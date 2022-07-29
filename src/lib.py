@@ -47,18 +47,10 @@ class init(object):
         # if empty str
         if not path:
             return ""
-        # if in project path
-        if self.glob.bp_home in path:
-            return os.path.join(self.glob.stg['project_env'] + path.replace(self.glob.bp_home, ""))
-        # if in application path
-        elif self.glob.stg['build_path'] in path:
-            return os.path.join(self.glob.stg['app_env'] + path.replace(self.glob.stg['build_path'], ""))
-        # if in result path
-        elif self.glob.stg['bench_path'] in path:
-            return os.path.join(self.glob.stg['result_env'] + path.replace(self.glob.stg['bench_path'], ""))
-        # local repo
-        elif self.glob.stg['local_repo'] in path:
-            return os.path.join(self.glob.stg['local_repo_env'] + path.replace(self.glob.stg['local_repo'], ""))
+
+        for key in self.glob.ev:
+            if self.glob.ev[key] in path:
+                return path.replace(self.glob.ev[key], "$"+key)
 
         # if not any of the above
         return path
@@ -76,26 +68,23 @@ class init(object):
     def set_installed_apps(self):
 
         # Reset 
-        self.glob.installed_app_list  = []
-        self.glob.installed_app_paths = []
-        installed_apps                = []
+        self.glob.installed_apps  = []
 
-        app_dir = self.glob.stg['build_path']
+        app_dir = self.glob.ev['BP_APPS']
         start = app_dir.count(self.glob.stg['sl'])
 
         # Get directory paths
-        self.files.search_tree(installed_apps, app_dir, start, start, start + self.glob.stg['tree_depth'])
-
+        app_paths = []
+        self.files.search_tree(app_paths, app_dir, start, start, start + self.glob.stg['tree_depth'])
+        
         # Split app path into catagories and add status
-        for path in installed_apps:
+        for path in app_paths:
             status = self.glob.lib.sched.get_status_str(path)
             idx = self.report.get_task_id("build", path) 
-            # Job status could not be determined
-            self.glob.installed_app_paths.append(path)
-            self.glob.installed_app_list.append([idx] +  path.split(self.glob.stg['sl']) + [status])
+            self.glob.installed_apps.append({'task_id': idx, 'table': [idx] + path.split(self.glob.stg['sl']) + [status], 'path': path})
 
-        # Sort by code
-        self.glob.installed_app_list = sorted(self.glob.installed_app_list, key=itemgetter(5)) 
+        # Sort by task_id
+        self.glob.installed_apps = sorted(self.glob.installed_apps, key=lambda x: x['task_id'], reverse=True)
 
         # Add ID column
         #for i in range(0,len(self.glob.installed_app_list)):
@@ -236,14 +225,14 @@ class init(object):
         self.set_installed_apps()
 
         # For each installed code
-        results = [code_path for code_path in self.glob.installed_app_paths if self.search_with_dict(search_dict, code_path)]
+        matching_apps = [code_dict for code_dict in self.glob.installed_apps if self.search_with_dict(search_dict, code_dict['path'])]
 
         # Unique result
-        if len(results) == 1:
-            return results[0]
+        if len(matching_apps) == 1:
+            return matching_apps[0]
 
-        # No results
-        elif len(results) == 0:
+        # No matches
+        elif len(matching_apps) == 0:
 
             if self.glob.stg['build_if_missing']:
                 return False
@@ -252,9 +241,12 @@ class init(object):
                                 "And 'build_if_missing=False' in $BP_HOME/settings.ini",
                                 "Currently installed applications:"] + self.glob.installed_app_paths)
 
-        # Multiple results
-        elif len(results) > 1:
-            self.msg.error(["Multiple installed applications match your selection critera: " + ", ".join([key+"="+search_dict[key] for key in search_dict if search_dict[key]])] + [self.glob.stg['app_env'] + "/" + result for result in results] + ["Please be more specific."])
+        # Multiple multiple matches
+        elif len(matching_apps) > 1:
+
+            self.msg.high("Multiple applications match your criteria: " + ", ".join([key + "=" + search_dict[key] for key in search_dict if search_dict[key]]))
+            self.msg.print_app_table([code_dict['table'] for code_dict in matching_apps]) 
+            self.msg.error("Please be more specific (use task_ID)")
 
     # Read every build config file and construct a list with format [[cfg_file, code, version, build_label],...]
     def get_avail_codes(self):
@@ -320,11 +312,11 @@ class init(object):
     def get_system_vars(self, system):
     
         self.glob.system['system'] = system
-        cfg_file = os.path.join(self.glob.stg['config_path'], self.glob.stg['system_cfg_file'])
-        
+        cfg_file = os.path.join(self.glob.stg['sys_cfg_path'], self.glob.stg['sys_cfg_file'])
+       
         # Check system cfg file exists
         if not os.path.isfile(cfg_file):
-           self.glob.lib.msg.error(self.glob.stg['system_cfg_file'] + " file not found in " + self.glob.lib.rel_path(self.glob.stg['config_path'])) 
+           self.glob.lib.msg.error(self.glob.stg['sys_cfg_file'] + " file not found in " + self.glob.lib.rel_path(self.glob.stg['sys_cfg_path'])) 
 
         system_parser   = cp.RawConfigParser(allow_no_value=True)
         system_parser.read(cfg_file)
@@ -351,30 +343,35 @@ class init(object):
         return app_id.hexdigest()[:10]
 
     # Parse all build cfg files into list
-    def get_cfg_list(self, path):
+    def get_cfg_list(self, path_list):
 
         cfg_list = []
 
-        # Get common cfgs
-        cfg_files = gb.glob(os.path.join(path, "*.cfg"))
+        idx = 0
+        for path in path_list:
+            cfg_list.append([])
+            # Get common cfgs
+            cfg_files = gb.glob(os.path.join(path, "*.cfg"))
         
-        # Get system specific cfgs
-        if os.path.isdir(os.path.join(path,self.glob.system['system'])):
-            cfg_files += gb.glob(os.path.join(path, self.glob.system['system'], "*.cfg"))
+            # Get system specific cfgs
+            if os.path.isdir(os.path.join(path,self.glob.system['system'])):
+                cfg_files += gb.glob(os.path.join(path, self.glob.system['system'], "*.cfg"))
 
-        # Construct
-        for cfg in cfg_files:
-            cfg_list.append(self.files.read_cfg(cfg))
-    
+            # Construct
+            for cfg in cfg_files:
+                cfg_list[idx].append(self.files.read_cfg(cfg))
+
+            idx += 1
+        
         return cfg_list
     
     # Set a list of build cfg file contents in glob
     def set_build_cfg_list(self):
-        self.glob.build_cfgs =  self.get_cfg_list(os.path.join(self.glob.stg['config_path'],self.glob.stg['build_cfg_dir']))
+        self.glob.build_cfgs =  self.get_cfg_list(self.glob.stg['build_cfg_path'])
 
     # Set a list of bench cfg file contents in glob
     def set_bench_cfg_list(self):
-        self.glob.bench_cfgs = self.get_cfg_list(os.path.join(self.glob.stg['config_path'],self.glob.stg['bench_cfg_dir']))
+        self.glob.bench_cfgs = self.get_cfg_list(self.glob.stg['bench_cfg_path'])
 
     # Convert cmdline string into a dict
     def parse_input_str(self, input_str, default):

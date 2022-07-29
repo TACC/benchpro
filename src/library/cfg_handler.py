@@ -25,50 +25,54 @@ class init(object):
         return None
 
     # Find matching config file given search criteria
-    def search_cfg_with_dict(self, search_dict, avail_cfgs, blanks_are_wild):
+    def search_cfg_with_dict(self, search_dict, avail_cfgs_list, blanks_are_wild):
+
 
         matching_cfgs = []
-
         # Iter over all avail cfg files
-        for cfg in avail_cfgs:
-            # Iter over all search terms
-            match = True
-            found = False
-            for key in search_dict.keys():
-                # For each section of cfg
-                for sec in cfg.keys():
-                    # If key is in cfg section and we can match to blank values
-                    if key in cfg[sec].keys():
-                        found = True
-                        # 1: both set but not equal = NO MATCH
-                        if search_dict[key] and cfg[sec][key] and not search_dict[key] == cfg[sec][key]:
-                            match = False
-                        # 2: if search dict contains value missing in cfg
-                        elif search_dict[key] and not cfg[sec][key]:
-                            # allow blank wildcards
-                            if blanks_are_wild:
-                                cfg[sec][key] = search_dict[key]
-                            else:
+        for avail_cfgs in avail_cfgs_list:
+            for cfg in avail_cfgs:
+                # Iter over all search terms
+                match = True
+                found = False
+                for key in search_dict.keys():
+                    # For each section of cfg
+                    for sec in cfg.keys():
+                        # If key is in cfg section and we can match to blank values
+                        if key in cfg[sec].keys():
+                            found = True
+                            # 1: both set but not equal = NO MATCH
+                            if search_dict[key] and cfg[sec][key] and not search_dict[key] == cfg[sec][key]:
+                                match = False
+                            # 2: if search dict contains value missing in cfg
+                            elif search_dict[key] and not cfg[sec][key]:
+                                # allow blank wildcards
+                                if blanks_are_wild:
+                                    cfg[sec][key] = search_dict[key]
+                                else:
+                                    match = False
+
+                            # 3: if cfg contains value missing in search dict and wildcards not allowed
+                            elif cfg[sec][key] and not search_dict[key] and not blanks_are_wild:
                                 match = False
 
-                        # 3: if cfg contains value missing in search dict and wildcards not allowed
-                        elif cfg[sec][key] and not search_dict[key] and not blanks_are_wild:
-                            match = False
+                # If match, add to list
+                if match and found:
+                    matching_cfgs.append(cfg)
 
-            # If match, add to list
-            if match and found:
-                matching_cfgs.append(cfg)
+            # Match found in this direct
+            if len(matching_cfgs) == 1:
+                return matching_cfgs[0]
 
+            # Multiple cfgs found
+            elif len(matching_cfgs) > 1:
+                for cfg in matching_cfgs:
+                    print("    " + self.glob.lib.rel_path(cfg['metadata']['cfg_file']))
+                self.glob.lib.msg.error("Multiple config files found matching search criteria '" + ",".join([key + "=" + search_dict[key] for key in search_dict.keys()]) + "'")
+
+        # No matches after scanning all dirs
         if not matching_cfgs:
             self.glob.lib.msg.error("No config file found matching search criteria '" + ",".join([key + "=" + search_dict[key] for key in search_dict.keys()]) + "'")
-
-        elif len(matching_cfgs) == 1:
-            return matching_cfgs[0]
-
-        else:
-            for cfg in matching_cfgs:
-                print("    " + cfg['metadata']['cfg_label'])
-            self.glob.lib.msg.error("Multiple config files found matching search criteria '" + ",".join([key + "=" + search_dict[key] for key in search_dict.keys()]) + "'")
 
     # Check cfg file exists
     def find_cfg_file(self, cfg_type, cfg_name):
@@ -76,36 +80,26 @@ class init(object):
         subdir = None
 
         # If search input is a string, assume user input and search for cfg in various locations
-        if isinstance(cfg_name, str):
-            cfg_found = self.glob.lib.files.find_in([self.glob.stg['config_path'],
-                                            os.path.join(self.glob.stg['config_path'], cfg_type),
-                                            os.path.join(self.glob.stg['config_path'], cfg_type, self.glob.system['system'])],
-                                            cfg_name, True)
-            if cfg_found:
-                return cfg_found
+#        if isinstance(cfg_name, str):
+#            cfg_found = self.glob.lib.files.find_in([self.glob.stg['sys_cfg_path'],
+#                                                    self.glob.stg['sched_cfg_path'],
+#                                                    self.glob.ev['BP_HOME']],
+#                                                    cfg_name, True)
+#            if cfg_found:
+#               return cfg_found
 
-        # Search cfg dir
-        search_path = self.glob.stg['config_path'] + self.glob.stg['sl'] 
-        cfg_file = self.search_cfg_with_list(cfg_name, search_path)
-        if cfg_file:
-            return cfg_file
+        search_path_list = [self.glob.stg['sys_cfg_path'],
+                            self.glob.stg['sched_cfg_path'],
+                            self.glob.ev['BP_HOME']]
 
-        # Search 'type' subdir
-        search_path = search_path + cfg_type + self.glob.stg['sl']
-        cfg_file = self.search_cfg_with_list(cfg_name, search_path)
-        if cfg_file:
-            return cfg_file
-
-        # Seach system subdir 
-        search_path = search_path + self.glob.system['system'] + self.glob.stg['sl']
-        cfg_file = self.search_cfg_with_list(cfg_name, search_path)
-        if cfg_file:
-            return cfg_file
+        
+        for search_path in search_path_list:
+            cfg_file = self.search_cfg_with_list(cfg_name, search_path)
+            if cfg_file:
+                return cfg_file
 
         # Not found
         if cfg_type:
-            self.glob.lib.misc.print_avail_type(cfg_type, os.path.join(self.glob.stg['config_path'], cfg_type))
-
             self.glob.lib.msg.error("config file containing '" + ", ".join(cfg_name) + "' not found.")
 
         else:
@@ -153,6 +147,10 @@ class init(object):
 
         # Run overload search
         self.glob.lib.overload.replace(None)
+
+    # Check if the additions file is findable
+    def additions_file_location(self, additions_file):
+        return self.glob.lib.files.find_in([self.glob.stg['resource_path']], cfg_name, True)
 
     # Generate module metadata from user input
     def setup_module_dict(self, cfg_dict):
@@ -234,7 +232,7 @@ class init(object):
         # --- Apply defaults ---
 
         # Evaluate expressions in [general]
-        self.glob.lib.expr.eval_dict(cfg_dict['general'])
+        self.glob.lib.expr.eval_dict(cfg_dict['general'], False)
 
         # Convert dtypes
         self.get_val_types(cfg_dict)
@@ -251,7 +249,7 @@ class init(object):
         self.setup_module_dict(cfg_dict)
 
         # Path to application's data directory
-        cfg_dict['config']['local_repo'] = self.glob.stg['local_repo']
+        cfg_dict['config']['local_repo'] = self.glob.ev['BP_REPO']
 
         # Get system from env if not defined
         if not cfg_dict['general']['system']:
@@ -267,14 +265,10 @@ class init(object):
 
         # Confirm additions file exists if set
         if cfg_dict['config']['script_additions']:
-            if not os.path.isfile(os.path.join(self.glob.stg['template_path'], cfg_dict['config']['script_additions'])):
-                self.glob.lib.msg.error("Build script additions file '" + cfg_dict['config']['script_additions'] + "' not found in " + self.glob.lib.rel_path(self.glob.stg['template_path']))
+            cfg_dict['config']['script_additions'] = self.additions_file_location(cfg_dict['config']['script_additions'])
 
-            else:
-                cfg_dict['config']['script_additions'] = os.path.join(self.glob.stg['template_path'], cfg_dict['config']['script_additions'])
-        
         # Parse architecture defaults config file 
-        arch_file = self.find_cfg_file('arch', self.glob.stg['config_path'] + self.glob.stg['sl'] + self.glob.stg['arch_cfg_file'])
+        arch_file = os.path.join(self.glob.stg['sys_cfg_path'], self.glob.stg['arch_cfg_file'])
         arch_dict = self.glob.lib.files.read_cfg(arch_file)
 
         # Get core count for system
@@ -325,7 +319,7 @@ class init(object):
                                                                 cfg_dict['general']['code'], str(cfg_dict['general']['version']),
                                                                 cfg_dict['config']['build_label'])
 
-            cfg_dict['metadata']['working_path'] = os.path.join(self.glob.stg['build_path'], 
+            cfg_dict['metadata']['working_path'] = os.path.join(self.glob.ev['BP_APPS'], 
                                                                 cfg_dict['metadata']['working_dir'])
 
         # Translate 'build_prefix' to 'working_path' for better readability
@@ -338,6 +332,9 @@ class init(object):
 
         # Path to copy files to
         cfg_dict['metadata']['copy_path']    = cfg_dict['metadata']['build_path']
+
+        if not cfg_dict['general']['sched_cfg']:
+            cfg_dict['general']['sched_cfg'] = os.path.join(self.glob.stg['sched_cfg_path'], self.glob.system['default_sched'])
 
         # Set sched nodes to 1 for build jobs
         cfg_dict['config']['nodes'] = 1
@@ -370,6 +367,7 @@ class init(object):
         if not 'system'             in cfg_dict['requirements'].keys():  cfg_dict['requirements']['system']     = ""
         if not 'compiler'           in cfg_dict['requirements'].keys():  cfg_dict['requirements']['compiler']   = ""
         if not 'mpi'                in cfg_dict['requirements'].keys():  cfg_dict['requirements']['mpi']        = ""
+        if not 'task_id'            in cfg_dict['requirements'].keys():  cfg_dict['requirements']['task_id']    = ""
 
         if not 'threads'            in cfg_dict['runtime'].keys():  cfg_dict['runtime']['threads']              = 0
         if not 'ranks_per_node'     in cfg_dict['runtime'].keys():  cfg_dict['runtime']['ranks_per_node']       = 0
@@ -402,7 +400,7 @@ class init(object):
         self.glob.lib.overload.replace(cfg_dict['requirements'])
 
         # Path to data directory
-        cfg_dict['config']['local_repo'] = self.glob.stg['local_repo']
+        cfg_dict['config']['local_repo'] = self.glob.ev['BP_REPO']
 
         # If system not specified for bench requirements, add current system
         if not cfg_dict['requirements']['system']:
@@ -417,11 +415,8 @@ class init(object):
 
         # Confirm additions file exists if set
         if cfg_dict['config']['script_additions']:
-            if not os.path.isfile(os.path.join(self.glob.stg['template_path'], cfg_dict['config']['script_additions'])):
-                self.glob.lib.msg.error("Benchmark script additions file '" + cfg_dict['config']['script_additions'] + "' not found in " + self.glob.lib.rel_path(self.glob.stg['template_path']))
+            cfg_dict['config']['script_additions'] = self.additions_file_location(cfg_dict['config']['script_additions'])
 
-            else:
-                cfg_dict['config']['script_additions'] = os.path.join(self.glob.stg['template_path'], cfg_dict['config']['script_additions'])
         # Expression method
         if cfg_dict['result']['method'] == "expr":
             if not 'expr' in cfg_dict['result']:
@@ -523,25 +518,25 @@ class init(object):
             self.glob.lib.msg.log("Set threads = " + cfg_dict['sched']['threads'])
     
     # Read input param config and test 
-    def ingest(self, cfg_type, search_dict):
+    def ingest(self, cfg_type, search):
 
         # Process and store build cfg 
         if cfg_type == 'build':
-            cfg_dict = self.search_cfg_with_dict(search_dict, self.glob.build_cfgs, True)
+            cfg_dict = self.search_cfg_with_dict(search, self.glob.build_cfgs, True)
             self.glob.lib.msg.log("Starting build cfg processing.")
             self.process_build_cfg(cfg_dict)
             self.glob.config = cfg_dict
     
         # Process and store bench cfg 
         elif cfg_type == 'bench':
-            cfg_dict = self.search_cfg_with_dict(search_dict, self.glob.bench_cfgs, False)
+            cfg_dict = self.search_cfg_with_dict(search, self.glob.bench_cfgs, False)
             self.glob.lib.msg.log("Starting bench cfg processing.")
             self.process_bench_cfg(cfg_dict)
             self.glob.config = cfg_dict
     
         # Process and store sched cfg 
         elif cfg_type == 'sched':
-            cfg_file = self.find_cfg_file(cfg_type, search_dict)
+            cfg_file = self.glob.lib.files.find_in([self.glob.stg['sched_cfg_path']], search, True)
             cfg_dict = self.glob.lib.files.read_cfg(cfg_file)
             self.glob.lib.msg.log("Starting sched cfg processing.")
             self.process_sched_cfg(cfg_dict)
@@ -549,7 +544,7 @@ class init(object):
     
         # Process and store compiler cfg 
         elif cfg_type == 'compiler':
-            cfg_file = self.find_cfg_file(cfg_type, search_dict)
+            cfg_file = os.path.join(self.glob.stg['sys_cfg_path'], self.glob.stg['compile_cfg_file'])
             cfg_dict = self.glob.lib.files.read_cfg(cfg_file)
             self.glob.compiler = cfg_dict
     

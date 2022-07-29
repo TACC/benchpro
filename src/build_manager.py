@@ -84,7 +84,12 @@ def build_code(input_dict, glob_copy):
         # If sched config file not specified, use system default
         if not glob.config['general']['sched_cfg']:
             glob.config['general']['sched_cfg'] = glob.lib.get_sched_cfg()
+            print("ASDAS", glob.config['general']['sched_cfg'])
         # Ingest sched config from file
+
+        print(glob.config)
+        print(glob.config['general']['sched_cfg'])
+        print("-----------------------")
         glob.lib.cfg.ingest('sched', glob.config['general']['sched_cfg'])
 
         # Low priority stdout message
@@ -139,6 +144,7 @@ def build_code(input_dict, glob_copy):
     # Clean up tmp files
     glob.lib.files.cleanup([])
 
+    glob.lib.msg.brk()
     glob.lib.msg.high(glob.success)
 
     # If dry_run
@@ -183,6 +189,10 @@ def init(glob):
 
     # Get list of avail cfgs
     glob.lib.set_build_cfg_list()
+
+    # Set generized paths
+    glob.stg['curr_tmpl_path'] = glob.stg['build_tmpl_path']
+    glob.stg['curr_cfg_path'] = glob.stg['build_cfg_path']
 
     # Overload settings.ini with cmd line args
     glob.lib.overload.replace(None)

@@ -1,0 +1,15 @@
+
+echo "JobID:    ${SLURM_JOB_ID}"
+echo "User:     ${USER}"
+echo "Hostlist: ${SLURM_NODELIST}"
+
+export         working_path=<<<working_path>>>
+export          output_file=<<<output_file>>>
+export             mpi_exec=<<<mpi_exec>>>
+export          base_module=<<<base_mod>>>
+export           app_module=<<<app_mod>>>
+export              threads=<<<threads>>>
+export                ranks=<<<ranks_per_node>>>
+export                nodes=<<<nodes>>>
+export                 gpus=<<<gpus>>>
+
