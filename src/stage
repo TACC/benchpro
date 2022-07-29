@@ -56,7 +56,7 @@ function in_repo() {
             # Unconfirm filename of asset
             NEW_FILENAME=`echo $URL_MATCH | cut -d ' ' -f 2`
             if [[ -f "$BP_REPO/$NEW_FILENAME" ]]; then
-                echo "Found '$NEW_FILENAME' in \$BP_REPO"
+                echo "Found '$NEW_FILENAME' cached in the local repository (\$BP_REPO)"
                 # Confirmed - file exists
                 FILENAME=$NEW_FILENAME
                 REPO_SRC=$BP_REPO/$FILENAME
@@ -73,10 +73,12 @@ function in_repo() {
 
 function copy_asset() { 
     echo "Copying asset '$1' to $2"
-    if [[ -f $2/$3 ]]; then
+    echo "$1 $2 $3"
+    if [[ -f ${2}/${3} ]]; then
         echo "Skipping copy, already present."
         return 1
     else
+        echo "cp -r $1 $2/"
         cp -r $1 $2/ 
         return 0
     fi
