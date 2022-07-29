@@ -38,7 +38,7 @@ You will likely get a warning stating you need to install missing user files. Fo
 .. code-block::
 
     ml git
-    git clone https://github.com/TACC/benchpro.git $HOME/.benchpro
+    git clone https://github.com/TACC/benchpro.git $HOME/benchpro
 
 .. note::
 

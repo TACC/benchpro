@@ -295,7 +295,7 @@ Global settings are defined in the file :code:`$BP_HOME/settings.ini`
 +--------------------+----------------------------+-------------------------------------------------------------------------+
 | file_copy_handler  | cp                         | Command for moving results to destination.                              |
 +--------------------+----------------------------+-------------------------------------------------------------------------+
-| collection_path    | $BP_SITE/collection        | Blackhole, will periodically be imported to database by site admin.     |
+| collection_path    | $BPS_SITE/collection        | Blackhole, will periodically be imported to database by site admin.     |
 +--------------------+----------------------------+-------------------------------------------------------------------------+
 | **[resources]**                                                                                                           |
 +--------------------+----------------------------+-------------------------------------------------------------------------+
