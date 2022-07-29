@@ -268,7 +268,7 @@ def main():
     args = get_arguments()
 
     # This is dumb
-    if args.avail != "None" \
+    if args.avail == "None" \
     and not args.bench \
     and not args.build \
     and not args.capture \
@@ -366,8 +366,6 @@ def main():
         glob.lib.misc.print_version()
     elif glob.args.last:
         glob.lib.misc.print_last()
-
-    notices.print_notices() 
 
 if __name__ == "__main__":
     sys.exit(main())

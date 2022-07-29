@@ -78,21 +78,31 @@ def print_notices():
         print()        
         print("2.B. If you are a TACC staff member with SSH key access to https://github.com/TACC/benchpro")
         print("    Grab the new restructured user file repo via SSH key:")
-        print(">   git clone https://github.com/TACC/csa.git $BP_HOME/")
+        print(">   git clone https://github.com/TACC/csa.git ~/benchpro")
         print("Create a branch from main")
-        print(">   checkout -b [your_csa_branch_label] origin/main")
-        print("Add your application (https://benchpro.readthedocs.io/en/latest/020_add_app.html)")
-        print("and benchmark (https://benchpro.readthedocs.io/en/latest/030_add_bench.html) .cfg profiles, then push to your branch:")
-        print(">   checkout -b [csa_branch_label] origin/main")
-        print("Refer to recommended branch naming convention below.")
+        print(">   cd ~/benchpro")
+        print(">   git checkout -b [your_csa_branch_label] origin/main")
         print()
 
-        print("3.A You can conintue as an un-affiliated BenchPRO user - doing work unrelated to LCCF CSA.")
+        print("3. Run the validator, which checks everything is correct, it also generates a directory structure under ~/benchpro")
+        print(">   bp --validate")
+        print()
+
+
+        print("BP! TACC staff can now [add your application](https://benchpro.readthedocs.io/en/latest/020_add_app.html)")
+        print("and [add your benchmark](https://benchpro.readthedocs.io/en/latest/030_add_bench.html) .cfg and .template files, then push to your branch:")
+        print(">   git add .")
+        print(">   git commit -m '[csa-branch] profile updates' ")
+        print("Refer to recommended branch naming convention below.")
+        print("Then create a pull request for your new branch. Once the branches are created I can priveidge TACC staff to push to their branch.")
+
+
+        print("4.A You can conintue as an un-affiliated BenchPRO user - doing work unrelated to LCCF CSA.")
         print("    In this case you can work from the main branch.")
         print()
         print("!__OR__! ")
         print()
-        print("3.B If you are a CSA group member, contact your TACC support laison to create your CSA branch.")
+        print("4.B If you are a CSA group member, contact your TACC support laison to create your CSA branch.")
         print("    or try:")
         print(">   cd $BP_HOME")
         print(">   git fetch")
@@ -101,9 +111,9 @@ def print_notices():
         print("Refer to recommended branch naming convention below.")
         print()
 
-        print("4. Generate your directory structure by running the validator:")
+        print("5. Generate your directory structure by running the validator:")
         print(">   bp --validate")
-        print("5. You now have a new $BP_HOME file structure created for you.")
+        print("6. You now have a new $BP_HOME file structure created for you.")
         print("The file $BP_HOME/settings.ini contains key-value pairs, under your control, that can 'overwrite' the system level defined defaults.")
         print("TLDR: these permenent 'overwrite' key-values can be apploied to ANY parameter within BenchPRO, e.g:")
         print("    parameters like: 'queue', 'benchmark_label', $git_tag, 'runtime', 'nodes', 'mpi_ranks_per_node', 'OMP_NUM_THREADS', etc.")
@@ -111,28 +121,23 @@ def print_notices():
         print("Run 'bp --defaults' for more info.")
         print()
 
-        print("6. If you are an existing user and backed up your CSA's application and benchmark .cfg and .template files to ~/benchpro.old, now's the time to restore them.")
+        print("7. If you are an existing user and backed up your CSA's application and benchmark .cfg and .template files to ~/benchpro.old, now's the time to restore them.")
         print("(NOTE: the directroy structure for these files has changed by popular request):")
         print(">   cp ~/benchpro.old/config/build/[app.cfg] ~/benchpro/build/config/")
         print(">   cp ~/benchpro.old/template/bench/[app.cfg] ~/benchpro/bench/config/")
         print()
 
-        print("7. Confirm your application was copied correctly and is visible to BenchPRO with:")
+        print("8. Confirm your application was copied correctly and is visible to BenchPRO with:")
         print(">   bp -a")
         print("(under the \"$BP_HOME/build/config:\" section)")
         print()
 
-        print("8. Now you can rebuild your application, or get more walkthrough info at:")
+        print("9. Now you can rebuild your application, or get more walkthrough info at:")
         print("   https://benchpro.readthedocs.io/en/latest")
         print()
 
-        print("You can build the reference LAMMPS application with:")
-        print(">  bp -b lammps -o queue=debug")
-        print("(the debug queue is for TACC staff only, users leave that off)")
-        print() 
 
-
-        print("In order to share files between members of you CSA group, I suggest you checkout your own branch.")
+        print("10. In order to share files between members of you CSA group, I suggest you checkout your own branch.")
         print("Only TACC staff that have SSH keys setup to access https://github.com/TACC/benchpro can push.")
 
         print("Here is a proposed naming convention for each CSA group:")
@@ -160,11 +165,18 @@ def print_notices():
         print("--------------")
         print()
 
-        print("I suggest each TACC liason branch from ")
-        print("Please DO NOT! push to main. I will be upset.")
+        print("11. Please confirm your branch and do NOT create merge requests to orogin/main. I will be upset.")
 
+        print()
+        print("12. You can squash this message with export BP_NOTICES=0")
+        print()
+        print("13. Continue by printing your available BenchPRO profiles:")
+        print("> bp --avail")
 
-
+        print("14. You can now build the reference LAMMPS application with:")
+        print(">  bp -b lammps -o queue=debug")
+        print("(the debug queue is for TACC staff only, users leave that off)")
+        print()
 
 
         sys.exit(1)
