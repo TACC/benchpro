@@ -99,8 +99,8 @@ def give_group_access(path_list):
 
     for path in path_list:
         try:
-            os.chmod(path, 0o750)
-            print(bcolors.SET, path, "750")
+            os.chmod(path, 0o755)
+            print(bcolors.SET, path, "755")
             parent = str(Path(path).parent.absolute())
             give_group_access([parent])
         except Exception as e:
