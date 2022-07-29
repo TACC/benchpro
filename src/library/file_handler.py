@@ -76,18 +76,29 @@ class init(object):
 
     # Looks for file in paths
     def look(self, paths, filename):
+
+        if not filename:
+            return False
+        results = []
         for path in paths:
-            results = gb.glob(os.path.join(path, filename))
-            if len(results) == 1:
-                return results[0]
+            results += [gb.glob(os.path.join(path, filename))]
+        
+        # Found one result
+        if len(results) == 1:
+            return results[0]
             
+        # Didn't
         return False
 
     # Accepts list of paths and filename, returns file path to file if found, or errors 
     def find_in(self, paths, filename, error_if_missing):
 
+
+        if os.path.isfile(filename):
+            return filename
+
         # Add some default locations to the search path list
-        paths.extend(["", self.glob.ev['BP_HOME'], self.glob.cwd, self.glob.home])
+        paths.extend(["/", "", self.glob.ev['BP_HOME'], self.glob.cwd, self.glob.home])
         file_path = self.look(paths, filename) 
 
         if file_path:
@@ -95,21 +106,25 @@ class init(object):
 
         # Error if not found?
         if error_if_missing:
+
             self.glob.lib.msg.error(["Unable to locate file '" + filename + "' in any of these locations:"] +\
                                     [self.glob.lib.rel_path(p) for p in paths])
 
         return False
 
     # Find *file* in directory
-    def find_partial(self, filename, path):
+    def find_partial(self, filename, path_list):
         # Check file doesn't exist already
         if os.path.isfile(filename):
             return filename
+        # Iterate input list
+        for path in path_list:
         # Search provided path for file
-        for root, dirs, files in os.walk(path):
-            match = next((s for s in files if filename in s), None)
-            if match:
-                return os.path.join(root, match)
+            for root, dirs, files in os.walk(path):
+                match = next((s for s in files if filename in s), None)
+                if match:
+                    return os.path.join(root, match)
+
         # File not found
         return None
 
@@ -132,18 +147,16 @@ class init(object):
             self.glob.lib.msg.error("Directory '" + base + "' not found, did you run --validate?")
 
     # Recursive function to scan app directory, called by 'get_installed'
-    def search_tree(self, app_dir, start_depth, current_depth, max_depth):
-        installed_list = []
+    def search_tree(self, installed_list, app_dir, start_depth, current_depth, max_depth):
         for d in self.get_subdirs(app_dir):
             if d != self.glob.stg['module_dir']:
                 new_dir = os.path.join(app_dir, d)
                 # Once tree hits max search depth, append path to list
                 if current_depth == max_depth:
-                    installed_list.append(self.glob.stg['sl'].join(new_dir.split(self.glob.stg['sl'])[start_depth + 1:]))
+                    installed_list += [self.glob.stg['sl'].join(new_dir.split(self.glob.stg['sl'])[start_depth + 1:])]
                 # Else continue to search tree
                 else:
-                    installed_list = self.search_tree(new_dir, start_depth,current_depth + 1, max_depth)
-        return installed_list
+                    self.search_tree(installed_list, new_dir, start_depth,current_depth + 1, max_depth)
 
     # Prune dir tree until not unique
     def prune_tree(self, path):
@@ -154,10 +167,13 @@ class init(object):
         # If parent dir is root ('build' or 'modulefile') or if it contains more than this subdir, delete this subdir
         if (parent_dir == self.glob.stg['build_dir']) or \
            (parent_dir == self.glob.stg['module_dir']) or \
-           (parent_dir == os.path.basename(self.glob.stg['collection_path'])) or \
+           (parent_dir == os.path.basename(self.glob.ev['BPS_COLLECT'])) or \
            (len(gb.glob(os.path.join(parent_path,"*"))) > 1):
 
-            su.rmtree(path)
+            try:         
+                su.rmtree(path)
+            except:
+                print("Skipping symlink: " + path)
         # Else resurse with parent
         else:
             self.prune_tree(parent_path)
@@ -222,7 +238,7 @@ class init(object):
             # File not found
             if not os.path.isfile(src):
                 self.glob.lib.msg.error("Input file '" + src + "' not found in repo " + \
-                                        self.glob.lib.rel_path(self.glob.stg['local_repo']))
+                                        self.glob.lib.rel_path(self.glob.ev['BP_REPO']))
 
             # Extract to working dir
             tar = tarfile.open(src)
@@ -239,7 +255,7 @@ class init(object):
         # Absolute path or in local repo
         src_path = os.path.expandvars(src)
         if not os.path.isfile(src_path) and not os.path.isdir(src_path):
-            src_path = os.path.join(self.glob.stg['local_repo'], src)
+            src_path = os.path.join(self.glob.ev['BP_REPO'], src)
 
         # Copy now
         if self.glob.stg['sync_staging']:
@@ -248,7 +264,7 @@ class init(object):
             # Check presence
             if not os.path.isfile(src_path) and not os.path.isdir(src_path):
                 self.glob.lib.msg.error("Input file '" + src + "' not found in repo " + \
-                                        self.glob.lib.rel_path(self.glob.stg['local_repo']))
+                                        self.glob.lib.rel_path(self.glob.ev['BP_REPO']))
 
             self.glob.lib.msg.low("Copying " + src_path + "...")
             # Copy file
@@ -274,10 +290,10 @@ class init(object):
 
             ## Locate file
             #if self.glob.stg['sync_staging']:
-            #    file_path = self.find_in([self.glob.stg['local_repo'], self.glob.config['metadata']['copy_path']], filename, True)
+            #    file_path = self.find_in([self.glob.ev['BP_REPO'], self.glob.config['metadata']['copy_path']], filename, True)
             # Assume will be in repo after download
             #else:
-            file_path = os.path.join(self.glob.stg['local_repo'], filename)
+            file_path = os.path.join(self.glob.ev['BP_REPO'], filename)
 
             # Add tar op to staged ops
             #if any(x in filename for x in ['tar', 'tgz', 'bgz']):
@@ -338,8 +354,8 @@ class init(object):
     # Check if file or dir is present in local repo
     def in_local_repo(self, filename):
 
-        if os.path.isfile(os.path.join(self.glob.stg['local_repo'], filename)) \
-        or os.path.isdir(os.path.join(self.glob.stg['local_repo'], filename)):
+        if os.path.isfile(os.path.join(self.glob.ev['BP_REPO'], filename)) \
+        or os.path.isdir(os.path.join(self.glob.ev['BP_REPO'], filename)):
             return True
         return False
 
@@ -348,7 +364,7 @@ class init(object):
         dest = None
         # Destination = working_dir or local repo
         if self.glob.stg['cache_downloads']:
-            dest = os.path.join(self.glob.stg['local_repo'], filename)
+            dest = os.path.join(self.glob.ev['BP_REPO'], filename)
         else:
             dest = os.path.join(self.glob.config['metadata']['copy_path'], filename)
 
@@ -437,21 +453,24 @@ class init(object):
     # Get list of config files by type
     def get_cfg_list(self, cfg_type):
         # Get cfg subdir name from input
-        type_dir = ""
+        search_path_list = None
+        cfg_list = [] 
         if cfg_type == "build":
-            type_dir = self.glob.stg['build_cfg_dir']
+            search_path_list = self.glob.stg['build_cfg_path']
         elif cfg_type == "bench":
-            type_dir = self.glob.stg['bench_cfg_dir']
+            search_path_list = self.glob.stg['bench_cfg_path']
         else:
             self.glob.lib.msg.error("unknown cfg type '"+cfg_type+"'. get_cfgs() accepts either 'build' or 'bench'.")
 
-        search_path = os.path.join(self.glob.stg['config_path'], type_dir)
-        # Get list of cfg files in dir
-        cfg_list = self.glob.lib.files.get_files_in_path(search_path)
+        # Look for cfg files in each search path
+        for search_path in search_path_list:
+            # Get list of cfg files in dir
+            cfg_list = self.glob.lib.files.get_files_in_path(search_path)
 
-        # If system subdir exists, scan that too
-        if os.path.isdir(os.path.join(search_path,self.glob.system['system'])):
-            cfg_list = cfg_list + self.glob.lib.files.get_files_in_path(os.path.join(search_path,self.glob.system['system']))
+            # If system subdir exists, scan that too
+            if os.path.isdir(os.path.join(search_path,self.glob.system['system'])):
+                cfg_list = cfg_list + self.glob.lib.files.get_files_in_path(os.path.join(search_path,self.glob.system['system']))
+
         return cfg_list
 
     # Parse cfg file into dict

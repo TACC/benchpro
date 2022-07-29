@@ -22,8 +22,8 @@ class setup(object):
     bold                        = '\033[1m'
     end                         = '\033[0m'
 
-    white                       = '\033[1;30m'
-    grey                        = '\033[1m'
+    white                       = '\033[1m'
+    grey                        = '\033[1m' #'\033[1;30m'
 
     # Get dev_mode from environ
     dev_mode                    = True
@@ -64,6 +64,10 @@ class setup(object):
     stage_ops                   = []
     # Contents of user's settings.ini
     user_settings               = []
+
+    # List of paths to add to PATH
+    paths                       = []
+
     # Report obj
     build_report                = None
     # List of dependant 'any' jobs
@@ -100,37 +104,39 @@ class setup(object):
     try:
         cwd                     = os.getcwd()
     except BaseException:
-        print("It seems your current working directory doesn't exist. Exitting.")
+        print("It seems your current working directory doesn't exist. Aborting.")
         sys.exit(1)
 
     # Version info is populated by lib.files.init
     version_client              = None
     version_client_date         = None
     version_site                = os.getenv('BPS_VERSION')
-    version_site_full           = version_site + "-" + os.getenv('BP_BUILD_ID') + " " + dev_str
-    version_site_date           = os.getenv("BP_BUILD_DATE")
+    version_site_full           = os.getenv('BPS_VERSION_STR') + " " + dev_str
+#    version_site_date           = os.getenv("BP_BUILD_DATE")
 
     # Ingest EVs
     for key, val in os.environ.items():
-        if "BP_" in key:
+        if ("BP_" in key or "BPS_" in key) and (key != "BP_DEV"):
             ev[key]  = val
 
     # Resolve relative paths and EVs in $BP_HOME/settings.ini
-    def resolve(self, ev):
-        path = os.path.expandvars(ev)
+    def resolve(self, val):
+
+        val = os.path.expandvars(val)
         # Check for unresolved EV
-        if "$" in path:
+        if "$" in val:
             print(
                 "Unable to resolve environment variable in '" +
-                path +
+                val +
                 "''. Exiting.")
             sys.exit(1)
 
         # Convert relative paths: ./[path] -> $BP_HOME/[path]
-        if len(path) > 2:
-            if path[0:2] == "./":
-                return os.path.join(self.ev['BP_HOME'], path[2:])
-        return path
+        if len(val) > 2:
+            if val[0:2] == "./":
+                return [os.path.join(self.ev['BP_HOME'], val[2:]),
+                        os.path.join(self.ev['BPS_INC'], val[2:])]
+        return val
 
     # Process each key-value in .ini, check for null values
     def process(self, key, value):
@@ -158,7 +164,16 @@ class setup(object):
             return value
 
     # Read ini file and return configparser obj
-    def read_ini(self, ini_file):
+    def read_ini(self, ini_file, required):
+
+        if not os.path.isfile(ini_file):
+            # Required
+            if required:
+                print("Unable to read file " + ini_file)
+                sys.exit(1)
+            # Not required
+            else:
+                return
 
         ini_parser = configparser.RawConfigParser(allow_no_value=True)
         
@@ -171,18 +186,19 @@ class setup(object):
     # Read in settings.ini file
     def read_settings(self, settings_file, overload):
 
-        if not os.path.isfile(settings_file) and not overload:
-            print("Unable to read file " + settings_file)
-            sys.exit(1)
+        settings_parser = self.read_ini(settings_file, not overload)
+        if not settings_parser:
+            return
 
         # Read contents of ini into dict
-        settings_parser = self.read_ini(settings_file)
-
         for section in settings_parser:
             if not section == "DEFAULT":
                 for key in settings_parser[section]:
                     # Convert values to correct datatype
                     value = self.process(key, settings_parser[section][key])
+                    # Auto-resolve all val in [path]
+                    if section == "paths":
+                        value = self.resolve(value)
                     # Add to overload dict (user settings)
                     if overload:
                         self.user_settings += [value]
@@ -199,47 +215,83 @@ class setup(object):
         self.read_settings(os.path.join(self.ev['BP_HOME'], "settings.ini"), True)
         self.lib.overload.setup_dict()
 
+    def join(self, path1, path2):
+        return os.path.join(path1, path2)
+
+    def join_paths(self, path1, path2):
+        if isinstance(path1, list):
+            out = []
+            for path in path1:
+                out.append(self.join(path, path2))
+            
+        elif isinstance(path2, list):
+            out = []
+            for path in path2:
+                out.append(self.join(path1, path))
+
+        else:
+            return self.join(path1, path2)
+
+    # Add user and site /bin paths to PATH
+    def add_to_path(self):
+        for path in self.paths:
+            os.environ['PATH'] = os.environ['PATH'] + ":" + path
+
     def derived_variables(self):
 
-        self.stg['log_path']            = self.resolve(self.stg['log_dir'])
-        self.stg['config_path']         = self.resolve(self.stg['config_dir'])
-        self.stg['template_path']       = self.resolve(self.stg['template_dir'])
-        self.stg['local_repo']          = self.resolve(self.stg['local_repo_env'])
-        self.stg['collection_path']     = self.resolve(self.stg['collection_path'])
-        self.stg['resource_path']       = self.resolve(self.stg['resource_dir'])
+#        self.stg['build_tmpl_path']     = self.resolve(self.stg['build_tmpl_path'])
+#        self.stg['build_cfg_path']      = self.resolve(self.stg['build_cfg_path'])
+#        self.stg['bench_tmpl_path']     = self.resolve(self.stg['bench_tmpl_path'])
+#        self.stg['bench_cfg_path']      = self.resolve(self.stg['bench_cfg_path'])
+#        self.stg['resource_path']       = self.resolve(self.stg['resource_path'])
+#        self.stg['user_bin_path']       = self.resolve(self.stg['user_bin_path'])
+#        self.stg['site_bin_path']       = self.resolve(self.stg['site_bin_path'])
+
+        # Add to PATH
+        self.paths += [self.stg['user_bin_path']]
+        self.paths += [self.stg['site_bin_path']]
+        self.add_to_path()
+        self.paths += [os.path.join(self.ev['BPS_SITE'], "python", "bin")]
+
+
+#        self.stg['log_path']            = self.resolve(self.stg['log_path'])
+#        self.stg['']          = self.resolve(self.stg['rules_path'])
+#        self.stg['rules_path']          = self.resolve(self.stg['rules_path'])
+        
+        
+
+
+        # list
+            
 
         # Derived variables
+        self.stg['build_dir']           = os.path.basename(self.ev['BP_APPS'])
         self.stg['module_dir']          = "modulefiles"
         self.stg['user_mod_path']       = os.path.join(
                                         self.ev['BP_HOME'], self.stg['module_dir'])
-        self.stg['build_dir']           = os.path.basename(self.ev['BP_APPS'])
+
         self.stg['pending_path']        = os.path.join(
                                         self.ev['BP_RESULTS'], self.stg['pending_subdir'])
         self.stg['captured_path']       = os.path.join(
                                         self.ev['BP_RESULTS'], self.stg['captured_subdir'])
         self.stg['failed_path']         = os.path.join(
                                         self.ev['BP_RESULTS'], self.stg['failed_subdir'])
+
         self.stg['module_path']         = os.path.join(
                                         self.ev['BP_APPS'], self.stg['module_dir'])
-        self.stg['utils_path']          = os.path.join(
-                                        self.stg['resource_path'], self.stg['hw_utils_subdir'])
-        self.stg['script_path']         = os.path.join(
-                                        self.stg['resource_path'], self.stg['script_subdir'])
-        self.stg['rules_path']          = os.path.join(
-                                        self.stg['config_path'], self.stg['rules_dir'])
+
 
         # Add some useful key-values
         self.stg['date_str'] = datetime.now().strftime("%Y.%m.%d")
         self.stg['time_str'] = datetime.now().strftime("%Y-%m-%dT%H-%M")
 
-
     # Read suites.ini
     def read_suites(self):
 
-        suite_parser = self.read_ini(os.path.join(self.ev['BP_HOME'], "suites.ini"))
-
-        # Read suites into own dict
-        self.suite = dict(suite_parser.items('suites'))
+        suite_parser = self.read_ini(os.path.join(self.ev['BP_HOME'], "suites.ini"), False)
+        if suite_parser:
+            # Read suites into own dict
+            self.suite = dict(suite_parser.items('suites'))
 
     # Get system EV
     def get_system_label(self):
@@ -276,4 +328,4 @@ class setup(object):
         self.get_system_label()
 
         # Read version info 
-        self.lib.files.get_client_version()
+        #self.lib.files.get_client_version()

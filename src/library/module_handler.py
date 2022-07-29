@@ -54,7 +54,7 @@ class init(object):
 
 
     # Gets full module name of default module, eg: 'intel' -> 'intel/18.0.2'
-    def get_full_name(self, module):
+    def get_full_mod_name(self, module):
 
         # No slashes and no digits = short form module
         if (not '/' in module) or all(not char.isdigit() for char in module):
@@ -78,8 +78,7 @@ class init(object):
                 # Module exists
                 if self.lmod_query(['show', value]):
                     # Return full module name
-                    return self.get_full_name(value) 
-
+                    return self.get_full_mod_name(value) 
         else: 
             return value
            
@@ -111,6 +110,9 @@ class init(object):
     def copy_mod_template(self, module_template):
 
         mod_obj = []
+
+        for path in self.glob.paths:
+            mod_obj.append("prepend_path(\"PATH\",     \"" + path + "\")\n")
 
         # Add custom module path if set in cfg
         if self.glob.config['general']['module_use']:
@@ -144,7 +146,7 @@ class init(object):
         # Get capitalized code name for env var
         mod['caps_code'] = self.glob.config['general']['code'].upper().replace("-", "_")
 
-        pop_dict = {**mod, **self.glob.config['metadata'], **self.glob.config['general'], **self.glob.config['config'], **{'site_path': self.glob.ev['BPS_SITE']}}
+        pop_dict = {**mod, **self.glob.config['metadata'], **self.glob.config['general'], **self.glob.config['config'], **self.glob.ev}
 
         for key in pop_dict:
             self.glob.lib.msg.log("replace " + "<<<" + key + ">>> with " + str(pop_dict[key]))
@@ -157,6 +159,7 @@ class init(object):
         with open(tmp_mod_file, "w") as f:
             for line in mod_obj:
                 f.write(line)
+
 
     # Make module for compiled appliation
     def make_mod(self):
@@ -177,16 +180,21 @@ class init(object):
         self.check_for_previous_module(mod_path, mod_file)
     
         template_filename = self.glob.config['general']['code'] + "_" + str(self.glob.config['general']['version']) + ".module" 
-        module_template = os.path.join(self.glob.stg['template_path'], self.glob.stg['build_tmpl_dir'], template_filename)
+        module_template = os.path.join(self.glob.stg['sys_tmpl_path'], template_filename)
 
         # Use generic module template if not found for this application
         if not os.path.isfile(module_template):
             self.glob.lib.msg.low("Module template '" + template_filename + "' not found, generating a generic module.")
-            module_template = os.path.join(self.glob.stg['template_path'], self.glob.stg['build_tmpl_dir'], "generic.module")
+            module_template = os.path.join(self.glob.stg['sys_tmpl_path'], "generic.module")
 
         self.glob.lib.msg.log("Using module template file: " + module_template)
 
         # Copy base module template to 
+        if self.glob.config['config']['bin_dir']:
+            self.glob.paths += [os.path.join(self.glob.config['metadata']['install_path'], self.glob.config['config']['bin_dir'])]
+        else:
+            self.glob.paths += [self.glob.config['metadata']['install_path']]
+
         mod_obj = self.copy_mod_template(module_template)
 
         # Populuate template with config params

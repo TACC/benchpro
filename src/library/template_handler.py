@@ -16,8 +16,9 @@ class init(object):
             self.glob.lib.msg.log("Reading template file " + input_template)
             # Test if input template file exists
             if not os.path.exists(input_template):
-                self.glob.lib.msg.error("failed to locate template file '" + input_template + "' in " + self.glob.lib.rel_path(self.glob.stg['template_path'])  + ".")
-
+                self.glob.lib.msg.error("failed to locate template file '" + input_template + " in any of these locations:" + \
+                                                            [self.glob.lib.rel_path(p) for p in self.glob.stg['curr_tmpl_path']])
+                        
             template = []
             # Copy input template file to temp obj
             with open(input_template, 'r') as fd:
@@ -49,7 +50,8 @@ class init(object):
     # Add standard lines to build template
     def add_standard_build_definitions(self, template_obj):
     
-        header_template = os.path.join(self.glob.stg['template_path'], self.glob.stg['build_tmpl_dir'], self.glob.stg['header_file'])
+        # Take system template path
+        header_template = os.path.join(self.glob.stg['build_tmpl_path'][1], self.glob.stg['header_file'])
         self.append_to_template(template_obj, header_template)
 
         # Add config key-values
@@ -71,7 +73,7 @@ class init(object):
 
         # Add module loads
         template_obj.append("# Load modules \n")
-#        template_obj.append("ml reset \n")
+        template_obj.append("ml benchpro \n")
     
         # add 'module use' if set
         if self.glob.config['general']['module_use']:
@@ -85,13 +87,15 @@ class init(object):
 
         # Compiler variables
         template_obj.append("\n# Compiler variables")
+
         self.append_to_template(template_obj, self.glob.compiler['template'])
 
         template_obj.append("\n")
 
     # Add standard lines to bench template
     def add_standard_bench_definitions(self, template_obj):
-        header_template = os.path.join(self.glob.stg['template_path'], self.glob.stg['bench_tmpl_dir'], self.glob.stg['header_file'])
+        # Take system template path
+        header_template = os.path.join(self.glob.stg['bench_tmpl_path'][1], self.glob.stg['header_file'])
         self.append_to_template(template_obj, header_template)
 
         # add parameters from [config] section of cfg file to script
@@ -103,7 +107,7 @@ class init(object):
         # Add module loads if application must be loaded
         if self.glob.config['metadata']['app_mod']:
             template_obj.append("# Load Modules \n")
-#            template_obj.append("ml reset \n")
+            template_obj.append("ml benchpro \n")
             template_obj.append("ml use ${base_module} \n")
             template_obj.append("ml ${app_module} \n")
             template_obj.append("ml \n")
@@ -142,19 +146,20 @@ class init(object):
                                 self.glob.config['config']['exe']) + " \n")
 
         # Add hardware collection script to job script
-        self.collect_stats(template_obj)
+        #self.collect_stats(template_obj)
 
     # Add things to the bootom of the bench script
     def bench_epilog(self, template_obj):
         # Collect stats
-        self.collect_stats(template_obj)
+        return 
+        #self.collect_stats(template_obj)
 
     # Add dependency to build process (if building locally)
     def add_process_dep(self, template_obj):
 
         self.glob.lib.msg.low("Adding dependency to benchmark script, waiting for PID: " + self.glob.prev_pid)
 
-        dep_file = os.path.join(self.glob.stg['template_path'], self.glob.stg['pid_dep_file'])
+        dep_file = os.path.join(self.glob.stg['sys_tmpl_path'], self.glob.stg['pid_dep_file'])
         if os.path.isfile(dep_file):
             with open(dep_file, 'r') as fd:
                 template_obj.extend(fd.readlines())
@@ -205,7 +210,7 @@ class init(object):
 
         if self.glob.stg['build_mode'] == "sched":
             self.glob.sched['template'] = self.glob.lib.files.find_exact(self.glob.sched['sched']['type'] + \
-                                                                        ".template", self.glob.stg['template_path'])
+                                                                        ".template", self.glob.stg['sched_tmpl_path'])
 
         # Get application template file name from cfg, otherwise use cfg_label to look for it
         if self.glob.config['general']['template']:
@@ -215,25 +220,23 @@ class init(object):
 
         # Search for application template file
         build_template_search = self.glob.lib.files.find_partial(self.glob.config['template'], \
-                                        os.path.join(self.glob.stg['template_path'], self.glob.stg['build_tmpl_dir']))
+                                        self.glob.stg['build_tmpl_path'])
 
         # Error if not found
         if not build_template_search:
-            self.glob.lib.msg.error("failed to locate build template '" + self.glob.config['template'] + "' in " + \
-                                    self.glob.lib.rel_path(self.glob.stg['template_path'] + self.glob.stg['sl'] + \
-                                                            self.glob.stg['build_tmpl_dir']))
+            self.glob.lib.msg.error("failed to locate build template '" + self.glob.config['template'] + \
+                                    "' in any of these locations:" + [self.glob.lib.rel_path(p) for p in self.glob.stg['build_tmpl_path']])
     
         self.glob.config['template'] = build_template_search
 
-
         # Error if compiler type not recongnized
-        if not self.glob.modules['compiler']['type'] in self.glob.compiler.keys():
+        if not self.glob.modules['compiler']['type']:# in [self.glob.compiler[keys] for :
             self.glob.lib.msg.error("Unrecognized compiler type '" + self.glob.modules['compiler']['type']  + "'")
 
         # Get compiler cmds for gcc/intel/pgi, otherwise compiler type is unknown
         self.glob.compiler['common'] = self.glob.compiler[self.glob.modules['compiler']['type']]
-        self.glob.compiler['template'] = self.glob.lib.files.find_exact(self.glob.stg['compile_tmpl_file'], \
-                                                                            self.glob.stg['template_path'])
+        self.glob.compiler['template'] = os.path.join(self.glob.stg['sys_tmpl_path'], self.glob.stg['compile_tmpl_file'])
+        
     # Combine template files and populate
     def generate_build_script(self):
 
@@ -299,8 +302,7 @@ class init(object):
         # Scheduler template file
         if self.glob.stg['bench_mode'] == "sched":
             self.glob.sched['template'] = self.glob.lib.files.find_exact(self.glob.sched['sched']['type'] + ".template", \
-                                                                        os.path.join(self.glob.stg['template_path'], \
-                                                                        self.glob.stg['sched_tmpl_dir']))
+                                                                         self.glob.stg['sched_tmpl_path'])
 
         # Set bench template to default, if set in bench.cfg: overload
         if self.glob.config['config']['template']:
@@ -308,8 +310,9 @@ class init(object):
         else:
             self.glob.config['template'] = self.glob.config['config']['bench_label']
 
-        matches = gb.glob(os.path.join(self.glob.stg['template_path'], self.glob.stg['bench_tmpl_dir'], "*" + \
-                                        self.glob.config['template'] + "*"))
+        matches = []
+        for template_path in self.glob.stg['bench_tmpl_path']:
+            matches += gb.glob(os.path.join(template_path, "*" + self.glob.config['template'] + "*"))
         matches.sort()
 
         # If more than 1 template match found
@@ -319,8 +322,7 @@ class init(object):
         # if no template match found 
         if not matches:
             self.glob.lib.msg.error("failed to locate bench template '" + self.glob.config['template'] + \
-                                    "' in " + self.glob.lib.rel_path(os.path.join(self.glob.stg['template_path'], \
-                                                                    self.glob.stg['bench_tmpl_dir'])))
+                                    "' in " + self.glob.lib.rel_path(self.glob.stg['bench_tmpl_path']))
         else:
             self.glob.config['template'] = matches[0]
 

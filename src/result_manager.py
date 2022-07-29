@@ -343,15 +343,15 @@ def send_files(result_dir, dest_dir):
 
         # Use local blackhole
     elif glob.stg['file_copy_handler'] == "cp":
-        if not glob.stg['collection_path']:
+        if not glob.ev['BPS_COLLECT']:
             glob.lib.msg.error("Key 'collection_path' required in $BP_HOME/settings.ini if using 'cp' file transmission mode.")
 
         # Check write permissions
-        if not glob.lib.files.write_permission(glob.stg['collection_path']): 
-            glob.lib.msg.error("Unable to write result data to " + glob.stg['collection_path'])
+        if not glob.lib.files.write_permission(glob.ev['BPS_COLLECT']): 
+            glob.lib.msg.error("Unable to write result data to " + glob.ev['BPS_COLLECT'])
         
         # File destination
-        copy_path = os.path.join(glob.stg['collection_path'], dest_dir)
+        copy_path = os.path.join(glob.ev['BPS_COLLECT'], dest_dir)
         glob.lib.files.create_dir(copy_path) 
         
         # Copy files to local directory
@@ -606,8 +606,11 @@ def query_result(glob_obj, result_label):
                     get_matching_results(glob.stg['captured_path'], result_label) + \
                     get_matching_results(glob.stg['failed_path'],   result_label)
 
+
     # No result found
     if not matching_dirs:
+        glob.args.listResults = 'all'
+        list_results(glob)
         glob.lib.msg.error("No matching result found matching '" + result_label + "'.")
 
     # Multiple results

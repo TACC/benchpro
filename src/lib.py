@@ -47,18 +47,10 @@ class init(object):
         # if empty str
         if not path:
             return ""
-        # if in project path
-        if self.glob.ev['BP_HOME'] in path:
-            return os.path.join(self.glob.stg['home_env'] + path.replace(self.glob.ev['BP_HOME'], ""))
-        # if in application path
-        elif self.glob.ev['BP_APPS'] in path:
-            return os.path.join(self.glob.stg['app_env'] + path.replace(self.glob.ev['BP_APPS'], ""))
-        # if in result path
-        elif self.glob.ev['BP_RESULTS'] in path:
-            return os.path.join(self.glob.stg['result_env'] + path.replace(self.glob.ev['BP_RESULTS'], ""))
-        # local repo
-        elif self.glob.stg['local_repo'] in path:
-            return os.path.join(self.glob.stg['local_repo_env'] + path.replace(self.glob.stg['local_repo'], ""))
+
+        for key in self.glob.ev:
+            if self.glob.ev[key] in path:
+                return path.replace(self.glob.ev[key], "$"+key)
 
         # if not any of the above
         return path
@@ -82,8 +74,9 @@ class init(object):
         start = app_dir.count(self.glob.stg['sl'])
 
         # Get directory paths
-        app_paths = self.files.search_tree(app_dir, start, start, start + self.glob.stg['tree_depth'])
-
+        app_paths = []
+        self.files.search_tree(app_paths, app_dir, start, start, start + self.glob.stg['tree_depth'])
+        
         # Split app path into catagories and add status
         for path in app_paths:
             status = self.glob.lib.sched.get_status_str(path)
@@ -236,7 +229,7 @@ class init(object):
 
         # Unique result
         if len(matching_apps) == 1:
-            return matching_apps[0]['path']
+            return matching_apps[0]
 
         # No matches
         elif len(matching_apps) == 0:
@@ -319,11 +312,11 @@ class init(object):
     def get_system_vars(self, system):
     
         self.glob.system['system'] = system
-        cfg_file = os.path.join("benchpro/system/config", self.glob.stg['system_cfg_file'])
-        
+        cfg_file = os.path.join(self.glob.stg['sys_cfg_path'], self.glob.stg['sys_cfg_file'])
+       
         # Check system cfg file exists
         if not os.path.isfile(cfg_file):
-           self.glob.lib.msg.error(self.glob.stg['system_cfg_file'] + " file not found in " + self.glob.lib.rel_path(self.glob.stg['config_path'])) 
+           self.glob.lib.msg.error(self.glob.stg['sys_cfg_file'] + " file not found in " + self.glob.lib.rel_path(self.glob.stg['sys_cfg_path'])) 
 
         system_parser   = cp.RawConfigParser(allow_no_value=True)
         system_parser.read(cfg_file)
@@ -350,30 +343,35 @@ class init(object):
         return app_id.hexdigest()[:10]
 
     # Parse all build cfg files into list
-    def get_cfg_list(self, path):
+    def get_cfg_list(self, path_list):
 
         cfg_list = []
 
-        # Get common cfgs
-        cfg_files = gb.glob(os.path.join(path, "*.cfg"))
+        idx = 0
+        for path in path_list:
+            cfg_list.append([])
+            # Get common cfgs
+            cfg_files = gb.glob(os.path.join(path, "*.cfg"))
         
-        # Get system specific cfgs
-        if os.path.isdir(os.path.join(path,self.glob.system['system'])):
-            cfg_files += gb.glob(os.path.join(path, self.glob.system['system'], "*.cfg"))
+            # Get system specific cfgs
+            if os.path.isdir(os.path.join(path,self.glob.system['system'])):
+                cfg_files += gb.glob(os.path.join(path, self.glob.system['system'], "*.cfg"))
 
-        # Construct
-        for cfg in cfg_files:
-            cfg_list.append(self.files.read_cfg(cfg))
-    
+            # Construct
+            for cfg in cfg_files:
+                cfg_list[idx].append(self.files.read_cfg(cfg))
+
+            idx += 1
+        
         return cfg_list
     
     # Set a list of build cfg file contents in glob
     def set_build_cfg_list(self):
-        self.glob.build_cfgs =  self.get_cfg_list(os.path.join(self.glob.stg['config_path'],self.glob.stg['build_cfg_dir']))
+        self.glob.build_cfgs =  self.get_cfg_list(self.glob.stg['build_cfg_path'])
 
     # Set a list of bench cfg file contents in glob
     def set_bench_cfg_list(self):
-        self.glob.bench_cfgs = self.get_cfg_list(os.path.join(self.glob.stg['config_path'],self.glob.stg['bench_cfg_dir']))
+        self.glob.bench_cfgs = self.get_cfg_list(self.glob.stg['bench_cfg_path'])
 
     # Convert cmdline string into a dict
     def parse_input_str(self, input_str, default):

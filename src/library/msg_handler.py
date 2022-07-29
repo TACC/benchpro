@@ -7,6 +7,8 @@ import signal
 import sys
 import time
 
+import src.library.misc_handler       as misc_handler
+
 class init(object):
 
     # Catch user interrupt
@@ -30,7 +32,9 @@ class init(object):
         self.glob = glob
         # Init interrupt handler
         signal.signal(signal.SIGINT, self.signal_handler) 
-    
+
+        self.misc     = misc_handler.init(self.glob) 
+
     # Convert strings to lists: str -> [str], list -> list
     def listify(self, message):
         if not isinstance(message, list):
@@ -110,8 +114,6 @@ class init(object):
     # Get list of uncaptured results and print note to user
     def new_results(self):
     
-        print("HERE", self.glob.stg['skip_result_check'], type(self.glob.stg['skip_result_check']))
-
         if not self.glob.stg['skip_result_check']:
 
             self.log_and_print(["Checking for uncaptured results..."], False)
@@ -151,7 +153,7 @@ class init(object):
         # Print last 20 lines
         with open(file_path, 'r') as fd:
                 lines = fd.readlines()
-                [print(x.strip()) for x in lines[max(-30, (len(lines)*-1)):]]
+                [print(x.strip()) for x in lines[max(-15, (len(lines)*-1)):]]
 
         print("=====> " + self.glob.lib.rel_path(file_path) + " <=====")
 
@@ -160,8 +162,12 @@ class init(object):
 
         # If sent empty list, print everything
         if not table_contents:
+
+            self.glob.lib.set_installed_apps()
+
             # Get list of apps 
             table_contents = [app['table'] for app in self.glob.installed_apps]
+
             if not table_contents:
                 self.glob.lib.msg.success("No applications installed.")
 
@@ -214,3 +220,16 @@ class init(object):
 
             hint = random.choice(hints)
             print("HINT: " + hint)
+
+    # Print info
+    def info(self):
+
+        print("Welcome to BenchPRO, are you new?")
+        print("You may want to read the documentation: https://benchpro.readthedocs.io/en/latest/")
+        print("")
+        print("You can view all available applications with bp -a")
+        print("You can list all installed applcations with bp -la")
+        print("Build the included LAMMPS code with bp -b lammps")
+        print("export BP_NOTICES=1 for more help.")
+
+        self.misc.print_version()

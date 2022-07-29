@@ -95,15 +95,14 @@ class init(object):
         if input_list[0] == 'all':
             self.glob.lib.set_installed_apps()
 
-            if not self.glob.installed_app_paths:
+            if not self.glob.installed_apps:
                 print("No applications installed.")
                 return
 
             print("Deleting all installed applications:")
 
             # Print apps to remove
-            for app in self.glob.installed_app_paths:
-                print(app)
+            self.glob.lib.msg.print_app_table([code_dict['table'] for code_dict in self.glob.installed_apps])
 
             # Timeout
             print()
@@ -112,8 +111,8 @@ class init(object):
             print("\nNo going back now...")
 
             # Delete
-            for app in self.glob.installed_app_paths:
-                self.delete_app_path(app)
+            for app in self.glob.installed_apps:
+                self.delete_app_path(app['path'])
 
         # Else check each input is installed then add to list
         else:
@@ -141,11 +140,13 @@ class init(object):
 
                 # If installed, add to remove list
                 installed = self.glob.lib.check_if_installed(search_dict)
+
                 if installed:
+                    app_path = installed['path']
                     print("\033[0;31mDeleting in", self.glob.stg['timeout'], "seconds\033[0m")
                     self.glob.lib.msg.wait(self.glob.stg['timeout'])
                     print("No going back now...")
-                    self.delete_app_path(installed)
+                    self.delete_app_path(app_path)
                 else:
                     print("No installed application matching search term '" + app + "'")
 
@@ -170,14 +171,19 @@ class init(object):
         
         # Get installation directory from search dict
         app_dir = self.glob.lib.check_if_installed(search_dict)
+        if not app_dir:
+            print("Not found.")
+            sys.exit(1)   
+            
+        app_path = app_dir['path']
 
         # No matches found
-        if not app_dir:
+        if not app_path:
             self.glob.lib.msg.error("Application '" + arg + "' is not installed.")
 
-        app_path = os.path.join(self.glob.ev['BP_APPS'], self.glob.lib.check_if_installed(search_dict))
-        build_report = os.path.join(app_path, self.glob.stg['build_report_file'])
-        install_path = os.path.join(app_path, self.glob.stg['install_subdir'])
+        app_full_path = os.path.join(self.glob.ev['BP_APPS'], app_path)
+        build_report = os.path.join(app_full_path, self.glob.stg['build_report_file'])
+        install_path = os.path.join(app_full_path, self.glob.stg['install_subdir'])
 
         # Read contents of build report file
         report_dict = self.glob.lib.report.read(build_report)
@@ -238,6 +244,9 @@ class init(object):
 
                 elif status == "COMPLETED":
                     col = "\033[0;32m"
+
+                elif status == "UNKNOWN":
+                    col = "\033[1;33m"
 
                 print(("Job " + report_dict['build']['task_id'] + " status: ").ljust(gap) + col + status + "\033[0m")
 
@@ -302,25 +311,28 @@ class init(object):
                         self.get_cmd_string([['requirements', 'code'], ['requirements', 'version'], ['requirements', 'build_label'], ['config', 'bench_label']], \
                         contents))
 
-    # Print applications that can be installed from available cfg files
-    def print_avail_type(self, atype, search_path):
-        print(self.glob.bold + "Available " + atype + " profiles:" + self.glob.end)
-        print(self.glob.bold, "------------------------------------------------------------", self.glob.end)
+    def print_heading(self, search_path):
         print(self.glob.lib.rel_path(search_path) + ":")
         print("------------------------------------------------------------")
         print("| Config file".ljust(32) + "| Run with")
-        # Scan config/build
-        app_dir = search_path + self.glob.stg['sl']
-        self.print_config(atype, gb.glob(app_dir + "*.cfg"))
 
-        # Scan config/build/[system]
-        app_dir = app_dir + self.glob.system['system'] + self.glob.stg['sl']
-        if os.path.isdir(app_dir):
-            print("------------------------------------------------------------")
-            print(self.glob.lib.rel_path(os.path.join(search_path, self.glob.system['system'])) + ":")
-            print("------------------------------------------------------------")
-            print("| Config file".ljust(32) + "| Run with")
+    # Print applications that can be installed from available cfg files
+    def print_avail_type(self, atype, search_path_list):
+        print(self.glob.bold + "Available " + atype + " profiles:" + self.glob.end)
+        print(self.glob.bold, "------------------------------------------------------------", self.glob.end)
+        for search_path in search_path_list:
+            self.print_heading(search_path)
+            # Scan config/build
+            app_dir = search_path + self.glob.stg['sl']
             self.print_config(atype, gb.glob(app_dir + "*.cfg"))
+            print()
+            # Scan config/build/[system]
+            app_dir = app_dir + self.glob.system['system'] + self.glob.stg['sl']
+            if os.path.isdir(app_dir):
+                print("------------------------------------------------------------")
+                self.print_heading(search_path)
+                self.print_config(atype, gb.glob(app_dir + "*.cfg"))
+                print()
 
     # return True for input is type int
     def int_input(self, arg):
@@ -367,15 +379,13 @@ class init(object):
 
     def show_available(self):
         if self.glob.args.avail in ['code', 'all']:
-            search_path = os.path.join(self.glob.stg['config_path'], self.glob.stg['build_cfg_dir'])
-            self.print_avail_type("application", search_path)
+            self.print_avail_type("application", self.glob.stg['build_cfg_path'])
 
         print()
         print()
 
         if self.glob.args.avail in ['bench', 'all']:
-            search_path = os.path.join(self.glob.stg['config_path'], self.glob.stg['bench_cfg_dir'])
-            self.print_avail_type("benchmark", search_path)
+            self.print_avail_type("benchmark", self.glob.stg['bench_cfg_path'])
 
         if self.glob.args.avail in ['suite', 'all']:
             print()
@@ -421,7 +431,7 @@ class init(object):
 
         sched_cfg = self.glob.lib.get_sched_cfg()
         try:
-            with open(os.path.join(self.glob.base_path, "system/config/sched", sched_cfg)) as f:
+            with open(os.path.join(self.glob.stg['sched_cfg_path'], sched_cfg)) as f:
                 print("Scheduler defaults for " + self.glob.system['system'] + ":")
                 for line in f.readlines():
                     if "=" in line:
@@ -432,9 +442,10 @@ class init(object):
             print(err)
     
         print()
-        print("Overload with '-o [SETTING1=ARG] [SETTING2=ARG]'")
-        print()
-
+        print("Overload with '-o [SETTING1=ARG] [SETTING2=ARG]' on the command line for one-time changes.")
+        print("Or by editting $BP_HOME/settings.ini which apply persist changes over the defaults.")
+        print("You can now use the 'bps' utility to manipulate these persitant changes, e.g.")
+        print(">   bps dry_run False")
     # Print command line history file
     def print_history(self):
         history_file = os.path.join(self.glob.ev['BP_HOME'], ".history")
@@ -446,12 +457,7 @@ class init(object):
 
     # Print version file and quit
     def print_version(self):
-        print("Client version: ")
-        print(self.glob.version_client + " (" + self.glob.version_client_date + ")" )
-        print()
-        print("Site package version:")
-        print(self.glob.version_site_full + " (" + self.glob.version_site_date + ")")
-        print()
+        print("benchpro " + self.glob.version_site_full) #+ " (" + self.glob.version_site_date + ")")
 
     # Return the last line of the .outputs file
     def get_last_history(self):

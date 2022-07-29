@@ -90,9 +90,13 @@ class init(object):
 
         # Iterate overload list
         for setting in user_input:
+            if not isinstance(setting, str):
+                continue
             pair = setting.split('=')
+            if len (pair) != 2:
+                continue
             # Test key-value pair
-            if not len(pair) == 2:
+            if not len(pair) == 2 and setting != '':
                 print("Invalid overload [key]=[value] pair detected: ", setting)
                 sys.exit(1)
             self.glob.overload_dict[pair[0].strip()] = pair[1].strip()

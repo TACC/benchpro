@@ -19,7 +19,7 @@ def get_app_info():
     glob.lib.expr.eval_dict(glob.config['requirements'], False)
 
     # Check if code is installed
-    glob.config['metadata']['code_path'] = glob.lib.check_if_installed(glob.config['requirements'])
+    glob.config['metadata']['code_path'] = glob.lib.check_if_installed(glob.config['requirements'])['path']
 
     # If application is not installed, check if cfg file is available to build
     if not glob.config['metadata']['code_path']:
@@ -41,11 +41,10 @@ def get_app_info():
             glob.config['metadata']['build_running'] = True
 
         # Recheck that app is installed
-        glob.config['metadata']['code_path'] = glob.lib.check_if_installed(glob.config['requirements'])
+        glob.config['metadata']['code_path'] = glob.lib.check_if_installed(glob.config['requirements'])['path']
 
     # Code is built
     else:
-
         glob.lib.msg.high("Installed application found, continuing...")
         glob.config['metadata']['build_running'] = False
 
@@ -57,9 +56,6 @@ def get_app_info():
     glob.config['metadata']['app_mod'] = glob.config['metadata']['code_path']
 
     # Get app info from build report
-
-    print("HERE", glob.ev['BP_APPS'], glob.config['metadata']['code_path'])
-
     install_path = os.path.join(glob.ev['BP_APPS'], glob.config['metadata']['code_path'])
     glob.build_report = glob.lib.report.read(os.path.join(install_path, glob.stg['build_report_file']))['build']
 
@@ -120,7 +116,7 @@ def gen_bench_script():
     glob.counter += 1
 
     # Working Dir
-    glob.config['metadata']['working_dir'] =  glob.system['system'] + "_" + \
+    glob.config['metadata']['working_dir'] =  glob.user + "_" + \
                                             glob.config['config']['bench_label'] + "_" + \
                                             glob.stg['time_str'] + "_" + str(glob.config['runtime']['nodes']).zfill(3) + "N_" + \
                                             str(glob.config['runtime']['ranks_per_node']).zfill(2) + "R_" + \
@@ -254,7 +250,7 @@ def run_bench(input_str, glob_copy):
         glob.sched['sched']['job_label'] = glob.config['config']['dataset']+"_bench"
 
         glob.sched_template = glob.lib.files.find_exact(glob.sched['sched']['type'] + ".template", \
-                                            os.path.join(glob.stg['template_path'], glob.stg['sched_tmpl_dir']))
+                                                        glob.stg['sched_tmpl_path'])
 
     # Check for empty overload params
     glob.lib.overload.check_for_unused()
@@ -324,6 +320,10 @@ def init(glob):
 
     # Get list of avail cfgs
     glob.lib.set_bench_cfg_list()
+
+    # Set generized paths
+    glob.stg['curr_tmpl_path'] = glob.stg['build_tmpl_path']
+    glob.stg['curr_cfg_path'] = glob.stg['build_cfg_path']
 
     # Check for new results
     glob.lib.msg.new_results()

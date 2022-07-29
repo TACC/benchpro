@@ -95,7 +95,6 @@ class init(object):
 
         runtime_keys = None
         if eval_runtime_vars:
-            print("HERE", self.glob.config['runtime'])
             runtime_keys = self.glob.config['runtime'].keys()
 
         for key in cfg_dict:
