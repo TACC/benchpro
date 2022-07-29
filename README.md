@@ -1,4 +1,4 @@
-![Lmod Logo](https://github.com/TACC/BenchPRO/raw/main/resources/images/benchpro_white.png)
+![Lmod Logo](https://github.com/TACC/BenchPRO/raw/main/resources/images/benchpro_grey.png)
 
 [![Documentation Status](https://readthedocs.org/projects/benchpro/badge/?version=latest)](https://benchpro.readthedocs.io/en/latest/?badge=latest)
 
