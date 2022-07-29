@@ -1,0 +1,6 @@
+The --last option queries the status of your last BenchPRO operation.
+The --defaults option displays pertinant default settings.
+BenchPRO supports list format for benchmark [runtime] paramaters.
+The 'ranks_per_node' and 'threads' runtime parameters support list format, the lists must contain an equal number of elements. i.e "threads=1,28 ranks_per_node=56,2" will produce two runs: 56 ranks * 1 thread, and 2 ranks * 28 threads.
+BenchPRO creates a .lua module for each application, you can use modules to load your applications independently BenchPRO, so long as as the base module is loaded. Get the label to load with 'ml -avail'
+If you use the integrated file staging feature (the [files] stanza in config files), BenchPRO will attempt to cache your source files/dataset URL target in $BP_REPO, to avoid fetching a fresh copy from the Internet every time.

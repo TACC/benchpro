@@ -1,0 +1,16 @@
+
+source $OPENFOAM_DIR/OpenFOAM-*/etc/bashrc
+
+cd ${dataset}
+
+numberOfSubdomains=$(( nodes * ranks ))
+
+sed -i "/endTime/c\endTime         ${endTime};" system/controlDict
+sed -i "/writeInterval/c\writeInterval   ${writeInterval};" system/controlDict
+sed -i "/numberOfSubdomains/c\numberOfSubdomains ${numberOfSubdomains};" system/decomposeParDict
+
+blockMesh | tee  log.blockMesh
+decomposePar -force | tee log.decomposePar
+
+${mpi_exec} ${exe} -parallel | tee log.icoFoam
+

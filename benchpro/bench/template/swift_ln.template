@@ -1,0 +1,2 @@
+ln -s ${local_repo}/${dataset}/* .
+${mpi_exec} ${exe} -n ${steps} ${run_args} --threads=${threads} --pin ${yml}

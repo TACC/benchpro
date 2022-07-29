@@ -1,0 +1,11 @@
+cd ${dataset}
+
+sed -i "/run_hours/c\ run_hours                           = ${run_hours}" namelist.input
+sed -i "/interval_seconds/c\ interval_seconds                    = ${interval_seconds}" namelist.input
+
+ln -s ${WRF_DIR}/run/RRTMG_* .
+ln -s ${WRF_DIR}/run/ozone* .
+ln -s ${WRF_DIR}/run/*.TBL .
+ln -s ${WRF_DIR}/run/CAMtr_volume_mixing_ratio.RCP8.5 CAMtr_volume_mixing_ratio
+
+${mpi_exec} ${exe} 
