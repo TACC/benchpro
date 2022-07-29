@@ -94,15 +94,15 @@ def print_notices():
         print(">   git add .")
         print(">   git commit -m '[csa-branch] profile updates' ")
         print("Refer to recommended branch naming convention below.")
-        print("Then create a pull request for your new branch. Once the branches are created I can priveidge TACC staff to push to their branch.")
+        print("Then create a pull request for your new branch. Once the branches are created I can elevate privileges for staff to push to their respective branches.")
 
 
-        print("4.A You can conintue as an un-affiliated BenchPRO user - doing work unrelated to LCCF CSA.")
+        print("4.A You can continue as an un-affiliated BenchPRO user - doing work unrelated to LCCF CSA.")
         print("    In this case you can work from the main branch.")
         print()
         print("!__OR__! ")
         print()
-        print("4.B If you are a CSA group member, contact your TACC support laison to create your CSA branch.")
+        print("4.B If you are a CSA group member, contact your TACC support liaison to create your CSA branch.")
         print("    or try:")
         print(">   cd $BP_HOME")
         print(">   git fetch")
@@ -115,8 +115,8 @@ def print_notices():
         print(">   bp --validate")
         print("6. You now have a new $BP_HOME file structure created for you.")
         print("The file $BP_HOME/settings.ini contains key-value pairs, under your control, that can 'overwrite' the system level defined defaults.")
-        print("TLDR: these permenent 'overwrite' key-values can be apploied to ANY parameter within BenchPRO, e.g:")
-        print("    parameters like: 'queue', 'benchmark_label', $git_tag, 'runtime', 'nodes', 'mpi_ranks_per_node', 'OMP_NUM_THREADS', etc.")
+        print("TLDR: these permanent 'overwrite' key-values can be applied to ANY parameter within BenchPRO, e.g:")
+        print("    parameters like: 'queue', 'benchmark_label', $git_tag, 'version', 'dataset', 'runtime', 'nodes', 'ranks_per_node', 'OMP_NUM_THREADS', etc.")
         print("key-value pairs in $BP_HOME/settings.ini will be enforced/overwritten where ever needed, and an error will be raise if a overwriting key-value pair goes unused.")
         print("Run 'bp --defaults' for more info.")
         print()
@@ -165,7 +165,7 @@ def print_notices():
         print("--------------")
         print()
 
-        print("11. Please confirm your branch and do NOT create merge requests to orogin/main. I will be upset.")
+        print("11. Please confirm your branch and do NOT create merge requests to origin/main. I will be upset.")
 
         print()
         print("12. You can squash this message with export BP_NOTICES=0")
