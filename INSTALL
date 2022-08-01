@@ -109,12 +109,12 @@ printf "Done.\n"
 printf "\nGenerating site module...\n"
 
 # Copy  and contextualize module file
-cp ${SRC_PATH}/modulefiles/benchpro.lua                                  ${BPS_SITE}/modulefiles/benchpro/${BPS_VERSION}.lua
+cp ${SRC_PATH}/modulefiles/benchpro.lua                                     ${BPS_SITE}/modulefiles/benchpro/${BPS_VERSION}.lua
 
 function update_mod() {
     # Check val is set
     [[ -z $2 ]] && echo "$1 not set" && exit 1
-    sed -i "3 i setenv(\"$1\", \"$2\")" ${BPS_SITE}/modulefiles/benchpro/${BPS_VERSION}.lua
+    sed -i "3 i setenv(\"$1\", \"$2\")"                                     ${BPS_SITE}/modulefiles/benchpro/${BPS_VERSION}.lua
 }
 
 # Copy current 'BP_' EVs to modulefile
@@ -123,6 +123,9 @@ while IFS='=' read -r -d '' n v; do
         update_mod $n $v
     fi
 done < <(env -0)
+
+# Add BP_BIN
+sed -i "3 i prepend_path(\"BP_BIN\", \"${BPS_SITE}/python/bin\")"  ${BPS_SITE}/modulefiles/benchpro/${BPS_VERSION}.lua
 
 # Add py_version
 sed -i "/local bp_home/c\local bp_home = \"${BP_HOME}\""                    ${BPS_SITE}/modulefiles/benchpro/${BPS_VERSION}.lua
@@ -134,7 +137,7 @@ sed -i "/local bps_site/c\local bps_site = \"${BPS_SITE}\""                 ${BP
 chmod -R a+rX                                                               ${BPS_SITE}/modulefiles
 chmod a+w                                                                   ${BP_REPO}
 chmod --silent g+r                                                          ${BP_REPO}/*
-setfacl -d -m other::rX                                                     ${BP_REPO}
+setfacl -d -m group::rX,other::rX                                           ${BP_REPO}
 touch                                                                       ${BP_REPO}/.urllookup
 chmod a+rw                                                                  ${BP_REPO}/.urllookup
 
