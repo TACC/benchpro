@@ -290,6 +290,10 @@ def main():
         notices.print_notices()    
         sys.exit(0)
 
+
+    # Set default for sched input
+    args.sched = "system"
+    
     # Create glob obj
     try:
         glob = init_glob()
