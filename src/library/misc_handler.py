@@ -438,7 +438,7 @@ class init(object):
                         print("  " + line.split("=")[0].strip().ljust(19) + "= " + line.split("=")[1].strip() )
 
         except Exception as err:
-            print("Unable to read " + sched_cfg)
+            print("Unable to read " + str(sched_cfg))
             print(err)
     
         print()
