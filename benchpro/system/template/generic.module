@@ -1,5 +1,6 @@
 local install_path = "<<<install_path>>>"
 setenv("<<<caps_code>>>_DIR",       install_path)
+prepend_path("BP_BIN",              install_path)
 prepend_path("LD_LIBRARY_PATH",     pathJoin(install_path, "lib64"))
 prepend_path("LD_LIBRARY_PATH",     pathJoin(install_path, "lib"))
 
