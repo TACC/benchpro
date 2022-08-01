@@ -84,12 +84,8 @@ def build_code(input_dict, glob_copy):
         # If sched config file not specified, use system default
         if not glob.config['general']['sched_cfg']:
             glob.config['general']['sched_cfg'] = glob.lib.get_sched_cfg()
-            print("ASDAS", glob.config['general']['sched_cfg'])
         # Ingest sched config from file
 
-        print(glob.config)
-        print(glob.config['general']['sched_cfg'])
-        print("-----------------------")
         glob.lib.cfg.ingest('sched', glob.config['general']['sched_cfg'])
 
         # Low priority stdout message
