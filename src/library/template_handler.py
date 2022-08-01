@@ -134,8 +134,10 @@ class init(object):
                                     self.glob.stg['utils_path'] + " " + \
                                     os.path.join(self.glob.config['metadata']['working_path'], "hw_report") + "\n")
             else:
-                self.glob.lib.msg.warning(["Requested hardware stats but script permissions not set",
-                                                "Run 'sudo -E $BP_HOME/resources/scripts/change_permissions'"])
+                #self.glob.lib.msg.warning(["Requested hardware stats but script permissions not set",
+                #                                "Run 'sudo -E $BP_HOME/resources/scripts/change_permissions'"])
+                self.glob.lib.msg.warning("Skipping hardware scan for now...")
+                pass
 
     # Add things to the bottom of the build script
     def build_epilog(self, template_obj):
