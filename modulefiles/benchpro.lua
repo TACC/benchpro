@@ -2,8 +2,6 @@
 
 
 
-setenv("BP_NOTICE", "1")
-
 
 -- Resolve user environment variables, $HOME, $SCRATCH, etc
 local bp_home         = 
