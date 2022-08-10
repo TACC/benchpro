@@ -223,11 +223,11 @@ class init(object):
         if not 'script_additions' in cfg_dict['config'].keys():    cfg_dict['config']['script_additions'] = ""
 
         # Add sections if missing
-        if not 'requirements'     in cfg_dict.keys():              cfg_dict['requirements'] = {}
-        if not 'runtime'          in cfg_dict.keys():              cfg_dict['runtime'] = {}
-        if not 'result'           in cfg_dict.keys():              cfg_dict['result'] = {}
-        if not 'files'            in cfg_dict.keys():              cfg_dict['files'] = {}
-        if not 'overload'         in cfg_dict.keys():              cfg_dict['overload'] = {}
+        if not 'requirements'     in cfg_dict.keys():              cfg_dict['requirements']     = {}
+        if not 'runtime'          in cfg_dict.keys():              cfg_dict['runtime']          = {}
+        if not 'result'           in cfg_dict.keys():              cfg_dict['result']           = {}
+        if not 'files'            in cfg_dict.keys():              cfg_dict['files']            = {}
+        if not 'overload'         in cfg_dict.keys():              cfg_dict['overload']         = {}
 
         # --- Apply defaults ---
 
@@ -500,14 +500,15 @@ class init(object):
     # Check sched config file and add required fields
     def process_sched_cfg(self, cfg_dict):
         # Check for missing essential parameters
+        
         self.check_dict_section(cfg_dict['metadata']['cfg_file'], cfg_dict, 'sched')
         self.check_dict_key(    cfg_dict['metadata']['cfg_file'], cfg_dict, 'sched', 'type')
         self.check_dict_key(    cfg_dict['metadata']['cfg_file'], cfg_dict, 'sched', 'queue')
-        self.check_dict_key(    cfg_dict['metadata']['cfg_file'], cfg_dict, 'sched', 'account')
     
         # Instantiate missing optional parameters
+        if not 'slurm_account'  in    cfg_dict['sched'].keys():   cfg_dict['sched']['slurm_account']    = ""
         if not 'reservation' in    cfg_dict['sched'].keys():   cfg_dict['sched']['reservation']   = ""
-   
+
         self.glob.lib.overload.replace(cfg_dict)
         # Fill missing parameters
         if not cfg_dict['sched']['runtime']:
@@ -536,7 +537,7 @@ class init(object):
     
         # Process and store sched cfg 
         elif cfg_type == 'sched':
-            cfg_file = self.glob.lib.files.find_in([self.glob.stg['sched_cfg_path']], search, True)
+            cfg_file = os.path.join(self.glob.stg['sched_cfg_path'], search)
             cfg_dict = self.glob.lib.files.read_cfg(cfg_file)
             self.glob.lib.msg.log("Starting sched cfg processing.")
             self.process_sched_cfg(cfg_dict)

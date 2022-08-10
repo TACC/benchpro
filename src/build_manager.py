@@ -96,12 +96,13 @@ def build_code(input_dict, glob_copy):
 
     # Check for unused overload params (unless run from bench_manager)
     if not glob.quiet_build:
-        glob.lib.overload.check_for_unused()
+        glob.lib.overload.check_for_unused_overloads()
 
     # Apply system rules if not running locally
     if not glob.stg['build_mode'] == "local":
         glob.lib.expr.apply_system_rules()
 
+    glob.lib.msg.brk()
     # Print inputs to log
     glob.lib.send_inputs_to_log('Builder')
 
@@ -140,7 +141,6 @@ def build_code(input_dict, glob_copy):
     # Clean up tmp files
     glob.lib.files.cleanup([])
 
-    glob.lib.msg.brk()
     glob.lib.msg.high(glob.success)
 
     # If dry_run

@@ -11,6 +11,7 @@ class init(object):
     # Select which dicts are searchable when applying overloads
     def set_search_space(self):
         self.search_space = [   self.glob.stg,
+                                self.glob.ev,
                                 self.glob.config['general'],
                                 self.glob.config['config'],
                                 self.glob.config['files'],
@@ -48,8 +49,10 @@ class init(object):
                     self.glob.lib.msg.error("datatype mismatch for '" + overload_key +"', expected=" + str(datatype) +\
                                                 ", provided=" + str(type(overload_key)))
 
-            self.glob.lib.msg.high("Overloading " + overload_key + ": '" + str(old) + "' -> '" + \
-                                        str(search_dict[overload_key]) + "'")
+            # Only print overloads from CLI
+            if overload_key not in self.glob.user_overload_dict.keys():
+                self.glob.lib.msg.high("Overloading " + overload_key + ": '" + str(old) + "' -> '" + \
+                                            str(search_dict[overload_key]) + "'")
             # Add to list of overloaded keys
             self.glob.overloaded += [overload_key]
             # Remove key from overload dict
@@ -70,7 +73,7 @@ class init(object):
         else:
             self.search_space = [search_space]
         
-        # For each overload key
+       # For each overload key
         for overload_key in list(self.glob.overload_dict):
             self.glob.lib.msg.log("Overloading key " + overload_key + "...")            
             # Search for match in searchable dicts
@@ -83,13 +86,16 @@ class init(object):
     # Generate dict from commandline params
     def setup_dict(self):
 
-        user_input = self.glob.user_settings
+        user_input = self.glob.user_overload_list #[[overload, True] for overload in self.glob.user_overload_list]
         # Overloads from $BP_HOME/settings.ini first, then CLI
-        if self.glob.args.overload:
-            user_input += self.glob.args.overload
 
+        if self.glob.args.overload:
+            user_input = user_input + self.glob.args.overload #[[overload, False] for overload in self.glob.args.overload]
+
+        # expected = user_input is list of key=vals
         # Iterate overload list
         for setting in user_input:
+
             if not isinstance(setting, str):
                 continue
             pair = setting.split('=')
@@ -115,7 +121,7 @@ class init(object):
                 self.glob.overload_dict.pop(key)
 
     # Print warning if overload dict not empty (unmatched keys)
-    def check_for_unused(self):
+    def check_for_unused_overloads(self):
 
         # Last chance to make replacements
         self.replace(None)
@@ -131,3 +137,18 @@ class init(object):
                 self.glob.lib.msg.high("  " + key + "=" + self.glob.overload_dict[key])
             self.glob.lib.msg.error("Invalid input arguments.")
 
+    # Confirm all required overloads are present in settings.ini
+    def check_for_required_overloads(self):
+
+
+        for required_key in self.glob.required_overload_keys:
+            # No value defined - error
+            try:
+                if self.glob.overload_dict[required_key]:
+                    pass
+            except:
+                self.glob.lib.msg.error(["Missing required setting '" + required_key + "'",
+                                         "Please set with:",
+                                         "bps " + required_key + " [val]"])
+
+ 

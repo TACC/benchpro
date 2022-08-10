@@ -253,7 +253,7 @@ def run_bench(input_str, glob_copy):
                                                         glob.stg['sched_tmpl_path'])
 
     # Check for empty overload params
-    glob.lib.overload.check_for_unused()
+    glob.lib.overload.check_for_unused_overloads()
 
     # Check if MPI is allow on this host
     if glob.stg['bench_mode'] == "local" and not glob.stg['dry_run'] and not glob.lib.check_mpi_allowed():

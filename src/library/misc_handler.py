@@ -75,7 +75,7 @@ class init(object):
             print("Warning: Failed to remove application directory:")
             print(">  "  + self.glob.lib.rel_path(app_dir))
             print("Skipping")
-            print()
+        print()
         # Detele module dir
         try:
             self.glob.lib.files.prune_tree(mod_dir)
@@ -210,7 +210,6 @@ class init(object):
         # Dry_run - do nothing
         if report_dict['build']['task_id']  == "dry_run":
             print("Build job was dry_run. Skipping executable check")
-    
         else:
             # Local build        
             if report_dict['build']['exec_mode'] == "local":
@@ -326,6 +325,7 @@ class init(object):
             app_dir = search_path + self.glob.stg['sl']
             self.print_config(atype, gb.glob(app_dir + "*.cfg"))
             print()
+
             # Scan config/build/[system]
             app_dir = app_dir + self.glob.system['system'] + self.glob.stg['sl']
             if os.path.isdir(app_dir):
@@ -400,52 +400,49 @@ class init(object):
             
     # Print key/value pair from setting.ini dict
     def print_setting(self, key, value):
-        print("  " + key.ljust(18) + " = " + str(value))
+        if value:
+            print("  " + key.ljust(18) + " = " + str(value))
+        else:
+            print("  " + key.ljust(18) + " = " + "\033[0;31mMISSING\033[0m")
 
     # Print default params from settings.ini
     def print_defaults(self):
-        print()
 
         # Print site info
+        print("------------------------------------------------------")
         print("Setup info:")
         [self.print_setting(key[0], key[1]) for key in [        ["User", self.glob.user], \
                                                                 ["Host", self.glob.hostname.split(".")[0]], \
                                                                 ["System", self.glob.system['system']], \
                                                                 ["CWD", self.glob.cwd]]]
         
-        # Print BenchPRO settings
-        print()
-        print("Benchtool defaults:")
-        [self.print_setting(key, self.glob.stg[key]) for key in ['dry_run', \
-                                                                'debug', \
-                                                                'exit_on_missing', \
-                                                                'overwrite', \
-                                                                'build_mode', \
-                                                                'build_if_missing', \
-                                                                'bench_mode',\
-                                                                'check_modules', \
-                                                                'sync_staging']]
-        print()
         # Print scheduler defaults for this system if available
         self.glob.lib.get_system_vars(self.glob.system['system'])
 
         sched_cfg = self.glob.lib.get_sched_cfg()
         try:
-            with open(os.path.join(self.glob.stg['sched_cfg_path'], sched_cfg)) as f:
+            with open(os.path.join(self.glob.stg['sched_cfg_path'], sched_cfg)) as fp:
+                print("------------------------------------------------------")
                 print("Scheduler defaults for " + self.glob.system['system'] + ":")
-                for line in f.readlines():
+                for line in fp.readlines():
                     if "=" in line:
                         print("  " + line.split("=")[0].strip().ljust(19) + "= " + line.split("=")[1].strip() )
 
         except Exception as err:
             print("Unable to read " + str(sched_cfg))
             print(err)
-    
+
+        # Print BenchPRO settings
+        print("------------------------------------------------------")
+        print("$BP_HOME/settings.ini")
+        [self.print_setting(setting.split("=")[0].strip(), setting.split("=")[1].strip()) for setting in self.glob.user_overload_list]
+        print("------------------------------------------------------")
         print()
         print("Overload with '-o [SETTING1=ARG] [SETTING2=ARG]' on the command line for one-time changes.")
-        print("Or by editting $BP_HOME/settings.ini which apply persist changes over the defaults.")
-        print("You can now use the 'bps' utility to manipulate these persitant changes, e.g.")
-        print(">   bps dry_run False")
+        print("Edit $BP_HOME/settings.ini to apply persistant changes.")
+        print("Use the 'bps' command to apply these persistant changes via the CLI, e.g.")
+        print(">   bps dry_run False\n\n")
+
     # Print command line history file
     def print_history(self):
         history_file = os.path.join(self.glob.ev['BP_HOME'], ".history")
@@ -466,8 +463,8 @@ class init(object):
             print("No previous outputs found.")
             sys.exit(0)
 
-        with open(os.path.join(self.glob.ev['BP_HOME'], ".history"), 'r') as f:
-            lines = f.readlines()
+        with open(os.path.join(self.glob.ev['BP_HOME'], ".history"), 'r') as fp:
+            lines = fp.readlines()
             if len(lines) == 0:
                 print("No previous outputs found.")    
                 sys.exit(0)
@@ -519,3 +516,21 @@ class init(object):
                     ",gpus="            + self.glob.config['runtime']['gpus']               + \
                     " | " + str(self.glob.task_id)                                          + \
                     " | " + self.glob.config['metadata']['working_dir'] 
+
+    # Print EV matching prefix str
+    def print_env_matching_str(self, prefix):
+        
+        for k, v in os.environ.items():
+            if prefix in k:
+                print(k.ljust(18, " ") + "= " + v)
+
+    # Print BP_ and BPS_ EVs
+    def print_env(self):
+        print("Editable environment variables:")
+        self.print_env_matching_str("BP_")
+        print()
+        print("Non-editable environment variables:")
+        self.print_env_matching_str("BPS_")
+        print()
+        
+

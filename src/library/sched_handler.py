@@ -34,7 +34,7 @@ class init(object):
             if "local" in jobid:
                 return "COMPLETED"
 
-            # Query Slurm accounting with job ID
+            # Query Slurm slurm_accounting with job ID
             success, stdout, stderr = self.slurm_exec("sacct -j " + jobid + " --format State")
 
             if success:
@@ -213,8 +213,11 @@ class init(object):
         task_id = self.glob.lib.report.get_task_id("build", app)
 
         # Unable to get task ID from report file
-        if not task_id:
-            self.glob.lib.msg.warning("Unable read build report file for " + str(app))
+        if not task_id and not self.glob.args.delApp:
+            self.glob.lib.msg.warning(["Unable read build report file for " + str(app),
+                                        "Please cleanup with:",
+                                        "bp -da "+str(app)])
+            
             return '\033[0;32mUNKNONWN\033[0m' 
 
         if task_id == "dry_run":
