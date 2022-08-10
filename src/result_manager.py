@@ -164,8 +164,8 @@ def get_timestamp(line_id):
     output_file = os.path.join(glob.result_path, glob.report_dict['bench']['stdout'])
 
     # Search for tiem line and return in
-    with open(output_file, 'r') as f:
-        for line in f.readlines():
+    with open(output_file, 'r') as fp:
+        for line in fp.readlines():
             if line.startswith(line_id):
                 return line
 

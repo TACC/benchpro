@@ -25,7 +25,7 @@ class init(object):
                 report_file = os.path.join(report_file, self.glob.stg['bench_report_file'])
             # Else error
             else:
-                self.glob.lib.msg.warning("Report file '" + self.glob.lib.rel_path(report_file)  + "' not found. Skipping.")
+                self.glob.lib.msg.log("Report file '" + self.glob.lib.rel_path(report_file)  + "' not found. Skipping.")
                 return False
 
         report_parser    = cp.ConfigParser()
@@ -50,10 +50,10 @@ class init(object):
                     "code           = "+ self.glob.config['general']['code'],
                     "version        = "+ str(self.glob.config['general']['version']),
                     "build_label    = "+ self.glob.config['config']['build_label'],
-                    "compiler       = "+ self.glob.config['modules']['compiler'],
-                    "mpi            = "+ self.glob.config['modules']['mpi'],
+                    "compiler       = "+ self.glob.modules['compiler']['full'],
+                    "mpi            = "+ self.glob.modules['mpi']['full'],
                     "module_use     = "+ self.glob.config['general']['module_use'],
-                    "modules        = "+ ", ".join(self.glob.config['modules'].values()),
+                    "modules        = "+ ", ".join([self.glob.modules[module]['full'] for module in self.glob.modules.keys()]),
                     "opt_flags      = "+ self.glob.config['config']['opt_flags'],
                     "bin_dir        = "+ self.glob.config['config']['bin_dir'],
                     "exe_file       = "+ self.glob.config['config']['exe'],

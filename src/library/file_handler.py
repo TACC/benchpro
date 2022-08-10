@@ -21,8 +21,8 @@ class init(object):
         if not os.path.isfile(file_path):
             self.glob.lib.msg.error("File " + self.glob.lib.rel_path(file_path) + " not found.")
 
-        with open(file_path) as f:
-            return f.readlines()
+        with open(file_path) as fp:
+            return fp.readlines()
 
     # Delete tmp build files if installation fails
     def cleanup(self, clean_list):
@@ -440,9 +440,9 @@ class init(object):
 
     # Write module to file
     def write_list_to_file(self, list_obj, output_file):
-        with open(output_file, "w") as f:
+        with open(output_file, "w") as fp:
             for line in list_obj:
-                f.write(line)
+                fp.write(line)
 
     # Write command line to history file
     def write_cmd_history(self):
@@ -479,6 +479,10 @@ class init(object):
         cfg_parser.optionxform=str
         cfg_parser.read(cfg_file)
 
+
+        if not os.path.isfile(cfg_file):
+            self.glob.lib.msg.error("Unable to read cfg file " + self.glob.lib.real_path(cfg_file))
+
         # Add file name & label to dict
         cfg_dict = {}
         cfg_dict['metadata'] ={}
@@ -495,9 +499,9 @@ class init(object):
     # Read client version number from file
     def get_client_version(self):
         try:
-            with open(os.path.join(self.glob.ev['BP_HOME'], ".version"), 'r') as f:
-                self.glob.version_client = f.readline().split(" ")[-1][1:].strip()
-                self.glob.version_client_date = f.readline().strip()
+            with open(os.path.join(self.glob.ev['BP_HOME'], ".version"), 'r') as fp:
+                self.glob.version_client = fp.readline().split(" ")[-1][1:].strip()
+                self.glob.version_client_date = fp.readline().strip()
 
         except:
             self.glob.lib.msg.error("Failed to read version info from $BP_HOME/.version")    

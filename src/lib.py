@@ -83,8 +83,13 @@ class init(object):
             idx = self.report.get_task_id("build", path) 
             self.glob.installed_apps.append({'task_id': idx, 'table': [idx] + path.split(self.glob.stg['sl']) + [status], 'path': path})
 
+        #print(self.glob.installed_apps[0])
+        #print(self.glob.installed_apps[0]['task_id'])
+        #print(type(self.glob.installed_apps[0]['task_id']))
+        #print()
+
         # Sort by task_id
-        self.glob.installed_apps = sorted(self.glob.installed_apps, key=lambda x: x['task_id'], reverse=True)
+        self.glob.installed_apps = sorted(self.glob.installed_apps, key=lambda x: x['table'][5], reverse=True)
 
         # Add ID column
         #for i in range(0,len(self.glob.installed_app_list)):

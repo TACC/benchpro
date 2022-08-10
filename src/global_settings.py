@@ -62,8 +62,6 @@ class setup(object):
     installed_apps              = []
     # List of staging command to add to script
     stage_ops                   = []
-    # Contents of user's settings.ini
-    user_settings               = []
 
     # List of paths to add to PATH
     paths                       = []
@@ -82,6 +80,10 @@ class setup(object):
     # dict for storing overload key-values
     overload_dict               = {}
     overloaded                  = [] 
+    # Contents of user's settings.ini
+    user_overload_list          = []
+    user_overload_dict          = {}
+    required_overload_keys      = ["slurm_account", "queue"]
     # List populated with appliction info
     installed_app_list          = []
     installed_app_paths         = []
@@ -93,7 +95,7 @@ class setup(object):
     cmd                         = None
 
     # Context variables
-    user                        = str(os.getlogin())
+    user                        = os.path.expandvars("$USER")
     home                        = os.path.expandvars("$HOME")
     hostname                    = str(socket.gethostname())
     # If FQDN - take first 2 fields
@@ -122,7 +124,7 @@ class setup(object):
     # Resolve relative paths and EVs in $BP_HOME/settings.ini
     def resolve(self, val):
 
-        val = os.path.expandvars(val)
+        val = os.path.expandvars(str(val))
         # Check for unresolved EV
         if "$" in val:
             print(
@@ -144,7 +146,7 @@ class setup(object):
         optional = ['collection_path', 'ssh_user', 'ssh_key', 'scp_path']
 
         # Throw exception if required value is NULL
-        if key not in optional and not value:
+        if key and key not in optional and not value:
             print("Missing value for key '" +
                   key +
                   "' in $BP_HOME/settings.ini, check the documentation.")
@@ -179,7 +181,7 @@ class setup(object):
         
         # This reading method allows for [sections] be present or not
         with open(ini_file) as fp:
-            ini_parser.read_file(itertools.chain(['[DEFAULT]'], fp), source=ini_file)            
+            ini_parser.read_file(itertools.chain(['[user]'], fp), source=ini_file)            
 
         return ini_parser
 
@@ -188,11 +190,13 @@ class setup(object):
 
         settings_parser = self.read_ini(settings_file, not overload)
         if not settings_parser:
-            return
+            print("FATAL: failed to read settings file " + settings_file)
+            sys.exit(1)
 
         # Read contents of ini into dict
         for section in settings_parser:
             if not section == "DEFAULT":
+
                 for key in settings_parser[section]:
                     # Convert values to correct datatype
                     value = self.process(key, settings_parser[section][key])
@@ -201,7 +205,10 @@ class setup(object):
                         value = self.resolve(value)
                     # Add to overload dict (user settings)
                     if overload:
-                        self.user_settings += [value]
+                        # Process before casting to str, 0 -> False
+                        self.user_overload_list += [key+"="+str(value)]
+                        self.user_overload_dict[key] = value
+
                     # Add to stg dict (site settings)
                     else:
                         self.stg[key] = value
@@ -213,7 +220,10 @@ class setup(object):
     # Use defined settings - overwrite the defaults
     def read_user_settings(self):
         self.read_settings(os.path.join(self.ev['BP_HOME'], "settings.ini"), True)
+
+        # Create overload dict from settings.ini & --overload
         self.lib.overload.setup_dict()
+        self.lib.overload.check_for_required_overloads()
 
     def join(self, path1, path2):
         return os.path.join(path1, path2)
@@ -239,47 +249,31 @@ class setup(object):
 
     def derived_variables(self):
 
-#        self.stg['build_tmpl_path']     = self.resolve(self.stg['build_tmpl_path'])
-#        self.stg['build_cfg_path']      = self.resolve(self.stg['build_cfg_path'])
-#        self.stg['bench_tmpl_path']     = self.resolve(self.stg['bench_tmpl_path'])
-#        self.stg['bench_cfg_path']      = self.resolve(self.stg['bench_cfg_path'])
-#        self.stg['resource_path']       = self.resolve(self.stg['resource_path'])
-#        self.stg['user_bin_path']       = self.resolve(self.stg['user_bin_path'])
-#        self.stg['site_bin_path']       = self.resolve(self.stg['site_bin_path'])
-
         # Add to PATH
         self.paths += [self.stg['user_bin_path']]
         self.paths += [self.stg['site_bin_path']]
         self.add_to_path()
         self.paths += [os.path.join(self.ev['BPS_SITE'], "python", "bin")]
 
-
-#        self.stg['log_path']            = self.resolve(self.stg['log_path'])
-#        self.stg['']          = self.resolve(self.stg['rules_path'])
-#        self.stg['rules_path']          = self.resolve(self.stg['rules_path'])
-        
-        
-
-
-        # list
-            
+        # Check if BP_DEBUG is set
+        if "BP_DEBUG" in os.environ:
+            self.stg['debug'] = self.process(None, os.environ.get('BP_DEBUG'))
+            print("BP_DEBUG=" + str(self.stg['debug']) + " (from env)")
 
         # Derived variables
         self.stg['build_dir']           = os.path.basename(self.ev['BP_APPS'])
-        self.stg['module_dir']          = "modulefiles"
         self.stg['user_mod_path']       = os.path.join(
-                                        self.ev['BP_HOME'], self.stg['module_dir'])
-
+                                            self.ev['BP_HOME'], self.stg['module_dir'])
+        self.stg['site_mod_path']       = os.path.join(
+                                            self.ev['BPS_SITE'], self.stg['module_dir'])
         self.stg['pending_path']        = os.path.join(
-                                        self.ev['BP_RESULTS'], self.stg['pending_subdir'])
+                                            self.ev['BP_RESULTS'], self.stg['pending_subdir'])
         self.stg['captured_path']       = os.path.join(
-                                        self.ev['BP_RESULTS'], self.stg['captured_subdir'])
+                                            self.ev['BP_RESULTS'], self.stg['captured_subdir'])
         self.stg['failed_path']         = os.path.join(
-                                        self.ev['BP_RESULTS'], self.stg['failed_subdir'])
-
+                                            self.ev['BP_RESULTS'], self.stg['failed_subdir'])
         self.stg['module_path']         = os.path.join(
-                                        self.ev['BP_APPS'], self.stg['module_dir'])
-
+                                            self.ev['BP_APPS'], self.stg['module_dir'])
 
         # Add some useful key-values
         self.stg['date_str'] = datetime.now().strftime("%Y.%m.%d")
@@ -301,8 +295,32 @@ class setup(object):
 
         # Check its set
         if not self.system['system']:
-            print("ERROR: " + self.stg['system_env'] + " not set.")
-            exit(1)
+            print("FATAL: " + self.stg['system_env'] + " not set.")
+            sys.exit(1)
+
+    def check_group(self):
+
+        if self.stg['shared_apps']:
+            if self.stg['working_group'] == "None":
+                print("FATAL: bps working_group [working_group (bp --notices)]")
+                sys.exit(1)
+
+            # working_group not in lookup table
+            gid_file = self.lib.files.read(os.path.join(self.ev['BPS_INC'], "resources/csa-gids.txt"))
+            gid_table = [line.split() for line in gid_file]
+        
+            try:
+                gid = [gid[1] for gid in gid_table if gid[0] == self.stg['working_group']][0]
+            except:
+                print("FATAL: unrecongized working_group, your options:")
+                [print(gid[0]) for gid in gid_table]
+                print()
+                print("bps working_group [your_group]")
+                print()
+                sys.exit(1)
+
+            self.overload_dict['gid'] = gid
+            self.overload_dict['BP_APPS'] = os.path.join(self.stg['group_app_prefix'], self.stg['working_group'])
 
     # Initialize the global dicts, settings and libraries
     def __init__(self, args):
@@ -326,6 +344,14 @@ class setup(object):
 
         # Get system label
         self.get_system_label()
+
+        # Run Overloads
+        self.lib.overload.replace(self.stg)
+
+        # Check group stuff
+        self.check_group()
+
+        self.lib.overload.replace(self.ev)
 
         # Read version info 
         #self.lib.files.get_client_version()

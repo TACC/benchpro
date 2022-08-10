@@ -21,8 +21,8 @@ class init(object):
                         
             template = []
             # Copy input template file to temp obj
-            with open(input_template, 'r') as fd:
-                template = fd.readlines()
+            with open(input_template, 'r') as fp:
+                template = fp.readlines()
 
             return template             
 
@@ -33,7 +33,7 @@ class init(object):
             self.glob.lib.msg.error("A template addition was not generated successfully.")
 
         # Copy input template file to temp obj
-        with open(input_template, 'r') as fd:
+        with open(input_template, 'r') as fp:
             template_obj.extend(self.read_template(input_template))
 
     # Add user defined section of template
@@ -163,8 +163,8 @@ class init(object):
 
         dep_file = os.path.join(self.glob.stg['sys_tmpl_path'], self.glob.stg['pid_dep_file'])
         if os.path.isfile(dep_file):
-            with open(dep_file, 'r') as fd:
-                template_obj.extend(fd.readlines())
+            with open(dep_file, 'r') as fp:
+                template_obj.extend(fp.readlines())
 
         else:
             self.glob.lib.msg.error("Unable to read pid dependency template " + self.glob.lib.rel_path(dep_file))
