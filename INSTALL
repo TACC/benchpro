@@ -86,7 +86,7 @@ printf "\nCleaning up old files...\n"
 # Clean up env & build/install directories
 ${SRC_PATH}/clean
 rm -rf                                                                  ${BPS_SITE}/python/lib/python${PY_VERSION}/site-packages/benchpro-${BPS_VERSION}*
-rm -f                                                                   ${BPS_SITE}/modulefiles/benchpro/*.lua
+rm -f                                                                   ${BPS_MODULES}/benchpro/*.lua
 rm -f                                                                   ${BPS_SITE}/package
 rm -f                                                                   ${BPS_SITE}/python/lib/python${PY_VERSION}/site-packages/benchpro-latest
 
@@ -102,19 +102,21 @@ mkdir -p                                                                ${BPS_CO
 setfacl -d -m group::rwX,other::rwX                                     ${BPS_COLLECT}
 chmod a+w                                                               ${BPS_COLLECT}
 mkdir -p                                                                ${BPS_SITE}/python/lib/python${PY_VERSION}/site-packages
-mkdir -p                                                                ${BPS_SITE}/modulefiles
+mkdir -p                                                                ${BPS_MODULES}
+chmod a+w                                                               ${BPS_MODULES}
+setfacl -d -m group::rX,other::rX                                       ${BPS_MODULES}
 printf "Done.\n"
 
 #--------------------MODULE FILE---------------------------------
 printf "\nGenerating site module...\n"
 
 # Copy  and contextualize module file
-cp ${SRC_PATH}/modulefiles/benchpro.lua                                     ${BPS_SITE}/modulefiles/benchpro/${BPS_VERSION}.lua
+cp ${SRC_PATH}/modulefiles/benchpro.lua                                     ${BPS_MODULES}/benchpro/${BPS_VERSION}.lua
 
 function update_mod() {
     # Check val is set
     [[ -z $2 ]] && echo "$1 not set" && exit 1
-    sed -i "3 i setenv(\"$1\", \"$2\")"                                     ${BPS_SITE}/modulefiles/benchpro/${BPS_VERSION}.lua
+    sed -i "3 i setenv(\"$1\", \"$2\")"                                     ${BPS_MODULES}/benchpro/${BPS_VERSION}.lua
 }
 
 # Copy current 'BP_' EVs to modulefile
@@ -124,17 +126,14 @@ while IFS='=' read -r -d '' n v; do
     fi
 done < <(env -0)
 
-# Add BP_BIN
-sed -i "3 i prepend_path(\"BP_BIN\", \"${BPS_SITE}/python/bin\")"  ${BPS_SITE}/modulefiles/benchpro/${BPS_VERSION}.lua
-
 # Add py_version
-sed -i "/local bp_home/c\local bp_home = \"${BP_HOME}\""                    ${BPS_SITE}/modulefiles/benchpro/${BPS_VERSION}.lua
-sed -i "/local bp_apps/c\local bp_apps = \"${BP_APPS}\""                    ${BPS_SITE}/modulefiles/benchpro/${BPS_VERSION}.lua
-sed -i "/local bp_results/c\local bp_results = \"${BP_RESULTS}\""           ${BPS_SITE}/modulefiles/benchpro/${BPS_VERSION}.lua
-sed -i "/local py_version/c\local py_version = \"${PY_VERSION}\""           ${BPS_SITE}/modulefiles/benchpro/${BPS_VERSION}.lua
-sed -i "/local bps_site/c\local bps_site = \"${BPS_SITE}\""                 ${BPS_SITE}/modulefiles/benchpro/${BPS_VERSION}.lua
+sed -i "/local bp_home/c\local bp_home = \"${BP_HOME}\""                    ${BPS_MODULES}/benchpro/${BPS_VERSION}.lua
+sed -i "/local bp_apps/c\local bp_apps = \"${BP_APPS}\""                    ${BPS_MODULES}/benchpro/${BPS_VERSION}.lua
+sed -i "/local bp_results/c\local bp_results = \"${BP_RESULTS}\""           ${BPS_MODULES}/benchpro/${BPS_VERSION}.lua
+sed -i "/local py_version/c\local py_version = \"${PY_VERSION}\""           ${BPS_MODULES}/benchpro/${BPS_VERSION}.lua
+sed -i "/local bps_site/c\local bps_site = \"${BPS_SITE}\""                 ${BPS_MODULES}/benchpro/${BPS_VERSION}.lua
 
-chmod -R a+rX                                                               ${BPS_SITE}/modulefiles
+chmod -R a+rX                                                               ${BPS_MODULES}
 chmod a+w                                                                   ${BP_REPO}
 chmod --silent g+r                                                          ${BP_REPO}/*
 setfacl -d -m group::rX,other::rX                                           ${BP_REPO}
@@ -144,7 +143,7 @@ chmod a+rw                                                                  ${BP
 printf "Done.\n"
 printf "\nLoading module...\n"
 
-ml use                                                                      ${BPS_SITE}/modulefiles
+ml use                                                                      ${BPS_MODULES}
 ml benchpro || quit "\nCan't load module\n"
 
 printf "Done.\n"
@@ -178,7 +177,7 @@ if [[ -z $BP_DEV ]]; then
     echo "Benchtool successfully installed into $BPS_SITE"
     echo "User files installed into $BP_HOME for testing"
     echo "To use, load site module with:"
-    echo "ml use $BPS_SITE/modulefiles"
+    echo "ml use ${BPS_MODULES}"
     echo "ml benchpro"
     echo
     echo "------------------------------------------------"

@@ -109,6 +109,7 @@ def give_group_access(path_list):
 # Set perms on output dirs
 def set_permissions(path_list):
     if glob.stg['set_gid']:
+        print("path_list", path_list)
         for path in path_list:
             chgrp(path, glob.stg['gid'])
             sticky_bit(path)
@@ -290,7 +291,7 @@ def run():
     # Check priv
 
     # Check group memebership
-    check_group_membership()
+    #check_group_membership()
 
     # Check paths
     confirm_path_exists([glob.ev['BP_HOME'],
@@ -318,8 +319,8 @@ def run():
                        glob.ev['BP_RESULTS']])
 
     # Set perms
-    set_permissions([glob.ev['BP_APPS'],
-                     glob.ev['BP_RESULTS']])
+#    set_permissions([glob.ev['BP_APPS'],
+#                     glob.ev['BP_RESULTS']])
 
     # Error if dir not found
     ensure_path_exists([glob.ev['BPS_SITE'],
@@ -348,8 +349,8 @@ def run():
 def we_need_to_validate():
     if os.path.isfile(os.path.join(glob.ev['BP_HOME'], ".validated")):
         # File exists
-        with open(os.path.join(glob.ev['BP_HOME'], ".validated"), 'r') as f:
-            your_ver = f.read().strip()
+        with open(os.path.join(glob.ev['BP_HOME'], ".validated"), 'r') as fp:
+            your_ver = fp.read().strip()
 
         req_ver = os.environ.get("BPS_VERSION_STR").split(".")[-1]
         # Compare validation versions

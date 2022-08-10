@@ -9,7 +9,7 @@ set() {
 
 # SETUP
 set BPS_SYSTEM $TACC_SYSTEM
-set BPS_VERSION "1.6.0"
+set BPS_VERSION "1.6.2"
 [[ -z BP_DEV ]] && set BP_DEV 1
 set BUILD_HASH `echo $RANDOM | md5sum | head -c 8`
 
@@ -61,6 +61,8 @@ fi
 set BPS_SITE "${SITE}"
 set BPS_COLLECT "${BPS_SITE}/collection"
 set BPS_INC "${BPS_SITE}/package/benchpro"
+set BPS_MODULES "${BPS_SITE}/modulefiles"
+set BPS_BIN "${BPS_SITE}/python/bin"
 
 today=`date +%Y-%m-%d_%H-%M-%S`
 set BP_LOG "${BPS_SITE}/logs/build_${today}.log"
