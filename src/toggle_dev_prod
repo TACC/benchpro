@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+# DEV currently loaded
+if [[ $BP_DEV -eq 1 ]]; then
+    ml use /scratch1/hpc_tools/benchpro/modulefiles
+    ml unuse /scratch1/08780/benchpro/benchpro-dev/modulefiles
+# PROD currently loaded
+else
+    ml use /scratch1/08780/benchpro/benchpro-dev/modulefiles
+    ml unuse /scratch1/hpc_tools/benchpro/modulefiles
+fi
+
+ml benchpro
+
+version=$BP_SITE_VERSION
+[[ -z "$BP_SITE_VERSION" ]] && version=$BPS_VERSION_STR
+
+echo "Switched to $version in $(which benchpro)"
+
+return 0

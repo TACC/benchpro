@@ -10,6 +10,15 @@ import configparser
 import os
 import sys
 
+def fmat(value):
+        # True
+    if value in ["1", "T", "t", "True", "true"]:
+        return "True"
+        # False
+    elif value in ["0", "F", "f", "False", "false"]:
+        return "False"
+    return value
+
 # Print a setting matching input, None == *
 def print_setting(select):
     with open(os.path.join(os.environ.get("BP_HOME"), "settings.ini"), 'r') as settings:
@@ -27,18 +36,24 @@ def change_setting(setting, value):
     # Replace the target string
     lines = filedata.split("\n")
 
+    # Drop trailing line
+    if lines[-1] == "":
+        del lines[-1]
+
+    new_val = fmat(value)
+
     found = False
     for n in range(len(lines)):
         key = lines[n].split("=")[0].strip()
         if key == setting:
-            print(key + ": " + lines[n].split("=")[1].strip() + " -> " + value)
-            lines[n] = key.ljust(24, " ") + "= " + value 
+            print(key + ": " + lines[n].split("=")[1].strip() + " -> " + new_val)
+            lines[n] = key.ljust(24, " ") + "= " + new_val 
             found = True
             break
 
     if not found:
-        print("No matches for '" + setting + "'")
-        sys.exit(1)
+        print("Adding setting: '" + setting + " = " + new_val + "'")
+        lines.append(setting.ljust(24, " ") + "= " + new_val + "\n")
 
     # Write the file out again
     with open(os.path.join(os.environ.get("BP_HOME"), "settings.ini"), 'w') as file:
