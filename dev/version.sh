@@ -15,6 +15,9 @@ sed -i "/set BPS_VERSION /c\set BPS_VERSION \"${1}\"" ./site.sh
 echo "benchpro v${1}" > $HOME/benchpro/.version
 date +'%Y-%m-%d %H:%m:%S' >> $HOME/benchpro/.version
 
+# Update benchpro version check
+sed -i "/        required_version =/c\        required_version = \"${1}\"" ./src/benchpro
+
 echo "Push user repo before reinstalling"
 echo "--------------"
 echo "git -C \$HOME/benchpro add ."

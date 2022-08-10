@@ -1,14 +1,29 @@
 #!/bin/bash
 
-[[ $# -ne 2 ]] && echo "arg1 = match, arg2 = replace" && exit 1
+[[ $# -lt 2 ]] && echo "arg1 = match, arg2 = replace" && exit 1
 
 old="$(<<< "$1" sed -e 's`[][\\/.*^$]`\\&`g')"
 new="$(<<< "$2" sed -e 's`[][\\/.*^$]`\\&`g')"
 
+file_list=("INSTALL" "README.md" "site.sh" "src/"* "src/library/"* "benchpro/defaults.ini" "doc/source/"*)
+
+[ ! -z "$3" ] && file_list=("$3"*)
+
+
+echo "file_list $3"
+
+dry=false
+[ ! -z "$4" ] && [[ "$4" == "-d" ]] && dry=true
+
 printf "\n"
 printf "Find:    $1\n"
-printf "Replace: $2\n\n"
-printf "Continue (y/n):"
+printf "Replace: $2\n"
+printf "In:\n"
+for file in "${file_list[@]}"; do
+    printf "    $file\n"
+done
+
+printf "\nContinue (y/n):"
 
 read -n 1 k <&1
 
@@ -18,13 +33,6 @@ if [[ $k != "y" ]] ; then
 fi
 
 printf "\n\n"
-
-#file_list=("site.sh")
-#file_list=("src/global_settings.py")
-file_list=("INSTALL" "README.md" "site.sh" "src/"* "src/library/"* "benchpro/defaults.ini" "doc/source/"*)
-#file_list=("test.txt")
-
-
 
 tally_before=0
 tally_after=0
@@ -50,7 +58,11 @@ for file in "${file_list[@]}"; do
         printf "$file: \n"
         printf "          Old | New\n"
         printf "  Before  $old_matches | $new_matches = $((old_matches + new_matches))\n"
-        sed -i "s/${old}/${new}/g" ${file}
+        if ($dry); then
+            echo "cmd: sed -i \"s/${old}/${new}/g\" ${file}"
+        else
+            sed -i "s/${old}/${new}/g" ${file}
+        fi
         matches ${file}
         printf "  After   $old_matches | $new_matches = $((old_matches + new_matches))\n"
         printf "\n"
