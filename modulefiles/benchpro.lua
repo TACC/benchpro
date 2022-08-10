@@ -29,7 +29,7 @@ setenv("BP_RESULTS",  bp_results)
 set_alias("bp", "benchpro")
 set_alias("bps", "benchset")
 set_alias("cdb", "cd $BP_HOME")
-
+set_alias("bp_switch", "source $BPS_BIN/toggle_dev_prod")
 
 -- add user's application directory tree to MODULEPATH
 prepend_path("MODULEPATH" ,  pathJoin(bp_apps, "modulefiles" ))
