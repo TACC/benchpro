@@ -14,7 +14,7 @@ required_packages = [x.strip() for x in all_reqs if ('git+' not in x) and (
 
 setup (
     name='benchpro',
-    version='1.6.0',
+    version='1.6.2',
     description="A utility that automates building applications, running benchmarks and collecting results.",
     packages=['src', 'benchpro'],
     include_package_data=True,
@@ -32,5 +32,5 @@ setup (
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.7',
     ],
-    scripts=['src/benchpro', 'src/benchset', 'src/stage'],
+    scripts=['src/benchpro', 'src/benchset', 'src/stage', 'src/toggle_dev_prod'],
 )
