@@ -2,7 +2,7 @@
 New User Guide
 ==============
 
-This guide explains how to use BenchPRO to build one of the provided applications, run a benchmark and capture the result. If you have not yet setup BenchPRO for your user account, refer to the :ref:`user_setup` page.
+This guide explains how to use BenchPRO to build one of the provided applications, run a benchmark and capture the result. If you have not yet setup BenchPRO for your user slurm_account, refer to the :ref:`user_setup` page.
 
 
 .. note::
