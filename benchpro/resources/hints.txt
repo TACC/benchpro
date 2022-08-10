@@ -1,8 +1,10 @@
 The --last option queries the status of your last BenchPRO operation.
 The --defaults option displays pertinant default settings.
 BenchPRO supports list format for benchmark [runtime] paramaters.
-The 'ranks_per_node' and 'threads' runtime parameters support list format, the lists must contain an equal number of elements. i.e "threads=1,28 ranks_per_node=56,2" will produce two runs: 56 ranks * 1 thread, and 2 ranks * 28 threads.
+The 'ranks_per_node' and 'threads' runtime parameters support list format, the lists must contain an equal number of elements. i.e "threads=1,28 ranks_per_node=56,2" will produce two benchmarks with: 56 ranks * 1 thread, and 2 ranks * 28 threads per node.
 BenchPRO creates a .lua module for each application, you can use modules to load your applications independently BenchPRO, so long as as the base module is loaded. Get the label to load with 'ml -avail'
 If you use the integrated file staging feature (the [files] stanza in config files), BenchPRO will attempt to cache your source files/dataset URL target in $BP_REPO, to avoid fetching a fresh copy from the Internet every time.
 BenchPRO effectively has two $BP_HOME paths; your write accessible $BP_HOME, and the system default $BPS_INC, where sensible default values and reference apps/benchmarks are maintained by the site manager (Matthew Cawood).
-The 'overwrite' key-values can be applied to ANY parameter within BenchPRO, e.g: 'queue', 'benchmark_label', $git_tag, 'runtime', 'nodes', 'mpi_ranks_per_node', 'OMP_NUM_THREADS', etc.
+The 'overwrite' key-values can be applied to ANY parameter within BenchPRO, e.g: 'queue', 'benchmark_label', 'git_tag', 'runtime', 'nodes', 'mpi_ranks_per_node', 'OMP_NUM_THREADS', etc.
+bp -b [app] == benchpro --build [app]
+bp -B [dataset] == benchpro --bench [dataset]
