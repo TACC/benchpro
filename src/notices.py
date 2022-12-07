@@ -4,7 +4,7 @@ import os
 import subprocess
 import sys
 
-# If an urgent message is in $BPS_SITE/notices/urgent, print them and quit
+# If an urgent message is in $BPS_HOME/notices/urgent, print them and quit
 
 def run_files(notice_path):
     if os.path.isdir(notice_path):
@@ -55,7 +55,7 @@ def info():
     print()
     print("You may want to read the documentation: https://benchpro.readthedocs.io/en/latest/")
     print()
-    print("1. First run 'bp' and follow the prompts to assign first-time parameters with bps (benchsetter).")
+    print("1. First run 'bp' and follow the prompts to assign first-time parameters with bps (benchset).")
     print()
     print("2. You can view all available applications with bp -a")
     print()
