@@ -66,15 +66,18 @@ class init(object):
 
         template_obj.append("\n")
 
+        # Add module loads
+        template_obj.append("# Load modules \n")
+        template_obj.append("ml use " + self.glob.stg['site_mod_path'] + " \n")
+        template_obj.append("ml benchpro \n")
+   
+        template_obj.append("\n")
         # Stage input files
         if not self.glob.stg['sync_staging']:
             template_obj.append("# [files]\n")
             self.stage_input_files(template_obj)
+            template_obj.append("\n")
 
-        # Add module loads
-        template_obj.append("# Load modules \n")
-        template_obj.append("ml benchpro \n")
-    
         # add 'module use' if set
         if self.glob.config['general']['module_use']:
             template_obj.append("ml use " + self.glob.config['general']['module_use'] + "\n")
@@ -107,7 +110,16 @@ class init(object):
         # Add module loads if application must be loaded
         if self.glob.config['metadata']['app_mod']:
             template_obj.append("# Load Modules \n")
+            template_obj.append("ml use " + self.glob.stg['site_mod_path'] + " \n")
             template_obj.append("ml benchpro \n")
+
+            template_obj.append("\n")
+            # Stage input files
+            if not self.glob.stg['sync_staging']:
+                template_obj.append("# [files]\n")
+                self.stage_input_files(template_obj)
+                template_obj.append("\n")
+
             template_obj.append("ml use ${base_module} \n")
             template_obj.append("ml ${app_module} \n")
             template_obj.append("ml \n")
@@ -128,15 +140,15 @@ class init(object):
     # If the setting in enabled, add the provenance data collection script to the script
     def collect_stats(self, template_obj):
         if self.glob.config['config']['collect_stats']:
-            if self.glob.lib.files.file_owner(os.path.join(self.glob.stg['utils_path'], "lshw")) == "root":
+            if self.glob.lib.files.file_owner(os.path.join(self.glob.stg['user_bin_path'], "lshw")) == "root":
                 template_obj.append("\n# Provenance data collection script \n")
-                template_obj.append(os.path.join(self.glob.stg['script_path'], "collect_hw_info") + " " + \
-                                    self.glob.stg['utils_path'] + " " + \
+                template_obj.append(self.glob.stg['user_bin_path'] + " " + \
+                                    self.glob.stg['user_bin_path'] + " " + \
                                     os.path.join(self.glob.config['metadata']['working_path'], "hw_report") + "\n")
             else:
-                #self.glob.lib.msg.warning(["Requested hardware stats but script permissions not set",
+                #self.glob.lib.msg.warn(["Requested hardware stats but script permissions not set",
                 #                                "Run 'sudo -E $BP_HOME/resources/scripts/change_permissions'"])
-                self.glob.lib.msg.warning("Skipping hardware scan for now...")
+                self.glob.lib.msg.warn("Skipping hardware scan for now...")
                 pass
 
     # Add things to the bottom of the build script
@@ -176,13 +188,20 @@ class init(object):
         for cfg in cfg_dicts:
             # For each key, find and replace <<<key>>> in template file
             for key in cfg:
-                template_obj = [line.replace("<<<" + str(key) + ">>>", str(cfg[key])) for line in template_obj]
-                self.glob.lib.msg.log("Replacing " + "<<<" + str(key) + ">>> with " + str(cfg[key]))
+                val = cfg[key]
+                if isinstance(val, list):
+                    val = val[0]
+
+                template_obj = [line.replace("<<<" + str(key) + ">>>", str(val)) for line in template_obj]
+                self.glob.lib.msg.log("Replacing " + "<<<" + str(key) + ">>> with " + str(val) + " from " + str(cfg))
 
         return template_obj
 
     # Check for unpopulated <<<keys>>> in template file
     def test_template(self, template_file, template_obj):
+
+        #print(self.glob.sched)
+        #print("ALLOCATION", self.glob.sched['sched']['slurm_account'])
 
         key = "<<<.*>>>"
         unfilled_keys = [re.search(key, line) for line in template_obj]
@@ -191,9 +210,9 @@ class init(object):
         if len(unfilled_keys) > 0:
             # Conitue regardless
             if not self.glob.stg['exit_on_missing']:
-                self.glob.lib.msg.warning("Missing parameters were found in '" + self.glob.lib.rel_path(template_file) + \
+                self.glob.lib.msg.warn("Missing parameters were found in '" + self.glob.lib.rel_path(template_file) + \
                                             "':" + ", ".join(unfilled_keys))
-                self.glob.lib.msg.warning("'exit_on_missing=False' in $BP_HOME/settings.ini so continuing anyway...")
+                self.glob.lib.msg.warn("'exit_on_missing=False' in $BP_HOME/settings.ini so continuing anyway...")
             # Error and exit
             else:
                # Write file to disk
@@ -397,12 +416,8 @@ class init(object):
         if self.glob.config['config']['script_additions']:
             self.glob.lib.msg.low("Adding contents of '" + self.glob.lib.rel_path(self.glob.config['config']['script_additions']) + \
                                                             "' to benchmark script.")
-            self.append_to_template(template_obj, self.glob.config['config']['script_additions'])
+            self.append_to_template(template_obj, self.glob.lib.files.find_in([self.glob.stg['user_resource_path']], self.glob.config['config']['script_additions'], True))
             template_obj.append("\n")
-
-        # Stage files
-        if not self.glob.stg['sync_staging']:
-            self.stage_input_files(template_obj)
 
         # Add bench template to script
         template_obj = self.add_bench(template_obj)

@@ -10,6 +10,16 @@ class init(object):
     def __init__(self, glob):
             self.glob = glob
 
+    # Add refs to old keys (for apps build on old versions)
+    def add_legacy_keys(self, report_dict):
+        legacy_list = [['build', 'build_prefix', 'path'], ['bench', 'bench_prefix', 'path']]
+        for op in legacy_list:
+            if op[0] in report_dict:
+                if op[1] in report_dict[op[0]]:
+                    report_dict[op[0]][op[2]] = report_dict[op[0]][op[1]]
+
+        return report_dict
+
     # Read report file into dict, accepts file path or directory path containing default report file name
     def read(self, report_file):
 
@@ -33,7 +43,8 @@ class init(object):
         report_parser.read(report_file)
 
         # Return dict of report file sections
-        return {section: dict(report_parser.items(section)) for section in report_parser.sections()}
+        report_dict = {section: dict(report_parser.items(section)) for section in report_parser.sections()}
+        return self.add_legacy_keys(report_dict)
 
     # Write generic report to file
     def write(self, content, report_file):
@@ -47,6 +58,7 @@ class init(object):
         content = [ "[build]",
                     "username       = "+ self.glob.user,
                     "system         = "+ self.glob.config['general']['system'],
+                    "arch           = "+ self.glob.config['config']['arch'],
                     "code           = "+ self.glob.config['general']['code'],
                     "version        = "+ str(self.glob.config['general']['version']),
                     "build_label    = "+ self.glob.config['config']['build_label'],
@@ -55,9 +67,10 @@ class init(object):
                     "module_use     = "+ self.glob.config['general']['module_use'],
                     "modules        = "+ ", ".join([self.glob.modules[module]['full'] for module in self.glob.modules.keys()]),
                     "opt_flags      = "+ self.glob.config['config']['opt_flags'],
+                    "threads        = "+ self.glob.sched['sched']['threads'],
                     "bin_dir        = "+ self.glob.config['config']['bin_dir'],
                     "exe_file       = "+ self.glob.config['config']['exe'],
-                    "build_prefix   = "+ self.glob.config['metadata']['working_path'],
+                    "path           = "+ self.glob.config['metadata']['working_path'],
                     "submit_time    = "+ str(datetime.now()),
                     "script         = "+ self.glob.job_file,
                     "exec_mode      = "+ self.glob.stg['build_mode'],
@@ -84,7 +97,7 @@ class init(object):
 
         # Construct content of bench report
         content.extend (["[bench]", 
-                        "bench_prefix   = "+ self.glob.config['metadata']['working_path'],
+                        "path           = "+ self.glob.config['metadata']['working_path'],
                         "system         = "+ self.glob.system['system'],
                         "launch_node    = "+ self.glob.hostname,
                         "nodes          = "+ self.glob.config['runtime']['nodes'],
@@ -112,7 +125,7 @@ class init(object):
     def get_exec_mode(self, job_type, report_file):
 
         # Path to job report file
-        report_path = os.path.join(self.glob.ev['BP_APPS'], report_file, self.glob.stg['build_report_file'])
+        report_path = os.path.join(self.glob.bp_apps[-1], report_file, self.glob.stg['build_report_file'])
 
         if job_type == "bench":
             # Path to bench report file
@@ -127,22 +140,28 @@ class init(object):
     def get_task_id(self, job_type, report_file):
 
         # Path to job report file
-        report_path = os.path.join(self.glob.ev['BP_APPS'], report_file, self.glob.stg['build_report_file'])
+        report_path = os.path.join(self.glob.bp_apps[-1], report_file, self.glob.stg['build_report_file'])
         if job_type == "bench":
             # Path to bench report file
             report_path = os.path.join(self.glob.stg['pending_path'], report_file, self.glob.stg['bench_report_file'])
 
         if os.path.isfile(report_path):
             return self.read(report_path)[job_type]['task_id']
-
-        return False
+        return "-"
 
     # Return the binary executable value from provided build path
-    def build_exe(self, build_path):
-        report_path = os.path.join(self.glob.ev['BP_APPS'], build_path, self.glob.stg['build_report_file'])
+    def get_build_exe(self, build_path):
+        report_path = os.path.join(self.glob.bp_apps[-1], build_path, self.glob.stg['build_report_file'])
 
         if os.path.isfile(report_path):
             return self.read(report_path)['build']['bin_dir'], self.read(report_path)['build']['exe_file']
         return False, False
 
+
+    def get_build_user(self, build_path):
+        report_path = os.path.join(self.glob.bp_apps[-1], build_path, self.glob.stg['build_report_file'])
+
+        if os.path.isfile(report_path):
+            return self.read(report_path)['build']['username']
+        return "-"
 

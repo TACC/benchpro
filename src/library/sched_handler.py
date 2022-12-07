@@ -64,7 +64,7 @@ class init(object):
         state = self.get_job_status(jobid)
 
         # Job COMPLETE
-        if any (state == x for x in ["COMPLETED", "CANCELLED", "ERROR", "FAILED", "TIMEOUT"]):
+        if any (state == x for x in ["COMPLETED", "CANCELLED", "ERROR", "FAILED", "TIMEOUT", "UNKNOWN"]):
             return state
         # Job RUNNING or PENDING
         return False
@@ -180,7 +180,7 @@ class init(object):
                 jobid = line.split(" ")[-1]
 
         # Wait for slurm to generate jobid
-        time.sleep(self.glob.stg['timeout'])
+        time.sleep(1)
             
         # Get job in queue
         success, stdout, stderr = self.slurm_exec("squeue -a --job " + jobid)
@@ -214,18 +214,18 @@ class init(object):
 
         # Unable to get task ID from report file
         if not task_id and not self.glob.args.delApp:
-            self.glob.lib.msg.warning(["Unable read build report file for " + str(app),
+            self.glob.lib.msg.warn(["Unable read build report file for " + str(app),
                                         "Please cleanup with:",
                                         "bp -da "+str(app)])
             
-            return '\033[0;32mUNKNONWN\033[0m' 
+            return '\033[0;31mUNKNOWN\033[0m' 
 
         if task_id == "dry_run":
             return "\033[1;33mDRY RUN\033[0m"
 
-        status = None
+        status = None 
         if exec_mode == "sched":
-            status = self.glob.lib.sched.get_job_status(task_id)
+            status = self.get_job_status(task_id)
 
         if exec_mode == "local":
             # Check if PID is running
@@ -237,7 +237,7 @@ class init(object):
         # Complete state
         if status == "COMPLETED":
 
-            bin_dir, exe = self.glob.lib.report.build_exe(app)
+            bin_dir, exe = self.glob.lib.report.get_build_exe(app)
             if exe:
                 if self.glob.lib.files.exists(exe, os.path.join(self.glob.ev['BP_APPS'], app, self.glob.stg['install_subdir'], bin_dir)):
                     return '\033[0;32mEXE FOUND\033[0m'
@@ -254,5 +254,8 @@ class init(object):
 
         # Status not found
         if not status:
-            self.glob.lib.msg.warning("Unable to determine status of job ID " + str(task_id))
-            return '\033[0;32mUNKNONWN\033[0m'
+            self.glob.lib.msg.log("Unable to determine status of job ID " + str(task_id))
+        return '\033[0;31mUNKNONWN\033[0m'
+
+
+
