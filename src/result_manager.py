@@ -31,7 +31,7 @@ def move_to_archive(result_path, dest):
         su.move(result_path, dest)
     # If folder exists, rename and try again
     except:
-        glob.lib.msg.warning("Result directory already exists in archive. Appending suffix .dup")        
+        glob.lib.msg.warn("Result directory already exists in archive. Appending suffix .dup")        
         # Rename result dir
         su.move(result_path, result_path + ".dup")
         # Try again
@@ -72,7 +72,7 @@ def validate_result(result_path):
 
     # Test for benchmark output file
     if not glob.output_path:
-        glob.lib.msg.warning("Result file " + glob.report_dict['result']['output_file'] + " not found in " + \
+        glob.lib.msg.warn("Result file " + glob.report_dict['result']['output_file'] + " not found in " + \
                                 glob.lib.rel_path(result_path) + ". It seems the benchmark failed to run.\nWas dry_run=True?")
         return "failed", None
 
@@ -94,16 +94,16 @@ def validate_result(result_path):
                             " " + glob.report_dict['result']['unit'])
 
         except subprocess.CalledProcessError as e:
-            glob.lib.msg.warning("Using '" + glob.report_dict['result']['expr'] + "' on file " + \
+            glob.lib.msg.warn("Using '" + glob.report_dict['result']['expr'] + "' on file " + \
                                     glob.lib.rel_path(glob.output_path) + \
                                     " failed to find a valid a result. Skipping." )
             return "failed", None
 
     # Run scipt collection
     elif glob.report_dict['result']['method'] == 'script':
-        result_script = os.path.join(glob.stg['script_path'], glob.stg['result_scripts_dir'], glob.report_dict['result']['script'])
+        result_script = os.path.join(glob.stg['user_script_path'],  glob.report_dict['result']['script'])
         if not os.path.exists(result_script):
-            glob.lib.msg.warning("Result collection script not found in "+ glob.lib.rel_path(result_script))
+            glob.lib.msg.warn("Result collection script not found in "+ glob.lib.rel_path(result_script))
             return "failed", None
 
         # Run validation script on output file
@@ -117,7 +117,7 @@ def validate_result(result_path):
 
         except subprocess.CalledProcessError as e:
             print(e)
-            glob.lib.msg.warning("Running script '" + glob.lib.rel_path(result_script) + "' on file " + \
+            glob.lib.msg.warn("Running script '" + glob.lib.rel_path(result_script) + "' on file " + \
                                             glob.lib.rel_path(glob.output_path) + \
                                             " failed to find a valid a result." )
             return "failed", None
@@ -126,13 +126,16 @@ def validate_result(result_path):
     try:
         result = float(result_str)
     except:
-        glob.lib.msg.warning("result extracted from " + glob.lib.rel_path(glob.output_path) + " is not a float: '" + \
+        glob.lib.msg.warn("result extracted from " + glob.lib.rel_path(glob.output_path) + " is not a float: '" + \
                                 result_str + "'")
+
+        glob.lib.msg.print_file_tail(os.path.join(glob.report_dict['bench']['path'], glob.report_dict['bench']['stderr']))
+            
         return "failed", None
 
     # Check float non-zero
     if not result:
-        glob.lib.msg.warning("result extracted from " + glob.lib.rel_path(glob.output_path) + " is '0.0'.")
+        glob.lib.msg.warn("result extracted from " + glob.lib.rel_path(glob.output_path) + " is '0.0'.")
         return "failed", None
 
     glob.lib.msg.log("Successfully found result '" + str(result) + " " + glob.report_dict['result']['unit'] + " for result " + \
@@ -203,7 +206,7 @@ def get_insert_dict(result_path, result, unit):
         task_id = glob.report_dict['bench']['task_id']
     except:
         glob.lib.msg.low(e)
-        glob.lib.msg.warning("Failed to read key 'task_id' in " + glob.lib.rel_path(bench_report) + ". Skipping.")
+        glob.lib.msg.warn("Failed to read key 'task_id' in " + glob.lib.rel_path(bench_report) + ". Skipping.")
         return False
   
     elapsed_time = None
@@ -425,11 +428,11 @@ def capture_result(glob_obj):
                 continue
 
             # 2. Insert result into db
-            glob.lib.msg.low("Inserting into database...")
+            glob.lib.msg.log("Inserting into database...")
             glob.lib.db.capture_result(insert_dict)
 
             # 3. Copy files to collection dir
-            glob.lib.msg.low("Sending provenance data...")
+            glob.lib.msg.log("Sending provenance data...")
             send_files(glob.result_path, insert_dict['resource_path'])
 
             # 4. Touch .capture-complete file
@@ -626,7 +629,6 @@ def query_result(glob_obj, result_label):
         glob.lib.msg.error(["Missing report file " + glob.lib.rel_path(bench_report),
                             "It seems something went wrong with --bench"])
 
-    task_id = ""
     print("Report for benchmark: " + result_label)
     print("----------------------------------------")   
 
@@ -652,16 +654,21 @@ def query_result(glob_obj, result_label):
         # Sched exec mode
         if report_dict['bench']['exec_mode'] == "sched":
             # Check jobid is not running
-            complete = glob.lib.sched.check_job_complete(report_dict['bench']['task_id'])
+            status = glob.lib.sched.get_job_status(report_dict['bench']['task_id'])
 
         # If task complete, extract result
-        if complete:
+        if status == "COMPLETED":
             result, unit = validate_result(result_path)
             if not result == "failed":
                 print("Result: " + str(result) + " " + str(unit))
 
-        else: 
-            print("Job " + task_id + " still running.")
+        elif status in ("PENDING", "RUNNING"):
+            print("Job " + report_dict['bench']['task_id'] + " still running.")
+
+        else:
+            glob.lib.msg.print_file_tail(os.path.join(report_dict['bench']['path'], report_dict['bench']['stderr']))
+
+
 
 # Print list of result directories
 def print_results(result_list):
