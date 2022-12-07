@@ -13,7 +13,7 @@ BP_LOG          =
 
 Site/static:
 -----------
-BPS_SITE        =  
+BPS_HOME        =  
 BPS_SYSTEM      = 
 BPS_COLLECT     =
 BPS_MODULES     =
@@ -26,23 +26,23 @@ CSA group info (from TAS 08/01/2022):
 
 PROJECT NAME            TACC PI             SLURM_ACC   WORKING_GROUP       GID
 ------------------------------------------------------------------------------------
+CSA-Rommie-Amaro        William J. Allen    MCB22023    csa-amaro           G-825098
+CSA-Daniel-Bodony       Robert McLay        CTS22007    csa-bodony          G-825106
+CSA-Jim-Chelikowsky     Junjie Li           DMR22015    csa-chelikowsky     G-825108
+CSA-Yejin-Choi          Zhao Zhang          SBE22002    csa-choi            G-825111
+CSA-Lillian-Chong       Kent F Milfeld      MCB22024    csa-chong           G-825112
+CSA-Yifeng-Cui          Lars Koesterke      EAR22006    csa-cui             G-825110
 CSA-Alice-Agnes-Gabriel Ian Wang            EAR22007    csa-gabriel         G-825117
 CSA-Andrew-Gettelman    John Cazes          ATM22007    csa-gettelman       G-825116
-CSA-Benedikt-Riedel     Victor Eijkhout     AST22007    csa-riedel          G-825102
-CSA-Daniel-Bodony       Robert McLay        CTS22007    csa-bodony          G-825106
-CSA-Emad-Tajkhorshid    Amit Ruhela         MCB22025    csa-tajkhorshid     G-825113
 CSA-Feliciano-Giustino  Hang Liu            DMR22014    csa-giustino        G-825105
-CSA-James-Stone         Robert McLay        AST22008    csa-stone           G-825103
-CSA-Jim-Chelikowsky     Junjie Li           DMR22015    csa-chelikowsky     G-825108
-CSA-Leigh-Orf           Stephen L Harrell   ATM22006    csa-orf             G-825115
-CSA-Lillian-Chong       Kent F Milfeld      MCB22024    csa-chong           G-825112
-CSA-Maryam-Rahnemoonfar Ian Wang            ASC22050    csa-rahnemoonfar    G-825121
+CSA-Steven-Gottlieb     Junjie Li           PHY22011    csa-gottlieb        G-825107
 CSA-Mike-Gurnis         Victor Eijkhout     OCE22002    csa-gurnis          G-825114
 CSA-Mike-Norman         John Cazes          AST22005    csa-norman          G-825099
-CSA-PK-Yeung            Lars Koesterke      CTS22008    csa-yeung           G-825109
-CSA-Rommie-Amaro        William J. Allen    MCB22023    csa-amaro           G-825098
-CSA-Steven-Gottlieb     Junjie Li           PHY22011    csa-gottlieb        G-825107
+CSA-Leigh-Orf           Stephen L Harrell   ATM22006    csa-orf             G-825115
 CSA-Thomas-Quinn        Matthew R Cawood    AST22006    csa-quinn           G-825101
+CSA-Maryam-Rahnemoonfar Ian Wang            ASC22050    csa-rahnemoonfar    G-825121
+CSA-Benedikt-Riedel     Victor Eijkhout     AST22007    csa-riedel          G-825102
+CSA-James-Stone         Robert McLay        AST22008    csa-stone           G-825103
+CSA-Emad-Tajkhorshid    Amit Ruhela         MCB22025    csa-tajkhorshid     G-825113
 CSA-Yang-Wang           Hang Liu            DMR22013    csa-wang            G-825104
-CSA-Yejin-Choi          Zhao Zhang          SBE22002    csa-choi            G-825111
-CSA-Yifeng-Cui          Lars Koesterke      EAR22006    csa-cui             G-825110
+CSA-PK-Yeung            Lars Koesterke      CTS22008    csa-yeung           G-825109
