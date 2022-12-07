@@ -21,12 +21,12 @@ def check_module_version():
 
     mismatch = False
     # Not loaded
-    if not os.environ.get("BPS_SITE"):
+    if not os.environ.get("BPS_HOME"):
         print("It seems the benchpro module is not loaded.")
         mismatch = True
 
     mod_version = os.environ.get('BPS_VERSION')
-    required_version = "1.6.2"
+    required_version = "1.7.1"
     # Version mismatch
     if mod_version != required_version:
         print("Version mismatch: yours=" + mod_version + ", site=" + required_version)
@@ -352,7 +352,7 @@ def main():
         glob.lib.misc.show_available()
     # Remove installation and exit
     elif glob.args.delApp:
-        glob.lib.misc.remove_app()
+        glob.lib.misc.remove_app(None)
     # Query installation and exit
     elif glob.args.queryApp:
         glob.lib.misc.query_app(glob.args.queryApp)
