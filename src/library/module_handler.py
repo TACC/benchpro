@@ -54,7 +54,7 @@ class init(object):
         for module in module_path_list:
             module_path = module.strip()
             if not os.path.isdir(module_path):
-                self.glob.lib.msg.warning("ml use path not found: " + module_path)
+                self.glob.lib.msg.warn("ml use path not found: " + module_path)
 
             # Append to $MODULEPATH
             os.environ["MODULEPATH"] = module_path + ":" + os.environ["MODULEPATH"]
@@ -99,7 +99,7 @@ class init(object):
         if os.path.isfile(os.path.join(mod_path, mod_file)):
 
             if self.glob.stg['overwrite']:
-                self.glob.lib.msg.warning("Deleting old module in " + self.glob.lib.rel_path(mod_path) +
+                self.glob.lib.msg.warn("Deleting old module in " + self.glob.lib.rel_path(mod_path) +
                                                 " because 'overwrite=True' in $BP_HOME/settings.ini")
                 su.rmtree(mod_path)
                 os.makedirs(mod_path)

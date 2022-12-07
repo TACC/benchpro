@@ -112,6 +112,8 @@ class init(object):
 
     # Replace [key] with value
     def replace_key(self, expr, key, value):
+        if isinstance(value, list):
+            value = value[0]   
         return expr.replace("["+key+"]", str(value))
 
     # Get value from string
@@ -137,8 +139,8 @@ class init(object):
         key = self.extract_key(action)
         value = action.split("=")[1].strip().replace('"', '').replace("'", "")
    
-        # If this value has already been overloaded - don't change it a 2nd time (rules < user_overload)
-        if key in self.glob.overloaded:
+        # If this value has already been overloaded_dict - don't change it a 2nd time (rules < user_overload)
+        if key in self.glob.overloaded_dict.keys():
             self.glob.lib.msg.low("Skipping conflicting system rule: " + key + "='" + value + "'")
             return
 
@@ -207,5 +209,5 @@ class init(object):
                 self.eval_rule(line)
 
         else:
-            self.glob.lib.msg.warning("No " + self.glob.system['system'] + " rules file  found:" + rules_file)
+            self.glob.lib.msg.warn("No " + self.glob.system['system'] + " rules file  found:" + rules_file)
 
