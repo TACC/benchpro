@@ -9,7 +9,7 @@ set() {
 
 # SETUP
 set BPS_SYSTEM $TACC_SYSTEM
-set BPS_VERSION "1.6.2"
+set BPS_VERSION "1.7.1"
 [[ -z BP_DEV ]] && set BP_DEV 1
 set BUILD_HASH `echo $RANDOM | md5sum | head -c 8`
 
@@ -52,20 +52,20 @@ if [[ $BP_DEV == 0 ]]; then
     sleep 5
 # DEV INSTALL
 else
-    SITE="${SCRATCH}/benchpro-dev"
+    SITE="${SITE}-dev"
     printf "\n\033[0;32mDEPLOYING SITE PACKAGE IN DEV MODE [BP_DEV=1]\033[0m\n\n"
     sleep 2
 fi
 
 
-set BPS_SITE "${SITE}"
-set BPS_COLLECT "${BPS_SITE}/collection"
-set BPS_INC "${BPS_SITE}/package/benchpro"
-set BPS_MODULES "${BPS_SITE}/modulefiles"
-set BPS_BIN "${BPS_SITE}/python/bin"
+set BPS_HOME "${SITE}"
+set BPS_COLLECT "${BPS_HOME}/collection"
+set BPS_INC "${BPS_HOME}/package/benchpro"
+set BPS_MODULES "${BPS_HOME}/modulefiles"
+set BPS_BIN "${BPS_HOME}/python/bin"
 
 today=`date +%Y-%m-%d_%H-%M-%S`
-set BP_LOG "${BPS_SITE}/logs/build_${today}.log"
+set BP_LOG "${BPS_HOME}/logs/build_${today}.log"
 
 return 0
 
