@@ -11,8 +11,9 @@ if [[ -z $1 ]]; then
 fi
 
 DEST=`pwd`
-# Custom output dir
 
+echo "DEST $DEST"
+# Custom output dir
 if [ ! -z "$2" ]; then
     DEST=$2
 fi 
@@ -33,7 +34,15 @@ function update_lookup() {
 }
 
 function is_archive() { 
-    file $1 | grep -E 'compressed|tar archive' >> /dev/null && return 0 || return 1 
+
+    file $1 | grep -E 'compressed|tar archive'
+
+    if file $1 | grep -E 'compressed|tar archive' >> /dev/null; then
+        echo "$1 is archive..."
+        return 0
+    else
+        return 1
+    fi 
 }
 
 function get_filename() {
@@ -115,9 +124,7 @@ if ! in_repo $REPO_SRC; then
     # Check asset filename
     get_filename
     # Extract
-    if (is_archive $SRC ); then
-        untar_asset $SRC . 
-    fi
+    untar_asset $SRC . 
     move_asset $SRC $DEST $FILENAME
     update_lookup
 
