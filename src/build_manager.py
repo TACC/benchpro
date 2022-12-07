@@ -21,7 +21,7 @@ def check_for_previous_install():
         # Delete if overwrite=True
         if glob.stg['overwrite']:
 
-            glob.lib.msg.warning(["It seems this app is already installed. Deleting old build in " +
+            glob.lib.msg.warn(["It seems this app is already installed. Deleting old build in " +
                          glob.lib.rel_path(install_path) + " because 'overwrite=True'",
                          "\033[0;31mDeleting in 5 seconds...\033[0m"])
 
@@ -33,7 +33,7 @@ def check_for_previous_install():
             return False
         # Else warn and skip build
         else:
-            glob.lib.msg.warning("Application already installed.") 
+            glob.lib.msg.warn("Application already installed.") 
             glob.lib.msg.low(["Install path: " + glob.lib.rel_path(install_path),
                             "The install directory already exists and 'overwrite=False' in $BP_HOME/settings.ini"])
             glob.lib.msg.high("Skipping build.")
@@ -182,6 +182,9 @@ def init(glob):
 
     # Init logger
     logger.start_logging("BUILD", glob.stg['build_log_file'] + "_" + glob.stg['time_str'] + ".log", glob)
+
+    # Set list of installed applications
+    #glob.lib.set_installed_apps()
 
     # Get list of avail cfgs
     glob.lib.set_build_cfg_list()
