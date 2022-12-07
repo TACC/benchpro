@@ -302,7 +302,7 @@ def run():
                         glob.stg['bench_tmpl_path'],
                         glob.stg['bench_cfg_path'],
                         glob.stg['user_bin_path'],
-                        glob.stg['resource_path'],
+                        glob.stg['user_resource_path'],
                         glob.stg['log_path'],
                         glob.stg['pending_path'],
                         glob.stg['captured_path'],
@@ -323,7 +323,7 @@ def run():
 #                     glob.ev['BP_RESULTS']])
 
     # Error if dir not found
-    ensure_path_exists([glob.ev['BPS_SITE'],
+    ensure_path_exists([glob.ev['BPS_HOME'],
                         glob.ev['BP_REPO'],
                         glob.ev['BPS_COLLECT']])
 
