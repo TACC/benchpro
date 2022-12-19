@@ -95,7 +95,7 @@ class init(object):
 
 
         # Reset existing app list
-        self.glob.installed_apps_list = []
+        self.glob.installed_apps_list.clear()
 
         # For each BP_APPS
         for app_dir in self.glob.bp_apps:
@@ -222,6 +222,7 @@ class init(object):
 
         # For every installed app
         for app in self.glob.installed_apps_list:
+
             for search_key in search_dict.keys():
 
                 # Search key not in installed_app_dict
@@ -229,7 +230,7 @@ class init(object):
                     return False
 
                 if not search_dict[search_key] in app.values():
-                    return Falsee
+                    return False
 
         return True
 
@@ -264,6 +265,22 @@ class init(object):
 
         return False
 
+    def find_matching_apps(self, search_dict):
+        matching_apps = []
+        for installed_app_dict in self.glob.installed_apps_list:
+            match = True
+
+            for search_key in search_dict.keys():
+                if search_key in installed_app_dict.keys():
+                    if search_dict[search_key] and not str(search_dict[search_key]) == str(installed_app_dict[search_key]):
+                        match = False
+                        break
+
+            if match:
+                matching_apps.append(installed_app_dict)
+
+        return matching_apps
+
     # Check if search_list returns unique installed application
     def check_if_installed(self, search_dict):
 
@@ -271,7 +288,7 @@ class init(object):
             self.set_installed_apps() 
 
         # For each installed code
-        matching_apps = [code_dict for code_dict in self.glob.installed_apps_list if self.search_with_dict(search_dict)]
+        matching_apps = self.find_matching_apps(search_dict)
 
         # Unique result
         if len(matching_apps) == 1:
@@ -288,10 +305,11 @@ class init(object):
                                 "Currently installed applications:"] + self.glob.installed_app_paths)
 
         # Multiple multiple matches
+
         elif len(matching_apps) > 1:
 
             self.msg.high("Multiple applications match your criteria: " + ", ".join([key + "=" + search_dict[key] for key in search_dict if search_dict[key]]))
-            self.msg.print_app_table([code_dict['table'] for code_dict in matching_apps]) 
+            self.msg.print_app_table(matching_apps) 
             self.msg.error("Please be more specific (use task_ID)")
 
     # Read every build config file and construct a list with format [[cfg_file, code, version, build_label],...]

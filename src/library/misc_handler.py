@@ -99,7 +99,6 @@ class init(object):
         print("\nNo going back now...")
 
         for path in app_list:
-            print("PATH", path)
             self.delete_app_path(path)
 
 
@@ -198,13 +197,8 @@ class init(object):
     def query_app(self, arg):
         search_dict = {}
 
-        # Check input is ID
-        if self.int_input(arg):
-            # ID -> install_dir_list -> search_dict  
-            search_dict = self.glob.lib.app_list_to_dict(self.get_app_list_from_id(arg))
-
         # Input is string
-        elif not "/" in arg:
+        if not "/" in arg:
             search_dict["code"] = arg
 
         # Input is key-values
@@ -212,7 +206,7 @@ class init(object):
             # Disect search string into search dict
             for search_elem in arg.split("/"):
                 search_dict[search_elem] =  search_elem
-        
+      
         # Get installation directory from search dict
         app_dir = self.glob.lib.check_if_installed(search_dict)
         if not app_dir:
@@ -386,7 +380,7 @@ class init(object):
 
         # Populate app table if empty
         if not self.glob.installed_apps_list:
-            self.glob.lib.set_installed_apps_list()
+            self.glob.lib.set_installed_apps()
 
         app_list, app_path  = None, None
 

@@ -191,11 +191,12 @@ class init(object):
             if key == "compiler":
                 self.glob.modules[key]['type'] =  self.glob.modules[key]['full'].split('/')[0]
                 self.glob.modules[key]['family'] = self.glob.modules[key]['full'].split('/')[0]
+                
 
                 # Add special version check: intel > 20: type += oneapi
-                if (self.glob.modules[key]['type'] == "intel") and (int(self.glob.modules[key]['version'].split('.')[0]) > 20):
-                    # Prioritize oneapi
-                    self.glob.modules[key]['type'] = "oneapi"
+#                if (self.glob.modules[key]['type'] == "intel") and (int(self.glob.modules[key]['version'].split('.')[0]) > 20):
+#                    # Prioritize oneapi
+#                    self.glob.modules[key]['type'] = "oneapi"
 
     # Check build config file and add required fields
     def process_build_cfg(self, cfg_dict):
