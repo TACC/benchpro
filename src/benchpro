@@ -26,7 +26,7 @@ def check_module_version():
         mismatch = True
 
     mod_version = os.environ.get('BPS_VERSION')
-    required_version = "1.7.1"
+    required_version = "1.7.3"
     # Version mismatch
     if mod_version != required_version:
         print("Version mismatch: yours=" + mod_version + ", site=" + required_version)
