@@ -1,5 +1,6 @@
 # System Imports
 import re
+import os
 import sys
 
 class init(object):
@@ -111,6 +112,8 @@ class init(object):
 
     # Replace [key] with value
     def replace_key(self, expr, key, value):
+        if isinstance(value, list):
+            value = value[0]   
         return expr.replace("["+key+"]", str(value))
 
     # Get value from string
@@ -136,8 +139,8 @@ class init(object):
         key = self.extract_key(action)
         value = action.split("=")[1].strip().replace('"', '').replace("'", "")
    
-        # If this value has already been overloaded - don't change it a 2nd time (rules < user_overload)
-        if key in self.glob.overloaded:
+        # If this value has already been overloaded_dict - don't change it a 2nd time (rules < user_overload)
+        if key in self.glob.overloaded_dict.keys():
             self.glob.lib.msg.low("Skipping conflicting system rule: " + key + "='" + value + "'")
             return
 
@@ -190,9 +193,10 @@ class init(object):
             return
 
         # Rules file for this system
-        rules_file = self.glob.lib.files.find_in([self.glob.stg['rules_path']], self.glob.system['system']+".cfg", False)
+        rules_file = os.path.join(self.glob.stg['rules_path'], self.glob.system['system']+".cfg")
+
         # System rules file exists
-        if rules_file:
+        if os.path.isfile(rules_file):
 
             # Set variable search space
             self.set_search_space()
@@ -203,4 +207,7 @@ class init(object):
             # Evaluate each rule
             for line in rules:
                 self.eval_rule(line)
+
+        else:
+            self.glob.lib.msg.warn("No " + self.glob.system['system'] + " rules file  found:" + rules_file)
 

@@ -42,6 +42,32 @@ class init(object):
         self.sched    = sched_handler.init(self.glob)
         self.template = template_handler.init(self.glob)
 
+    def cast_to(self, var, dtype):
+        try:
+            return dtype(var)
+        except:
+            self.msg.error("Unable to cast '" + var + "' to " + str(dtype))
+
+    # Cast from string to proper type
+    def destr(self, var):
+
+        if not isinstance(var, str):
+            return var
+
+        # True
+        if var in ["1", "T", "t", "True", "true"]:
+            return True
+        # False
+        elif var in ["0", "F", "f", "False", "false"]:
+            return False
+        # Int
+        elif var.isdigit():
+            return int(var)
+        # String
+        else:
+            return var
+
+
     # Get relative paths for full paths before printing to stdout
     def rel_path(self, path):
         # if empty str
@@ -49,7 +75,7 @@ class init(object):
             return ""
 
         for key in self.glob.ev:
-            if self.glob.ev[key] in path:
+            if path.startswith(self.glob.ev[key]):
                 return path.replace(self.glob.ev[key], "$"+key)
 
         # if not any of the above
@@ -67,28 +93,46 @@ class init(object):
     # Get list of installed apps
     def set_installed_apps(self):
 
-        # Reset 
-        self.glob.installed_apps  = []
 
-        app_dir = self.glob.ev['BP_APPS']
-        start = app_dir.count(self.glob.stg['sl'])
+        # Reset existing app list
+        self.glob.installed_apps_list.clear()
 
-        # Get directory paths
-        app_paths = []
-        self.files.search_tree(app_paths, app_dir, start, start, start + self.glob.stg['tree_depth'])
-        
-        # Split app path into catagories and add status
-        for path in app_paths:
-            status = self.glob.lib.sched.get_status_str(path)
-            idx = self.report.get_task_id("build", path) 
-            self.glob.installed_apps.append({'task_id': idx, 'table': [idx] + path.split(self.glob.stg['sl']) + [status], 'path': path})
+        # For each BP_APPS
+        for app_dir in self.glob.bp_apps:
+
+            start = app_dir.count(self.glob.stg['sl'])
+
+            # Get directory paths
+            app_paths = []
+            self.files.search_tree(app_paths, app_dir, start, start, start + self.glob.stg['tree_depth'])
+
+            # For each app 
+            for app_path in app_paths:
+
+                report_path = os.path.join(self.glob.resolve(app_path), self.glob.stg['build_report_file'])
+                report = self.glob.lib.report.read(report_path)
+
+                if not report:
+
+                    # Ignore broken apps
+                    if not self.glob.stg['delete_broken']:
+                        self.msg.warn(["Skipping unreadable application report: ", 
+                                            self.rel_path(report_path)])
+                    # Delete broken apps
+                    else:
+                        self.glob.lib.msg.warn(["Found invalid application in " + self.rel_path(app_path), "'delete_broken=True', deleting now"])
+                        self.glob.lib.misc.remove_app(app_path)
+
+                    continue
+
+                report_dict = report['build']
+                report_dict['status']      = self.glob.lib.sched.get_status_str(app_path)
+
+                # Add to list on installed app dicts
+                self.glob.installed_apps_list.append(report_dict)
 
         # Sort by task_id
-        self.glob.installed_apps = sorted(self.glob.installed_apps, key=lambda x: x['task_id'], reverse=True)
-
-        # Add ID column
-        #for i in range(0,len(self.glob.installed_app_list)):
-        #   self.glob.installed_app_list[i] = [str(i+1)] + self.glob.installed_app_list[i]
+        #self.glob.installed_apps_list = sorted(self.glob.installed_apps_list, key=lambda x: x['task_id'], reverse=True)
 
     # Get results in $BP_RESULTS/pending
     def get_pending_results(self):
@@ -174,18 +218,21 @@ class init(object):
             return True
 
     # Search code_path with values in search_list
-    def search_with_dict(self, search_dict, code_path):
-        match = True
-        # Break code path by /
-        code_path_elems = code_path.split(self.glob.stg['sl'])
+    def search_with_dict(self, search_dict):
 
-        #Ensure every val that is set in search dict is found in code path
-        for search in search_dict.values():
-            if search and not any(search in x for x in code_path_elems):
-                # Otherwise not code does not match requirements
-                match = False
+        # For every installed app
+        for app in self.glob.installed_apps_list:
 
-        return match
+            for search_key in search_dict.keys():
+
+                # Search key not in installed_app_dict
+                if not search_key in app.keys():
+                    return False
+
+                if not search_dict[search_key] in app.values():
+                    return False
+
+        return True
 
     # Add fields to application search dict
     def generate_requirements(self, input_dict):
@@ -218,14 +265,30 @@ class init(object):
 
         return False
 
+    def find_matching_apps(self, search_dict):
+        matching_apps = []
+        for installed_app_dict in self.glob.installed_apps_list:
+            match = True
+
+            for search_key in search_dict.keys():
+                if search_key in installed_app_dict.keys():
+                    if search_dict[search_key] and not str(search_dict[search_key]) == str(installed_app_dict[search_key]):
+                        match = False
+                        break
+
+            if match:
+                matching_apps.append(installed_app_dict)
+
+        return matching_apps
+
     # Check if search_list returns unique installed application
     def check_if_installed(self, search_dict):
 
-        # Set list of installed applications
-        self.set_installed_apps()
+        if not self.glob.installed_apps_list:
+            self.set_installed_apps() 
 
         # For each installed code
-        matching_apps = [code_dict for code_dict in self.glob.installed_apps if self.search_with_dict(search_dict, code_dict['path'])]
+        matching_apps = self.find_matching_apps(search_dict)
 
         # Unique result
         if len(matching_apps) == 1:
@@ -242,10 +305,11 @@ class init(object):
                                 "Currently installed applications:"] + self.glob.installed_app_paths)
 
         # Multiple multiple matches
+
         elif len(matching_apps) > 1:
 
             self.msg.high("Multiple applications match your criteria: " + ", ".join([key + "=" + search_dict[key] for key in search_dict if search_dict[key]]))
-            self.msg.print_app_table([code_dict['table'] for code_dict in matching_apps]) 
+            self.msg.print_app_table(matching_apps) 
             self.msg.error("Please be more specific (use task_ID)")
 
     # Read every build config file and construct a list with format [[cfg_file, code, version, build_label],...]
@@ -312,11 +376,11 @@ class init(object):
     def get_system_vars(self, system):
     
         self.glob.system['system'] = system
-        cfg_file = os.path.join(self.glob.stg['sys_cfg_path'], self.glob.stg['sys_cfg_file'])
+        cfg_file = os.path.join(self.glob.stg['site_sys_cfg_path'], self.glob.stg['sys_cfg_file'])
        
         # Check system cfg file exists
         if not os.path.isfile(cfg_file):
-           self.glob.lib.msg.error(self.glob.stg['sys_cfg_file'] + " file not found in " + self.glob.lib.rel_path(self.glob.stg['sys_cfg_path'])) 
+           self.glob.lib.msg.error(self.glob.stg['sys_cfg_file'] + " file not found in " + self.glob.lib.rel_path(self.glob.stg['site_sys_cfg_path'])) 
 
         system_parser   = cp.RawConfigParser(allow_no_value=True)
         system_parser.read(cfg_file)
@@ -411,7 +475,7 @@ class init(object):
     # Check if the client version is up-to-date with site version
     def check_version(self):
             if not self.version_match():
-                self.msg.warning(["You are using BenchPRO " + self.glob.version_client + ", the site package is using " + self.glob.version_site + ".", \
+                self.msg.warn(["You are using BenchPRO " + self.glob.version_client + ", the site package is using " + self.glob.version_site + ".", \
                                  "Update with: git -C ~/benchpro pull", \
                                  "Continuing..."])
                 time.sleep(self.glob.stg['timeout'])

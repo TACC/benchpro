@@ -21,7 +21,7 @@ def check_for_previous_install():
         # Delete if overwrite=True
         if glob.stg['overwrite']:
 
-            glob.lib.msg.warning(["It seems this app is already installed. Deleting old build in " +
+            glob.lib.msg.warn(["It seems this app is already installed. Deleting old build in " +
                          glob.lib.rel_path(install_path) + " because 'overwrite=True'",
                          "\033[0;31mDeleting in 5 seconds...\033[0m"])
 
@@ -33,7 +33,7 @@ def check_for_previous_install():
             return False
         # Else warn and skip build
         else:
-            glob.lib.msg.warning("Application already installed.") 
+            glob.lib.msg.warn("Application already installed.") 
             glob.lib.msg.low(["Install path: " + glob.lib.rel_path(install_path),
                             "The install directory already exists and 'overwrite=False' in $BP_HOME/settings.ini"])
             glob.lib.msg.high("Skipping build.")
@@ -84,12 +84,8 @@ def build_code(input_dict, glob_copy):
         # If sched config file not specified, use system default
         if not glob.config['general']['sched_cfg']:
             glob.config['general']['sched_cfg'] = glob.lib.get_sched_cfg()
-            print("ASDAS", glob.config['general']['sched_cfg'])
         # Ingest sched config from file
 
-        print(glob.config)
-        print(glob.config['general']['sched_cfg'])
-        print("-----------------------")
         glob.lib.cfg.ingest('sched', glob.config['general']['sched_cfg'])
 
         # Low priority stdout message
@@ -100,12 +96,13 @@ def build_code(input_dict, glob_copy):
 
     # Check for unused overload params (unless run from bench_manager)
     if not glob.quiet_build:
-        glob.lib.overload.check_for_unused()
+        glob.lib.overload.check_for_unused_overloads()
 
     # Apply system rules if not running locally
     if not glob.stg['build_mode'] == "local":
         glob.lib.expr.apply_system_rules()
 
+    glob.lib.msg.brk()
     # Print inputs to log
     glob.lib.send_inputs_to_log('Builder')
 
@@ -144,7 +141,6 @@ def build_code(input_dict, glob_copy):
     # Clean up tmp files
     glob.lib.files.cleanup([])
 
-    glob.lib.msg.brk()
     glob.lib.msg.high(glob.success)
 
     # If dry_run
@@ -186,6 +182,9 @@ def init(glob):
 
     # Init logger
     logger.start_logging("BUILD", glob.stg['build_log_file'] + "_" + glob.stg['time_str'] + ".log", glob)
+
+    # Set list of installed applications
+    #glob.lib.set_installed_apps()
 
     # Get list of avail cfgs
     glob.lib.set_build_cfg_list()

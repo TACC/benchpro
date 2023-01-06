@@ -1,6 +1,5 @@
-![Lmod Logo](https://github.com/TACC/BenchPRO/raw/main/resources/images/benchpro_grey.png)
+![Lmod Logo](https://github.com/TACC/benchpro-site/raw/main/benchpro/resources/images/benchpro_grey.png)
 
-[![Documentation Status](https://readthedocs.org/projects/benchpro/badge/?version=latest)](https://benchpro.readthedocs.io/en/latest/?badge=latest)
 
 
 # BenchPRO-site
@@ -42,7 +41,7 @@ The user files repository was installed as part of the process described above f
 
 ### Version Control
 
-The user repository version number in $BP_HOME/.version is tested against the package version number $BPS_SITE_VERSION to ensure compatibility between the two repositories. If users are running an old version, they will be prompted to update when using the utility. If changes are made to this repository, the version should be updated with the provided script:
+The user repository version number in $BP_HOME/.version is tested against the package version number $BPS_HOME_VERSION to ensure compatibility between the two repositories. If users are running an old version, they will be prompted to update when using the utility. If changes are made to this repository, the version should be updated with the provided script:
 ```
 ./dev/version.sh [x.y.z]
 ```

@@ -5,4 +5,4 @@
 #SBATCH -t <<<runtime>>>
 #SBATCH -N <<<nodes>>>
 #SBATCH -n <<<ranks>>>
-#SBATCH -A <<<account>>>
+#SBATCH -A <<<slurm_account>>>

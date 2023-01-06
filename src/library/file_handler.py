@@ -21,8 +21,8 @@ class init(object):
         if not os.path.isfile(file_path):
             self.glob.lib.msg.error("File " + self.glob.lib.rel_path(file_path) + " not found.")
 
-        with open(file_path) as f:
-            return f.readlines()
+        with open(file_path) as fp:
+            return fp.readlines()
 
     # Delete tmp build files if installation fails
     def cleanup(self, clean_list):
@@ -81,12 +81,14 @@ class init(object):
             return False
         results = []
         for path in paths:
-            results += [gb.glob(os.path.join(path, filename))]
-        
+            found = gb.glob(os.path.join(path, filename)) 
+            if found:
+                results += found
+
         # Found one result
         if len(results) == 1:
             return results[0]
-            
+
         # Didn't
         return False
 
@@ -99,6 +101,7 @@ class init(object):
 
         # Add some default locations to the search path list
         paths.extend(["/", "", self.glob.ev['BP_HOME'], self.glob.cwd, self.glob.home])
+
         file_path = self.look(paths, filename) 
 
         if file_path:
@@ -134,7 +137,7 @@ class init(object):
 
     # Check write permissions to a directory
     def write_permission(self, path):
-        if os.access(path, os.W_OK | os.X_OK):
+        if os.access(path, os.W_OK):
             return True
         return False
 
@@ -153,7 +156,7 @@ class init(object):
                 new_dir = os.path.join(app_dir, d)
                 # Once tree hits max search depth, append path to list
                 if current_depth == max_depth:
-                    installed_list += [self.glob.stg['sl'].join(new_dir.split(self.glob.stg['sl'])[start_depth + 1:])]
+                    installed_list += [new_dir]
                 # Else continue to search tree
                 else:
                     self.search_tree(installed_list, new_dir, start_depth,current_depth + 1, max_depth)
@@ -165,15 +168,16 @@ class init(object):
         parent_dir  = path_elems[-2]
 
         # If parent dir is root ('build' or 'modulefile') or if it contains more than this subdir, delete this subdir
-        if (parent_dir == self.glob.stg['build_dir']) or \
+        if (parent_dir == self.glob.stg['build_topdir']) or \
            (parent_dir == self.glob.stg['module_dir']) or \
            (parent_dir == os.path.basename(self.glob.ev['BPS_COLLECT'])) or \
            (len(gb.glob(os.path.join(parent_path,"*"))) > 1):
 
             try:         
                 su.rmtree(path)
+                print("Deleted : " + path)
             except:
-                print("Skipping symlink: " + path)
+                print("Can't delete: " + path)
         # Else resurse with parent
         else:
             self.prune_tree(parent_path)
@@ -247,7 +251,7 @@ class init(object):
 
         # untar in script
         else:
-            self.glob.stage_ops.append("tar -xf " + src + " -C ${working_path}")
+            self.glob.stage_ops.append("tar -xf " + src + " -C ${copy_path}")
 
     # Copy file to working dir
     def cp_file(self, src):
@@ -297,7 +301,7 @@ class init(object):
 
             # Add tar op to staged ops
             #if any(x in filename for x in ['tar', 'tgz', 'bgz']):
-            self.glob.stage_ops.append("stage " + file_name)
+            self.glob.stage_ops.append("stage " + file_name + " " + self.glob.config['metadata']['copy_path'])
             # Add cp op to staged ops
             #else:
             #    self.glob.stage_ops.append("cp -r " + file_path + " ${working_path}")
@@ -344,7 +348,7 @@ class init(object):
                 except:
                     pass
                 
-                self.glob.lib.msg.warning("Retrying URL...")
+                self.glob.lib.msg.warn("Retrying URL...")
                 time.sleep(2)
                 retries += 1
 
@@ -423,7 +427,7 @@ class init(object):
             for op in self.glob.config['files'].keys():
 
                 assets = self.glob.config['files'][op].split(',')
-                [self.glob.stage_ops.append("stage " + asset) for asset in assets]
+                [self.glob.stage_ops.append("stage " + asset + " " + self.glob.config['metadata']['copy_path']) for asset in assets]
 
 #                # Copy local file [from BP_REPO or local path]
 #                if op == 'local':
@@ -440,9 +444,9 @@ class init(object):
 
     # Write module to file
     def write_list_to_file(self, list_obj, output_file):
-        with open(output_file, "w") as f:
+        with open(output_file, "w") as fp:
             for line in list_obj:
-                f.write(line)
+                fp.write(line)
 
     # Write command line to history file
     def write_cmd_history(self):
@@ -479,6 +483,10 @@ class init(object):
         cfg_parser.optionxform=str
         cfg_parser.read(cfg_file)
 
+
+        if not os.path.isfile(cfg_file):
+            self.glob.lib.msg.error("Unable to read cfg file " + self.glob.lib.real_path(cfg_file))
+
         # Add file name & label to dict
         cfg_dict = {}
         cfg_dict['metadata'] ={}
@@ -495,9 +503,9 @@ class init(object):
     # Read client version number from file
     def get_client_version(self):
         try:
-            with open(os.path.join(self.glob.ev['BP_HOME'], ".version"), 'r') as f:
-                self.glob.version_client = f.readline().split(" ")[-1][1:].strip()
-                self.glob.version_client_date = f.readline().strip()
+            with open(os.path.join(self.glob.ev['BP_HOME'], ".version"), 'r') as fp:
+                self.glob.version_client = fp.readline().split(" ")[-1][1:].strip()
+                self.glob.version_client_date = fp.readline().strip()
 
         except:
             self.glob.lib.msg.error("Failed to read version info from $BP_HOME/.version")    

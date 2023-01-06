@@ -63,104 +63,142 @@ class init(object):
     def delete_app_path(self, path):
         
         # Get module dir from app dir, by adding 'modulefiles' prefix and stripping [version] suffix
-        mod_dir = os.path.join(self.glob.stg['module_path'],  self.glob.stg['sl'].join(path.split(self.glob.stg['sl'])[:-1]))
-        app_dir = os.path.join(self.glob.ev['BP_APPS'], path)
+        app_path = self.glob.stg['sl'].join(path.split(self.glob.stg['sl'])[path.split(self.glob.stg['sl']).index(self.glob.stg['build_topdir'])+1:-1])
+        mod_path = os.path.join(self.glob.stg['module_path'],  app_path)
 
-        print("/".join(app_dir.split("/")[-3:]) + ":")
         # Delete application dir
         try:
-            self.glob.lib.files.prune_tree(app_dir)
+            self.glob.lib.files.prune_tree(path)
             print("Application removed.")
         except:
             print("Warning: Failed to remove application directory:")
-            print(">  "  + self.glob.lib.rel_path(app_dir))
+            print(">  "  + self.glob.lib.rel_path(path))
+            print("Do you own this application?")
             print("Skipping")
-            print()
+        print()
         # Detele module dir
         try:
-            self.glob.lib.files.prune_tree(mod_dir)
+            self.glob.lib.files.prune_tree(mod_path)
             print("Module removed.")
         except:
             print("Warning: no associated module located in:")
             print(">  " + self.glob.lib.rel_path(mod_dir))
+            print("Do you own this module?")
             print("Skipping")
         print()
+       
+
+    def prep_delete(self, app_list, msg_str):
         
-    # Delete application and module matching path provided
-    def remove_app(self):
-        input_list = self.glob.args.delApp
+        print("Deleting " + msg_str)
+
+        # Timeout
+        print()
+        print("\033[0;31mDeleting in", self.glob.stg['timeout'], "seconds\033[0m")
+        self.glob.lib.msg.wait()
+        print("\nNo going back now...")
+
+        for path in app_list:
+            self.delete_app_path(path)
+
+
+    # Find an application to delete
+    def id_app_to_remove(self, search):
+
+        if search == "all":
+            return self.glob.installed_apps_list
+
+        else:
+            matching_apps = []
+            # Iterate over installed apps looking for search matches
+
+            for app in self.glob.installed_apps_list:
+                if search in app.values():
+                    matching_apps.append(app)
+
+            if len(matching_apps) > 1:
+                self.glob.lib.msg.high("Application selection was not unique")
+                self.glob.lib.msg.print_app_table(matching_apps)
+                self.glob.lib.msg.error("Please provide unique identifier")
+
+            elif len(matching_apps) == 0:
+                self.glob.lib.msg.error("No matching app found.")
+
+            else:
+                return matching_apps[0]
+
+    def remove_app(self, app_path=None):
 
         remove_list = []
-        # If 'all' provided, add all installed apps to list to remove
-        if input_list[0] == 'all':
+
+        # OPTION 1: App path provided
+        if app_path:
+            self.prep_delete([app_path], "application in " + self.glob.lib.rel_path(app_path))
+
+        # OPTION 2: Use args
+        else:
+            # Split arg string by ","
+            arg_list = self.glob.args.delApp
             self.glob.lib.set_installed_apps()
 
-            if not self.glob.installed_apps:
-                print("No applications installed.")
-                return
+            # OPTION 2.a: args = all; get list of installed apps
+            if arg_list[0] == 'all':
 
-            print("Deleting all installed applications:")
+                del_list = self.glob.installed_apps_list
 
-            # Print apps to remove
-            self.glob.lib.msg.print_app_table([code_dict['table'] for code_dict in self.glob.installed_apps])
+                if not del_list:
+                    print("No applications installed.")
+                    return
 
-            # Timeout
-            print()
-            print("\033[0;31mDeleting in", self.glob.stg['timeout'], "seconds\033[0m")
-            self.glob.lib.msg.wait(self.glob.stg['timeout'])
-            print("\nNo going back now...")
+                # Print apps to remove
+                self.glob.lib.msg.print_app_table(None)
 
-            # Delete
-            for app in self.glob.installed_apps:
-                self.delete_app_path(app['path'])
+                # Delete
+                self.prep_delete([app['path'] for app in del_list], "all aplications")
 
-        # Else check each input is installed then add to list
-        else:
-            # Accept space delimited list of apps
-            for app in input_list:
-                # Create search dict from search elements
-                search_dict = {}
+            # OPTION 2.b: Delete comma delimited arg list of apps
+            else:
+                # Accept space delimited list of apps
+                for app in arg_list:
+                    # Create search dict from search elements
+                    #search_dict = {}
                
-                # If input str is int
-                if self.int_input(app):
-                    search_dict = self.glob.lib.app_list_to_dict(self.get_app_list_from_id(app))
+                    # If input str is int
+                    #if self.int_input(app):
+                    #    search_dict = self.glob.lib.app_list_to_dict(self.get_app_list_from_id(app))
 
-                # Handle / delimited paths
-                elif "/" in app:
-                    for elem in app.split("/"):
-                        search_dict[elem] = elem
+                    # Handle / delimited paths
+                    #if "/" in app:
+                    #    for elem in app.split("/"):
+                    #        search_dict[elem] = elem
 
-                # Handle , delimited couples
-                else:
-                    for elem in app.split(","):
-                        if not "=" in elem:
-                            search_dict['code'] = elem
-                        else:
-                            search_dict[elem.split("=")[0]] = elem.split("=")[1]
+                    # Handle , delimited couples
+                    #else:
+                    #    for elem in app.split(","):
+                    #        if not "=" in elem:
+                    #            search_dict['code'] = elem
+                    #        else:
+                    #            search_dict[elem.split("=")[0]] = elem.split("=")[1]
 
-                # If installed, add to remove list
-                installed = self.glob.lib.check_if_installed(search_dict)
+                    # If installed, add to remove list
+                    #installed = self.glob.lib.check_if_installed(search_dict)
 
-                if installed:
-                    app_path = installed['path']
-                    print("\033[0;31mDeleting in", self.glob.stg['timeout'], "seconds\033[0m")
-                    self.glob.lib.msg.wait(self.glob.stg['timeout'])
-                    print("No going back now...")
-                    self.delete_app_path(app_path)
-                else:
-                    print("No installed application matching search term '" + app + "'")
+                    app_dict = self.id_app_to_remove(app)
+                    self.prep_delete([app_dict['path']], "app in " + self.glob.lib.rel_path(app_dict['path']))
+
+
+                    #if installed:
+                    #    self.prep_delete([installed['path']], "")
+
+                    #else:
+                    #    print("No installed application matching '" + app + "'")
 
     # Print build report of installed application
     def query_app(self, arg):
         search_dict = {}
 
-        # Check input is ID
-        if self.int_input(arg):
-            # ID -> install_dir_list -> search_dict  
-            search_dict = self.glob.lib.app_list_to_dict(self.get_app_list_from_id(arg))
-
         # Input is string
-        elif not "/" in arg:
+        if not "/" in arg:
             search_dict["code"] = arg
 
         # Input is key-values
@@ -168,7 +206,7 @@ class init(object):
             # Disect search string into search dict
             for search_elem in arg.split("/"):
                 search_dict[search_elem] =  search_elem
-        
+      
         # Get installation directory from search dict
         app_dir = self.glob.lib.check_if_installed(search_dict)
         if not app_dir:
@@ -182,6 +220,8 @@ class init(object):
             self.glob.lib.msg.error("Application '" + arg + "' is not installed.")
 
         app_full_path = os.path.join(self.glob.ev['BP_APPS'], app_path)
+
+
         build_report = os.path.join(app_full_path, self.glob.stg['build_report_file'])
         install_path = os.path.join(app_full_path, self.glob.stg['install_subdir'])
 
@@ -210,7 +250,6 @@ class init(object):
         # Dry_run - do nothing
         if report_dict['build']['task_id']  == "dry_run":
             print("Build job was dry_run. Skipping executable check")
-    
         else:
             # Local build        
             if report_dict['build']['exec_mode'] == "local":
@@ -261,16 +300,12 @@ class init(object):
                     print(("File "+report_dict['build']['exe_file']+": ").ljust(gap) + stat_str)
 
                 if stream:
-                    self.glob.lib.msg.print_file_tail(os.path.join(report_dict['build']['build_prefix'], report_dict['build'][stream]))       
+                    self.glob.lib.msg.print_file_tail(os.path.join(report_dict['build']['path'], report_dict['build'][stream]))       
 
 
     # Print currently installed apps as well as their exe status
     def show_installed(self):
 
-        # Get list of installed application paths
-        self.glob.lib.set_installed_apps()
-        # Print table
-        print("Installed applications:")
         self.glob.lib.msg.print_app_table(None)
 
     # Get run string for given config file
@@ -318,6 +353,7 @@ class init(object):
 
     # Print applications that can be installed from available cfg files
     def print_avail_type(self, atype, search_path_list):
+
         print(self.glob.bold + "Available " + atype + " profiles:" + self.glob.end)
         print(self.glob.bold, "------------------------------------------------------------", self.glob.end)
         for search_path in search_path_list:
@@ -326,11 +362,12 @@ class init(object):
             app_dir = search_path + self.glob.stg['sl']
             self.print_config(atype, gb.glob(app_dir + "*.cfg"))
             print()
+
             # Scan config/build/[system]
             app_dir = app_dir + self.glob.system['system'] + self.glob.stg['sl']
             if os.path.isdir(app_dir):
                 print("------------------------------------------------------------")
-                self.print_heading(search_path)
+                self.print_heading(app_dir)
                 self.print_config(atype, gb.glob(app_dir + "*.cfg"))
                 print()
 
@@ -342,24 +379,23 @@ class init(object):
     def get_app_tuple_from_id(self, idx):
 
         # Populate app table if empty
-        if not self.glob.installed_app_list:
+        if not self.glob.installed_apps_list:
             self.glob.lib.set_installed_apps()
 
         app_list, app_path  = None, None
 
         # Get path[i] and list[i] where list[i][0] == input. 
         # I.e. get corresponding path for app ID
-        for i in range(0,len(self.glob.installed_app_paths)):
-            if self.glob.installed_app_list[i][0] == str(idx):
-                app_list = self.glob.installed_app_list[i]
-                app_path = self.glob.installed_app_paths[i]
+        for installed_app in self.glob.installed_apps_list:
+            if installed_app['task_id'] == str(idx):
+                app_list = installed_app
+                app_path = installed_app['path']
 
         if not app_path:
-            self.glob.lib.msg.error("No application ID matching '" + idx  + "'")
+            self.glob.lib.msg.error("No application ID '" + idx  + "'")
 
         # Return path
         return app_list, app_path
-
 
     def get_app_path_from_id(self, idx : int) -> str:
         app_list, app_path = self.get_app_tuple_from_id(idx)
@@ -378,16 +414,22 @@ class init(object):
         return app_list
 
     def show_available(self):
-        if self.glob.args.avail in ['code', 'all']:
-            self.print_avail_type("application", self.glob.stg['build_cfg_path'])
+        
+        print()
 
-        print()
-        print()
+        # User or all
+        search_locs = self.glob.stg['build_cfg_path']
+
+        if self.glob.args.avail in ['apps', 'all']:
+            self.print_avail_type("application", search_locs)
+
+        # User or all
+        search_locs = self.glob.stg['bench_cfg_path']
 
         if self.glob.args.avail in ['bench', 'all']:
-            self.print_avail_type("benchmark", self.glob.stg['bench_cfg_path'])
+            self.print_avail_type("benchmark", search_locs)
 
-        if self.glob.args.avail in ['suite', 'all']:
+        if self.glob.args.avail in ['suite']:
             print()
             print(self.glob.bold, "Available benchmark suites:", self.glob.end)
             print(self.glob.bold, "------------------------------------------------------------", self.glob.end)
@@ -400,52 +442,49 @@ class init(object):
             
     # Print key/value pair from setting.ini dict
     def print_setting(self, key, value):
-        print("  " + key.ljust(18) + " = " + str(value))
+        if value:
+            print("  " + key.ljust(18) + " = " + str(value))
+        else:
+            print("  " + key.ljust(18) + " = " + "\033[0;31mMISSING\033[0m")
 
     # Print default params from settings.ini
     def print_defaults(self):
-        print()
 
         # Print site info
+        print("------------------------------------------------------")
         print("Setup info:")
         [self.print_setting(key[0], key[1]) for key in [        ["User", self.glob.user], \
                                                                 ["Host", self.glob.hostname.split(".")[0]], \
                                                                 ["System", self.glob.system['system']], \
                                                                 ["CWD", self.glob.cwd]]]
         
-        # Print BenchPRO settings
-        print()
-        print("Benchtool defaults:")
-        [self.print_setting(key, self.glob.stg[key]) for key in ['dry_run', \
-                                                                'debug', \
-                                                                'exit_on_missing', \
-                                                                'overwrite', \
-                                                                'build_mode', \
-                                                                'build_if_missing', \
-                                                                'bench_mode',\
-                                                                'check_modules', \
-                                                                'sync_staging']]
-        print()
         # Print scheduler defaults for this system if available
         self.glob.lib.get_system_vars(self.glob.system['system'])
 
         sched_cfg = self.glob.lib.get_sched_cfg()
         try:
-            with open(os.path.join(self.glob.stg['sched_cfg_path'], sched_cfg)) as f:
+            with open(os.path.join(self.glob.stg['sched_cfg_path'], sched_cfg)) as fp:
+                print("------------------------------------------------------")
                 print("Scheduler defaults for " + self.glob.system['system'] + ":")
-                for line in f.readlines():
+                for line in fp.readlines():
                     if "=" in line:
                         print("  " + line.split("=")[0].strip().ljust(19) + "= " + line.split("=")[1].strip() )
 
         except Exception as err:
-            print("Unable to read " + sched_cfg)
+            print("Unable to read " + str(sched_cfg))
             print(err)
-    
+
+        # Print BenchPRO settings
+        print("------------------------------------------------------")
+        print("$BP_HOME/settings.ini")
+        [self.print_setting(setting.split("=")[0].strip(), setting.split("=")[1].strip()) for setting in self.glob.defs_overload_list]
+        print("------------------------------------------------------")
         print()
         print("Overload with '-o [SETTING1=ARG] [SETTING2=ARG]' on the command line for one-time changes.")
-        print("Or by editting $BP_HOME/settings.ini which apply persist changes over the defaults.")
-        print("You can now use the 'bps' utility to manipulate these persitant changes, e.g.")
-        print(">   bps dry_run False")
+        print("Edit $BP_HOME/settings.ini to apply persistant changes.")
+        print("Use the 'bps' command to apply these persistant changes via the CLI, e.g.")
+        print(">   bps dry_run=False\n\n")
+
     # Print command line history file
     def print_history(self):
         history_file = os.path.join(self.glob.ev['BP_HOME'], ".history")
@@ -466,8 +505,8 @@ class init(object):
             print("No previous outputs found.")
             sys.exit(0)
 
-        with open(os.path.join(self.glob.ev['BP_HOME'], ".history"), 'r') as f:
-            lines = f.readlines()
+        with open(os.path.join(self.glob.ev['BP_HOME'], ".history"), 'r') as fp:
+            lines = fp.readlines()
             if len(lines) == 0:
                 print("No previous outputs found.")    
                 sys.exit(0)
@@ -519,3 +558,21 @@ class init(object):
                     ",gpus="            + self.glob.config['runtime']['gpus']               + \
                     " | " + str(self.glob.task_id)                                          + \
                     " | " + self.glob.config['metadata']['working_dir'] 
+
+    # Print EV matching prefix str
+    def print_env_matching_str(self, prefix):
+        
+        for k, v in os.environ.items():
+            if prefix in k:
+                print(k.ljust(18, " ") + "= " + v)
+
+    # Print BP_ and BPS_ EVs
+    def print_env(self):
+        print("Editable environment variables:")
+        self.print_env_matching_str("BP_")
+        print()
+        print("Non-editable environment variables:")
+        self.print_env_matching_str("BPS_")
+        print()
+        
+

@@ -19,16 +19,20 @@ def get_app_info():
     glob.lib.expr.eval_dict(glob.config['requirements'], False)
 
     # Check if code is installed
-    glob.config['metadata']['code_path'] = glob.lib.check_if_installed(glob.config['requirements'])['path']
+
+    
+
+    print("glob.config['requirements')", glob.config['requirements'])
 
     # If application is not installed, check if cfg file is available to build
-    if not glob.config['metadata']['code_path']:
-        glob.lib.msg.warning("No installed application meeting benchmark requirements: '" + "', '".join([i + "=" + glob.config['requirements'][i] for i in glob.config['requirements'].keys() if i]) + "'") 
+    if not glob.lib.check_if_installed(glob.config['requirements']):
+        glob.lib.msg.warn("No installed application meeting benchmark requirements: '" + "', '".join([i + "=" + glob.config['requirements'][i] for i in glob.config['requirements'].keys() if i]) + "'") 
         glob.lib.msg.high("Attempting to build now...")
 
         # Set build args
         build_glob = copy.deepcopy(glob)
         build_glob.args.build = glob.config['requirements']
+        build_glob.args.overload = glob.args.overload
         build_glob.args.bench = None
         build_glob.quiet_build = True
 
@@ -40,20 +44,29 @@ def get_app_info():
         else:
             glob.config['metadata']['build_running'] = True
 
+        print("glob.config['requirements')", glob.config['requirements'])
+        print("glob.lib.check_if_installed(glob.config['requirements'])", glob.lib.check_if_installed(glob.config['requirements']))
+
         # Recheck that app is installed
         glob.config['metadata']['code_path'] = glob.lib.check_if_installed(glob.config['requirements'])['path']
 
     # Code is built
     else:
+        glob.config['metadata']['code_path'] = glob.lib.check_if_installed(glob.config['requirements'])['path']
         glob.lib.msg.high("Installed application found, continuing...")
         glob.config['metadata']['build_running'] = False
+
+
+    #print("glob.config['metadata']['code_path']:", glob.config['metadata']['code_path'])
 
     # Confirm application is installed after attempt
     if not glob.config['metadata']['code_path']:
         glob.lib.msg.error("it seems the attempt to build your application failed. Consult the logs.")
 
     # Set application module path to install path
-    glob.config['metadata']['app_mod'] = glob.config['metadata']['code_path']
+
+    dirs = glob.config['metadata']['code_path'].split("/")
+    glob.config['metadata']['app_mod'] = "/".join(dirs[dirs.index(glob.system['system']):])
 
     # Get app info from build report
     install_path = os.path.join(glob.ev['BP_APPS'], glob.config['metadata']['code_path'])
@@ -127,6 +140,11 @@ def gen_bench_script():
     glob.config['metadata']['working_path'] = glob.lib.files.check_dup_path(os.path.join(glob.stg['pending_path'], glob.config['metadata']['working_dir']))
     # Path to copy files to
     glob.config['metadata']['copy_path']    = glob.config['metadata']['working_path']
+
+    # Stage input files
+    glob.lib.files.stage()
+
+    
 
     glob.lib.msg.low(["Benchmark working directory:",
                     ">  " + glob.lib.rel_path(glob.config['metadata']['working_path'])])
@@ -253,7 +271,7 @@ def run_bench(input_str, glob_copy):
                                                         glob.stg['sched_tmpl_path'])
 
     # Check for empty overload params
-    glob.lib.overload.check_for_unused()
+    glob.lib.overload.check_for_unused_overloads()
 
     # Check if MPI is allow on this host
     if glob.stg['bench_mode'] == "local" and not glob.stg['dry_run'] and not glob.lib.check_mpi_allowed():
@@ -267,7 +285,7 @@ def run_bench(input_str, glob_copy):
     glob.lib.send_inputs_to_log('Bencher')
 
     # Stage input files
-    glob.lib.files.stage()
+    #glob.lib.files.stage()
 
     glob.prev_task_id = glob.lib.sched.get_active_jobids('_bench')
     prev_pid = 0
@@ -317,6 +335,10 @@ def init(glob):
 
     # Start logger
     logger.start_logging("RUN", glob.stg['bench_log_file'] + "_" + glob.stg['time_str'] + ".log", glob)
+
+
+    # Set list of installed applications
+    #glob.lib.set_installed_apps()
 
     # Get list of avail cfgs
     glob.lib.set_bench_cfg_list()

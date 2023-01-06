@@ -10,7 +10,7 @@ Overloading parameters
 Useful for changing a setting for a onetime use. 
 Use `benchpro --setup` to confirm important default params from $BP_HOME/settings.ini
 You can overload any of the default parameters read from file with the `-o`/`--overload` flag. 
-Parameters are overloaded with a list of key-value pairs, or by provided a filename with overloads defined.
+Parameters are overloaded_dict with a list of key-value pairs, or by provided a filename with overloads defined.
 An exception will be raised if a provided overload key does not match an existing parameter read from file.
 
 Example 1: overload dry_run and build locally rather than via sched:

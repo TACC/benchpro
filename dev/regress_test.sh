@@ -5,11 +5,17 @@ APP="lammps"
 BENCH_LIST="ljmelt namd_apoa1 new_conus12km SimpleBenchMarkLarge milc_18 gromacs_PEP STMV_NVE EAGLE_DMO_12 AUSURF112"
 BENCH="ljmelt"
 
+OUT="regress.out"
+
+
+benchset slurm_account=A-ccsc
+benchset dry_run=True
+
 result(){
     op=`echo $2 | cut -d " " -f1`
     printf "%-20s" "$op"
     if [ $1 -ne 0 ]; then
-        printf ": FAILED"
+        printf ": FAILED ($1)"
         printf "\n"
         exit 1
     else
@@ -19,18 +25,18 @@ result(){
 }
 
 # Remove existing installation
-benchpro --delApp $APP		> /dev/null
+benchpro --delApp $APP		> $OUT
 
 declare cases=( "help"
             "version" 
             "validate"
             "avail"
-            "build $APP_LIST --overload dry_run=True"
+            "build $APP"
             "listApps"
             "queryApp $APP"
-            "bench $BENCH_LIST --overload dry_run=True"
+            "bench $BENCH"
             "last"
-            "delApp $APP_LIST "
+            "delApp $APP "
             "capture"
             "listResults all"
             "dbResult dataset=$BENCH --export"
@@ -40,7 +46,7 @@ declare cases=( "help"
             ) 
 
 for c in "${cases[@]}"; do
-    benchpro --$c > /dev/null 
+    benchpro --$c >> $OUT 
     result $? $c
 done
 
