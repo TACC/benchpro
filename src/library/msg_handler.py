@@ -217,17 +217,30 @@ class init(object):
             self.glob.lib.msg.error("Mismatched number of table columns.")
 
         # Get max length of each table column (for spacing)
+        col_len = [0] * num_cols
         col_chars = [0] * num_cols
+        
+
+        chars_left = self.glob.scrn_width - 10
         max_col_chars = 25
+        last_field_len = 0
+
+        # Iterate over table columns
         for i in range(num_cols):
+            # Iterate over table rows
             for row in table:
-                if len(str(row[i])) > col_chars[i]:
-                    col_chars[i] = min(len(str(row[i])), max_col_chars)
+                # Find maximum string length for column across all rows
 
+                cell_len = len(str(row[i]))
+                if cell_len > col_chars[i]:
+                    chars = min(col_len[i], max_col_chars)
+                    col_chars[i] = chars
+                    col_len[i] = max(col_len[i], cell_len)
 
+            chars_left -= chars
 
-        # Fix ASCII ctrl chars for STATUS column
-        col_chars[-1] += 16
+        chars_left += last_field_len
+        col_chars[-1] = max(5, min(col_len[-1], (chars_left+10))) #min(chars_left, col_len[-1]+15)
 
         # Buffer each column 2 chars
         padding = [i + 2 for i in col_chars]
