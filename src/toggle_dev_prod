@@ -17,4 +17,4 @@ version=$BP_SITE_VERSION
 
 echo "Switched to $version in $(which benchpro)"
 
-return 0
+exit 0

@@ -273,14 +273,16 @@ def run():
     #check_benchpro_version(glob)
 
     # Sys envs
-    home_env   = glob.stg['home_env'].strip("$")
+    home_env    = glob.stg['home_env'].strip("$")
+    repo_env    = glob.stg['repo_env'].strip("$")
     site_env    = glob.stg['site_env'].strip("$")
     apps_env    = glob.stg['apps_env'].strip("$")
     results_env = glob.stg['results_env'].strip("$")
-    system_env = glob.stg['system_env'].strip("$")
+    system_env  = glob.stg['system_env'].strip("$")
 
     # check EVs set
     check_env_vars([home_env,
+                    repo_env,
                     site_env,
                     apps_env,
                     results_env,
@@ -295,6 +297,7 @@ def run():
 
     # Check paths
     confirm_path_exists([glob.ev['BP_HOME'],
+                        glob.ev['BP_REPO'],
                         glob.ev['BP_APPS'],
                         glob.ev['BP_RESULTS'],
                         glob.stg['build_tmpl_path'],
@@ -324,7 +327,6 @@ def run():
 
     # Error if dir not found
     ensure_path_exists([glob.ev['BPS_HOME'],
-                        glob.ev['BP_REPO'],
                         glob.ev['BPS_COLLECT']])
 
     # Check exe

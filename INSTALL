@@ -97,7 +97,7 @@ printf "Done.\n"
 printf "\nCreating BPS_HOME...\n"
 # Setup
 mkdir -p                                                                ${BPS_HOME}/logs
-mkdir -p                                                                ${BP_REPO}
+
 mkdir -p                                                                ${BPS_COLLECT}
 setfacl -d -m group::rwX,other::rwX                                     ${BPS_COLLECT}
 chmod a+w                                                               ${BPS_COLLECT}
@@ -105,6 +105,7 @@ mkdir -p                                                                ${BPS_HO
 mkdir -p                                                                ${BPS_MODULES}/benchpro
 chmod a+w                                                               ${BPS_MODULES}
 setfacl -d -m group::rX,other::rX                                       ${BPS_MODULES}
+
 printf "Done.\n"
 
 #--------------------MODULE FILE---------------------------------
@@ -128,21 +129,18 @@ done < <(env -0)
 
 # Add py_version
 sed -i "/local bp_home/c\local bp_home = \"${BP_HOME}\""                    ${BPS_MODULES}/benchpro/${BPS_VERSION}.lua
+sed -i "/local bp_repo/c\local bp_repo = \"${BP_REPO}\""                    ${BPS_MODULES}/benchpro/${BPS_VERSION}.lua
 sed -i "/local bp_apps/c\local bp_apps = \"${BP_APPS}\""                    ${BPS_MODULES}/benchpro/${BPS_VERSION}.lua
 sed -i "/local bp_results/c\local bp_results = \"${BP_RESULTS}\""           ${BPS_MODULES}/benchpro/${BPS_VERSION}.lua
 sed -i "/local py_version/c\local py_version = \"${PY_VERSION}\""           ${BPS_MODULES}/benchpro/${BPS_VERSION}.lua
 sed -i "/local bps_site/c\local bps_site = \"${BPS_HOME}\""                 ${BPS_MODULES}/benchpro/${BPS_VERSION}.lua
 
-chmod -R a+rX                                                               ${BPS_MODULES}
-chmod a+w                                                                   ${BP_REPO}
-chmod --silent g+r                                                          ${BP_REPO}/*
-setfacl -d -m group::rX,other::rX                                           ${BP_REPO}
-touch                                                                       ${BP_REPO}/.urllookup
-chmod a+rw                                                                  ${BP_REPO}/.urllookup
-
 printf "Done.\n"
 printf "\nLoading module...\n"
 
+chmod -R a+rX                                                               ${BPS_MODULES}
+
+ml unload benchpro
 ml use                                                                      ${BPS_MODULES}
 ml benchpro || quit "\nCan't load module\n"
 
