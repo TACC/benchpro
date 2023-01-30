@@ -2,19 +2,22 @@
 
 # DEV currently loaded
 if [[ $BP_DEV -eq 1 ]]; then
-    ml use /scratch1/hpc_tools/benchpro/modulefiles
-    ml unuse /scratch1/08780/benchpro/benchpro-dev/modulefiles
+    ml use      /scratch1/hpc_tools/benchpro/modulefiles
 # PROD currently loaded
 else
-    ml use /scratch1/08780/benchpro/benchpro-dev/modulefiles
-    ml unuse /scratch1/hpc_tools/benchpro/modulefiles
+    ml use      /scratch1/hpc_tools/benchpro-dev/modulefiles
 fi
 
 ml benchpro
 
+
+build="[PROD]"
+
+[[ $BP_DEV -eq 1 ]] && build="[DEV]"
+
 version=$BP_SITE_VERSION
 [[ -z "$BP_SITE_VERSION" ]] && version=$BPS_VERSION_STR
 
-echo "Switched to $version in $(which benchpro)"
+echo "Switched to ${version} ${build} in $(which benchpro)"
 
-exit 0
+return 0
