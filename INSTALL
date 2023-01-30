@@ -64,7 +64,7 @@ source $SOURCE_FILE
 [[ ${PIPESTATUS[0]} -ne 0 ]] && quit "\nCan't source ${SOURCE_FILE}\n"
 
 # Test that BPS_HOME is writable
-mkdir -p $BPS_HOME && printf "\nWe have write permission.\n" || quit "\nCan't write to ${BPS_HOME}\n" 
+mkdir -p $BPS_HOME && printf "\nWe have write permission to ${BPS_HOME}\n" || quit "\nCan't write to ${BPS_HOME}\n" 
 
 # Get path to SSH key - not stored in repo
 SSH_KEY=""
