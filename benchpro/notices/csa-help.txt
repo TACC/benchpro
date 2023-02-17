@@ -1,27 +1,3 @@
-Environment variables:
-
-User configurable:
------------------
-BP_HOME         = Top-level directory for user application and benchmark config & template files.
-BP_APPS         = Top-level directory for applications built with BenchPRO.
-BP_RESULTS      = Top-level directory for benchmarks run with BenchPRO.
-BP_BIN          = paths added to $PATH.
-BP_NOTICE       = [1]: print site notices, [0], ignore notices.
-BP_DEV          = [1]: use development release, [0]: use production.  
-BP_DEBUG        = same as "debug=" in $BP_HOME/settings.ini, turns on/off additional output
-BP_LOG          = 
-
-Site/static:
------------
-BPS_HOME        =  
-BPS_SYSTEM      = 
-BPS_COLLECT     =
-BPS_MODULES     =
-BPS_INC         =
-BPS_SYSTEM      =
-BPS_VERSION     =
-BPS_VERSION_STR =
-
 CSA group info (from TAS 08/01/2022):
 
 PROJECT NAME            TACC PI             SLURM_ACC   WORKING_GROUP       GID
