@@ -1,5 +1,13 @@
 #!/bin/env python3 
 
+#
+# BenchPRO - Stage
+# A little tool to download/copy (and cache) file assets for BenchPRO
+# Matthew Cawood
+# January 2023
+# v2.0
+
+
 import cgi
 import glob
 import logging

@@ -1,3 +1,11 @@
+#!/bin/env python3
+
+#
+# Notices
+# Stand alone notice printer for BenchPRO
+# Matthew Cawood
+# September 2022
+# v1.0
 
 import glob
 import os

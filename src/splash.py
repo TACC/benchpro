@@ -1,3 +1,11 @@
+#!/bin/env python3
+
+#
+# Splash screen printer
+# Prints BenchPRO header (if not in quiet mode)
+# Matthew Cawood
+# September 2021
+# v1.0
 
 import os
 import sys
