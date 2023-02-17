@@ -14,11 +14,13 @@ glob = None
 
 # Check if an existing installation exists
 def check_for_previous_install():
+
     install_path = glob.config['metadata']['working_path']
 
     # If existing installation is found
     if os.path.isdir(install_path):
         # Delete if overwrite=True
+
         if glob.stg['overwrite']:
 
             glob.lib.msg.warn(["It seems this app is already installed. Deleting old build in " +
@@ -186,12 +188,20 @@ def init(glob):
     # Set list of installed applications
     #glob.lib.set_installed_apps()
 
+    #print("glob.stg['curr_cfg_path']", glob.stg['curr_cfg_path'])
+    #print("glob.stg['build_cfg_path']", glob.stg['build_cfg_path'])
+
     # Get list of avail cfgs
     glob.lib.set_build_cfg_list()
 
+    #print("self.glob.build_cfgs", glob.build_cfgs)
+
     # Set generized paths
-    glob.stg['curr_tmpl_path'] = glob.stg['build_tmpl_path']
     glob.stg['curr_cfg_path'] = glob.stg['build_cfg_path']
+
+    #print("glob.stg['curr_cfg_path']", glob.stg['curr_cfg_path'])
+
+    glob.stg['curr_tmpl_path'] = glob.stg['build_tmpl_path']
 
     # Overload settings.ini with cmd line args
     glob.lib.overload.replace(None)

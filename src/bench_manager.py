@@ -20,9 +20,7 @@ def get_app_info():
 
     # Check if code is installed
 
-    
-
-    print("glob.config['requirements')", glob.config['requirements'])
+    #print("glob.config['requirements')", glob.config['requirements'])
 
     # If application is not installed, check if cfg file is available to build
     if not glob.lib.check_if_installed(glob.config['requirements']):
@@ -44,8 +42,8 @@ def get_app_info():
         else:
             glob.config['metadata']['build_running'] = True
 
-        print("glob.config['requirements')", glob.config['requirements'])
-        print("glob.lib.check_if_installed(glob.config['requirements'])", glob.lib.check_if_installed(glob.config['requirements']))
+        #print("glob.config['requirements')", glob.config['requirements'])
+        #print("glob.lib.check_if_installed(glob.config['requirements'])", glob.lib.check_if_installed(glob.config['requirements']))
 
         # Recheck that app is installed
         glob.config['metadata']['code_path'] = glob.lib.check_if_installed(glob.config['requirements'])['path']

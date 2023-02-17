@@ -14,9 +14,12 @@ import traceback
 # MODULE NOT LOADED
 def check_module_version():
 
-    sys_dict = { 'frontera' : "/scratch1/hpc_tools/benchpro/modulefiles",
-                 'stampede2': "/scratch/hpc_tools/benchpro/modulefiles",
-                 'ls6'      : "/scratch/projects/benchtool/modulefiles"
+    sys_dict = {'prod': {   'frontera' : "/scratch1/hpc_tools/benchpro/modulefiles",
+                            'stampede2': "/scratch/hpc_tools/benchpro/modulefiles",
+                            'ls6'      : "/scratch/projects/benchtool/modulefiles"},
+                'dev': {    'frontera' : "/scratch1/hpc_tools/benchpro-dev/modulefiles",
+                            'stampede2': "/scratch/hpc_tools/benchpro-dev/modulefiles",
+                            'ls6'      : "/scratch/projects/benchtool-dev/modulefiles"}
                 }
 
     mismatch = False
@@ -26,19 +29,18 @@ def check_module_version():
         mismatch = True
 
     mod_version = os.environ.get('BPS_VERSION')
-    required_version = "1.7.4"
+    required_version = "1.7.6"
     # Version mismatch
     if mod_version != required_version:
-        print("Version mismatch: yours=" + mod_version + ", site=" + required_version)
+        print("Version mismatch: yours=" + mod_version + ", site=" + required_version + ". Reload the module with:\n")
         mismatch = True
         
     if mismatch:
-        print("Reload the module with:")
         print("Development site:")
-        print("ml use /scratch1/08780/benchpro/benchpro-dev/modulefiles")
+        print("ml use " + sys_dict['dev'][os.environ.get('TACC_SYSTEM')])
         print()
         print("Production site:")
-        print("ml use " + sys_dict[os.environ.get('TACC_SYSTEM')])
+        print("ml use " + sys_dict['prod'][os.environ.get('TACC_SYSTEM')])
         print()
         print("ml benchpro")
         print()
@@ -312,7 +314,7 @@ def main():
     glob.args = args
 
     # Run validator checker, with --validate as 2nd arg. Forces if True
-    validator.check(glob, glob.args.validate) 
+    validator.check(glob) 
 
     # Start build manager
     if glob.args.build:

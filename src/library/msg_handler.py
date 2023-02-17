@@ -221,7 +221,7 @@ class init(object):
         col_chars = [0] * num_cols
         
 
-        chars_left = self.glob.scrn_width - 10
+        chars_left = self.glob.session['columns'] - 10
         max_col_chars = 25
         last_field_len = 0
 
@@ -241,6 +241,11 @@ class init(object):
 
         chars_left += last_field_len
         col_chars[-1] = max(5, min(col_len[-1], (chars_left+10))) #min(chars_left, col_len[-1]+15)
+
+
+        col_chars = [10, 10, 10, 10, 18, 12, 20]
+        tot_chars = sum(col_chars)
+        col_chars.append(self.glob.session['columns'] - tot_chars - 30)
 
         # Buffer each column 2 chars
         padding = [i + 2 for i in col_chars]

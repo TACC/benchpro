@@ -206,7 +206,7 @@ class init(object):
             # Disect search string into search dict
             for search_elem in arg.split("/"):
                 search_dict[search_elem] =  search_elem
-      
+     
         # Get installation directory from search dict
         app_dir = self.glob.lib.check_if_installed(search_dict)
         if not app_dir:
@@ -449,6 +449,9 @@ class init(object):
 
     # Print default params from settings.ini
     def print_defaults(self):
+
+        # Run overloads
+        self.glob.lib.overload.replace(None)
 
         # Print site info
         print("------------------------------------------------------")

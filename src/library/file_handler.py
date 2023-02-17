@@ -301,7 +301,10 @@ class init(object):
 
             # Add tar op to staged ops
             #if any(x in filename for x in ['tar', 'tgz', 'bgz']):
-            self.glob.stage_ops.append("stage " + file_name + " " + self.glob.config['metadata']['copy_path'])
+            if self.glob.stg['soft_links']:
+                self.glob.stage_ops.append("stage -ln " + file_name)
+            else:
+                self.glob.stage_ops.append("stage " + file_name)
             # Add cp op to staged ops
             #else:
             #    self.glob.stage_ops.append("cp -r " + file_path + " ${working_path}")
@@ -427,7 +430,13 @@ class init(object):
             for op in self.glob.config['files'].keys():
 
                 assets = self.glob.config['files'][op].split(',')
-                [self.glob.stage_ops.append("stage " + asset + " " + self.glob.config['metadata']['copy_path']) for asset in assets]
+
+                # Symlink assets
+                if self.glob.stg['soft_links']:
+                    [self.glob.stage_ops.append("stage -ln " + asset) for asset in assets]
+                else:
+                    [self.glob.stage_ops.append("stage " + asset) for asset in assets]
+
 
 #                # Copy local file [from BP_REPO or local path]
 #                if op == 'local':

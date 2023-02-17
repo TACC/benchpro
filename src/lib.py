@@ -267,14 +267,17 @@ class init(object):
 
     def find_matching_apps(self, search_dict):
         matching_apps = []
-        for installed_app_dict in self.glob.installed_apps_list:
-            match = True
 
-            for search_key in search_dict.keys():
-                if search_key in installed_app_dict.keys():
-                    if search_dict[search_key] and not str(search_dict[search_key]) == str(installed_app_dict[search_key]):
-                        match = False
-                        break
+
+        # Iterate over each installed application
+        for installed_app_dict in self.glob.installed_apps_list:
+
+            # Assume not a matching app
+            match = False
+
+            # If all values in search dict are present in app_dict, app is a match
+            if all(search_elem in installed_app_dict.values() for search_elem in search_dict.values()):
+                match = True
 
             if match:
                 matching_apps.append(installed_app_dict)
@@ -409,6 +412,8 @@ class init(object):
     # Parse all build cfg files into list
     def get_cfg_list(self, path_list):
 
+
+        #print("PATH LIST", path_list)
         cfg_list = []
 
         idx = 0

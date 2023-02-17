@@ -248,6 +248,7 @@ class init(object):
 
         self.glob.lib.overload.replace(cfg_dict['general'])
         self.glob.lib.overload.replace(cfg_dict['modules'])
+        self.glob.lib.overload.replace(cfg_dict['config'])
 
         # Process requested modules
         self.setup_module_dict(cfg_dict)

@@ -69,6 +69,10 @@ class setup(object):
     # List of paths to add to PATH
     paths                       = []
 
+    # Quit after validator
+    quit_after_val              = False
+
+
     # Report obj
     build_report                = None
     
@@ -110,6 +114,7 @@ class setup(object):
     user                        = os.path.expandvars("$USER")
     home                        = os.path.expandvars("$HOME")
     hostname                    = str(socket.gethostname())
+
     # If FQDN - take first 2 fields
     if ("." in hostname):
         hostname                = '.'.join(map(str, hostname.split('.')[0:2]))
@@ -194,7 +199,10 @@ class setup(object):
     def read_settings(self, settings_file, overload):
 
         settings_parser = self.read_ini(settings_file, not overload)
+
+        # If missing settings.ini file, run validator 
         if not settings_parser:
+            return
             print("FATAL: failed to read settings file " + settings_file)
             sys.exit(1)
 
@@ -224,6 +232,15 @@ class setup(object):
 
     # Use defined settings - overwrite the defaults
     def read_user_settings(self):
+
+        settings_file = os.path.join(self.ev['BP_HOME'], "settings.ini")
+
+        # Run validator if user settings.ini file is missing
+        if not os.path.isfile(settings_file):
+            self.args.validate = True
+            self.quit_after_val = True
+            return 
+
         self.read_settings(os.path.join(self.ev['BP_HOME'], "settings.ini"), True)
 
         # Create overload dict from settings.ini & --overload
@@ -288,7 +305,7 @@ class setup(object):
         try:
             self.session['columns'], self.session['rows'] = os.get_terminal_size()
         except:
-            self.session['columns'], self.session['rows'] = 0, 0
+            self.session['columns'], self.session['rows'] = 640, 480
 
     # Read suites.ini
     def read_suites(self):
