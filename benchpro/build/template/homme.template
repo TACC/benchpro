@@ -1,0 +1,8 @@
+
+cd homme
+ln -s Makefile.${make_label} Makefile.Linux
+
+make
+cd build*
+make -j ${threads}
+

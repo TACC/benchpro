@@ -1,0 +1,6 @@
+tar -xf qe-${version}
+cd q-e-qe-${version}
+
+./configure --prefix=${install_path} --enable-parallel --with-scalapack=intel --enable-openmp
+make -j ${threads} pw
+make install

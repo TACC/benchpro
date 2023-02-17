@@ -1,0 +1,27 @@
+
+cuda_str=""
+if [ ${build_label} == "cuda" ]; then
+    cuda_str="--with-cuda --cuda-prefix $TACC_CUDA_DIR"
+fi
+
+cd NAMD_${version}_Source
+tar -xf charm-* && mv charm-*/ charm
+cd charm
+./build charm++ mpi-linux-x86_64 smp mpicxx --with-production "-O3 -ip -xCORE-AVX512" -DCMK_OPTIMIZE -DMPICH_IGNORE_CXX_SEEK
+
+
+pwd
+cd ..
+pwd
+
+cp arch/Linux-KNL-icc.arch arch/Linux-AVX512-icc.arch
+cp arch/Linux-KNL.base arch/Linux-AVX512.base
+cp arch/Linux-KNL.mkl arch/Linux-AVX512.mkl
+
+sed -i 's/Linux-KNL/Linux-AVX512/g' arch/Linux-AVX512-icc.arch
+sed -i 's/MIC-AVX512/CORE-AVX512/g' arch/Linux-AVX512-icc.arch
+./config Linux-AVX512-icc --with-memopt $cuda_str --charm-base ./charm --charm-arch mpi-linux-x86_64-smp-mpicxx --with-mkl --without-tcl
+cd Linux-AVX512-icc
+make -j
+
+cp ${exe} ${install_path}

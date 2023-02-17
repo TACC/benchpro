@@ -1,0 +1,18 @@
+git clone https://github.com/SWIFTSIM/swiftsim.git
+cd swiftsim
+git checkout v${version}
+
+TACC_PARMETIS_DIR="$TACC_PARMETIS_LIB"
+if [ $TACC_SYSTEM == "stampede2" ]; then
+    TACC_PARMETIS_DIR="$(dirname "$TACC_PARMETIS_LIB")"
+elif [ $TACC_SYSTEM == "frontera" ]; then
+    TACC_PARMETIS_DIR="$(dirname "$TACC_PETSC_LIB")"
+fi
+
+./autogen.sh
+./configure --prefix=${install_path} --enable-mpi --enable-optimization=yes --enable-parallel-hdf5 \
+            --with-gsl=$TACC_GSL_DIR --with-fftw=$TACC_FFTW3_DIR --with-hdf5=$TACC_HDF5_BIN/h5pcc --with-metis=$TACC_METIS_DIR \
+			--with-parmetis=$TACC_PARMETIS_DIR --with-tbbmalloc --with-numa 
+
+make -j${threads}
+make install

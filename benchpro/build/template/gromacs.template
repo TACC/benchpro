@@ -1,0 +1,115 @@
+PKG_ROOT_DIR=${working_path}
+PKG_INSTALL_DIR=${install_path}
+PKG_SRC_FILE=gromacs-${version}
+
+rm ${PKG_SRC_FILE}.tar.gz
+cd ${PKG_SRC_FILE}
+
+mkdir -p ${PKG_INSTALL_DIR}/lib/python3.7/site-packages/
+export PYTHONPATH=${PKG_INSTALL_DIR}/lib/python3.7/site-packages/:$PYTHONPATH
+
+rm -rf g_single_serial
+mkdir g_single_serial
+cd g_single_serial
+
+env CC=icc CXX=icpc cmake .. \
+-DCMAKE_INSTALL_PREFIX=${PKG_INSTALL_DIR} \
+-DGMX_FFT_LIBRARY=fftw3 \
+-DFFTWF_LIBRARY="${TACC_FFTW3_LIB}/libfftw3f.so" \
+-DFFTWF_INCLUDE_DIR="${TACC_FFTW3_INC}" \
+-DGMX_X11=OFF \
+-DBUILD_SHARED_LIBS=OFF \
+-DGMX_PREFER_STATIC_LIBS=ON \
+-DGMX_BUILD_MDRUN_ONLY=OFF \
+-DGMX_MPI=OFF \
+-DGMX_OPENMP=OFF \
+-DGMX_OPENMP_MAX_THREADS=256 \
+-DGMX_XML=OFF \
+-DGMX_GPU=OFF \
+-DGMX_DOUBLE=OFF \
+-DGMX_SIMD=AVX_512 \
+-DGMX_SKIP_DEFAULT_CFLAGS=OFF \
+-DCMAKE_EXE_LINKER_FLAGS=" -mkl=sequential" \
+-DCMAKE_C_FLAGS="-O3 -g -diag-disable=cpu-dispatch " \
+-DCMAKE_CXX_FLAGS="-O3 -g -diag-disable=cpu-dispatch " \
+-DGMX_EXTERNAL_BOOST=OFF \
+-DGMX_BUILD_SHARED_EXE=OFF \
+-DGMX_DEFAULT_SUFFIX=ON
+
+make -j $threads
+make install
+
+# Single precision parallel version
+
+cd ..
+rm -rf g_single_parallel
+mkdir g_single_parallel
+cd g_single_parallel
+
+env CC=mpicc CXX=mpicxx cmake .. \
+-DCMAKE_INSTALL_PREFIX=${PKG_INSTALL_DIR} \
+-DGMX_FFT_LIBRARY=fftw3 \
+-DFFTWF_LIBRARY="${TACC_FFTW3_LIB}/libfftw3f.so" \
+-DFFTWF_INCLUDE_DIR="${TACC_FFTW3_INC}" \
+-DGMX_X11=OFF \
+-DBUILD_SHARED_LIBS=OFF \
+-DGMX_PREFER_STATIC_LIBS=ON \
+-DGMX_BUILD_MDRUN_ONLY=ON \
+-DGMX_MPI=ON \
+-DGMX_OPENMP=ON \
+-DGMX_OPENMP_MAX_THREADS=256 \
+-DGMX_GPU=OFF \
+-DGMX_XML=OFF \
+-DGMX_DOUBLE=OFF \
+-DGMX_SIMD=AVX_512 \
+-DGMX_SKIP_DEFAULT_CFLAGS=OFF \
+-DCMAKE_EXE_LINKER_FLAGS=" -mkl=sequential" \
+-DCMAKE_C_FLAGS="-O3 -g -diag-disable=cpu-dispatch " \
+-DCMAKE_CXX_FLAGS="-O3 -g -diag-disable=cpu-dispatch " \
+-DGMX_EXTERNAL_BOOST=OFF \
+-DGMX_BUILD_SHARED_EXE=OFF \
+-DGMX_DEFAULT_SUFFIX=OFF \
+-DGMX_BINARY_SUFFIX=_mpi \
+-DGMX_LIBS_SUFFIX=_mpi
+
+make -j $threads
+make install
+
+# Double precision MPI-enabled mdrun
+
+cd ..
+rm -rf g_double_parallel
+mkdir g_double_parallel
+cd g_double_parallel
+
+env CC=mpicc CXX=mpicxx cmake .. \
+-DCMAKE_INSTALL_PREFIX=${PKG_INSTALL_DIR} \
+-DGMX_FFT_LIBRARY=fftw3 \
+-DFFTWF_LIBRARY="${TACC_FFTW3_LIB}/libfftw3f.so" \
+-DFFTWF_INCLUDE_DIR="${TACC_FFTW3_INC}" \
+-DGMX_X11=OFF \
+-DBUILD_SHARED_LIBS=OFF \
+-DGMX_PREFER_STATIC_LIBS=ON \
+-DGMX_BUILD_MDRUN_ONLY=ON \
+-DGMX_MPI=ON \
+-DGMX_OPENMP=ON \
+-DGMX_OPENMP_MAX_THREADS=256 \
+-DGMX_GPU=OFF \
+-DGMX_XML=OFF \
+-DGMX_SIMD=AVX_512 \
+-DGMX_DOUBLE=ON \
+-DGMX_SOFTWARE_INVSQRT=OFF \
+-DGMX_SKIP_DEFAULT_CFLAGS=OFF \
+-DCMAKE_EXE_LINKER_FLAGS=" -mkl=sequential" \
+-DCMAKE_C_FLAGS="-O3 -g -diag-disable=cpu-dispatch " \
+-DCMAKE_CXX_FLAGS="-O3 -g -diag-disable=cpu-dispatch " \
+-DGMX_EXTERNAL_BOOST=OFF \
+-DGMX_BUILD_SHARED_EXE=OFF \
+-DGMX_DEFAULT_SUFFIX=OFF \
+-DGMX_BINARY_SUFFIX=_mpi_d \
+-DGMX_LIBS_SUFFIX=_mpi_d
+
+make -j $threads
+make install
+
+

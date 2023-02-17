@@ -1,0 +1,10 @@
+git clone https://github.com/netbench/GPCNET.git
+cd GPCNET
+git fetch --all --tags
+git checkout tags/v${version}
+git pull
+
+make all CC=${MPICC}
+
+cp network_test ${install_path}
+cp network_load_test ${install_path}

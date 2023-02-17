@@ -1,0 +1,9 @@
+
+cd stream
+
+sed -i "2s/$/ ${opt_flags}/" Makefile
+sed -i "5s/$/ ${opt_flags}/" Makefile
+
+make
+
+cp *.exe ${install_path}

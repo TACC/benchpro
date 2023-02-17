@@ -1,0 +1,137 @@
+export build_label=<<<build_label>>>
+export c_flags=<<<c_flags>>>
+export fc_flags=<<<fc_flags>>>
+export cxx_flags=<<<cxx_flags>>>
+
+builddir=${working_path}/specfem3d_globe-${version}
+datadir=${working_path}/specfem3d_globe_generalized_dataset
+
+# Compiler type
+config_comp=""
+if [[ "${compiler}" == *"intel"* ]]; then
+  config_comp="FC=ifort CC=icc CXX=icpc" 
+elif [[ "${compiler}" == *"gcc"* ]]; then
+  config_comp="FC=gfortran CC=gcc CXX=g++"
+else
+  echo "Unknown compiler type: ${compiler}"
+  exit -1
+fi
+
+# MPI type
+config_mpi=""
+if [[ "${mpi}" == *"impi"* ]]; then
+  config_mpi="MPIFC=mpiifort MPI_INC=$MPICH_HOME/intel64/include"
+elif [[ "${mpi}" == *"mvapich"* ]]; then
+  config_mpi="MPIFC=mpiifort MPI_INC=$MPICH_HOME/include"
+else
+  echo "Unknown MPI type: ${mpi}"
+  exit -1
+fi
+
+
+##################################################
+
+echo "running example: `date`"
+
+cd $datadir
+echo "directory: $datadir"
+echo
+
+# sets up directory structure in current example directoy
+echo
+echo "   setting up example..."
+echo
+
+mkdir -p DATABASES_MPI
+mkdir -p OUTPUT_FILES
+
+rm -rf DATABASES_MPI/*
+rm -rf OUTPUT_FILES/*
+
+# compiles executables in build directory
+# using default configuration
+
+cd $builddir
+
+# compiles for a forward simulation
+cp $datadir/DATA/Par_file DATA/Par_file
+
+# Modify the Parfile with benchmark MPI settings
+
+# Read NCHUNKS from Par_file
+nchunks=`sed -n -e '/^NCHUNKS/p' DATA/Par_file | cut -d '=' -f 2`
+
+ranks=`echo ${build_label} | cut -d '-' -f 2`
+
+echo "RANKS     = ${ranks}"
+echo "NCHUNKS   = ${nchunks}"
+
+ranks=$((${ranks} / ${nchunks}))
+
+xi=1
+eta=1
+
+# Get list of factors
+factors=$(factor ${ranks} | cut -d ':' -f 2)
+while :
+do
+  # Get largest factor
+  fact=$(echo $factors | rev | cut -d ' ' -f 1 | rev)
+  # Add fact to xi/eta
+  if [ ${xi} -le ${eta}  ]; then
+    xi=$((xi*$fact))
+  else
+    eta=$((eta*$fact))
+  fi
+  # Done last factor
+  if [ $(echo $factors | wc -w) -eq 1 ]; then
+      break
+  fi
+  # Remove largest factor from list
+  factors=$(echo $factors | rev | cut -d ' ' -f 2- | rev)
+done
+
+echo "NPROC_XI  = ${xi}"
+echo "NPROC_ETA = ${eta}"
+echo ""
+
+sed -i "/NCHUNKS/c\NCHUNKS                         = ${nchunks}" DATA/Par_file
+sed -i "/NPROC_XI/c\NPROC_XI                        = ${xi}" DATA/Par_file
+sed -i "/NPROC_ETA/c\NPROC_ETA                       = ${eta}" DATA/Par_file
+
+# Build CUDA + MPI
+if [ ! -z ${mpi} ] && [ ! -z ${cuda} ]; then
+  echo "y" | ./configure --with-cuda=cuda5 CUDA_LIB=$TACC_CUDA_DIR/lib64 CUDA_INC=$TACC_CUDA_DIR/include ${config_mpi} ${config_comp} CFLAGS="${c_flags}" FCFLAGS="${fc_flags}" CXXFLAGS="${cxx_flags}"
+  make clean
+  make all -j${threads}
+elif [ ! -z ${mpi} ]; then
+  echo "y" | ./configure ${config_mpi} ${config_comp} "${c_flags}" "${fc_flags}" "${cxx_flags}"
+  make clean
+  make all -j${threads}
+else
+  echo "y" | ./configure ${config_comp} "${c_flags}" "${fc_flags}" "${cxx_flags}"
+  make clean
+  make all -j${threads}
+fi
+
+# backup of constants setup
+cp setup/* $datadir/OUTPUT_FILES/
+cp DATA/Par_file $datadir/OUTPUT_FILES/
+
+cd $datadir
+
+# copy executables
+mkdir -p bin
+cp $builddir/bin/xmeshfem3D ./bin/
+cp $builddir/bin/xspecfem3D ./bin/
+
+# links data directories needed to run example in this current directory with s362ani
+cd DATA/
+ln -s $builddir/DATA/crust2.0
+ln -s $builddir/DATA/s362ani
+ln -s $builddir/DATA/QRFSI12
+ln -s $builddir/DATA/topo_bathy
+cd ../
+
+mkdir -p ${install_path}
+cp -r ${datadir}/* ${install_path}/
