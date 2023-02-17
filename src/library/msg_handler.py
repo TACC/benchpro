@@ -243,7 +243,7 @@ class init(object):
         col_chars[-1] = max(5, min(col_len[-1], (chars_left+10))) #min(chars_left, col_len[-1]+15)
 
 
-        col_chars = [10, 10, 10, 10, 18, 12, 20]
+        col_chars = [10, 10, 10, 10, 16, 14, 22]
         tot_chars = sum(col_chars)
         col_chars.append(self.glob.session['columns'] - tot_chars - 30)
 
