@@ -9,12 +9,12 @@ set() {
 
 # SETUP
 set BPS_SYSTEM      $TACC_SYSTEM
-set BPS_VERSION     "1.7.4"
-[[ -z BP_DEV ]] && set BP_DEV 1
+set BPS_VERSION "1.7.6"
+[[ -z $BP_DEV ]] && set BP_DEV 1
 set BUILD_HASH `echo $RANDOM | md5sum | head -c 8`
 
 # Enforce client re-validate with higher number
-set VALIDATOR_VER   "3"
+set VALIDATOR_VER   "4"
 
 set BUILD_DATE      "$(date +'%Y-%m-%d %H:%m:%S')"
 set BPS_VERSION_STR "${BPS_VERSION}-${BUILD_HASH}.${VALIDATOR_VER}"
@@ -66,7 +66,7 @@ set BPS_MODULES     "${BPS_HOME}/modulefiles"
 set BPS_BIN         "${BPS_HOME}/python/bin"
 
 today=`date +%Y-%m-%d_%H-%M-%S`
-set BP_LOG          "${BPS_HOME}/logs/build_${today}.log"
+set BPS_LOG         "${BPS_HOME}/logs/build_${today}.log"
 
 return 0
 

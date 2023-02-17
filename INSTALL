@@ -38,8 +38,8 @@ patch_wrapper() {
 
 # Install Python package and set group permissions
 install() {
-    python3 -m pip uninstall -y benchpro  &>> $BP_LOG
-    python3 setup.py install --prefix=${BPS_HOME}/python/ &>> $BP_LOG
+    python3 -m pip uninstall -y benchpro  &>> $BPS_LOG
+    python3 setup.py install --prefix=${BPS_HOME}/python/ &>> $BPS_LOG
 
     [[ ${PIPESTATUS[0]} -ne 0 ]] && quit "\nPackage installation failed\n"
     # Change group permissions
@@ -61,6 +61,7 @@ SRC_PATH=`pwd`
 SOURCE_FILE="$SRC_PATH/site.sh"
 printf "Reading ${SOURCE_FILE}...\n"
 source $SOURCE_FILE
+
 [[ ${PIPESTATUS[0]} -ne 0 ]] && quit "\nCan't source ${SOURCE_FILE}\n"
 
 # Test that BPS_HOME is writable
@@ -127,7 +128,8 @@ while IFS='=' read -r -d '' n v; do
     fi
 done < <(env -0)
 
-# Add py_version
+# Contextualize generic module file after install
+sed -i "/Version:/c\Version: ${BPS_VERSION} "                               ${BPS_MODULES}/benchpro/${BPS_VERSION}.lua
 sed -i "/local bp_home/c\local bp_home = \"${BP_HOME}\""                    ${BPS_MODULES}/benchpro/${BPS_VERSION}.lua
 sed -i "/local bp_repo/c\local bp_repo = \"${BP_REPO}\""                    ${BPS_MODULES}/benchpro/${BPS_VERSION}.lua
 sed -i "/local bp_apps/c\local bp_apps = \"${BP_APPS}\""                    ${BPS_MODULES}/benchpro/${BPS_VERSION}.lua
