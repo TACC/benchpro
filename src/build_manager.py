@@ -14,14 +14,16 @@ glob = None
 
 # Check if an existing installation exists
 def check_for_previous_install():
+
     install_path = glob.config['metadata']['working_path']
 
     # If existing installation is found
     if os.path.isdir(install_path):
         # Delete if overwrite=True
+
         if glob.stg['overwrite']:
 
-            glob.lib.msg.warning(["It seems this app is already installed. Deleting old build in " +
+            glob.lib.msg.warn(["It seems this app is already installed. Deleting old build in " +
                          glob.lib.rel_path(install_path) + " because 'overwrite=True'",
                          "\033[0;31mDeleting in 5 seconds...\033[0m"])
 
@@ -33,7 +35,7 @@ def check_for_previous_install():
             return False
         # Else warn and skip build
         else:
-            glob.lib.msg.warning("Application already installed.") 
+            glob.lib.msg.warn("Application already installed.") 
             glob.lib.msg.low(["Install path: " + glob.lib.rel_path(install_path),
                             "The install directory already exists and 'overwrite=False' in $BP_HOME/settings.ini"])
             glob.lib.msg.high("Skipping build.")
@@ -96,12 +98,13 @@ def build_code(input_dict, glob_copy):
 
     # Check for unused overload params (unless run from bench_manager)
     if not glob.quiet_build:
-        glob.lib.overload.check_for_unused()
+        glob.lib.overload.check_for_unused_overloads()
 
     # Apply system rules if not running locally
     if not glob.stg['build_mode'] == "local":
         glob.lib.expr.apply_system_rules()
 
+    glob.lib.msg.brk()
     # Print inputs to log
     glob.lib.send_inputs_to_log('Builder')
 
@@ -140,7 +143,6 @@ def build_code(input_dict, glob_copy):
     # Clean up tmp files
     glob.lib.files.cleanup([])
 
-    glob.lib.msg.brk()
     glob.lib.msg.high(glob.success)
 
     # If dry_run
@@ -183,12 +185,23 @@ def init(glob):
     # Init logger
     logger.start_logging("BUILD", glob.stg['build_log_file'] + "_" + glob.stg['time_str'] + ".log", glob)
 
+    # Set list of installed applications
+    #glob.lib.set_installed_apps()
+
+    #print("glob.stg['curr_cfg_path']", glob.stg['curr_cfg_path'])
+    #print("glob.stg['build_cfg_path']", glob.stg['build_cfg_path'])
+
     # Get list of avail cfgs
     glob.lib.set_build_cfg_list()
 
+    #print("self.glob.build_cfgs", glob.build_cfgs)
+
     # Set generized paths
-    glob.stg['curr_tmpl_path'] = glob.stg['build_tmpl_path']
     glob.stg['curr_cfg_path'] = glob.stg['build_cfg_path']
+
+    #print("glob.stg['curr_cfg_path']", glob.stg['curr_cfg_path'])
+
+    glob.stg['curr_tmpl_path'] = glob.stg['build_tmpl_path']
 
     # Overload settings.ini with cmd line args
     glob.lib.overload.replace(None)

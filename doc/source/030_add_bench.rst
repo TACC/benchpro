@@ -31,7 +31,7 @@ result
 where result collection parameters are defined.
 
 Any additional parameters may be defined in order to setup the benchmark, i.e dataset label, problem size variables etc.
-This file must be located in :code:`$BP_HOME/config/bench`, preferably with the naming scheme :code:`[label].cfg`.
+This file must be located in :code:`$BP_HOME/bench/config`, preferably with the naming scheme :code:`[label].cfg`.
 
 Benchmark template file
 -----------------------
@@ -39,7 +39,7 @@ Benchmark template file
 As with the build template. The benchmark template file is populated with the parameters defined in the config file above. This file should include setup of the dataset, any required pre-processing or domain decomposition steps if required, and the appropriate mpi_exec command.
 You are able to make use of the :code:`local_repo` variable defined in :code:`$BP_HOME/settings.ini` to copy local files.
 
-This file must be located in :code:`$BP_HOME/templates/bench`, with the naming scheme :code:`[label].template`.
+This file must be located in :code:`$BP_HOME/bench/templates`, with the naming scheme :code:`[label].template`.
 
 The benchmark added above would be run with the following command:
 

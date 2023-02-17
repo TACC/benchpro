@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+
+#
+# Script to swap between development and production installations of BenchPRO
+# Matthew Cawood
+# April 2022
+#
+
+# DEV currently loaded
+if [[ $BP_DEV -eq 1 ]]; then
+    ml use      /scratch1/hpc_tools/benchpro/modulefiles
+# PROD currently loaded
+else
+    ml use      /scratch1/hpc_tools/benchpro-dev/modulefiles
+fi
+
+ml benchpro
+
+
+build="[PROD]"
+
+[[ $BP_DEV -eq 1 ]] && build="[DEV]"
+
+version=$BP_SITE_VERSION
+[[ -z "$BP_SITE_VERSION" ]] && version=$BPS_VERSION_STR
+
+echo "Switched to ${version} ${build} in $(which benchpro)"
+
+return 0

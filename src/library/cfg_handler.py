@@ -27,7 +27,6 @@ class init(object):
     # Find matching config file given search criteria
     def search_cfg_with_dict(self, search_dict, avail_cfgs_list, blanks_are_wild):
 
-
         matching_cfgs = []
         # Iter over all avail cfg files
         for avail_cfgs in avail_cfgs_list:
@@ -81,14 +80,14 @@ class init(object):
 
         # If search input is a string, assume user input and search for cfg in various locations
 #        if isinstance(cfg_name, str):
-#            cfg_found = self.glob.lib.files.find_in([self.glob.stg['sys_cfg_path'],
+#            cfg_found = self.glob.lib.files.find_in([self.glob.stg['site_sys_cfg_path'],
 #                                                    self.glob.stg['sched_cfg_path'],
 #                                                    self.glob.ev['BP_HOME']],
 #                                                    cfg_name, True)
 #            if cfg_found:
 #               return cfg_found
 
-        search_path_list = [self.glob.stg['sys_cfg_path'],
+        search_path_list = [self.glob.stg['site_sys_cfg_path'],
                             self.glob.stg['sched_cfg_path'],
                             self.glob.ev['BP_HOME']]
 
@@ -143,14 +142,17 @@ class init(object):
 
         # Add key-values to overload dict
         for key in overloads:
-            self.glob.overload_dict[key] = str(overloads[key])
+            if key not in self.glob.overload_dict.keys():
+                self.glob.overload_dict[key] = str(overloads[key])
+            else:
+                self.glob.lib.msg.warn("ignoring duplicate overload '" + key + "=" + overloads[key] + "'")
 
         # Run overload search
         self.glob.lib.overload.replace(None)
 
     # Check if the additions file is findable
     def additions_file_location(self, additions_file):
-        return self.glob.lib.files.find_in([self.glob.stg['resource_path']], cfg_name, True)
+        return self.glob.lib.files.find_in([self.glob.stg['user_resource_path'], self.glob.stg['site_resource_path']], additions_file, True)
 
     # Generate module metadata from user input
     def setup_module_dict(self, cfg_dict):
@@ -189,11 +191,12 @@ class init(object):
             if key == "compiler":
                 self.glob.modules[key]['type'] =  self.glob.modules[key]['full'].split('/')[0]
                 self.glob.modules[key]['family'] = self.glob.modules[key]['full'].split('/')[0]
+                
 
                 # Add special version check: intel > 20: type += oneapi
-                if (self.glob.modules[key]['type'] == "intel") and (int(self.glob.modules[key]['version'].split('.')[0]) > 20):
-                    # Prioritize oneapi
-                    self.glob.modules[key]['type'] = "oneapi"
+#                if (self.glob.modules[key]['type'] == "intel") and (int(self.glob.modules[key]['version'].split('.')[0]) > 20):
+#                    # Prioritize oneapi
+#                    self.glob.modules[key]['type'] = "oneapi"
 
     # Check build config file and add required fields
     def process_build_cfg(self, cfg_dict):
@@ -223,11 +226,11 @@ class init(object):
         if not 'script_additions' in cfg_dict['config'].keys():    cfg_dict['config']['script_additions'] = ""
 
         # Add sections if missing
-        if not 'requirements'     in cfg_dict.keys():              cfg_dict['requirements'] = {}
-        if not 'runtime'          in cfg_dict.keys():              cfg_dict['runtime'] = {}
-        if not 'result'           in cfg_dict.keys():              cfg_dict['result'] = {}
-        if not 'files'            in cfg_dict.keys():              cfg_dict['files'] = {}
-        if not 'overload'         in cfg_dict.keys():              cfg_dict['overload'] = {}
+        if not 'requirements'     in cfg_dict.keys():              cfg_dict['requirements']     = {}
+        if not 'runtime'          in cfg_dict.keys():              cfg_dict['runtime']          = {}
+        if not 'result'           in cfg_dict.keys():              cfg_dict['result']           = {}
+        if not 'files'            in cfg_dict.keys():              cfg_dict['files']            = {}
+        if not 'overload'         in cfg_dict.keys():              cfg_dict['overload']         = {}
 
         # --- Apply defaults ---
 
@@ -241,9 +244,11 @@ class init(object):
         self.add_overloads(cfg_dict['overload'])
 
         # ------ Apply overloads -------
-        # Need to apply overloads before compiler parsing
+        # Need to apply specific overloads before compiler parsing
 
         self.glob.lib.overload.replace(cfg_dict['general'])
+        self.glob.lib.overload.replace(cfg_dict['modules'])
+        self.glob.lib.overload.replace(cfg_dict['config'])
 
         # Process requested modules
         self.setup_module_dict(cfg_dict)
@@ -268,7 +273,7 @@ class init(object):
             cfg_dict['config']['script_additions'] = self.additions_file_location(cfg_dict['config']['script_additions'])
 
         # Parse architecture defaults config file 
-        arch_file = os.path.join(self.glob.stg['sys_cfg_path'], self.glob.stg['arch_cfg_file'])
+        arch_file = os.path.join(self.glob.stg['site_sys_cfg_path'], self.glob.stg['arch_cfg_file'])
         arch_dict = self.glob.lib.files.read_cfg(arch_file)
 
         # Get core count for system
@@ -319,7 +324,7 @@ class init(object):
                                                                 cfg_dict['general']['code'], str(cfg_dict['general']['version']),
                                                                 cfg_dict['config']['build_label'])
 
-            cfg_dict['metadata']['working_path'] = os.path.join(self.glob.ev['BP_APPS'], 
+            cfg_dict['metadata']['working_path'] = os.path.join(self.glob.bp_apps[-1], 
                                                                 cfg_dict['metadata']['working_dir'])
 
         # Translate 'build_prefix' to 'working_path' for better readability
@@ -500,14 +505,15 @@ class init(object):
     # Check sched config file and add required fields
     def process_sched_cfg(self, cfg_dict):
         # Check for missing essential parameters
+        
         self.check_dict_section(cfg_dict['metadata']['cfg_file'], cfg_dict, 'sched')
         self.check_dict_key(    cfg_dict['metadata']['cfg_file'], cfg_dict, 'sched', 'type')
         self.check_dict_key(    cfg_dict['metadata']['cfg_file'], cfg_dict, 'sched', 'queue')
-        self.check_dict_key(    cfg_dict['metadata']['cfg_file'], cfg_dict, 'sched', 'account')
     
         # Instantiate missing optional parameters
-        if not 'reservation' in    cfg_dict['sched'].keys():   cfg_dict['sched']['reservation']   = ""
-   
+        if not 'slurm_account'  in    cfg_dict['sched'].keys():   cfg_dict['sched']['slurm_account']    = None
+        if not 'reservation' in    cfg_dict['sched'].keys():   cfg_dict['sched']['reservation']   = None
+
         self.glob.lib.overload.replace(cfg_dict)
         # Fill missing parameters
         if not cfg_dict['sched']['runtime']:
@@ -525,26 +531,26 @@ class init(object):
             cfg_dict = self.search_cfg_with_dict(search, self.glob.build_cfgs, True)
             self.glob.lib.msg.log("Starting build cfg processing.")
             self.process_build_cfg(cfg_dict)
-            self.glob.config = cfg_dict
+            self.glob.config.update(cfg_dict)
     
         # Process and store bench cfg 
         elif cfg_type == 'bench':
             cfg_dict = self.search_cfg_with_dict(search, self.glob.bench_cfgs, False)
             self.glob.lib.msg.log("Starting bench cfg processing.")
             self.process_bench_cfg(cfg_dict)
-            self.glob.config = cfg_dict
+            self.glob.config.update(cfg_dict)
     
         # Process and store sched cfg 
         elif cfg_type == 'sched':
-            cfg_file = self.glob.lib.files.find_in([self.glob.stg['sched_cfg_path']], search, True)
+            cfg_file = os.path.join(self.glob.stg['sched_cfg_path'], search)
             cfg_dict = self.glob.lib.files.read_cfg(cfg_file)
             self.glob.lib.msg.log("Starting sched cfg processing.")
             self.process_sched_cfg(cfg_dict)
-            self.glob.sched = cfg_dict
+            self.glob.sched.update(cfg_dict)
     
         # Process and store compiler cfg 
         elif cfg_type == 'compiler':
-            cfg_file = os.path.join(self.glob.stg['sys_cfg_path'], self.glob.stg['compile_cfg_file'])
+            cfg_file = os.path.join(self.glob.stg['site_sys_cfg_path'], self.glob.stg['compile_cfg_file'])
             cfg_dict = self.glob.lib.files.read_cfg(cfg_file)
             self.glob.compiler = cfg_dict
     

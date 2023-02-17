@@ -1,128 +1,346 @@
-#!/usr/bin/env bash
+#!/bin/env python3 
 
-# Executable utility to stage input files for BenchPRO during script execution
+#
+# BenchPRO - Stage
+# A little tool to download/copy (and cache) file assets for BenchPRO
 # Matthew Cawood
-# June 2022
+# January 2023
+# v2.0
 
-# Test inputs
-if [[ -z $1 ]]; then
-    echo "Invalid input."
-    exit 1
-fi
 
-DEST=`pwd`
-# Custom output dir
+import cgi
+import glob
+import logging
+import shutil
+import os
+import sys
+import tarfile
+import time
+from urllib.parse import urlparse
+from urllib.request import urlretrieve
+import zipfile
 
-if [ ! -z "$2" ]; then
-    DEST=$2
-fi 
+# arg[1] - mode [str: '-cp' or '-ln']
+# arg[2] - asset [str: filename or URL]
 
-ASSET=$1
-FILENAME="tmp"
-URL=""
+# Test args
+asset_label,mode = None, None
 
-REPO_SRC=$BP_REPO/$ASSET
-LOOKUP_FILE=$BP_REPO/.urllookup
+# Only file supplied
+if len(sys.argv) == 2:
+    mode = "-cp"
+    asset_label = sys.argv[1]
 
-function update_lookup() {
-    URL_MATCH=`grep $URL $LOOKUP_FILE`
-    # Add to lookup file if not present
-    if [[ -z $URL_MATCH ]]; then
-        echo "$URL $FILENAME" >> $LOOKUP_FILE
-    fi
-}
+# Mode and file supplied
+elif len(sys.argv) == 3:
+    mode = sys.argv[1]
+    if mode not in ['-cp', '-ln']:
+        print("Mode options: [cp,ln]. Provided: " + mode)
+        sys.exit(1)
+    asset_label = sys.argv[2]
+# Unsupported input
+else:
+    print("Invalid arguments")
+    sys.exit(1)
 
-function is_archive() { 
-    file $1 | grep -E 'compressed|tar archive' >> /dev/null && return 0 || return 1 
-}
+# Test $BP_REPO
+if not "BP_REPO" in os.environ:
+    print("$BP_REPO not set.")
+    sys.exit(1)
 
-function get_filename() {
-    FILENAME=`ls -rt . | tail -n 1`
-    SRC="`pwd`/$FILENAME"
-    DEST=$BP_REPO
-}
+cwd = os.getcwd()
+log_file=os.path.join(cwd,".stage.log")
+logging.basicConfig(filename=log_file, filemode='w', level=logging.DEBUG)
 
-function in_repo() {
-    # Matching filename
-    if [[ -f $1 ]] || [[ -d $1 ]]; then
-        FILENAME=$ASSET
-        return 0
-    else
-        # Martching URL in .urllookup
-        URL=$ASSET
-        URL_MATCH=`grep $URL $LOOKUP_FILE`
-        # In .urllookup
-        if [[ ! -z $URL_MATCH ]]; then
-            # Unconfirm filename of asset
-            NEW_FILENAME=`echo $URL_MATCH | cut -d ' ' -f 2`
-            if [[ -f "$BP_REPO/$NEW_FILENAME" ]]; then
-                echo "Found '$NEW_FILENAME' cached in the local repository (\$BP_REPO)"
-                # Confirmed - file exists
-                FILENAME=$NEW_FILENAME
-                REPO_SRC=$BP_REPO/$FILENAME
-                return 0
-            else
-                echo "Removing stale entry '$URL_MATCH' from \$BP_REPO/.urllookup"               
-                sed -i "/$URL/d" $LOOKUP_FILE
-                return 1
-            fi
-        fi
-        return 1
-    fi
-}
+repo_path = os.path.join(os.environ["BP_REPO"], "")
+lookup_file = os.path.join(repo_path, ".urllookup")
 
-function copy_asset() { 
-    echo "Copying asset '$1' to $2"
-    echo "$1 $2 $3"
-    if [[ -f ${2}/${3} ]]; then
-        echo "Skipping copy, already present."
-        return 1
-    else
-        echo "cp -r $1 $2/"
-        cp -r $1 $2/ 
-        return 0
-    fi
-}
+extensions = [".tgz", ".tar.gz", ".tar.bz", ".tar.bz2", ".tar"]
 
-function move_asset() {
-    echo "Moving asset '$1' to $2"
-    if [[ -f $2/$3 ]]; then
-        echo "Skipping move, already present."
-        return 1
-    else
-        mv $1 $2/
-        return 0
-    fi
-}
+repo_path = os.path.join(os.environ["BP_REPO"], "")
 
-function untar_asset() { 
-    echo "Extracting asset '$1' to $2"
-    tar -xzf $1 -C $2/ 
-}
+# Create lookup file if missing
+if not os.path.isfile(lookup_file):
+    fp = open(lookup_file, 'x')
+    logging.debug("Missing " + lookup_file + ". Creating.")
+    fp.close()
 
-function get_asset() { 
-    (is_archive $1) && untar_asset $1 $2 || copy_asset $1 $2 $3
-}
+# Check if asset is in lookup file
+# Takes: asset_url [str]
+# Returns: asset_path [str] or False
+def check_in_lookup_file(asset_url):
 
-function download_asset() {
-    echo "Downloadling asset '$1' to $2"
-    gdown $1 --quiet
-}
+    if os.path.isfile(lookup_file):
+        logging.debug("Looking for " + asset_url + " entry in $BP_REPO/.urllookup")
+        with open(lookup_file) as fp:
+            for line in fp.readlines():
+                asset_label = line.split(" ")[1]
+                # Asset label find in line
+                # Match in urllookup
+                if asset_url == asset_label:
+                    # Get filename
+                    # Conver to path
+                    asset_path = os.path.join(repo_path, asset_label)
+                    logging.debug("Found in urllookup: " + asset_label)
+                    return asset_path
+    # Not found
+    logging.debug("Not found.")
+    return False
 
-# 1. If not present, fetch to $BP_REPO
-if ! in_repo $REPO_SRC; then
-    download_asset $ASSET $DEST
-    # Check asset filename
-    get_filename
-    # Extract
-    if (is_archive $SRC ); then
-        untar_asset $SRC . 
-    fi
-    move_asset $SRC $DEST $FILENAME
-    update_lookup
+# Check if asset label is found in local repository
+# Takes: asset_label [str], either filename or URL
+# Returns: asset_path [str] or False
+def find_asset(asset_label):
 
-# 2. Copy from repo
-else
-    get_asset $REPO_SRC $DEST $ASSET
-fi    
-exit 0
+    # 1. Input is file path
+    if os.path.isfile(asset_label):
+        logging.debug(asset_label + " is a valid file path.") 
+        return asset_label
+
+    logging.debug(asset_label + " isn't a valid file path.")
+    asset_path = None
+
+    # 2. Check if filename in repo
+    logging.debug("Looking for '" + asset_label + "' in $BP_REPO")
+    asset_path = os.path.join(repo_path, asset_label)
+    # Found in repo
+    if os.path.isfile(asset_path) or os.path.isdir(asset_path):
+        logging.debug("Found in repo: " + asset_path)
+        return asset_path
+
+    logging.debug("Not found.")
+
+    # 3. Check if URL in lookup file
+    asset_path = check_in_lookup_file(asset_label)
+    # Found in lookup
+    if asset_path:
+        # File exists
+        if os.path.isfile(asset_path):
+            logging.debug("Asset found at " + asset_path)
+            return asset_path
+
+    # Not Found in lookup
+    logging.debug("Asset not in repo.")
+    return False
+
+# Get filename from URL
+# Takes: asset_url [str]
+# Returns: filename [str]
+def get_filename_from_url(asset_url):
+    try:
+        parsed = urlparse(asset_url)
+        filename = os.path.basename(parsed.path)
+
+        # Extracted name doesn't appear to be a file
+        if not "." in filename:
+            raise
+
+        logging.debug(asset_url + " -> " + filename)
+        return filename
+    except:
+        logging.debug("Couldn't infer filename from " + asset_url)
+        return False
+
+# Update the .urllookup file with asset record, if not already present
+# Takes: asset_url [str]
+#        asset_path [str]
+def update_lookup(asset_url, asset_path):
+
+    asset_file = os.path.basename(asset_path)
+
+    # If asset_label already in lookup file, skip add
+    with open(lookup_file) as fp:
+        if asset_file in fp.read():
+            logging.debug(asset_file + " already in " + lookup_file)
+            return
+
+    # Add lookup
+    with open(lookup_file, 'a') as fp:
+        fp.write(time.strftime("%Y/%m/%d-%H:%M") + " " + asset_file + " " + asset_url + "\n")
+        logging.debug("Added " + asset_file + " to " + lookup_file)
+
+# Find most recent file in directory
+def get_latest(path):
+    file_list = glob.glob(path+'/*')
+    return max(file_list, key=os.path.getctime)
+
+# Fetch asset URL 
+# Takes: asset_url [str]
+# Returns: asset_path [str]
+def download_asset(asset_url):
+
+    try:
+        # Download
+        asset_path = os.path.join(repo_path, asset_url.split('/')[-1])
+        urlretrieve(asset_url, asset_path)
+
+    except:
+        logging.error("Failed to download " + asset_url)
+        print("Failed to stage", asset_url)
+        sys.exit(1)
+
+    logging.info("Downloaded " + asset_url + " to " + repo_path)
+
+    # Find downloaded file
+    logging.debug("Download file: " + asset_path)
+
+    # Add to download lookup table
+    update_lookup(asset_url, asset_path) 
+
+    return asset_path
+
+# Check if asset file is an archive
+def is_archive(asset_path):
+    if tarfile.is_tarfile(asset_path) or zipfile.is_zipfile(asset_path):
+        logging.debug("Asset is archive")
+        return True
+    logging.debug("Asset is not archive")
+    return False
+
+# Remove supported file extension from filename
+def strip_ext(filename):
+    # Check if extension in filename
+    for ext in extensions:
+        if filename.endswith(ext):
+            # Strip extension and return filename
+            stripped = filename.replace(ext, "")
+            logging.debug("Stripped: " + filename + " -> " + stripped)
+            return filename.replace(ext, "")
+
+    # Not matching extension found
+    return filename
+
+# Extract asset if its archive
+# Takes: asset_path [str]
+#        target_path [str]
+def extract_asset(asset_path, asset_file, target_path):
+
+    # For symlink mode, next extracted files under archive name (handle multiple top-level files)
+    if mode == "-ln":
+        target_path = os.path.join(target_path, asset_file, "")
+
+        # If extracted dir already exists, assume extraction already complete, return list of top-level files inside dir
+        if os.path.isdir(target_path):
+            logging.debug("Skipping extract, file already exists: " + target_path)
+            return glob.glob(os.path.join(target_path, "*"))
+    
+    # a. tar file
+    if tarfile.is_tarfile(asset_path):
+        with tarfile.open(asset_path) as zip:
+            zip.extractall(target_path)
+            logging.debug("Extracted " + asset_path + " to" + target_path)
+            return [get_latest(os.path.dirname(target_path))]
+
+    # b. zip file
+    elif zipfile.is_zipfile(asset_path):
+        with zipfile.ZipFile(asset_path, 'r') as zip:
+            zip.extractall(target_path)
+            logging.debug("Extracted " + asset_path + " to" + target_path)
+            return [get_latest(os.path.dirname(target_path))]
+
+    # Not an archive
+    return None
+
+# Copy asset
+# Takes: asset_path [str]
+#        target_path [str]
+def copy_asset(asset_path, asset_file, target_path):
+
+    target = os.path.join(target_path, asset_file)
+
+    # File already exists at dest
+    if os.path.isfile(target) or os.path.isdir(target):
+        logging.error("Skipping copy, dest already exists")
+        return
+
+    # If asset is archive, extract to target
+    if is_archive(asset_path):
+        f = extract_asset(asset_path, asset_file, target_path)
+        return
+
+    # Else copy
+    # File
+    if os.path.isfile(asset_path):
+        logging.debug("Copying file " + asset_path + " to " + target)
+        shutil.copy(asset_path, target)
+    # Directory
+    else:
+        logging.debug("Copying directory " + asset_path + " to " + target)
+        shutil.copytree(asset_path, target)
+
+    logging.debug("Done.")
+
+# Create symlink
+# Takes: asset_path [str]
+#        target_path [str]
+def link_asset(asset_path, asset_file, target_path):
+
+    asset_paths = []
+    extract_path = os.path.join(repo_path, asset_file, "")
+
+    # Asset is an archive
+    if is_archive(asset_path):
+        # Extract to repo
+        asset_paths = extract_asset(asset_path, asset_file, repo_path)
+    # Asset is a file
+    else:
+        asset_paths = [asset_path]
+
+    # Iterate over top-level archive files/dirs and create symlinks to target path
+    for asset_path in asset_paths:
+
+        asset_file = os.path.basename(asset_path)
+        target = os.path.join(target_path, asset_file)
+        logging.info("Linking: " + asset_path + " to " + target)
+
+        # Test file doesn't already exist in target dir
+        if not os.path.isfile(target) and not os.path.isdir(target):
+            os.symlink(asset_path, target)
+            logging.debug("Done")
+        else:
+            logging.debug("Skipping link, dest already exists")
+
+# Delete file
+def clean_file(target):
+    logging.debug("Deleting " + target)
+    #os.remove(target)
+
+# ------------------------
+# 1. Identify asset
+# ------------------------
+logging.info("=====IDENTIFY=====")
+
+# 1.a Look for asset
+asset_path = find_asset(asset_label)
+
+# 1.b Not found, try with URL filename
+if not asset_path:
+    url_filename = get_filename_from_url(asset_label)
+    if url_filename:
+        asset_path = find_asset(url_filename)
+
+# ------------------------
+# 2.  Download asset (if not found)
+# ------------------------
+
+if not asset_path:
+    logging.info("=====DOWNLOAD=====")
+    # 2.a Download
+    asset_path = download_asset(asset_label)
+
+# -------------------------
+# 3. Stage asset
+# -------------------------
+logging.info("=====STAGE=====")
+
+asset_file_ext = os.path.basename(asset_path)
+asset_file = strip_ext(asset_file_ext)
+
+target_path = os.path.join(cwd, "")
+
+if mode == "-cp":
+#    extract_asset(asset_path, cwd)
+    copy_asset(asset_path, asset_file, target_path)
+else:
+    link_asset(asset_path, asset_file, target_path)
+

@@ -26,7 +26,7 @@ ml python3
 ```
 git clone https://github.com/TACC/benchpro-site.git
 cd benchpro-site
-./install.sh [key]
+./INSTALL [key]
 ```
 
 You can optionally provide an SSH private key for authentication to the database server, if no key is provided the default user key will be used. The installation script will perform a number of checks during installation to assist in troubleshooting if errors arise. By default, the installation script will limit access to the package directory to current unix group (G-25072 on TACC systems).
@@ -41,7 +41,7 @@ The user files repository was installed as part of the process described above f
 
 ### Version Control
 
-The user repository version number in $BP_HOME/.version is tested against the package version number $BPS_SITE_VERSION to ensure compatibility between the two repositories. If users are running an old version, they will be prompted to update when using the utility. If changes are made to this repository, the version should be updated with the provided script:
+The user repository version number in $BP_HOME/.version is tested against the package version number $BPS_HOME_VERSION to ensure compatibility between the two repositories. If users are running an old version, they will be prompted to update when using the utility. If changes are made to this repository, the version should be updated with the provided script:
 ```
 ./dev/version.sh [x.y.z]
 ```

@@ -37,21 +37,30 @@ class init(object):
     # Get list of default modules
     def set_default_module_list(self, module_use):
 
+        # Cast to list for appending
+        module_path_list = []
+        # from cfg
+        if module_use: 
+            module_path_list = [module_use]
+
+        # from bp_site.modulefiles
+        module_path_list += [self.glob.ev['BPS_MODULES']]        
+
+        # From bp_home/modulefiles
         if os.path.isdir(self.glob.stg['user_mod_path']):
-            module_use += [self.glob.stg['user_mod_path']] 
+            module_path_list += [self.glob.stg['user_mod_path']] 
 
         # Append 'module use' elements to MODULEPATH, support comma delimited list of paths
-        if module_use:
-            for module in module_use.split(","):
-                module_path = module.strip()
-                if not os.path.isdir(module_path):
-                    self.glob.lib.msg.warning("ml use path not found: " + module_path)
+        for module in module_path_list:
+            module_path = module.strip()
+            if not os.path.isdir(module_path):
+                self.glob.lib.msg.warn("ml use path not found: " + module_path)
 
-                os.environ["MODULEPATH"] = module_use + ":" + os.environ["MODULEPATH"]
+            # Append to $MODULEPATH
+            os.environ["MODULEPATH"] = module_path + ":" + os.environ["MODULEPATH"]
 
-
+        # Set default system modules
         self.glob.default_module_list = self.lmod_query(['-t', '-d', 'av']).split("\n")
-
 
     # Gets full module name of default module, eg: 'intel' -> 'intel/18.0.2'
     def get_full_mod_name(self, module):
@@ -90,7 +99,7 @@ class init(object):
         if os.path.isfile(os.path.join(mod_path, mod_file)):
 
             if self.glob.stg['overwrite']:
-                self.glob.lib.msg.warning("Deleting old module in " + self.glob.lib.rel_path(mod_path) +
+                self.glob.lib.msg.warn("Deleting old module in " + self.glob.lib.rel_path(mod_path) +
                                                 " because 'overwrite=True' in $BP_HOME/settings.ini")
                 su.rmtree(mod_path)
                 os.makedirs(mod_path)
@@ -156,9 +165,9 @@ class init(object):
 
     # Write module to file
     def write_mod_file(self, module, tmp_mod_file):
-        with open(tmp_mod_file, "w") as f:
+        with open(tmp_mod_file, "w") as fp:
             for line in mod_obj:
-                f.write(line)
+                fp.write(line)
 
 
     # Make module for compiled appliation

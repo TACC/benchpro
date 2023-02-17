@@ -12,33 +12,43 @@ import sys
 import traceback
 
 # MODULE NOT LOADED
-def check_module_loaded():
-    if not os.environ.get("BPS_SITE"):
-        print("It seems the benchpro module is not loaded.")
-        sys_dict = { 'frontera' : "/scratch1/hpc_tools/benchpro/modulefiles",
-                     'stampede2': "/scratch/hpc_tools/benchpro/modulefiles",
-                     'ls6'      : "/scratch/projects/benchtool/modulefiles"
+def check_module_version():
+
+    sys_dict = {'prod': {   'frontera' : "/scratch1/hpc_tools/benchpro/modulefiles",
+                            'stampede2': "/scratch/hpc_tools/benchpro/modulefiles",
+                            'ls6'      : "/scratch/projects/benchtool/modulefiles"},
+                'dev': {    'frontera' : "/scratch1/hpc_tools/benchpro-dev/modulefiles",
+                            'stampede2': "/scratch/hpc_tools/benchpro-dev/modulefiles",
+                            'ls6'      : "/scratch/projects/benchtool-dev/modulefiles"}
                 }
-        if os.environ.get('TACC_SYSTEM') in sys_dict:
-            print("Load with:")
-            print("ml use " + sys_dict[os.environ.get('TACC_SYSTEM')])
-            print("ml benchpro")
-        else:
-            print("This system doesn't look familiar, contact support to get the BenchPRO module path.")
+
+    mismatch = False
+    # Not loaded
+    if not os.environ.get("BPS_HOME"):
+        print("It seems the benchpro module is not loaded.")
+        mismatch = True
+
+    mod_version = os.environ.get('BPS_VERSION')
+    required_version = "1.7.6"
+    # Version mismatch
+    if mod_version != required_version:
+        print("Version mismatch: yours=" + mod_version + ", site=" + required_version + ". Reload the module with:\n")
+        mismatch = True
+        
+    if mismatch:
+        print("Development site:")
+        print("ml use " + sys_dict['dev'][os.environ.get('TACC_SYSTEM')])
+        print()
+        print("Production site:")
+        print("ml use " + sys_dict['prod'][os.environ.get('TACC_SYSTEM')])
+        print()
+        print("ml benchpro")
         print()
         print("HINT: You can load BenchPRO automatically next time by adding it to your default module collection:")
         print("ml save")
         sys.exit(1)
 
-check_module_loaded()
-
-# Print urgent (terminating) and non-urgent messages
-import src.notices as notices
-
-# VERSION MISMATCH
-if os.environ.get("BPS_VERSION") != "1.6.0":
-    print("Please ml the newest benchpro module (1.6.0)")
-    sys.exit(1)
+check_module_version()
 
 # Synchronize the user's benchpro repo with this site version
 #import src.sync_handler     as sync
@@ -49,6 +59,7 @@ try:
     import src.bench_manager    as bench_manager
     import src.build_manager    as build_manager
     import src.global_settings  as global_settings
+    import src.notices          as notices
     import src.result_manager   as result_manager
     import src.splash           as splash
     import src.validator        as validator
@@ -71,10 +82,10 @@ def catch_major_exception(glob, e):
         sys.exit(1)
 
     if not glob.stg['debug']:
-        print()
+
         print("It appears something has gone wrong!")
         print(e)
-        print()
+
         if glob.log:
             glob.log.debug(traceback.format_exc())
             print("Traceback written to log.")
@@ -90,6 +101,7 @@ def catch_major_exception(glob, e):
 # Get cmdline arguments
 def get_arguments():
 
+
     # Parse cmdline args
     cmd_parser = argparse.ArgumentParser(
         description='This is a benchmarking tool to automate the installation of applications, \
@@ -100,6 +112,18 @@ def get_arguments():
         default=False,
         action='store_true',
         help="Forcibly delete multiple applications/benchmarks meeting your selection criteria.")
+
+    cmd_parser.add_argument(
+        "--notices",
+        default=False,
+        action='store_true',
+        help="Print notices and quit.")
+
+    cmd_parser.add_argument(
+        "--env",
+        default=False,
+        action='store_true',
+        help="Print environment variables and quit.")
 
     cmd_parser.add_argument(
         "--settings",
@@ -237,7 +261,7 @@ def get_arguments():
         "--purge",
         default=False,
         action='store_true',
-        help="Delete all local user files, forever (!)")
+        help="Delete all local user files, forever(!). Do not use this unless you know what you are doing.")
 
     cmd_parser.add_argument(
         "-V",
@@ -255,8 +279,7 @@ def get_arguments():
 
     return cmd_parser.parse_args()
 
-
-# 
+#  
 def init_glob():
     # Init global object
     glob = global_settings.setup(get_arguments())
@@ -267,29 +290,16 @@ def main():
     glob = None
     args = get_arguments()
 
-    # This is dumb
-    if args.avail == "None" \
-    and not args.bench \
-    and not args.build \
-    and not args.capture \
-    and not args.clean \
-    and not args.dbApp \
-    and args.dbResult != "None" \
-    and not args.defaults \
-    and not args.delApp \
-    and not args.delResult \
-    and not args.history \
-    and args.last != "None" \
-    and not args.listApps \
-    and args.listResults != "None" \
-    and not args.purge \
-    and not args.queryApp \
-    and not args.queryResult \
-    and not args.validate \
-    and not args.version:
-        notices.print_notices()    
-        sys.exit(0)
+    if args.notices:
+        notices.print_notices(False, True)
 
+    # No input = print notice
+    no_input = True
+    for key in args.__dict__:
+        if args.__dict__[key]:
+            no_input = False
+    if no_input:    
+        notices.info()
 
     # Set default for sched input
     args.sched = "system"
@@ -304,7 +314,7 @@ def main():
     glob.args = args
 
     # Run validator checker, with --validate as 2nd arg. Forces if True
-    validator.check(glob, glob.args.validate) 
+    validator.check(glob) 
 
     # Start build manager
     if glob.args.build:
@@ -336,12 +346,15 @@ def main():
     # Print defaults settings
     elif glob.args.defaults:
         glob.lib.misc.print_defaults()
+    # Print BP_ and BPS_ EVs
+    elif glob.args.env:
+        glob.lib.misc.print_env()
     # Show available and exit
     elif glob.args.avail:
         glob.lib.misc.show_available()
     # Remove installation and exit
     elif glob.args.delApp:
-        glob.lib.misc.remove_app()
+        glob.lib.misc.remove_app(None)
     # Query installation and exit
     elif glob.args.queryApp:
         glob.lib.misc.query_app(glob.args.queryApp)
@@ -365,11 +378,23 @@ def main():
         result_manager.remove_result(glob)
     # Purge user files 
     elif glob.args.purge:
-        glob.lib.files.purge()
+        #glob.lib.files.purge()
+        print("Purge disabled for now...")
+        sys.exit(0)
     elif glob.args.version:
         glob.lib.misc.print_version()
     elif glob.args.last:
         glob.lib.misc.print_last()
+
+    #Print notices
+    elif glob.args.notices:
+        notices.print_notices(False, True)
+
+    elif not glob.args.validate:
+        notices.print_notices(False, False)
+
+    # Need to hit this one day...
+    return 0
 
 if __name__ == "__main__":
     sys.exit(main())

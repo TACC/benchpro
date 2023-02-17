@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
 
+#
+# Validator
+# Script to run user init - setup user files and directories for BenchPRO
+# Matthew Cawood
+# July 2022
+# v3.0
+
 # System Imports
 import configparser as cp
 import grp
@@ -47,6 +54,17 @@ def create_path(path):
     except BaseException:
         print(bcolors.FAIL, "cannot create", path)
         sys.exit(1)
+
+
+def create_file(f):
+    try:
+        fp = open(f, 'x')
+        fp.close()
+        print(bcolors.CREATE, f)
+    except BaseException:
+        print(bcolors.FAIL, "cannot create", f)
+        sys.exit(1)
+
 
 # Check that the user belongs to the 'gid' they provided 
 def check_group_membership():
@@ -109,6 +127,7 @@ def give_group_access(path_list):
 # Set perms on output dirs
 def set_permissions(path_list):
     if glob.stg['set_gid']:
+#        print("path_list", path_list)
         for path in path_list:
             chgrp(path, glob.stg['gid'])
             sticky_bit(path)
@@ -124,12 +143,20 @@ def confirm_path_exists(path_list):
 
         if path[0:2] == "./":
             path = os.path.join(glob.ev['BP_HOME'], path[2:])
-            print("path", path)
-            sys.exit(1)
+#            print("path", path)
+#            sys.exit(1)
         if not os.path.isdir(path):
             create_path(path)
         else:
             print(bcolors.PASS, path, "found")
+
+def confirm_file_exists(file_list):
+    for f in file_list:
+        if not os.path.isfile(f):
+            create_file(f)
+        else:
+            print(bcolors.PASS, f, "found")
+
 
 # Test if path exists
 def ensure_path_exists(path_list):
@@ -160,7 +187,7 @@ def check_exe(exe_list):
 # Test environment variable is set
 def check_env_vars(var_list):
     for var in var_list:
-        if os.environ.get(var):
+        if os.environ.get(var.strip("$")):
             print(bcolors.PASS, var, "is set")
         else:
             print(bcolors.FAIL, var, "not set")
@@ -267,33 +294,29 @@ def run():
     # Python version
     check_python_version()
 
-
     # Check benchpro version
     #check_benchpro_version(glob)
 
     # Sys envs
-    home_env   = glob.stg['home_env'].strip("$")
-    site_env    = glob.stg['site_env'].strip("$")
-    apps_env    = glob.stg['apps_env'].strip("$")
-    results_env = glob.stg['results_env'].strip("$")
-    system_env = glob.stg['system_env'].strip("$")
 
     # check EVs set
-    check_env_vars([home_env,
-                    site_env,
-                    apps_env,
-                    results_env,
-                    system_env,
+    check_env_vars([glob.stg['home_env'],
+                    glob.stg['repo_env'],
+                    glob.stg['site_env'],
+                    glob.stg['apps_env'],
+                    glob.stg['results_env'],
+                    glob.stg['system_env'],
                     'BPS_VERSION',
                     'LMOD_VERSION'])
 
     # Check priv
 
     # Check group memebership
-    check_group_membership()
+    #check_group_membership()
 
     # Check paths
     confirm_path_exists([glob.ev['BP_HOME'],
+                        glob.ev['BP_REPO'],
                         glob.ev['BP_APPS'],
                         glob.ev['BP_RESULTS'],
                         glob.stg['build_tmpl_path'],
@@ -301,11 +324,16 @@ def run():
                         glob.stg['bench_tmpl_path'],
                         glob.stg['bench_cfg_path'],
                         glob.stg['user_bin_path'],
-                        glob.stg['resource_path'],
+                        glob.stg['user_resource_path'],
                         glob.stg['log_path'],
                         glob.stg['pending_path'],
                         glob.stg['captured_path'],
                         glob.stg['failed_path']])
+
+
+    confirm_file_exists([os.path.join(glob.ev['BP_HOME'], "settings.ini")]
+                        )
+
 
     # Check user write access
     check_write_priv([glob.ev['BP_HOME'],
@@ -318,12 +346,11 @@ def run():
                        glob.ev['BP_RESULTS']])
 
     # Set perms
-    set_permissions([glob.ev['BP_APPS'],
-                     glob.ev['BP_RESULTS']])
+#    set_permissions([glob.ev['BP_APPS'],
+#                     glob.ev['BP_RESULTS']])
 
     # Error if dir not found
-    ensure_path_exists([glob.ev['BPS_SITE'],
-                        glob.ev['BP_REPO'],
+    ensure_path_exists([glob.ev['BPS_HOME'],
                         glob.ev['BPS_COLLECT']])
 
     # Check exe
@@ -342,14 +369,13 @@ def run():
     with open(os.path.join(glob.ev['BP_HOME'], ".validated"), 'w') as val:
         val.write(os.environ.get("BPS_VERSION_STR").split(".")[-1])
     print("Done.")
-    return
 
 # Test if our validation is out to date
 def we_need_to_validate():
     if os.path.isfile(os.path.join(glob.ev['BP_HOME'], ".validated")):
         # File exists
-        with open(os.path.join(glob.ev['BP_HOME'], ".validated"), 'r') as f:
-            your_ver = f.read().strip()
+        with open(os.path.join(glob.ev['BP_HOME'], ".validated"), 'r') as fp:
+            your_ver = fp.read().strip()
 
         req_ver = os.environ.get("BPS_VERSION_STR").split(".")[-1]
         # Compare validation versions
@@ -359,11 +385,16 @@ def we_need_to_validate():
     return True
 
 # Check if validation has been run
-def check(glob_obj, force):
+def check(glob_obj):
 
     global glob
     glob = glob_obj
 
-    if we_need_to_validate() or force:
+    # Run validator if we detect validation version mismatch, or if requested by user
+    if we_need_to_validate() or glob.args.validate:
         run()
+
+    if glob.quit_after_val:
+        sys.exit(0)
+
 

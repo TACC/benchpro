@@ -4,46 +4,91 @@
 # A little tool to automatically apply changes to BenchPRO's settings files
 # Matthew Cawood
 # July 2022
-#
+# v2.0
 
 import configparser
 import os
 import sys
 
+settings_file = os.path.join(os.environ.get("BP_HOME"), "settings.ini")
+
+# Convert various input types to bool, if expecting bool
+def fmat(new_value, old_value):
+
+    if str(old_value) in ["True", "False"]:
+        # True
+        if new_value in ["1", "T", "t", "True", "true"]:
+            return "True"
+        # False
+        elif new_value in ["0", "F", "f", "False", "false"]:
+            return "False"
+    # Not bool
+    return new_value
+
 # Print a setting matching input, None == *
 def print_setting(select):
-    with open(os.path.join(os.environ.get("BP_HOME"), "settings.ini"), 'r') as settings:
+    with open(settings_file, 'r') as settings:
         for line in settings.readlines():
             if not select or (select in line):
                 print(line.strip())
 
 # Update a setting
-def change_setting(setting, value):
+def change_setting(kv):
+
+    new_key = kv[0]
+    new_val = kv[1]
 
     # Read file
-    with open(os.path.join(os.environ.get("BP_HOME"), "settings.ini"), 'r') as settings :
+    with open(settings_file, 'r') as settings :
         filedata = settings.read()
 
     # Replace the target string
     lines = filedata.split("\n")
 
+    # Drop trailing line
+    if lines[-1] == "":
+        del lines[-1]
+
     found = False
     for n in range(len(lines)):
-        key = lines[n].split("=")[0].strip()
-        if key == setting:
-            print(key + ": " + lines[n].split("=")[1].strip() + " -> " + value)
-            lines[n] = key.ljust(24, " ") + "= " + value 
+        old_key = lines[n].split("=")[0].strip()
+        old_val = lines[n].split("=")[1].strip()
+        if old_key == new_key:
+            fmat_val = fmat(new_val, old_val)
+            print(new_key + ": " + old_val + " -> " + fmat_val)
+            lines[n] = new_key.ljust(24, " ") + "= " + fmat_val 
             found = True
             break
 
     if not found:
-        print("No matches for '" + setting + "'")
-        sys.exit(1)
+        print("Adding new setting: '" + new_key + "=" + new_val + "'")
+        lines.append(new_key.ljust(24, " ") + "= " + new_val + "\n")
 
     # Write the file out again
     with open(os.path.join(os.environ.get("BP_HOME"), "settings.ini"), 'w') as file:
         file.write("\n".join(lines))
-    print("Done.")
+
+# Remove key-value from settings file matching input key
+def drop_setting(key):
+
+    lines = None
+    dropped = False
+
+    with open(settings_file, 'r') as fp:
+        lines = fp.readlines()
+
+    with open(settings_file, 'w') as fp:
+        for line in lines:
+            if line.split("=")[0].strip() == key:
+                dropped = True
+            else:
+                fp.write(line)
+
+    if not dropped:
+        print_setting(None)
+        print()
+        print("No keys match '" + key + "'")
+
 
 def main():
     
@@ -52,14 +97,30 @@ def main():
         print_setting(None)
     # Print specific
     elif len(sys.argv) == 2:
-        print_setting(sys.argv[1])
-    # Change value
-    elif len(sys.argv) == 3:
-        change_setting(sys.argv[1], sys.argv[2])        
-    else:
-        print ("Unknown input format.")
-        sys.exit(1)
 
+        if "=" in sys.argv[1]:
+            # Change setting
+            change_setting(sys.argv[1].split("="))
+        else:
+            # Print keyvalue
+            print_setting(sys.argv[1])
+    # Op flag supplied
+    elif len(sys.argv) == 3:
+
+        if sys.argv[1] in ["--add", "-a"]:
+            change_setting(sys.argv[2].split("="))
+
+        elif sys.argv[1] in ["--drop", "-d"]:
+            drop_setting(sys.argv[2])
+
+        else:
+            print("Unknown input format")
+            print("Expected --add/-a or --drop/-d")
+            sys.exit(1)
+
+    else:
+        print ("Unknown input format, expected 'bps [key]=[value]'")
+        sys.exit(1)
     sys.exit(0)
 
 if __name__ == "__main__":
