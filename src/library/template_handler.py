@@ -146,9 +146,11 @@ class init(object):
                                     self.glob.stg['user_bin_path'] + " " + \
                                     os.path.join(self.glob.config['metadata']['working_path'], "hw_report") + "\n")
             else:
+
                 #self.glob.lib.msg.warn(["Requested hardware stats but script permissions not set",
                 #                                "Run 'sudo -E $BP_HOME/resources/scripts/change_permissions'"])
                 self.glob.lib.msg.warn("Skipping hardware scan for now...")
+
                 pass
 
     # Add things to the bottom of the build script
