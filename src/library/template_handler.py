@@ -125,9 +125,6 @@ class init(object):
             template_obj.append("ml \n")
             template_obj.append("\n")
 
-        template_obj.append("# Create working directory \n")
-        template_obj.append("mkdir -p ${working_path} && cd ${working_path} \n")
-
     # Get input files asynchronously
     def stage_input_files(self, template_obj):
 

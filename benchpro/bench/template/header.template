@@ -13,3 +13,6 @@ export                ranks=<<<ranks_per_node>>>
 export                nodes=<<<nodes>>>
 export                 gpus=<<<gpus>>>
 
+# Create working directory
+mkdir -p ${working_path} && cd ${working_path}
+
