@@ -1,6 +1,7 @@
 
-
-cd hpcg/bin
+ml intel
+cp -r $MKLROOT/benchmarks/hpcg/bin .
+cd bin
 
 export PATH=`pwd`:$PATH
 

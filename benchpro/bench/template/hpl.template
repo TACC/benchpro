@@ -1,4 +1,6 @@
 
+ml intel
+cp -r $MKLROOT/benchmarks/mp_linpack .
 cd mp_linpack
 
 export PATH=`pwd`:$PATH
@@ -10,18 +12,22 @@ if [ ! -f "HPL.dat" ]; then
   exit 1
 fi
 
+
+export HPL_EXE=xhpl_intel64_dynamic
+export MPI_PER_NODE=${ranks}
+export MPI_PROC_NUM=$(bc <<< ${nodes}*${ranks})
 # These consts give a GB/node -> problem size (N) equation accurate to +-2 GB, tested over range 8GB-180GB/node
 const1=2
 const2=0.5
-export I_MPI_DAPL_DIRECT_COPY_THRESHOLD=655360
-export MPI_PER_NODE=2
-export MPI_PROC_NUM=$(bc <<< ${nodes}*${MPI_PER_NODE})
 N=$(bc <<< "scale=0; (sqrt((${GB_PER_NODE}*1024*1024*1024*${nodes})/${const1})*${const2})/${NB}*${NB}")
 
 cp -f HPL.dat HPL.dat.bak
 
 # Get P & Q if not set
 if [ -z $Q ] || [ -z $P ]; then
+
+    Q=1
+    P=1
 
     mapfile -t facts < <( factor ${MPI_PROC_NUM} )
 
@@ -65,11 +71,7 @@ sed -i "12s/.*/${Q}    Qs/"  HPL.dat
 
 echo "HPL.dat: "
 cat HPL.dat
-echo "Binary name: "
-ls -l xhpl_intel64_dynamic 
-echo "Environment variables: "
-env
+echo "Binary: "
+ldd xhpl_intel64_dynamic 
 
-${mpi_exec} ${exe} "$@"
-
-
+${mpi_exec} ./runme_intel64_prv
