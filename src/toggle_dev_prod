@@ -1,10 +1,7 @@
 #!/usr/bin/env bash
-
-#
 # Script to swap between development and production installations of BenchPRO
 # Matthew Cawood
 # April 2022
-#
 
 # DEV currently loaded
 if [[ $BP_DEV -eq 1 ]]; then
@@ -16,9 +13,7 @@ fi
 
 ml benchpro
 
-
 build="[PROD]"
-
 [[ $BP_DEV -eq 1 ]] && build="[DEV]"
 
 version=$BP_SITE_VERSION

@@ -1,13 +1,10 @@
 #!/usr/bin/env python3
-
-#
-# Validator
+# BenchPRO Validator
 # Script to run user init - setup user files and directories for BenchPRO
 # Matthew Cawood
 # July 2022
 # v3.0
 
-# System Imports
 import configparser as cp
 import grp
 import os
@@ -29,6 +26,7 @@ except ImportError:
 
 glob = None
 
+
 # ANSI escape squence for text color
 class bcolors:
     PASS = '\033[92mPASS:\033[0m'
@@ -36,6 +34,7 @@ class bcolors:
     CREATE = '\033[94mCREATE:\033[0m'
     SET = '\033[94mSET:\033[0m'
     WARN = '\033[1;33mWARNING \033[0m'
+
 
 # Check python version
 def check_python_version():
@@ -45,6 +44,7 @@ def check_python_version():
         sys.exit(1)
     else:
         print(bcolors.PASS, "Python version: " + ver)
+
 
 # Create path
 def create_path(path):
@@ -56,6 +56,7 @@ def create_path(path):
         sys.exit(1)
 
 
+# Touch file
 def create_file(f):
     try:
         fp = open(f, 'x')
@@ -66,20 +67,23 @@ def create_file(f):
         sys.exit(1)
 
 
-# Check that the user belongs to the 'gid' they provided 
+# Check that the user belongs to the 'gid' they provided
 def check_group_membership():
 
     if glob.stg['set_gid']:
         gid = glob.stg['gid']
-        if not gid[0].isdigit(): 
+        if not gid[0].isdigit():
             gid = int(gid.split('-')[1])
-        
+
         grouplist = os.getgrouplist(os.environ.get('USER'), 100)
         if not gid in grouplist:
-            print(bcolors.FAIL, "you don't belong to gid " + glob.stg['gid'] + " (" + gid + ")")
+            print(bcolors.FAIL, "you don't belong to gid " +
+                  glob.stg['gid'] + " (" + gid + ")")
             sys.exit(1)
 
-# Walk FS and recursively chown everything (i.e. chgrp -R) (yes, there is no function for this)
+
+# Walk FS and recursively chown everything (i.e. chgrp -R)
+# (yes, there is no function for this)
 def chgrp(path, group):
 
     gid = grp.getgrnam(group).gr_gid
@@ -87,23 +91,24 @@ def chgrp(path, group):
     if os.path.isdir(path):
         # Chgrp on top dir
         os.chown(path, -1, gid)
-    
+
         try:
 
-            for curDir,subDirs,subFiles in os.walk(path):
+            for curDir, subDirs, subFiles in os.walk(path):
                 # Chgrp on subFiles
                 for file in subFiles:
-                    absPath = os.path.join(curDir,file)
-                    os.chown(absPath,-1,gid)
+                    absPath = os.path.join(curDir, file)
+                    os.chown(absPath, -1, gid)
                 # Recurse through subDirs
                 for dir in subDirs:
-                    chgrp(os.path.join(curDir,dir), group)
+                    chgrp(os.path.join(curDir, dir), group)
         except:
             pass
 
-# Set group set bit 
+
+# Set group set bit
 def sticky_bit(path):
-    os.chmod(path, 0o3775) 
+    os.chmod(path, 0o3775)
     try:
         subprocess.call(['setfacl', '-d', '-m', 'group::rX', path])
     except:
@@ -111,6 +116,7 @@ def sticky_bit(path):
         sys.exit(1)
 
     print(bcolors.SET, path, "ACLs")
+
 
 # Open group access
 def give_group_access(path_list):
@@ -124,31 +130,31 @@ def give_group_access(path_list):
         except Exception as e:
             pass
 
+
 # Set perms on output dirs
 def set_permissions(path_list):
     if glob.stg['set_gid']:
-#        print("path_list", path_list)
         for path in path_list:
             chgrp(path, glob.stg['gid'])
             sticky_bit(path)
             print(bcolors.SET, path, glob.stg['gid'])
-        
+
+
 # Create path if not present
 def confirm_path_exists(path_list):
     for path in path_list:
-        # We got a path list 
-        if isinstance(path, list): 
+        # We got a path list
+        if isinstance(path, list):
             # Assume [0] = user, [1] = site
             path = path[0]
 
         if path[0:2] == "./":
             path = os.path.join(glob.ev['BP_HOME'], path[2:])
-#            print("path", path)
-#            sys.exit(1)
         if not os.path.isdir(path):
             create_path(path)
         else:
             print(bcolors.PASS, path, "found")
+
 
 def confirm_file_exists(file_list):
     for f in file_list:
@@ -167,6 +173,7 @@ def ensure_path_exists(path_list):
             print(bcolors.FAIL, path, "not found")
             sys.exit(1)
 
+
 # Test if file exists
 def ensure_file_exists(f):
     if os.path.isfile(f):
@@ -174,6 +181,7 @@ def ensure_file_exists(f):
     else:
         print(bcolors.FAIL, "file", f, "not found")
         sys.exit(1)
+
 
 # Test if executable is in PATH
 def check_exe(exe_list):
@@ -183,6 +191,7 @@ def check_exe(exe_list):
         else:
             print(bcolors.FAIL, exe, "not in PATH")
             sys.exit(1)
+
 
 # Test environment variable is set
 def check_env_vars(var_list):
@@ -194,6 +203,7 @@ def check_env_vars(var_list):
             print("Is benchpro module loaded?")
             sys.exit(1)
 
+
 # Test write access to dir
 def check_write_priv(path_list):
     for path in path_list:
@@ -203,6 +213,7 @@ def check_write_priv(path_list):
             print(bcolors.FAIL, path, "is not writable")
             sys.exit(1)
 
+
 # Check file permissions
 def check_file_perm(filename, perm):
     if os.path.isfile(filename):
@@ -210,6 +221,7 @@ def check_file_perm(filename, perm):
         print(bcolors.PASS, filename, "permissions set")
     else:
         print(bcolors.WARN, filename, "not found.")
+
 
 # Confirm SSH connection is successful
 def check_db_access(glob):
@@ -251,6 +263,7 @@ def check_db_access(glob):
             " from this server")
         return False
 
+
 # Confirm database connection
 def check_db_connect(glob):
     try:
@@ -266,11 +279,13 @@ def check_db_connect(glob):
             "unable to connect to " +
             glob.stg['db_name'] +
             " from this server")
-        print("    This server is not on the database access whitelist, contact your maintainer.")
+        print("    This server is not on the database access whitelist, \
+                contact your maintainer.")
 
         return
 
     print(bcolors.PASS, "connected to", glob.stg['db_name'])
+
 
 # Ensure client and site versions match
 def check_benchpro_version(glob):
@@ -288,6 +303,7 @@ def check_benchpro_version(glob):
         sys.exit(1)
     else:
         print(bcolors.PASS, "BenchPRO version " + glob.version_site)
+
 
 def run():
 
@@ -314,32 +330,29 @@ def run():
     # Check group memebership
     #check_group_membership()
 
-    # Check paths
+    # Make directories if missing
     confirm_path_exists([glob.ev['BP_HOME'],
-                        glob.ev['BP_REPO'],
-                        glob.ev['BP_APPS'],
-                        glob.ev['BP_RESULTS'],
-                        glob.stg['build_tmpl_path'],
-                        glob.stg['build_cfg_path'],
-                        glob.stg['bench_tmpl_path'],
-                        glob.stg['bench_cfg_path'],
-                        glob.stg['user_bin_path'],
-                        glob.stg['user_resource_path'],
-                        glob.stg['log_path'],
-                        glob.stg['pending_path'],
-                        glob.stg['captured_path'],
-                        glob.stg['failed_path']])
+                         glob.ev['BP_REPO'],
+                         glob.ev['BP_APPS'],
+                         glob.ev['BP_RESULTS'],
+                         glob.stg['build_tmpl_path'],
+                         glob.stg['build_cfg_path'],
+                         glob.stg['bench_tmpl_path'],
+                         glob.stg['bench_cfg_path'],
+                         glob.stg['user_bin_path'],
+                         glob.stg['user_resource_path'],
+                         glob.stg['log_path'],
+                         glob.stg['pending_path'],
+                         glob.stg['captured_path'],
+                         glob.stg['failed_path']])
 
-
-    confirm_file_exists([os.path.join(glob.ev['BP_HOME'], "settings.ini")]
-                        )
-
+    # Make files if missing
+    confirm_file_exists([os.path.join(glob.ev['BP_HOME'], "settings.ini")])
 
     # Check user write access
     check_write_priv([glob.ev['BP_HOME'],
-                    glob.ev['BP_APPS'],
-                    glob.ev['BP_RESULTS']])
-
+                      glob.ev['BP_APPS'],
+                      glob.ev['BP_RESULTS']])
 
     # Set access
     give_group_access([glob.ev['BP_APPS'],
@@ -370,6 +383,7 @@ def run():
         val.write(os.environ.get("BPS_VERSION_STR").split(".")[-1])
     print("Done.")
 
+
 # Test if our validation is out to date
 def we_need_to_validate():
     if os.path.isfile(os.path.join(glob.ev['BP_HOME'], ".validated")):
@@ -384,17 +398,17 @@ def we_need_to_validate():
 
     return True
 
+
 # Check if validation has been run
 def check(glob_obj):
 
     global glob
     glob = glob_obj
 
-    # Run validator if we detect validation version mismatch, or if requested by user
+    # Run validator if we detect validation version mismatch,
+    # or if requested by user
     if we_need_to_validate() or glob.args.validate:
         run()
 
     if glob.quit_after_val:
         sys.exit(0)
-
-

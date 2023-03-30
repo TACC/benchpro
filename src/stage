@@ -1,4 +1,4 @@
-#!/bin/env python3 
+#!/bin/env python3
 
 #
 # BenchPRO - Stage
@@ -24,7 +24,7 @@ import zipfile
 # arg[2] - asset [str: filename or URL]
 
 # Test args
-asset_label,mode = None, None
+asset_label, mode = None, None
 
 # Only file supplied
 if len(sys.argv) == 2:
@@ -49,7 +49,7 @@ if not "BP_REPO" in os.environ:
     sys.exit(1)
 
 cwd = os.getcwd()
-log_file=os.path.join(cwd,".stage.log")
+log_file = os.path.join(cwd, ".stage.log")
 logging.basicConfig(filename=log_file, filemode='w', level=logging.DEBUG)
 
 repo_path = os.path.join(os.environ["BP_REPO"], "")
@@ -65,10 +65,9 @@ if not os.path.isfile(lookup_file):
     logging.debug("Missing " + lookup_file + ". Creating.")
     fp.close()
 
+
 # Check if asset is in lookup file
-# Takes: asset_url [str]
-# Returns: asset_path [str] or False
-def check_in_lookup_file(asset_url):
+def check_in_lookup_file(asset_url: str) -> str:
 
     if os.path.isfile(lookup_file):
         logging.debug("Looking for " + asset_url + " entry in $BP_REPO/.urllookup")
@@ -87,14 +86,13 @@ def check_in_lookup_file(asset_url):
     logging.debug("Not found.")
     return False
 
+
 # Check if asset label is found in local repository
-# Takes: asset_label [str], either filename or URL
-# Returns: asset_path [str] or False
-def find_asset(asset_label):
+def find_asset(asset_label: str) -> str:
 
     # 1. Input is file path
     if os.path.isfile(asset_label):
-        logging.debug(asset_label + " is a valid file path.") 
+        logging.debug(asset_label + " is a valid file path.")
         return asset_label
 
     logging.debug(asset_label + " isn't a valid file path.")
@@ -123,10 +121,9 @@ def find_asset(asset_label):
     logging.debug("Asset not in repo.")
     return False
 
+
 # Get filename from URL
-# Takes: asset_url [str]
-# Returns: filename [str]
-def get_filename_from_url(asset_url):
+def get_filename_from_url(asset_url: str) -> str:
     try:
         parsed = urlparse(asset_url)
         filename = os.path.basename(parsed.path)
@@ -141,10 +138,9 @@ def get_filename_from_url(asset_url):
         logging.debug("Couldn't infer filename from " + asset_url)
         return False
 
+
 # Update the .urllookup file with asset record, if not already present
-# Takes: asset_url [str]
-#        asset_path [str]
-def update_lookup(asset_url, asset_path):
+def update_lookup(asset_url: str, asset_path: str):
 
     asset_file = os.path.basename(asset_path)
 
@@ -159,15 +155,15 @@ def update_lookup(asset_url, asset_path):
         fp.write(time.strftime("%Y/%m/%d-%H:%M") + " " + asset_file + " " + asset_url + "\n")
         logging.debug("Added " + asset_file + " to " + lookup_file)
 
+
 # Find most recent file in directory
-def get_latest(path):
+def get_latest(path: str) -> str:
     file_list = glob.glob(path+'/*')
     return max(file_list, key=os.path.getctime)
 
-# Fetch asset URL 
-# Takes: asset_url [str]
-# Returns: asset_path [str]
-def download_asset(asset_url):
+
+# Fetch asset URL
+def download_asset(asset_url: str) -> str:
 
     try:
         # Download
@@ -185,20 +181,22 @@ def download_asset(asset_url):
     logging.debug("Download file: " + asset_path)
 
     # Add to download lookup table
-    update_lookup(asset_url, asset_path) 
+    update_lookup(asset_url, asset_path)
 
     return asset_path
 
+
 # Check if asset file is an archive
-def is_archive(asset_path):
+def is_archive(asset_path: str) -> bool:
     if tarfile.is_tarfile(asset_path) or zipfile.is_zipfile(asset_path):
         logging.debug("Asset is archive")
         return True
     logging.debug("Asset is not archive")
     return False
 
+
 # Remove supported file extension from filename
-def strip_ext(filename):
+def strip_ext(filename: str) -> str:
     # Check if extension in filename
     for ext in extensions:
         if filename.endswith(ext):
@@ -210,20 +208,21 @@ def strip_ext(filename):
     # Not matching extension found
     return filename
 
-# Extract asset if its archive
-# Takes: asset_path [str]
-#        target_path [str]
-def extract_asset(asset_path, asset_file, target_path):
 
-    # For symlink mode, next extracted files under archive name (handle multiple top-level files)
+# Extract asset if its archive
+def extract_asset(asset_path: str, asset_file: str, target_path: str):
+
+    # For symlink mode, next extracted files under archive name 
+    # (handle multiple top-level files)
     if mode == "-ln":
         target_path = os.path.join(target_path, asset_file, "")
 
-        # If extracted dir already exists, assume extraction already complete, return list of top-level files inside dir
+        # If extracted dir already exists, assume extraction already complete, 
+        # return list of top-level files inside dir
         if os.path.isdir(target_path):
             logging.debug("Skipping extract, file already exists: " + target_path)
             return glob.glob(os.path.join(target_path, "*"))
-    
+
     # a. tar file
     if tarfile.is_tarfile(asset_path):
         with tarfile.open(asset_path) as zip:
@@ -241,10 +240,9 @@ def extract_asset(asset_path, asset_file, target_path):
     # Not an archive
     return None
 
+
 # Copy asset
-# Takes: asset_path [str]
-#        target_path [str]
-def copy_asset(asset_path, asset_file, target_path):
+def copy_asset(asset_path: str, asset_file: str, target_path: str):
 
     target = os.path.join(target_path, asset_file)
 
@@ -270,10 +268,9 @@ def copy_asset(asset_path, asset_file, target_path):
 
     logging.debug("Done.")
 
+
 # Create symlink
-# Takes: asset_path [str]
-#        target_path [str]
-def link_asset(asset_path, asset_file, target_path):
+def link_asset(asset_path: str, asset_file: str, target_path: str):
 
     asset_paths = []
     extract_path = os.path.join(repo_path, asset_file, "")
@@ -300,8 +297,9 @@ def link_asset(asset_path, asset_file, target_path):
         else:
             logging.debug("Skipping link, dest already exists")
 
+
 # Delete file
-def clean_file(target):
+def clean_file(target: str):
     logging.debug("Deleting " + target)
     #os.remove(target)
 
@@ -343,4 +341,3 @@ if mode == "-cp":
     copy_asset(asset_path, asset_file, target_path)
 else:
     link_asset(asset_path, asset_file, target_path)
-

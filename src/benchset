@@ -12,34 +12,37 @@ import sys
 
 settings_file = os.path.join(os.environ.get("BP_HOME"), "settings.ini")
 
-# Convert various input types to bool, if expecting bool
-def fmat(new_value, old_value):
 
+# Convert various input dtypes to bool type, if expecting bool type
+def fmat(new_value: str, old_value: str) -> str:
+    # Bool stored as string
     if str(old_value) in ["True", "False"]:
-        # True
+        # Inputs that map to True
         if new_value in ["1", "T", "t", "True", "true"]:
             return "True"
-        # False
+        # Inputs that map to False
         elif new_value in ["0", "F", "f", "False", "false"]:
             return "False"
-    # Not bool
+    # Not bool type
     return new_value
 
-# Print a setting matching input, None == *
-def print_setting(select):
+
+# Print a setting matching input selection, if None print all
+def print_setting(select: str=None):
     with open(settings_file, 'r') as settings:
         for line in settings.readlines():
             if not select or (select in line):
                 print(line.strip())
 
-# Update a setting
-def change_setting(kv):
 
-    new_key = kv[0]
-    new_val = kv[1]
+# Update a setting value with input
+def change_setting(kv: list):
+
+    # Split input list
+    new_key, new_val = kv
 
     # Read file
-    with open(settings_file, 'r') as settings :
+    with open(settings_file, 'r') as settings:
         filedata = settings.read()
 
     # Replace the target string
@@ -56,7 +59,7 @@ def change_setting(kv):
         if old_key == new_key:
             fmat_val = fmat(new_val, old_val)
             print(new_key + ": " + old_val + " -> " + fmat_val)
-            lines[n] = new_key.ljust(24, " ") + "= " + fmat_val 
+            lines[n] = new_key.ljust(24, " ") + "= " + fmat_val
             found = True
             break
 
@@ -65,11 +68,13 @@ def change_setting(kv):
         lines.append(new_key.ljust(24, " ") + "= " + new_val + "\n")
 
     # Write the file out again
-    with open(os.path.join(os.environ.get("BP_HOME"), "settings.ini"), 'w') as file:
+    s_file = os.path.join(os.environ.get("BP_HOME"), "settings.ini")
+    with open(s_file, 'w') as file:
         file.write("\n".join(lines))
 
+
 # Remove key-value from settings file matching input key
-def drop_setting(key):
+def drop_setting(key: str):
 
     lines = None
     dropped = False
@@ -85,20 +90,39 @@ def drop_setting(key):
                 fp.write(line)
 
     if not dropped:
-        print_setting(None)
-        print()
-        print("No keys match '" + key + "'")
+        print_setting()
+        print("\nNo keys match '" + key + "'")
 
 
 def main():
-    
+
     # Print list
     if len(sys.argv) == 1:
-        print_setting(None)
+        print_setting()
     # Print specific
     elif len(sys.argv) == 2:
 
-        if "=" in sys.argv[1]:
+        if sys.argv[1] in ['-h', '--help']:
+            print(
+                """
+                Benchsetter (BPS) is used to change default parameters used
+                by BenchPRO.
+                Usage: bps
+                    List user's current defaults (default, no arguments)
+
+                Usage: bps [PARAM]
+                    Print value of input parameter key
+
+                Usage: bps [KEY=VALUE]
+                    Update value of parameter KEY to VALUE
+
+                -a, --add       Optional flag to add new parameter key-value.
+                                Assumed if no flag is provided.
+                -d, --drop      Remove parameter KEY from defaults.
+
+                """)
+
+        elif "=" in sys.argv[1]:
             # Change setting
             change_setting(sys.argv[1].split("="))
         else:
