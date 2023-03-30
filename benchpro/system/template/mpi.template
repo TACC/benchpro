@@ -1,0 +1,4 @@
+export   MPICC=<<<MPICC>>>
+export  MPICXX=<<<MPICXX>>>
+export MPIFORT=<<<MPIFORT>>>
+export  MPIF90=<<<MPIF90>>>
