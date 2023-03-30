@@ -1,5 +1,5 @@
-![Lmod Logo](https://github.com/TACC/benchpro-site/raw/main/benchpro/resources/images/benchpro_grey.png)
-
+![BenchPRO Logo](https://github.com/TACC/benchpro-site/raw/main/benchpro/resources/images/benchpro_grey.png)
+[![Documentation Status](https://readthedocs.org/projects/benchpro/badge/?version=latest)](https://benchpro.readthedocs.io/en/latest/?badge=latest)
 
 
 # BenchPRO-site

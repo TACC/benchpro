@@ -33,30 +33,11 @@ Load the BenchPRO site package using the appropriate system path above, this mod
     ml use [module_path]
     ml benchpro
 
-You will likely get a warning stating you need to install missing user files. Follow the instructions to clone the user files from the repository:
-
-.. code-block::
-
-    ml git
-    git clone https://github.com/TACC/benchpro.git $HOME/benchpro
-
-.. note::
-
-    Refer to the :ref:`layout` diagram for more information about these user files.  
-
-Finally, you need to run a validation process to confirm that your system, environment and directory structures are correctly configured before using BenchPRO for the first time. Run this with:
+Next, you need to run a validation process install some user files into $HOME/benchpro, confirm that your system, environment and directory structures are correctly configured before using BenchPRO for the first time. Run the setup with:
 
 .. code-block::
 
     benchpro --validate
-
-.. note::
-   
-   Some of the hardware data collection functionality provided by BenchPRO requires root access, you can either run the permissions script below to privilege said scripts, or manage without this data collection feature.
-
-.. code-block::
-
-    sudo -E $BP_HOME/resources/scripts/change_permissions.sh
 
 Print help & version information:
 
@@ -71,3 +52,4 @@ Display some useful defaults
 
     benchpro --defaults
 
+BenchPRO is now setup and ready to use.
