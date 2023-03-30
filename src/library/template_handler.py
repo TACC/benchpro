@@ -90,9 +90,10 @@ class init(object):
 
         # Compiler variables
         template_obj.append("\n# Compiler variables")
-
         self.append_to_template(template_obj, self.glob.compiler['template'])
 
+        # MPI variables
+        self.append_to_template(template_obj, self.glob.mpi['template'])
         template_obj.append("\n")
 
     # Add standard lines to bench template
@@ -187,12 +188,16 @@ class init(object):
         for cfg in cfg_dicts:
             # For each key, find and replace <<<key>>> in template file
             for key in cfg:
+
                 val = cfg[key]
                 if isinstance(val, list):
                     val = val[0]
 
-                template_obj = [line.replace("<<<" + str(key) + ">>>", str(val)) for line in template_obj]
-                self.glob.lib.msg.log("Replacing " + "<<<" + str(key) + ">>> with " + str(val) + " from " + str(cfg))
+                # If val not Null
+                if val:
+                    # Replace <<<blah>>> with key[val]
+                    template_obj = [line.replace("<<<" + str(key) + ">>>", str(val)) for line in template_obj]
+                    self.glob.lib.msg.log("Replacing " + "<<<" + str(key) + ">>> with " + str(val) + " from " + str(cfg))
 
         return template_obj
 
@@ -211,14 +216,14 @@ class init(object):
             if not self.glob.stg['exit_on_missing']:
                 self.glob.lib.msg.warn("Missing parameters were found in '" + self.glob.lib.rel_path(template_file) + \
                                             "':" + ", ".join(unfilled_keys))
-                self.glob.lib.msg.warn("'exit_on_missing=False' in $BP_HOME/settings.ini so continuing anyway...")
+                self.glob.lib.msg.warn("'exit_on_missing=False' so continuing anyway...")
             # Error and exit
             else:
                # Write file to disk
                 self.glob.lib.files.write_list_to_file(template_obj, self.glob.tmp_job_file)
                 self.glob.lib.msg.error("Missing parameters were found after populating '" + \
                                         self.glob.lib.rel_path(template_file) +              \
-                                        "' and exit_on_missing=True in $BP_HOME/settings.ini: " + ' '.join(unfilled_keys))
+                                        "' and exit_on_missing=True:\n" + ' '.join(unfilled_keys))
         else:
             self.glob.lib.msg.log("All build parameters were filled, continuing")
 
@@ -256,7 +261,15 @@ class init(object):
         # Get compiler cmds for gcc/intel/pgi, otherwise compiler type is unknown
         self.glob.compiler['common'] = self.glob.compiler[self.glob.modules['compiler']['type']]
         self.glob.compiler['template'] = os.path.join(self.glob.stg['sys_tmpl_path'], self.glob.stg['compile_tmpl_file'])
-        
+     
+        # Get mpi cmds
+        if self.glob.modules['mpi']['type'] == "impi":
+            self.glob.mpi['common'] = self.glob.mpi["impi"]
+        else:
+            self.glob.mpi['common'] = self.glob.mpi["default"]
+
+        self.glob.mpi['template'] = os.path.join(self.glob.stg['sys_tmpl_path'], self.glob.stg['mpi_tmpl_file'])
+
     # Combine template files and populate
     def generate_build_script(self):
 
@@ -302,6 +315,7 @@ class init(object):
                                                 self.glob.config['config'], \
                                                 self.glob.sched['sched'], \
                                                 self.glob.compiler['common'], \
+                                                self.glob.mpi['common'], \
                                                 self.glob.system], \
                                                 template_obj)
 

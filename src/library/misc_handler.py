@@ -14,14 +14,14 @@ class init(object):
         self.glob = glob
 
     # Get list of files matching search
-    def find_matching_files(self, search_list):
+    def find_matching_files(self, search_list: list) -> list:
         file_list = []
         for search in search_list:
             file_list += gb.glob(os.path.join(self.glob.ev['BP_HOME'], search))
         return file_list
 
     # Delete matching files
-    def clean_matching_files(self, file_list):
+    def clean_matching_files(self, file_list: list) -> int:
         tally = 0
         for f in file_list:
             try:
@@ -60,7 +60,7 @@ class init(object):
             print("No temp files found.")
 
     # Delete app path and associated module
-    def delete_app_path(self, path):
+    def delete_app_path(self, path: str):
         
         # Get module dir from app dir, by adding 'modulefiles' prefix and stripping [version] suffix
         app_path = self.glob.stg['sl'].join(path.split(self.glob.stg['sl'])[path.split(self.glob.stg['sl']).index(self.glob.stg['build_topdir'])+1:-1])
@@ -88,7 +88,7 @@ class init(object):
         print()
        
 
-    def prep_delete(self, app_list, msg_str):
+    def prep_delete(self, app_list: list, msg_str: str):
         
         print("Deleting " + msg_str)
 
@@ -103,7 +103,7 @@ class init(object):
 
 
     # Find an application to delete
-    def id_app_to_remove(self, search):
+    def id_app_to_remove(self, search: str):
 
         if search == "all":
             return self.glob.installed_apps_list
@@ -126,6 +126,7 @@ class init(object):
 
             else:
                 return matching_apps[0]
+
 
     def remove_app(self, app_path=None):
 
@@ -193,6 +194,7 @@ class init(object):
                     #else:
                     #    print("No installed application matching '" + app + "'")
 
+
     # Print build report of installed application
     def query_app(self, arg):
         search_dict = {}
@@ -206,7 +208,7 @@ class init(object):
             # Disect search string into search dict
             for search_elem in arg.split("/"):
                 search_dict[search_elem] =  search_elem
-     
+
         # Get installation directory from search dict
         app_dir = self.glob.lib.check_if_installed(search_dict)
         if not app_dir:
@@ -248,8 +250,8 @@ class init(object):
         gap = max(len(report_dict['build']['exe_file']) + 9, 20)
 
         # Dry_run - do nothing
-        if report_dict['build']['task_id']  == "dry_run":
-            print("Build job was dry_run. Skipping executable check")
+        if "dry" in report_dict['build']['task_id']:
+            print("Build job was dry run. Skipping executable check")
         else:
             # Local build        
             if report_dict['build']['exec_mode'] == "local":
@@ -305,8 +307,8 @@ class init(object):
 
     # Print currently installed apps as well as their exe status
     def show_installed(self):
-
         self.glob.lib.msg.print_app_table(None)
+
 
     # Get run string for given config file
     def get_cmd_string(self, keys, config_dict):
@@ -321,6 +323,7 @@ class init(object):
                     if config_dict[sect][key]:
                         cmd_str.append(key+"="+config_dict[sect][key])
         return ",".join(cmd_str)
+
 
     # Print list of code strings
     def print_config(self, atype, config_list):
@@ -346,10 +349,12 @@ class init(object):
                         self.get_cmd_string([['requirements', 'code'], ['requirements', 'version'], ['requirements', 'build_label'], ['config', 'bench_label']], \
                         contents))
 
+
     def print_heading(self, search_path):
         print(self.glob.lib.rel_path(search_path) + ":")
         print("------------------------------------------------------------")
         print("| Config file".ljust(32) + "| Run with")
+
 
     # Print applications that can be installed from available cfg files
     def print_avail_type(self, atype, search_path_list):
@@ -371,12 +376,14 @@ class init(object):
                 self.print_config(atype, gb.glob(app_dir + "*.cfg"))
                 print()
 
+
     # return True for input is type int
     def int_input(self, arg):
         return arg.isdigit()
 
+
     # Get app path from int ID
-    def get_app_tuple_from_id(self, idx):
+    def get_app_tuple_from_id(self, idx: int):
 
         # Populate app table if empty
         if not self.glob.installed_apps_list:
@@ -397,9 +404,11 @@ class init(object):
         # Return path
         return app_list, app_path
 
+
     def get_app_path_from_id(self, idx : int) -> str:
         app_list, app_path = self.get_app_tuple_from_id(idx)
         return app_path
+
 
     def get_app_list_from_id(self, idx : int) -> list: 
         """
@@ -413,6 +422,7 @@ class init(object):
         app_list, app_path = self.get_app_tuple_from_id(idx)
         return app_list
 
+    # Print available apps and benchmarks (-a)
     def show_available(self):
         
         print()
@@ -439,13 +449,15 @@ class init(object):
 
         if self.glob.args.avail not in ['code', 'bench', 'suite', 'all']:
             print("Invalid input '"+self.glob.args.avail+"'")
-            
+
+
     # Print key/value pair from setting.ini dict
-    def print_setting(self, key, value):
+    def print_setting(self, key: str, value: str):
         if value:
             print("  " + key.ljust(18) + " = " + str(value))
         else:
             print("  " + key.ljust(18) + " = " + "\033[0;31mMISSING\033[0m")
+
 
     # Print default params from settings.ini
     def print_defaults(self):
@@ -488,6 +500,7 @@ class init(object):
         print("Use the 'bps' command to apply these persistant changes via the CLI, e.g.")
         print(">   bps dry_run=False\n\n")
 
+
     # Print command line history file
     def print_history(self):
         history_file = os.path.join(self.glob.ev['BP_HOME'], ".history")
@@ -497,13 +510,16 @@ class init(object):
                 for line in content.split("\n"):
                     print(line)
 
+
     # Print version file and quit
     def print_version(self):
         print("benchpro " + self.glob.version_site_full) #+ " (" + self.glob.version_site_date + ")")
 
+
     # Return the last line of the .outputs file
     def get_last_history(self):
 
+        # Check if history file exists
         if not os.path.isfile(os.path.join(self.glob.ev['BP_HOME'], ".history")):
             print("No previous outputs found.")
             sys.exit(0)
@@ -529,7 +545,14 @@ class init(object):
 
         # If last output was from build task
         if op in ["--build", "-b"]:
-            self.query_app(output)
+
+            # Use task ID as query search term
+            search_term = task_id
+            # If job was a dry_run, use output string instead
+            if "dry" in task_id:
+                search_term = output
+            # Query app
+            self.query_app(search_term)
 
         # If last output was from bench task
         elif op in ["--bench", "-B"]:
@@ -577,5 +600,8 @@ class init(object):
         print("Non-editable environment variables:")
         self.print_env_matching_str("BPS_")
         print()
-        
-
+    
+    # Print list of all parameter keys
+    def print_keys(self):
+        for key in self.glob.valid_keys:
+            print(key)

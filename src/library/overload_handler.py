@@ -32,6 +32,8 @@ class init(object):
     # Replace dict values with overloaded_dict values
     def update(self, overload_key, search_dict):
 
+        #print()
+        #print("START UPDATE~~~~~", search_dict)
 
         for pre_dict in list(self.glob.overloaded_dict.keys()):
             if overload_key in pre_dict:
@@ -48,17 +50,17 @@ class init(object):
             if not val:
                 val = "None"
 
-
             self.glob.lib.msg.log("Overload key '" + str(overload_key) + "=" + str(val) + "' found in dict!")
 
             old_val = search_dict[overload_key]
 
-
-
-            # If cfg value is a list, skip datatype check
-            if "," in str(self.glob.overload_dict[overload_key]):
-                self.glob.lib.msg.log("Skip overload datatype check for list '" + + "'")
-                search_dict[overload_key] = self.glob.overload_dict[overload_key]
+            # If old value was a list, iterate through new overload value and add to new list
+            if isinstance(old_val, list):
+                dtype = type(old_val[0])
+                search_dict[overload_key] = []
+                # For each elem of commadelimited list of new overload values
+                for new_elem in str(self.glob.overload_dict[overload_key]).split(","): 
+                    search_dict[overload_key].append(self.glob.lib.cast_to(new_elem, dtype))
 
             # Not list type
             else:
@@ -67,6 +69,8 @@ class init(object):
 
             # Only print overloads from CLI
             if overload_key not in self.glob.defs_overload_dict.keys():
+                #print("END UPDATE~~~~~~~", search_dict)
+                #print()
                 self.glob.lib.msg.high("Overloading " + overload_key + ": '" + str(old_val) + "' -> '" + \
                                             str(search_dict[overload_key]) + "'")
           
@@ -132,7 +136,7 @@ class init(object):
                     
                     # Check key not already present:
                     if not kv[0] in self.glob.overload_dict.keys():
-                        self.glob.overload_dict[kv[0].strip()] = self.glob.lib.destr(kv[1].strip())
+                        self.glob.overload_dict[kv[0].strip()] = self.glob.lib.destring(kv[1].strip())
 
 
         self.glob.lib.msg.log("----------------------")

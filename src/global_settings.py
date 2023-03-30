@@ -11,6 +11,7 @@ import sys
 # Local Imports
 import src.lib as lib
 
+
 # Global constants
 class setup(object):
 
@@ -55,6 +56,7 @@ class setup(object):
     sched['sched']              = {}
     # Compiler dict
     compiler                    = {}
+    mpi                         = {}
     # suites.ini dict
     suite                       = {}
     # System dict
@@ -75,13 +77,13 @@ class setup(object):
 
     # Report obj
     build_report                = None
-    
+
     # List of dependant 'any' jobs
     any_dep_list                = []
 
     # List of dependant 'ok' jobs
     ok_dep_list                 = []
-        
+
     # Process ID of previous task
     prev_pid                    = 0
 
@@ -91,7 +93,7 @@ class setup(object):
 
     # dict for storing overload key-values
     overload_dict               = {}
-    overloaded_dict             = {} 
+    overloaded_dict             = {}
     valid_keys                  = []
 
     # Contents of user's settings.ini
@@ -138,27 +140,29 @@ class setup(object):
         if ("BP_" in key or "BPS_" in key) and (key != "BP_DEV"):
             ev[key]  = val
 
-    # Resolve relative paths and EVs in $BP_HOME/settings.ini
-    def resolve(self, val):
 
-        val = os.path.expandvars(str(val))
+    # Resolve relative paths and EVs in $BP_HOME/settings.ini
+    def resolve(self, value: str) -> str:
+
+        value = os.path.expandvars(str(value))
         # Check for unresolved EV
-        if "$" in val:
+        if "$" in value:
             print(
                 "Unable to resolve environment variable in '" +
-                val +
+                value +
                 "''. Exiting.")
             sys.exit(1)
 
         # Convert relative paths: ./[path] -> $BP_HOME/[path]
-        if len(val) > 2:
-            if val[0:2] == "./":
-                return [os.path.join(self.ev['BP_HOME'], val[2:]),
-                        os.path.join(self.ev['BPS_INC'], val[2:])]
-        return val
+        if len(value) > 2:
+            if value[0:2] == "./":
+                return [os.path.join(self.ev['BP_HOME'], value[2:]),
+                        os.path.join(self.ev['BPS_INC'], value[2:])]
+        return value
+
 
     # Process each key-value in .ini, check for null values
-    def process(self, key, value):
+    def process(self, key: str, value: str):
         # List of optional keys exempted from NULL check
         optional = ['collection_path', 'ssh_user', 'ssh_key', 'scp_path']
 
@@ -173,10 +177,11 @@ class setup(object):
             sys.exit(1)
 
         # Cast to dtype
-        return self.lib.destr(value)
+        return self.lib.destring(value)
+
 
     # Read ini file and return configparser obj
-    def read_ini(self, ini_file, required):
+    def read_ini(self, ini_file:str, required: bool):
 
         if not os.path.isfile(ini_file):
             # Required
@@ -188,19 +193,19 @@ class setup(object):
                 return
 
         ini_parser = configparser.RawConfigParser(allow_no_value=True)
-        
+
         # This reading method allows for [sections] be present or not
         with open(ini_file) as fp:
-            ini_parser.read_file(itertools.chain(['[user]'], fp), source=ini_file)            
+            ini_parser.read_file(itertools.chain(['[user]'], fp), source=ini_file)
 
         return ini_parser
 
     # Read in settings.ini file
-    def read_settings(self, settings_file, overload):
+    def read_settings(self, settings_file: str, overload: bool):
 
         settings_parser = self.read_ini(settings_file, not overload)
 
-        # If missing settings.ini file, run validator 
+        # If missing settings.ini file, run validator
         if not settings_parser:
             return
             print("FATAL: failed to read settings file " + settings_file)
@@ -239,7 +244,7 @@ class setup(object):
         if not os.path.isfile(settings_file):
             self.args.validate = True
             self.quit_after_val = True
-            return 
+            return
 
         self.read_settings(os.path.join(self.ev['BP_HOME'], "settings.ini"), True)
 
@@ -256,7 +261,7 @@ class setup(object):
             out = []
             for path in path1:
                 out.append(self.join(path, path2))
-            
+
         elif isinstance(path2, list):
             out = []
             for path in path2:
@@ -294,7 +299,6 @@ class setup(object):
                                             self.ev['BP_RESULTS'], self.stg['captured_subdir'])
         self.stg['failed_path']         = os.path.join(
                                             self.ev['BP_RESULTS'], self.stg['failed_subdir'])
-
         self.stg['script_path']         =os.path.join(
                                             self.ev['BP_HOME'], self.stg['module_dir'])
 
@@ -340,7 +344,7 @@ class setup(object):
             # working_group not in lookup table
             gid_file = self.lib.files.read(os.path.join(self.ev['BPS_INC'], "resources/groups.txt"))
             gid_table = [line.split() for line in gid_file]
-        
+
             try:
                 self.overload_dict['slurm_account'], self.overload_dict['gid'] = [gid[1:] for gid in gid_table if gid[0] == self.stg['working_group']][0]
             except:
@@ -362,7 +366,7 @@ class setup(object):
 
             # Add shared app path to bp_apps
             self.bp_apps += [group_apps]
-            #self.bp_results += 
+            #self.bp_results +=
 
 
     # Initialize the global dicts, settings and libraries
@@ -404,7 +408,7 @@ class setup(object):
         # Update EV dict from overloads
         self.lib.overload.replace(self.ev)
 
-        # Set module path 
+        # Set module path
         self.stg['module_path']      = os.path.join(
                                           self.bp_apps[-1], self.stg['module_dir'])
 
@@ -412,5 +416,5 @@ class setup(object):
         #print("stg")
         #print(self.stg)
 
-        # Read version info 
+        # Read version info
         #self.lib.files.get_client_version()

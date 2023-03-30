@@ -12,8 +12,9 @@ import src.logger as logger
 
 glob = None
 
+
 # Check if an existing installation exists
-def check_for_previous_install():
+def check_for_previous_install() -> bool:
 
     install_path = glob.config['metadata']['working_path']
 
@@ -24,8 +25,8 @@ def check_for_previous_install():
         if glob.stg['overwrite']:
 
             glob.lib.msg.warn(["It seems this app is already installed. Deleting old build in " +
-                         glob.lib.rel_path(install_path) + " because 'overwrite=True'",
-                         "\033[0;31mDeleting in 5 seconds...\033[0m"])
+                                glob.lib.rel_path(install_path) + " because 'overwrite=True'",
+                                "\033[0;31mDeleting in 5 seconds...\033[0m"])
 
             time.sleep(glob.stg['timeout'])
             glob.lib.msg.high("No going back now...")
@@ -44,8 +45,9 @@ def check_for_previous_install():
     else:
         return False
 
+
 # Get build job dependency
-def get_build_dep(job_limit):
+def get_build_dep(job_limit: int):
 
     # Reset dependency lists
     glob.any_dep_list = []
@@ -58,14 +60,17 @@ def get_build_dep(job_limit):
     if len(running_task_ids) >= job_limit:
         glob.any_dep_list.append(str(running_task_ids[len(running_task_ids)-job_limit]))
 
+
 # Main method for generating and submitting build script
-def build_code(input_dict, glob_copy):
+def build_code(input_dict: dict, glob_copy: object):
 
     # Use copy of glob for this build
     global glob
     glob = glob_copy
 
     input_str = ",".join([key + "=" + input_dict[key] for key in input_dict.keys() if key])
+
+    glob.lib.overload.replace(None)
 
     glob.lib.msg.heading("Building application:  '" + input_str + "'")
 
@@ -111,7 +116,7 @@ def build_code(input_dict, glob_copy):
     # Stage input files
     glob.lib.files.stage()
 
-    #============== GENERATE BUILD & MODULE TEMPLATE  ======================================
+    #============== GENERATE BUILD & MODULE TEMPLATE  ===============================
 
     # Generate build script
     glob.lib.template.generate_build_script()
@@ -148,17 +153,20 @@ def build_code(input_dict, glob_copy):
     # If dry_run
     if glob.stg['dry_run']:
         glob.lib.msg.high(["This was a dryrun, skipping build step. Script created at:",
-                        ">  " + glob.lib.rel_path(os.path.join(glob.config['metadata']['working_path'], glob.job_file))])
-        glob.task_id = "dry_run"
+                            ">  " + glob.lib.rel_path(os.path.join(glob.config['metadata']['working_path'], 
+                            glob.job_file))])
+
+        # Set unique task id
+        glob.task_id = glob.lib.get_dry_id()
 
     else:
         # Submit job to sched
         if glob.stg['build_mode'] == "sched":
             # Check max running build jobs
             try:
-                job_limit = int(glob.stg['max_build_jobs'])
+                job_limit = int(glob.stg['max_running_jobs'])
             except:
-                glob.lib.msg.error("'max_build_jobs in $BP_HOME/settings.ini is not an integer")
+                glob.lib.msg.error("'max_running_job' is not an integer")
 
             get_build_dep(job_limit)
 
@@ -177,16 +185,19 @@ def build_code(input_dict, glob_copy):
     # Generate build report
     glob.lib.report.build()
 
-    glob.lib.msg.high("Done.") 
+    glob.lib.msg.high("Done.")
+
 
 # Setup contants and get build label
-def init(glob):
+def init(glob: object):
 
     # Init logger
     logger.start_logging("BUILD", glob.stg['build_log_file'] + "_" + glob.stg['time_str'] + ".log", glob)
 
     # Set list of installed applications
     #glob.lib.set_installed_apps()
+    # Get list of installed apps
+    glob.lib.set_installed_apps()
 
     #print("glob.stg['curr_cfg_path']", glob.stg['curr_cfg_path'])
     #print("glob.stg['build_cfg_path']", glob.stg['build_cfg_path'])

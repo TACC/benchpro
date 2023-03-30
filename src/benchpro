@@ -11,15 +11,16 @@ import os
 import sys
 import traceback
 
+
 # MODULE NOT LOADED
 def check_module_version():
 
-    sys_dict = {'prod': {   'frontera' : "/scratch1/hpc_tools/benchpro/modulefiles",
-                            'stampede2': "/scratch/hpc_tools/benchpro/modulefiles",
-                            'ls6'      : "/scratch/projects/benchtool/modulefiles"},
-                'dev': {    'frontera' : "/scratch1/hpc_tools/benchpro-dev/modulefiles",
-                            'stampede2': "/scratch/hpc_tools/benchpro-dev/modulefiles",
-                            'ls6'      : "/scratch/projects/benchtool-dev/modulefiles"}
+    sys_dict = {'prod': {'frontera':    "/scratch1/hpc_tools/benchpro/modulefiles",
+                         'stampede2':   "/scratch/hpc_tools/benchpro/modulefiles",
+                         'ls6':         "/scratch/projects/benchtool/modulefiles"},
+                'dev':  {'frontera':    "/scratch1/hpc_tools/benchpro-dev/modulefiles",
+                         'stampede2':   "/scratch/hpc_tools/benchpro-dev/modulefiles",
+                         'ls6':         "/scratch/projects/benchtool-dev/modulefiles"}
                 }
 
     mismatch = False
@@ -34,7 +35,7 @@ def check_module_version():
     if mod_version != required_version:
         print("Version mismatch: yours=" + mod_version + ", site=" + required_version + ". Reload the module with:\n")
         mismatch = True
-        
+
     if mismatch:
         print("Development site:")
         print("ml use " + sys_dict['dev'][os.environ.get('TACC_SYSTEM')])
@@ -56,13 +57,14 @@ check_module_version()
 
 # Local Imports
 try:
-    import src.bench_manager    as bench_manager
-    import src.build_manager    as build_manager
-    import src.global_settings  as global_settings
-    import src.notices          as notices
-    import src.result_manager   as result_manager
-    import src.splash           as splash
-    import src.validator        as validator
+    import src.bench_manager    as  bench_manager
+    import src.build_manager    as  build_manager
+    import src.global_settings  as  global_settings
+    import src.notices          as  notices
+    import src.result_manager   as  result_manager
+    import src.splash           as  splash
+    import src.validator        as  validator
+
 
 # Catch import exception
 except ImportError as e:
@@ -71,9 +73,9 @@ except ImportError as e:
     print(e)
     sys.exit(1)
 
+
 # Catch exception in a handler, write to log and quit
 def catch_major_exception(glob, e):
-
 
     if not glob:
         print("Failed to create glob object")
@@ -93,14 +95,14 @@ def catch_major_exception(glob, e):
             print(traceback.format_exc())
         sys.exit(1)
 
-    else: 
+    else:
         print(traceback.format_exc())
         print(e)
         sys.exit(1)
 
+
 # Get cmdline arguments
 def get_arguments():
-
 
     # Parse cmdline args
     cmd_parser = argparse.ArgumentParser(
@@ -258,6 +260,12 @@ def get_arguments():
 
 
     cmd_parser.add_argument(
+        "--keys",
+        default=False,
+        action="store_true",
+        help="Print list of all BenchPRO parameter keys.")
+
+    cmd_parser.add_argument(
         "--purge",
         default=False,
         action='store_true',
@@ -279,11 +287,12 @@ def get_arguments():
 
     return cmd_parser.parse_args()
 
-#  
-def init_glob():
-    # Init global object
+
+# Initialize the global object
+def init_glob() -> object:
     glob = global_settings.setup(get_arguments())
     return glob
+
 
 def main():
 
@@ -298,12 +307,12 @@ def main():
     for key in args.__dict__:
         if args.__dict__[key]:
             no_input = False
-    if no_input:    
+    if no_input:
         notices.info()
 
     # Set default for sched input
     args.sched = "system"
-    
+
     # Create glob obj
     try:
         glob = init_glob()
@@ -314,7 +323,7 @@ def main():
     glob.args = args
 
     # Run validator checker, with --validate as 2nd arg. Forces if True
-    validator.check(glob) 
+    validator.check(glob)
 
     # Start build manager
     if glob.args.build:
@@ -376,7 +385,9 @@ def main():
     # Remove result and exit
     elif glob.args.delResult:
         result_manager.remove_result(glob)
-    # Purge user files 
+    elif glob.args.keys:
+        glob.lib.misc.print_keys()
+    # Purge user files
     elif glob.args.purge:
         #glob.lib.files.purge()
         print("Purge disabled for now...")

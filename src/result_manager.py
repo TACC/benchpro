@@ -21,8 +21,9 @@ import src.logger as logger
 
 glob = None
 
+
 # Move benchmark directory from complete to captured/failed, once processed
-def move_to_archive(result_path, dest):
+def move_to_archive(result_path: str, dest: str):
     if not os.path.isdir(result_path):
         glob.lib.msg.error("result directory '" + glob.lib.rel_path(result_path) + "' not found.")
 
@@ -37,25 +38,29 @@ def move_to_archive(result_path, dest):
         # Try again
         move_to_archive(result_path + ".dup", dest)
 
+
 # Create .capture-complete file in result dir
-def capture_complete(result_path):
+def capture_complete(result_path: str):
     glob.lib.msg.low("Successfully captured result in " + glob.lib.rel_path(result_path))
     move_to_archive(result_path, glob.stg['captured_path'])
 
+
 # Create .capture-failed file in result dir
-def capture_failed(result_path):
+def capture_failed(result_path: str):
     glob.lib.msg.high("Failed to capture result in " + glob.lib.rel_path(result_path))
     # Move failed result to subdir if 'move_failed_result' is set
     if glob.stg['move_failed_result']:
         move_to_archive(result_path, glob.stg['failed_path'])
 
-def capture_skipped(result_path):
+
+def capture_skipped(result_path: str):
     glob.lib.msg.low("Skipping this dryrun result in " + glob.lib.rel_path(result_path))
     if glob.stg['move_failed_result']:
         move_to_archive(result_path, glob.stg['failed_path'])
 
+
 # Function to test if benchmark produced valid result
-def validate_result(result_path):
+def validate_result(result_path: str):
 
     # Get dict of report file contents
     glob.report_dict = glob.lib.report.read(result_path)
@@ -67,7 +72,7 @@ def validate_result(result_path):
     glob.output_path = glob.lib.files.find_exact(glob.report_dict['result']['output_file'], result_path)
 
     # Deal with dry_run 
-    if glob.report_dict['bench']['task_id'] == "dry_run":
+    if "dry" in glob.report_dict['bench']['task_id']:
         return "skipped", None
 
     # Test for benchmark output file
@@ -101,10 +106,16 @@ def validate_result(result_path):
 
     # Run scipt collection
     elif glob.report_dict['result']['method'] == 'script':
+
+        # Check user's directory first
         result_script = os.path.join(glob.stg['user_script_path'],  glob.report_dict['result']['script'])
         if not os.path.exists(result_script):
-            glob.lib.msg.warn("Result collection script not found in "+ glob.lib.rel_path(result_script))
-            return "failed", None
+
+            # Check site's bin dir
+            result_script = os.path.join(glob.stg['site_bin_path'],  glob.report_dict['result']['script'])
+            if not os.path.exists(result_script):
+                glob.lib.msg.warn("Result collection script not found in "+ glob.lib.rel_path(result_script))
+                return "failed", None
 
         # Run validation script on output file
         try:
@@ -144,8 +155,9 @@ def validate_result(result_path):
     # Return valid result and unit
     return result, glob.report_dict['result']['unit']
 
+
 # Get required key from report, if not found try get it from the [bench] section, otherwise error
-def get_required_key(section, key):
+def get_required_key(section: str, key: str) -> str:
     try:
         return glob.report_dict[section][key]
     except:
@@ -155,15 +167,17 @@ def get_required_key(section, key):
     except:    
         glob.lib.msg.error("missing required report field '"+key+"'")
 
-# Get optional key from report or return ""
-def get_optional_key(section, key):
+
+# Get optional key from report or return "def get_optional_key(section" , key):
+def get_optional_key(section: str, key: str) -> str:
     try:
         return glob.report_dict[section][key]
     except:
         return ""
 
+
 # Get timestamp from output file
-def get_timestamp(line_id):
+def get_timestamp(line_id: str) -> str:
     output_file = os.path.join(glob.result_path, glob.report_dict['bench']['stdout'])
 
     # Search for tiem line and return in
@@ -175,22 +189,25 @@ def get_timestamp(line_id):
     # Time line not found 
     return None
 
+
 # Return start time from job output file
-def get_start_time():
+def get_start_time() -> str:
     start = get_timestamp("START")
     if start:
         return start.split(" ")[1]
     return None
 
+
 # Return end time from job output file
-def get_end_time():
+def get_end_time() -> str:
     end = get_timestamp("END")
     if end:
         return get_timestamp("END").split(" ")[1]
     return None
 
+
 # Get difference of end and start times from job output file
-def get_elapsed_time():
+def get_elapsed_time() -> int:
     start_sec = get_timestamp("START")
     end_sec   = get_timestamp("END")
 
@@ -198,8 +215,9 @@ def get_elapsed_time():
         return int(end_sec.split(" ")[2]) - int(start_sec.split(" ")[2])
     return None
 
+
 # Generate dict for postgresql 
-def get_insert_dict(result_path, result, unit):
+def get_insert_dict(result_path: str, result: int, unit: str) -> dict:
     
     # Get JOBID in order to get NODELIST from sacct
     try:
@@ -268,8 +286,9 @@ def get_insert_dict(result_path, result, unit):
 
     return insert_dict
 
+
 # Create directory on remote server
-def make_remote_dir(dest_dir):
+def make_remote_dir(dest_dir: str):
     # Check that SSH key exists
     try:
         expr = "ssh -i " + glob.stg['ssh_key_path'] +" " + glob.stg['ssh_user'] + "@" + glob.stg['db_host'] + " -t mkdir -p " + dest_dir
@@ -286,8 +305,9 @@ def make_remote_dir(dest_dir):
 
     return True
 
+
 # SCP files to remote server
-def scp_files(src_dir, dest_dir):
+def scp_files(src_dir: str, dest_dir: str) -> bool:
 
     # Check that SSH key exists 
     try:
@@ -305,8 +325,9 @@ def scp_files(src_dir, dest_dir):
 
     return True
 
+
 # Send benchmark provenance files to db server
-def send_files(result_dir, dest_dir):
+def send_files(result_dir: str, dest_dir: str):
 
     # Use SCP
     if glob.stg['file_copy_handler'] == "scp":
@@ -378,9 +399,10 @@ def send_files(result_dir, dest_dir):
     # Transmission method neither 'scp' or 'cp'
     else:
        glob.lib.msg.error("unknown 'file_copy_handler' option in settings.cfg. Accepts 'scp' or 'cp'.") 
-       
+
+
 # Look for results and send them to db
-def capture_result(glob_obj):
+def capture_result(glob_obj: object):
     global glob
     glob = glob_obj
 
@@ -441,8 +463,9 @@ def capture_result(glob_obj):
 
         glob.lib.msg.high(["", "Done. " + str(captured) + " results sucessfully captured"])
 
+
 # Test if search field is valid in results/models.py
-def test_search_field(field):
+def test_search_field(field: str) -> bool:
 
     if field in glob.model_fields:
         return True
@@ -452,8 +475,9 @@ def test_search_field(field):
                             "Available fields:"] +
                             glob.model_fields)
 
+
 # Parse comma-delmited list of search criteria, test keys and return SQL WHERE statement
-def parse_input_str(args):
+def parse_input_str(args: str) -> str:
 
     # No filter
     if not args or args == "all":
@@ -477,6 +501,7 @@ def parse_input_str(args):
                 select_str += search[0] + "='" + search[1] + "'"
 
     return "WHERE " + select_str + ";"
+
 
 # Query db for results
 def query_db(glob_obj):
@@ -536,6 +561,7 @@ def query_db(glob_obj):
     else:
         print("No results found matching search criteria: '" + search_str + "'")
 
+
 # List local results
 def list_results(glob_obj):
     global glob
@@ -594,10 +620,12 @@ def list_results(glob_obj):
     if not glob.args.listResults in ['running', 'complete', 'captured', 'failed', 'all']:
         print("Invalid input, provide 'running', 'complete', 'captured', 'failed' or 'all'.")
 
+
 # Get list of result dirs matching search str
 def get_matching_results(result_path, result_str):
     matching_results = gb.glob(os.path.join(result_path, "*"+result_str+"*"))
     return matching_results
+
 
 # Show info for local result
 def query_result(glob_obj, result_label):
@@ -643,7 +671,7 @@ def query_result(glob_obj, result_label):
     print("----------------------------------------")
 
     # Handle dryrun
-    if report_dict['bench']['task_id'] == "dry_run":
+    if "dry" in report_dict['bench']['task_id']:
         print("Dry_run - skipping result check.")
     else:
         # Local exec mode
@@ -662,18 +690,21 @@ def query_result(glob_obj, result_label):
             if not result == "failed":
                 print("Result: " + str(result) + " " + str(unit))
 
-        elif status in ("PENDING", "RUNNING"):
+        elif status == "RUNNING":
             print("Job " + report_dict['bench']['task_id'] + " still running.")
+
+        elif status == "PENDING":
+            print("Job " + report_dict['bench']['task_id'] + " still pending.")
 
         else:
             glob.lib.msg.print_file_tail(os.path.join(report_dict['bench']['path'], report_dict['bench']['stderr']))
-
 
 
 # Print list of result directories
 def print_results(result_list):
     for result in result_list:
         print("  " + result)
+
 
 # Delete list of result directories
 def delete_results(result_list):
@@ -684,6 +715,7 @@ def delete_results(result_list):
     for result in result_list:
         su.rmtree(result)
     print("Done.")
+
 
 # Remove local result
 def remove_result(glob_obj):

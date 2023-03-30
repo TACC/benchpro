@@ -12,6 +12,7 @@ import src.logger as logger
 
 glob = glob_master = None
 
+
 # Get code info
 def get_app_info():
 
@@ -19,12 +20,15 @@ def get_app_info():
     glob.lib.expr.eval_dict(glob.config['requirements'], False)
 
     # Check if code is installed
-
     #print("glob.config['requirements')", glob.config['requirements'])
 
     # If application is not installed, check if cfg file is available to build
     if not glob.lib.check_if_installed(glob.config['requirements']):
-        glob.lib.msg.warn("No installed application meeting benchmark requirements: '" + "', '".join([i + "=" + glob.config['requirements'][i] for i in glob.config['requirements'].keys() if i]) + "'") 
+        glob.lib.msg.warn("No installed application meeting benchmark requirements: '" +
+                          "', '".join([i + "=" + 
+                          glob.config['requirements'][i] for i in glob.config['requirements'].keys() if i]) + 
+                          "'")
+
         glob.lib.msg.high("Attempting to build now...")
 
         # Set build args
@@ -37,13 +41,11 @@ def get_app_info():
         # Run build manager
         build_manager.init(build_glob)
 
+        # Set build job status
         if glob.stg['dry_run']:
             glob.config['metadata']['build_running'] = False
         else:
             glob.config['metadata']['build_running'] = True
-
-        #print("glob.config['requirements')", glob.config['requirements'])
-        #print("glob.lib.check_if_installed(glob.config['requirements'])", glob.lib.check_if_installed(glob.config['requirements']))
 
         # Recheck that app is installed
         glob.config['metadata']['code_path'] = glob.lib.check_if_installed(glob.config['requirements'])['path']
@@ -90,7 +92,10 @@ def get_app_info():
                 if glob.stg['bench_mode'] == 'sched':
                     # exe not null
                     if glob.build_report['exe_file']:
-                        glob.lib.msg.exe_check(glob.build_report['exe_file'], os.path.join(install_path, glob.stg['install_subdir'], glob.build_report['bin_dir']))
+                        glob.lib.msg.exe_check(glob.build_report['exe_file'], 
+                                               os.path.join(
+                                               install_path, glob.stg['install_subdir'], 
+                                               glob.build_report['bin_dir']))
                     # exe null
                     else:
                         glob.lib.msg.low("No exe defined, skipping application check.")
@@ -120,9 +125,12 @@ def gen_bench_script():
         gpu_path_str = str(glob.config['runtime']['gpus']).zfill(2) + "G"
         gpu_print_str = ", on " + glob.config['runtime']['gpus'] + " GPUs."
 
-    glob.lib.msg.heading("Task " + str(glob.counter) \
-            + ": " + glob.config['config']['bench_label'] + " : " + str(glob.config['runtime']['nodes']) + " nodes, " + str(glob.config['runtime']['threads']) + " threads, " + \
-            str(glob.config['runtime']['ranks_per_node']) + " ranks per node" + gpu_print_str + glob.end)
+    glob.lib.msg.heading("Task " + str(glob.counter) + \
+                         ": " + glob.config['config']['bench_label'] + \
+                         " : " + str(glob.config['runtime']['nodes']) + \
+                         " nodes, " + str(glob.config['runtime']['threads']) + \
+                         " threads, " + str(glob.config['runtime']['ranks_per_node']) + \
+                         " ranks per node" + gpu_print_str + glob.end)
 
     glob.counter += 1
 
@@ -135,7 +143,9 @@ def gen_bench_script():
                                             gpu_path_str
 
     # Check if working dir path already exists
-    glob.config['metadata']['working_path'] = glob.lib.files.check_dup_path(os.path.join(glob.stg['pending_path'], glob.config['metadata']['working_dir']))
+    glob.config['metadata']['working_path'] = glob.lib.files.check_dup_path(
+                                              os.path.join(glob.stg['pending_path'], 
+                                              glob.config['metadata']['working_dir']))
     # Path to copy files to
     glob.config['metadata']['copy_path']    = glob.config['metadata']['working_path']
 
@@ -149,6 +159,7 @@ def gen_bench_script():
 
     # Generate benchmark template
     glob.lib.template.generate_bench_script()
+
 
 # Execute the bench, locally or through sched
 def start_task():
@@ -221,8 +232,9 @@ def start_task():
     # Generate bench report
     glob.lib.report.bench()
 
+
 # Main function to check for installed application, setup benchmark and run it
-def run_bench(input_str, glob_copy):
+def run_bench(input_str: str, glob_copy: object) -> int:
 
     global glob
     glob = glob_copy
@@ -326,8 +338,9 @@ def run_bench(input_str, glob_copy):
     # Return number of tasks compeleted for this benchmark 
     return glob.counter
 
+
 # Check input
-def init(glob):
+def init(glob: object):
 
     glob.counter = 1
 

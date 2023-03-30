@@ -74,14 +74,15 @@ class init(object):
     # Replace variables
     def resolve_vars(self, dict_value, runtime_keys):
         # Get list of <<<variables>>>
+
         var_list = re.findall('\<<<([^>>>]+)',str(dict_value))
 
         # For each found variable
         for var in var_list:
 
             # Skip runtime keys for now
-            if runtime_keys and (var in runtime_keys):
-                break 
+            #if runtime_keys and (var in runtime_keys):
+            #    break 
 
             new_value = str(self.get_dict_value(var))
             dict_value = dict_value.replace("<<<" + var + ">>>", new_value)
@@ -99,6 +100,7 @@ class init(object):
             runtime_keys = self.glob.config['runtime'].keys()
 
         for key in cfg_dict:
+
             # Resolve variables
             cfg_dict[key] = self.resolve_vars(cfg_dict[key], runtime_keys) 
             

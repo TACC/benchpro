@@ -42,14 +42,15 @@ class init(object):
         self.sched    = sched_handler.init(self.glob)
         self.template = template_handler.init(self.glob)
 
-    def cast_to(self, var, dtype):
+    # Convert string to dtype
+    def cast_to(self, var: str, dtype: type):
         try:
             return dtype(var)
         except:
-            self.msg.error("Unable to cast '" + var + "' to " + str(dtype))
+            self.msg.error("Unable to cast '" + str(var) + "' to " + str(dtype))
 
     # Cast from string to proper type
-    def destr(self, var):
+    def destring(self, var):
 
         if not isinstance(var, str):
             return var
@@ -134,6 +135,15 @@ class init(object):
         # Sort by task_id
         #self.glob.installed_apps_list = sorted(self.glob.installed_apps_list, key=lambda x: x['task_id'], reverse=True)
 
+    # Get a unique job_id for dry_run job
+    def get_dry_id(self):
+        tally = 0
+        for app in self.glob.installed_apps_list:
+            if "dry" in app['task_id']:
+                tally += 1 
+
+        return "dry_" + str(tally)
+
     # Get results in $BP_RESULTS/pending
     def get_pending_results(self):
         complete =  self.files.get_subdirs(self.glob.stg['pending_path'])
@@ -192,7 +202,7 @@ class init(object):
     # Log cfg contents
     def send_inputs_to_log(self, label):
         # List of global dicts containing input data
-        cfg_list = [self.glob.config, self.glob.modules, self.glob.sched, self.glob.compiler]
+        cfg_list = [self.glob.config, self.glob.modules, self.glob.sched, self.glob.compiler, self.glob.mpi]
 
         self.glob.lib.msg.log(label + " started with the following inputs:")
         self.glob.lib.msg.log("======================================")

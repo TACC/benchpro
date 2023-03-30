@@ -187,8 +187,8 @@ class init(object):
             # Store module version
             self.glob.modules[key]['version'] = self.glob.modules[key]['full'].split('/')[-1]
 
-            # Set type for compiler
-            if key == "compiler":
+            # Set type for compiler/mpi
+            if key in ["compiler", "mpi"]:
                 self.glob.modules[key]['type'] =  self.glob.modules[key]['full'].split('/')[0]
                 self.glob.modules[key]['family'] = self.glob.modules[key]['full'].split('/')[0]
                 
@@ -509,12 +509,13 @@ class init(object):
         self.check_dict_section(cfg_dict['metadata']['cfg_file'], cfg_dict, 'sched')
         self.check_dict_key(    cfg_dict['metadata']['cfg_file'], cfg_dict, 'sched', 'type')
         self.check_dict_key(    cfg_dict['metadata']['cfg_file'], cfg_dict, 'sched', 'queue')
-    
+   
         # Instantiate missing optional parameters
         if not 'slurm_account'  in    cfg_dict['sched'].keys():   cfg_dict['sched']['slurm_account']    = None
         if not 'reservation' in    cfg_dict['sched'].keys():   cfg_dict['sched']['reservation']   = None
 
-        self.glob.lib.overload.replace(cfg_dict)
+        self.glob.lib.overload.replace(cfg_dict['sched'])
+
         # Fill missing parameters
         if not cfg_dict['sched']['runtime']:
             cfg_dict['sched']['runtime'] = '02:00:00'
@@ -548,9 +549,14 @@ class init(object):
             self.process_sched_cfg(cfg_dict)
             self.glob.sched.update(cfg_dict)
     
-        # Process and store compiler cfg 
+        # Process and store compiler/mpi cfg 
         elif cfg_type == 'compiler':
+            # Compiler cfg
             cfg_file = os.path.join(self.glob.stg['site_sys_cfg_path'], self.glob.stg['compile_cfg_file'])
             cfg_dict = self.glob.lib.files.read_cfg(cfg_file)
             self.glob.compiler = cfg_dict
+            # MPI cfg
+            cfg_file = os.path.join(self.glob.stg['site_sys_cfg_path'], self.glob.stg['mpi_cfg_file'])
+            cfg_dict = self.glob.lib.files.read_cfg(cfg_file)
+            self.glob.mpi = cfg_dict
     

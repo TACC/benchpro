@@ -27,7 +27,7 @@ class init(object):
     def get_job_status(self, jobid):
 
             # Assume dry run jobs are complete
-            if jobid == "dry_run":
+            if "dry" in jobid:
                 return "COMPLETED"
 
             # Local jobs
@@ -206,7 +206,7 @@ class init(object):
         exec_mode = self.glob.lib.report.get_exec_mode("build", app)
 
         # Handle dry run applications
-        if exec_mode == "dry_run":
+        if "dry" in exec_mode:
             return '\033[1;33mDRYRUN\033[0m'
 
         # Get Jobid from report file and check if status = COMPLETED
@@ -220,7 +220,7 @@ class init(object):
             
             return '\033[0;31mUNKNOWN\033[0m' 
 
-        if task_id == "dry_run":
+        if "dry" in task_id:
             return "\033[1;33mDRY RUN\033[0m"
 
         status = None 
@@ -255,7 +255,7 @@ class init(object):
         # Status not found
         if not status:
             self.glob.lib.msg.log("Unable to determine status of job ID " + str(task_id))
-        return '\033[0;31mUNKNONWN\033[0m'
+        return '\033[0;31mUNKNOWN\033[0m'
 
 
 
