@@ -10,7 +10,7 @@ import configparser
 import os
 import sys
 
-settings_file = os.path.join(os.environ.get("BP_HOME"), "settings.ini")
+settings_file = os.path.join(os.environ.get("BP_HOME"), "user.ini")
 
 
 # Convert various input dtypes to bool type, if expecting bool type
@@ -68,7 +68,7 @@ def change_setting(kv: list):
         lines.append(new_key.ljust(24, " ") + "= " + new_val + "\n")
 
     # Write the file out again
-    s_file = os.path.join(os.environ.get("BP_HOME"), "settings.ini")
+    s_file = os.path.join(os.environ.get("BP_HOME"), "user.ini")
     with open(s_file, 'w') as file:
         file.write("\n".join(lines))
 
@@ -95,6 +95,12 @@ def drop_setting(key: str):
 
 
 def main():
+
+    # Check user.ini is present
+    if not os.path.isfile(settings_file):
+        print("File validation required, run:")
+        print("bp --validate")
+        sys.exit(1)
 
     # Print list
     if len(sys.argv) == 1:
