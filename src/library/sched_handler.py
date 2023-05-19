@@ -24,19 +24,18 @@ class init(object):
         return True, cmd.stdout, cmd.stderr
 
     # Return job status for job ID
-    def get_job_status(self, jobid):
+    def task_status(self, jobid: int) -> str:
 
             # Assume dry run jobs are complete
-            if "dry" in jobid:
+            if "dry" in str(jobid):
                 return "COMPLETED"
 
             # Local jobs
-            if "local" in jobid:
+            if "local" in str(jobid):
                 return "COMPLETED"
 
-            # Query Slurm slurm_accounting with job ID
-            success, stdout, stderr = self.slurm_exec("sacct -j " + jobid + " --format State")
-
+            # Query Slurm slurm accounting with job ID
+            success, stdout, stderr = self.slurm_exec("sacct -j " + str(jobid) + " --format State")
             if success:
                 # Strip out bad chars from job state
                 if (len(stdout.split("\n")) > 2):
@@ -54,20 +53,21 @@ class init(object):
 
         # Build job exec_mode=local
         elif self.glob.build_report['exec_mode'] == "local":
-            if self.glob.lib.proc.pid_running(self.glob.build_report['task_id']):
+            if not self.glob.lib.proc.complete(self.glob.build_report['task_id']):
                 self.glob.prev_pid = self.glob.build_report['task_id']
 
     # Check that job ID is not running
     def check_job_complete(self, jobid):
 
         # Strip out bad chars from job state
-        state = self.get_job_status(jobid)
+        state = self.task_status(jobid)
 
         # Job COMPLETE
         if any (state == x for x in ["COMPLETED", "CANCELLED", "ERROR", "FAILED", "TIMEOUT", "UNKNOWN"]):
             return state
         # Job RUNNING or PENDING
         return False
+
 
     # Get Job IDs of RUNNING AND PENDNIG jobs
     def get_active_jobids(self, job_label):
@@ -130,9 +130,9 @@ class init(object):
         return node_list
 
     # Get NODELIST from sacct  using JOBID
-    def get_nodelist(self, jobid):
+    def get_nodelist(self, jobid: int) -> str:
 
-        success, stdout, stderr = self.slurm_exec("sacct -X -P -j  " + jobid + " --format NodeList")
+        success, stdout, stderr = self.slurm_exec("sacct -X -P -j  " + str(jobid) + " --format NodeList")
         if success:
             return self.parse_nodelist(stdout.split("\n")[1])
 
@@ -179,19 +179,22 @@ class init(object):
             if jobid_line in line:
                 jobid = line.split(" ")[-1]
 
-        # Wait for slurm to generate jobid
+        # Wait for slurm to queue job
         time.sleep(1)
             
         # Get job in queue
         success, stdout, stderr = self.slurm_exec("squeue -a --job " + jobid)
 
-        self.glob.lib.msg.low([stdout,
+        self.glob.lib.msg.low(stdout.split("\n") +
+                    ["",
                     "Job stdout:",
                     ">  "+ self.glob.lib.rel_path(
-                        os.path.join(self.glob.config['metadata']['working_path'], self.glob.config['config']['stdout'])),
+                        os.path.join(self.glob.config['metadata']['working_path'], 
+                                     self.glob.config['config']['stdout'])),
                     "Job stderr:",
                     ">  "+ self.glob.lib.rel_path(
-                        os.path.join(self.glob.config['metadata']['working_path'], self.glob.config['config']['stderr']))])
+                        os.path.join(self.glob.config['metadata']['working_path'], 
+                                     self.glob.config['config']['stderr']))])
 
         self.glob.lib.msg.log(stdout)
         self.glob.lib.msg.log(stderr)
@@ -225,21 +228,24 @@ class init(object):
 
         status = None 
         if exec_mode == "sched":
-            status = self.get_job_status(task_id)
+            status = self.task_status(task_id)
 
         if exec_mode == "local":
             # Check if PID is running
-            if self.glob.lib.proc.pid_running(task_id):
-                return "\033[1;33mPID STILL RUNNING\033[0m"
-            else:
+            if self.glob.lib.proc.complete(task_id):
                 status = "COMPLETED"
+            else:
+                return "\033[1;33mPID STILL RUNNING\033[0m"
 
         # Complete state
         if status == "COMPLETED":
 
             bin_dir, exe = self.glob.lib.report.get_build_exe(app)
             if exe:
-                if self.glob.lib.files.exists(exe, os.path.join(self.glob.ev['BP_APPS'], app, self.glob.stg['install_subdir'], bin_dir)):
+                if self.glob.lib.files.exists(exe, os.path.join(self.glob.ev['BP_APPS'], 
+                                                                app, 
+                                                                self.glob.stg['install_subdir'], 
+                                                                bin_dir)):
                     return '\033[0;32mEXE FOUND\033[0m'
 
             return '\033[0;31mEXE NOT FOUND\033[0m'
