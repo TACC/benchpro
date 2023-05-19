@@ -8,7 +8,7 @@ Overloading parameters
 ----------------------
 
 Useful for changing a setting for a onetime use. 
-Use `benchpro --setup` to confirm important default params from $BP_HOME/settings.ini
+Use `benchpro --setup` to confirm important default params from $BP_HOME/user.ini
 You can overload any of the default parameters read from file with the `-o`/`--overload` flag. 
 Parameters are overloaded_dict with a list of key-value pairs, or by provided a filename with overloads defined.
 An exception will be raised if a provided overload key does not match an existing parameter read from file.
@@ -67,7 +67,7 @@ Local build and bench modes
 Allows you to run the generated scripts in a shell on the local machine rather than  via the scheduler.
 Useful for evaluating hardware which is not integrated into the scheduler.
 
-In settings.ini `build_mode` and `bench_mode` are responsible for selecting this feature. Values `sched` or `local` are accepted, or an exception will be raised. 
+In user.ini `build_mode` and `bench_mode` are responsible for selecting this feature. Values `sched` or `local` are accepted, or an exception will be raised. 
 You can opt to build locally and run via the scheduler, or vice a versa.
 
 Benchmarks with no application dependency

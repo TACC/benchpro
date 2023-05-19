@@ -74,7 +74,7 @@ User files layout
     │           ├── read_quant_timing.sh
     │           ├── read_swift_timing.py
     │           └── read_wrf_timing.sh
-    ├── settings.ini
+    ├── user.ini
     ├── suites.ini
     └── templates
     ├── bench
@@ -136,7 +136,7 @@ Input Arguments
 Global settings
 ---------------
 
-Global settings are defined in the file :code:`$BP_HOME/settings.ini`
+Global settings are defined in the file :code:`$BP_HOME/user.ini`
 
 +--------------------+----------------------------+-------------------------------------------------------------------------+
 | Key                | Default value              | Description                                                             |
@@ -411,7 +411,7 @@ These config files contain parameters used to populate the benchmark template sc
 | description           | N          | Result explanation/description.                                                  |
 +-----------------------+------------+----------------------------------------------------------------------------------+
 | output_file           | N          | File to redirect stdout, if empty will use stdout for sched jobs, or             |
-|                       |            | 'output_file' from settings.ini for local job.                                   |
+|                       |            | 'output_file' from user.ini for local job.                                   |
 +-----------------------+------------+----------------------------------------------------------------------------------+
 | method                | Y          | Results extraction method. Currently 'expr' or 'script' modes supported.         |
 +-----------------------+------------+----------------------------------------------------------------------------------+

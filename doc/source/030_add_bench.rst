@@ -37,7 +37,7 @@ Benchmark template file
 -----------------------
 
 As with the build template. The benchmark template file is populated with the parameters defined in the config file above. This file should include setup of the dataset, any required pre-processing or domain decomposition steps if required, and the appropriate mpi_exec command.
-You are able to make use of the :code:`local_repo` variable defined in :code:`$BP_HOME/settings.ini` to copy local files.
+You are able to make use of the :code:`local_repo` variable defined in :code:`$BP_HOME/user.ini` to copy local files.
 
 This file must be located in :code:`$BP_HOME/bench/templates`, with the naming scheme :code:`[label].template`.
 

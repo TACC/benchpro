@@ -1,6 +1,6 @@
 CSA group info (from TAS 08/01/2022):
 
-PROJECT NAME            TACC PI             SLURM_ACC   WORKING_GROUP       GID
+PROJECT NAME            TACC PI             ALLOCATION  WORKING_GROUP       GID
 ------------------------------------------------------------------------------------
 CSA-Rommie-Amaro        William J. Allen    MCB22023    csa-amaro           G-825098
 CSA-Daniel-Bodony       Robert McLay        CTS22007    csa-bodony          G-825106

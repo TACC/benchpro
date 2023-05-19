@@ -32,7 +32,7 @@ List applications currently installed
 
     benchpro --listApps
 
-You should see that the status of LAMMPS is :code:`DRY RUN`, this is because by default :code:`dry_run=True` in :code:`$BP_HOME/settings.ini`. Therefore BenchPRO generated a LAMMPS compilation script but did not submit it to the scheduler to execute the build process automatically. This is useful for testing and troubleshooting without impacting the system scheduler. You can obtain more information about your LAMMPS build with:
+You should see that the status of LAMMPS is :code:`DRY RUN`, this is because by default :code:`dry_run=True` in :code:`$BP_HOME/user.ini`. Therefore BenchPRO generated a LAMMPS compilation script but did not submit it to the scheduler to execute the build process automatically. This is useful for testing and troubleshooting without impacting the system scheduler. You can obtain more information about your LAMMPS build with:
 
 .. code-block::
 
@@ -68,9 +68,9 @@ We can now run a benchmark with our LAMMPS installation.
 
 .. note::
 
-    There is no need to wait for the LAMMPS compilation job to complete, because BenchPRO is able create scheduler job dependencies between tasks as needed (i.e. the benchmark job will depend on the successful completion of the compilation job). In fact, if :code:`build_if_missing=True` in :code:`$BP_HOME/settings.ini`, BenchPRO would detect that LAMMPS was not available for the current system when attempting to run a benchmark and build it automatically without us doing the steps above. The process to run a benchmark is similar to application compilation; a configation file is used to populate a template script. A benchmark run is specified with :code:`--bench / -B`. The benchmark identifier argument can either refer to a single benchmark or a benchmark 'suite' (i.e collection of benchmarks) defined in :code:`$BP_HOME/suites.ini`. Once again you can check for available benchmarks with the :code:`--avail` argument.
+    There is no need to wait for the LAMMPS compilation job to complete, because BenchPRO is able create scheduler job dependencies between tasks as needed (i.e. the benchmark job will depend on the successful completion of the compilation job). In fact, if :code:`build_if_missing=True` in :code:`$BP_HOME/user.ini`, BenchPRO would detect that LAMMPS was not available for the current system when attempting to run a benchmark and build it automatically without us doing the steps above. The process to run a benchmark is similar to application compilation; a configation file is used to populate a template script. A benchmark run is specified with :code:`--bench / -B`. The benchmark identifier argument can either refer to a single benchmark or a benchmark 'suite' (i.e collection of benchmarks) defined in :code:`$BP_HOME/suites.ini`. Once again you can check for available benchmarks with the :code:`--avail` argument.
 
-If you haven't already, set :code:`dry_run=False` in :code:`$BP_HOME/settings.ini` so that we don't have to overload manually overload the setting on the command line.
+If you haven't already, set :code:`dry_run=False` in :code:`$BP_HOME/user.ini` so that we don't have to overload manually overload the setting on the command line.
 
 Execute the LAMMPS Lennard-Jones benchmark with
 

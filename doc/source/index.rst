@@ -2,7 +2,7 @@
 BenchPRO - Benchmark Performance & Reproducibility Orchestrator
 ===============================================================
 
-BenchPRO is a Python based framework that simplifies and standarizes the process of building applications, executing benchmarks and collection performace results on HPC systems. 
+BenchPRO is a utility that automates, simplifies and standarizes the process of building applications, executing benchmarks and collecting results on HPC systems. 
 
 .. note::
 
@@ -19,20 +19,14 @@ BenchPRO is a benchmarking framework that enforces a standardized approach to co
 * Store as much provenance data as possible for future reference.
 * Provide an intuitive way of exploring and comparing benchmark results.
 
-BenchPRO URLs
--------------
-
-    * Documentation    https://benchpro.readthedocs.io/en/latest/
-    * Client Repo      https://github.com/TACC/benchpro
-    * Site Repo        https://github.com/TACC/benchpro-site
-    * Database Repo    https://github.com/TACC/benchpro-db
 
 BenchPRO Basics
 ---------------
 
 .. toctree::
     :maxdepth: 2
-       
+
+    005_quickstart       
     010_user_guide
     020_add_app
     030_add_bench
@@ -57,3 +51,9 @@ Advanced Topics
     080_useful_features
     090_reference
 
+BenchPRO URLs
+-------------
+
+    * Documentation    https://benchpro.readthedocs.io/en/latest/
+    * Main Repo        https://github.com/TACC/benchpro
+    * Database Repo    https://github.com/TACC/benchpro-db
