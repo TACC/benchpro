@@ -1,6 +1,5 @@
 export     config_opt=<<<config_opt>>>
 export       nest_opt=<<<nest_opt>>>
-export    config_file=<<<config_file>>>
 
 #test configure inputs
 if [[ ${config_file} == "none" && ( -z "${config_opt}" || -z "${nest_opt}" ) ]]; then

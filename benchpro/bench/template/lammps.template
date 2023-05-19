@@ -1,4 +1,1 @@
-
-type $exe
-
-${mpi_exec} ${exe} -var x ${x} -var y ${y} -var z ${z} -var t ${t} < in.${dataset} >> ${output_file}
+${mpi_exec} ${exe} < in.${dataset} >> ${output_file}
