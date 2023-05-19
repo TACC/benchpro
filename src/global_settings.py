@@ -7,10 +7,11 @@ import os
 from pathlib import Path
 import socket
 import sys
+import time
 
 # Local Imports
-import src.lib as lib
-
+import src.lib              as lib
+import src.validator        as validator
 
 # Global constants
 class setup(object):
@@ -33,47 +34,15 @@ class setup(object):
         dev_mode                = False
         dev_str                 = "[PRODUCTION]"
 
-    # Create log obj
-    log                         = None
-
     ev                          = {}
 
     # User info
     session                     = {}
-    # defaults.ini dict
-    stg                         = {}
-    # Cfg file dict
-    config                      = {}
-    config['general']           = {}
-    config['config']            = {}
-    config['modules']           = {}
-    config['requirements']      = {}
-    config['runtime']           = {}
-    config['result']            = {}
-    config['files']             = {}
-    # Scheduler dict
-    sched                       = {}
-    sched['sched']              = {}
-    # Compiler dict
-    compiler                    = {}
-    mpi                         = {}
     # suites.ini dict
     suite                       = {}
-    # System dict
-    system                      = {}
-    # Module dict
-    modules                     = {}
-    # populated with metadata about installed apps
-    installed_apps_list         = []
-    # List of staging command to add to script
-    stage_ops                   = []
 
     # List of paths to add to PATH
     paths                       = []
-
-    # Quit after validator
-    quit_after_val              = False
-
 
     # Report obj
     build_report                = None
@@ -91,22 +60,17 @@ class setup(object):
     build_cfgs                  = []
     bench_cfgs                  = []
 
-    # dict for storing overload key-values
-    overload_dict               = {}
-    overloaded_dict             = {}
     valid_keys                  = []
 
-    # Contents of user's settings.ini
+    # Contents of user's user.ini
     defs_overload_list          = []
     defs_overload_dict          = {}
-    required_overload_keys      = ['slurm_account']
+    required_overload_keys      = ['allocation']
 
     # Lists of application/result base dirs
     bp_apps                     = []
     bp_results                  = []
 
-    # Suppress build manager output
-    quiet_build                 = False
     # Files to cleanup on fail
     cleanup                     = []
     # Command line history
@@ -128,20 +92,13 @@ class setup(object):
         print("It seems your current working directory doesn't exist. Aborting.")
         sys.exit(1)
 
-    # Version info is populated by lib.files.init
-    version_client              = None
-    version_client_date         = None
-    version_site                = os.getenv('BPS_VERSION')
-    version_site_full           = os.getenv('BPS_VERSION_STR') + " " + dev_str
-#    version_site_date           = os.getenv("BP_BUILD_DATE")
-
     # Ingest EVs
     for key, val in os.environ.items():
         if ("BP_" in key or "BPS_" in key) and (key != "BP_DEV"):
             ev[key]  = val
 
 
-    # Resolve relative paths and EVs in $BP_HOME/settings.ini
+    # Resolve relative paths and EVs in $BP_HOME/user.ini
     def resolve(self, value: str) -> str:
 
         value = os.path.expandvars(str(value))
@@ -173,7 +130,7 @@ class setup(object):
         if key and key not in optional and not value:
             print("Missing value for key '" +
                   key +
-                  "' in $BP_HOME/settings.ini, check the documentation.")
+                  "' in $BP_HOME/user.ini, check the documentation.")
             sys.exit(1)
 
         # Cast to dtype
@@ -200,12 +157,12 @@ class setup(object):
 
         return ini_parser
 
-    # Read in settings.ini file
+    # Read in user.ini file
     def read_settings(self, settings_file: str, overload: bool):
 
         settings_parser = self.read_ini(settings_file, not overload)
 
-        # If missing settings.ini file, run validator
+        # If missing user.ini file, run validator
         if not settings_parser:
             return
             print("FATAL: failed to read settings file " + settings_file)
@@ -238,17 +195,16 @@ class setup(object):
     # Use defined settings - overwrite the defaults
     def read_user_settings(self):
 
-        settings_file = os.path.join(self.ev['BP_HOME'], "settings.ini")
+        settings_file = os.path.join(self.ev['BP_HOME'], "user.ini")
 
-        # Run validator if user settings.ini file is missing
+        # Run validator if user user.ini file is missing
         if not os.path.isfile(settings_file):
             self.args.validate = True
-            self.quit_after_val = True
             return
 
-        self.read_settings(os.path.join(self.ev['BP_HOME'], "settings.ini"), True)
+        self.read_settings(settings_file, True)
 
-        # Create overload dict from settings.ini & --overload
+        # Create overload dict from user.ini & --overload
         self.lib.overload.init_overload_dict()
         self.lib.overload.check_for_required_overloads()
 
@@ -277,30 +233,67 @@ class setup(object):
 
     def derived_variables(self):
 
-        # Add to PATH
-        self.paths += [self.stg['user_bin_path']]
-        self.paths += [self.stg['site_bin_path']]
-        self.add_to_path()
-        self.paths += [os.path.join(self.ev['BPS_HOME'], "python", "bin")]
 
-        # Check if BP_DEBUG is set
-        if "BP_DEBUG" in os.environ:
-            self.stg['debug'] = self.process(None, os.environ.get('BP_DEBUG'))
-            print("BP_DEBUG=" + str(self.stg['debug']) + " (from env)")
+#        self.stg['user_stats_path']     = os.path.join(
+#                                            self.ev['BP_HOME'],
+#                                            self.stg['resource_subdir'],
+#                                            self.stg['script_subdir'],
+#                                            self.stg['stats_subdir']
+#                                            )
+
+        self.stg['site_stats_path']     = os.path.join(
+                                            self.ev['BPS_INC'],
+                                            self.stg['resource_subdir'],
+                                            self.stg['script_subdir'],
+                                            self.stg['stats_subdir']
+                                            )
+
+        self.stg['user_results_path']   = os.path.join(
+                                            self.ev['BP_HOME'],
+                                            self.stg['resource_subdir'],
+                                            self.stg['script_subdir'],
+                                            self.stg['results_subdir']
+                                            )
+
+        self.stg['site_results_path']   = os.path.join(
+                                            self.ev['BPS_INC'],
+                                            self.stg['resource_subdir'],
+                                            self.stg['script_subdir'],
+                                            self.stg['results_subdir']
+                                            )
+
+
+        # Add to PATH
+        #self.paths += [self.stg['user_bin_path']]
+#        self.paths += [self.stg['site_stats_path']]
+#        self.add_to_path()
+        self.paths += [os.path.join(self.ev['BPS_HOME'], "python", "bin")]
 
         # Derived variables
         self.stg['user_mod_path']       = os.path.join(
-                                            self.ev['BP_HOME'], self.stg['module_dir'])
+                                            self.ev['BP_HOME'], 
+                                            self.stg['module_dir']
+                                            )
         self.stg['site_mod_path']       = os.path.join(
-                                            self.ev['BPS_HOME'], self.stg['module_dir'])
+                                            self.ev['BPS_HOME'], 
+                                            self.stg['module_dir']
+                                            )
         self.stg['pending_path']        = os.path.join(
-                                            self.ev['BP_RESULTS'], self.stg['pending_subdir'])
+                                            self.ev['BP_RESULTS'], 
+                                            self.stg['pending_subdir']
+                                            )
         self.stg['captured_path']       = os.path.join(
-                                            self.ev['BP_RESULTS'], self.stg['captured_subdir'])
+                                            self.ev['BP_RESULTS'], 
+                                            self.stg['captured_subdir']
+                                            )
         self.stg['failed_path']         = os.path.join(
-                                            self.ev['BP_RESULTS'], self.stg['failed_subdir'])
-        self.stg['script_path']         =os.path.join(
-                                            self.ev['BP_HOME'], self.stg['module_dir'])
+                                            self.ev['BP_RESULTS'], 
+                                            self.stg['failed_subdir']
+                                            )
+#        self.stg['script_path']         =os.path.join(
+#                                            self.ev['BP_HOME'], 
+#                                            self.stg['module_dir']
+#                                            )
 
         # Add some useful key-values
         self.stg['date_str'] = datetime.now().strftime("%Y.%m.%d")
@@ -310,6 +303,10 @@ class setup(object):
             self.session['columns'], self.session['rows'] = os.get_terminal_size()
         except:
             self.session['columns'], self.session['rows'] = 640, 480
+
+        # Get text wrap chars
+        self.stg['width'] = min(self.stg['width'], self.session['columns'])
+
 
     # Read suites.ini
     def read_suites(self):
@@ -346,7 +343,7 @@ class setup(object):
             gid_table = [line.split() for line in gid_file]
 
             try:
-                self.overload_dict['slurm_account'], self.overload_dict['gid'] = [gid[1:] for gid in gid_table if gid[0] == self.stg['working_group']][0]
+                self.overload_dict['allocation'], self.overload_dict['gid'] = [gid[1:] for gid in gid_table if gid[0] == self.stg['working_group']][0]
             except:
                 print("FATAL: unrecongized working_group '" + self.stg['working_group'] + "', your options:")
                 [print(gid[0]) for gid in gid_table]
@@ -374,6 +371,46 @@ class setup(object):
 
         self.args = args
 
+        # defaults.ini dict
+        self.stg                         = {}
+
+        # Mutable dict definitions
+        # Create log obj
+        self.log                         = None
+        self.timing1                     = 0.
+        self.timing2                     = 0.
+
+        self.config                      = {}
+        self.config['general']           = {}
+        self.config['config']            = {}
+        self.config['modules']           = {}
+        self.config['requirements']      = {}
+        self.config['runtime']           = {}
+        self.config['result']            = {}
+        self.config['files']             = {}
+
+        # Scheduler dict
+        self.sched                       = {}
+        self.sched['sched']              = {}
+        # Compiler dict
+        self.compiler                    = {}
+        self.mpi                         = {}
+
+        # System dict
+        self.system                      = {}
+        # Module dict
+        self.modules                     = {}
+        # populated with metadata about installed apps
+        self.installed_apps_list         = []
+        self.bench_results_list          = []
+
+        # dict for storing overload key-values
+        self.overload_dict               = {}
+        self.overloaded_dict             = {}
+
+        # List of staging command to add to script
+        self.stage_ops                   = []
+
         # Init function library
         self.lib = lib.init(self)
 
@@ -383,11 +420,14 @@ class setup(object):
         # Init valid key list
         self.lib.overload.set_valid_keys()
 
-        # Overwrite defaults with user settings in $BP_HOME/settings.ini
+        # Overwrite defaults with user settings in $BP_HOME/user.ini
         self.read_user_settings()
 
         # Derive variables
         self.derived_variables()
+
+        # Start validator
+        validator.start(self)
 
         # Parse $BP_HOME/suites.ini
         self.read_suites()

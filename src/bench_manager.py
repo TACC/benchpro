@@ -10,7 +10,7 @@ import sys
 import src.build_manager as build_manager
 import src.logger as logger
 
-glob = glob_master = None
+glob = None
 
 
 # Get code info
@@ -19,6 +19,20 @@ def get_app_info():
     # Evaluate any expressions in the requirements section
     glob.lib.expr.eval_dict(glob.config['requirements'], False)
 
+    task_only = False
+    # Check if requirements['task_id'] is set, unset other requirements
+    if glob.config['requirements']['task_id']:
+        new_requirements = {'task_id': glob.config['requirements']['task_id'],
+                            'code': "",
+                            'version': "",
+                            'system': "",
+                            'compiler': "",
+                            'mpi': "",
+                            'build_label': ""}
+
+        glob.config['requirements'] = new_requirements
+        task_only = True
+
     # Check if code is installed
     #print("glob.config['requirements')", glob.config['requirements'])
 
@@ -26,17 +40,21 @@ def get_app_info():
     if not glob.lib.check_if_installed(glob.config['requirements']):
         glob.lib.msg.warn("No installed application meeting benchmark requirements: '" +
                           "', '".join([i + "=" + 
-                          glob.config['requirements'][i] for i in glob.config['requirements'].keys() if i]) + 
+                          glob.config['requirements'][i] for i in glob.config['requirements'].keys() if  glob.config['requirements'][i]]) + 
                           "'")
-
+        # If only searching with task ID, don't attempt a build
+        if task_only: 
+            glob.lib.msg.error("Quitting.")
+            
+                
         glob.lib.msg.high("Attempting to build now...")
 
         # Set build args
         build_glob = copy.deepcopy(glob)
-        build_glob.args.build = glob.config['requirements']
-        build_glob.args.overload = glob.args.overload
+        build_glob.args.build = copy.deepcopy(glob.config['requirements'])
         build_glob.args.bench = None
-        build_glob.quiet_build = True
+        # Suppress output
+        build_glob.stg['verbosity'] = 1
 
         # Run build manager
         build_manager.init(build_glob)
@@ -47,8 +65,16 @@ def get_app_info():
         else:
             glob.config['metadata']['build_running'] = True
 
+        # Update installed list 
+        glob.lib.set_installed_apps()
+
         # Recheck that app is installed
-        glob.config['metadata']['code_path'] = glob.lib.check_if_installed(glob.config['requirements'])['path']
+        success = glob.lib.check_if_installed(glob.config['requirements'])
+        if not success:
+            glob.lib.msg.error("it seems the attempt to build your application failed. Consult the logs.")
+
+        glob.config['metadata']['code_path'] = success['path']
+        glob.lib.msg.high("Success!")
 
     # Code is built
     else:
@@ -59,9 +85,6 @@ def get_app_info():
 
     #print("glob.config['metadata']['code_path']:", glob.config['metadata']['code_path'])
 
-    # Confirm application is installed after attempt
-    if not glob.config['metadata']['code_path']:
-        glob.lib.msg.error("it seems the attempt to build your application failed. Consult the logs.")
 
     # Set application module path to install path
 
@@ -104,7 +127,7 @@ def get_app_info():
                     glob.lib.msg.low("Application was built locally, skipping application exe check.")
             # check_exe=False
             else:
-                glob.lib.msg.low("'check_exe=False' in $BP_HOME/settings.ini, skipping application exe check.")
+                glob.lib.msg.low("'check_exe=False' in $BP_HOME/user.ini, skipping application exe check.")
 
 # Generate the bench script
 def gen_bench_script():
@@ -184,10 +207,10 @@ def start_task():
     glob.lib.files.cleanup([])
 
     glob.lib.msg.brk()
-    glob.lib.msg.high(glob.success)
+    glob.lib.msg.heading(glob.success)
     # dry_run = True
     if glob.stg['dry_run']:
-        glob.lib.msg.high(["This was a dryrun, skipping exec step. Script created at:",
+        glob.lib.msg.high(["This was a dryrun, skipping execution. Script created at:",
                         ">  " + glob.lib.rel_path(os.path.join(glob.config['metadata']['working_path'], glob.job_file))])
         glob.task_id = "dry_run"
 
@@ -287,6 +310,8 @@ def run_bench(input_str: str, glob_copy: object) -> int:
     if glob.stg['bench_mode'] == "local" and not glob.stg['dry_run'] and not glob.lib.check_mpi_allowed():
             glob.lib.msg.error("MPI execution is not allowed on this host!")
 
+    
+
     # Use code name for label if not set
     if not glob.config['config']['bench_label']:
         glob.config['config']['bench_label'] = glob.config['requirements']['code']
@@ -310,6 +335,7 @@ def run_bench(input_str: str, glob_copy: object) -> int:
     # for each nodes in list
     for node in node_list:
         glob.lib.msg.log("Write script for " + node + " nodes")
+        glob.lib.msg.brk()
 
         # Iterate over thread/rank pairs
         for i in range(len(thread_list)):
@@ -361,7 +387,7 @@ def init(glob: object):
     # Check for new results
     glob.lib.msg.new_results()
 
-    # Overload settings.ini with cmd line args
+    # Overload user.ini with cmd line args
     glob.lib.overload.replace(None)
 
     # Input is benchmark suite
@@ -375,10 +401,7 @@ def init(glob: object):
 
         # Get a copy of the global object for use in this benchmark session
         glob_copy = copy.deepcopy(glob)
-        glob_copy.overload_dict = copy.deepcopy(glob.overload_dict)
         # Start benchmark session and collect number of runs
         glob.counter = run_bench(inp, glob_copy)
 
-        # Reset stage ops list because deepcopy is unreliable
-        glob.stage_ops = []
 
