@@ -170,7 +170,7 @@ class init(object):
     
             # Skip if value = NULL
             if not mod:
-                self.glob.lib.msg.warning("Ignoring Null module key '" + key + "'")
+                self.glob.lib.msg.warn("Ignoring Null module key '" + key + "'")
                 continue
 
             self.glob.modules[key]  = { 'input':    mod,
@@ -305,7 +305,7 @@ class init(object):
 
             # Print warning if no matching compiler key not set for this archicture
             else:
-                self.glob.lib.msg.warning("Unable to determine default optimization flags for '" + \
+                self.glob.lib.msg.warn("Unable to determine default optimization flags for '" + \
                                         self.glob.modules['compiler']['type'] + "' compiler label(s) " + \
                                         "on arch '" + cfg_dict['config']['arch'] + "'")
 
@@ -466,7 +466,7 @@ class init(object):
         #Check bench_mode in set correctly
         if self.glob.stg['bench_mode'] not in  ["sched", "local"]:
             self.glob.lib.msg.error("Unsupported benchmark execution mode found: '"+glob.stg['bench_mode']+ \
-                                    "' in $BP_HOME/settings.ini, please specify 'sched' or 'local'.")
+                                    "' in $BP_HOME/user.ini, please specify 'sched' or 'local'.")
     
         # Check for hostfile/hostlist if exec_mode is local (mpirun)
         if self.glob.stg['bench_mode'] == "local":
@@ -486,7 +486,7 @@ class init(object):
     
             # Error if neither is set
             else:
-                self.glob.lib.msg.error("if using 'bench_mode=local' in $BP_HOME/settings.ini, " + \
+                self.glob.lib.msg.error("if using 'bench_mode=local' in $BP_HOME/user.ini, " + \
                                         "provide either a 'hostfile' or 'hostlist' under [runtime] in " + \
                                         self.glob.lib.rel_path(cfg_dict['metadata']['cfg_file']))
     
@@ -511,7 +511,7 @@ class init(object):
         self.check_dict_key(    cfg_dict['metadata']['cfg_file'], cfg_dict, 'sched', 'queue')
    
         # Instantiate missing optional parameters
-        if not 'slurm_account'  in    cfg_dict['sched'].keys():   cfg_dict['sched']['slurm_account']    = None
+        if not 'allocation'  in    cfg_dict['sched'].keys():   cfg_dict['sched']['allocation']    = None
         if not 'reservation' in    cfg_dict['sched'].keys():   cfg_dict['sched']['reservation']   = None
 
         self.glob.lib.overload.replace(cfg_dict['sched'])
