@@ -2,7 +2,7 @@
 
 #
 # Splash screen printer
-# Prints BenchPRO header (if not in quiet mode)
+# Prints BenchPRO header (if verbosity permits)
 # Matthew Cawood
 # September 2021
 # v1.0
@@ -20,7 +20,7 @@ def output(glob):
               " |____/|_____|_| \_|\____|_| |_|_|   |_| \_\\\\___/",
               "  >User      : " + glob.user,
               "  >System    : " + glob.hostname,
-              "  >Version   : " + glob.version_site_full,
+              "  >Version   : " + glob.ev['BPS_VERSION_STR'] + " " + glob.dev_str,
               "  >$BP_HOME  : " + glob.ev['BP_HOME']]
     try:
         splash.append(
@@ -42,5 +42,5 @@ def print_splash(glob):
         sys.exit(0)
 
     else:
-        if not glob.quiet_build:
+        if glob.stg['verbosity'] >= 3:
             output(glob)
