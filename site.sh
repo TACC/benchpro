@@ -9,15 +9,12 @@ set() {
 
 # SETUP
 set BPS_SYSTEM      $TACC_SYSTEM
-set BPS_VERSION "1.7.6"
+set BPS_VERSION "1.7.9"
 [[ -z $BP_DEV ]] && set BP_DEV 1
 set BUILD_HASH `echo $RANDOM | md5sum | head -c 8`
 
-# Enforce client re-validate with higher number
-set VALIDATOR_VER   "4"
-
 set BUILD_DATE      "$(date +'%Y-%m-%d %H:%m:%S')"
-set BPS_VERSION_STR "${BPS_VERSION}-${BUILD_HASH}.${VALIDATOR_VER}"
+set BPS_VERSION_STR "${BPS_VERSION}-${BUILD_HASH}"
 set PY_VERSION      "3.`python3 --version | head -n 1 | cut -d '.' -f 2`"
 
 # USER VARIABLES [dynamic]

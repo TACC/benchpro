@@ -200,7 +200,7 @@ def check_env_vars(var_list):
             print(bcolors.PASS, var, "is set")
         else:
             print(bcolors.FAIL, var, "not set")
-            print("Is benchpro module loaded?")
+            print("Is BenchPRO module loaded?")
             sys.exit(1)
 
 
@@ -287,31 +287,10 @@ def check_db_connect(glob):
     print(bcolors.PASS, "connected to", glob.stg['db_name'])
 
 
-# Ensure client and site versions match
-def check_benchpro_version(glob):
-
-    # Check client/site versions match
-    if not glob.lib.version_match():
-        print(
-            bcolors.FAIL,
-            "version mismatch, site version='" +
-            glob.version_site +
-            "', your version='" +
-            glob.version_client +
-            "'")
-        print("run git -C $BP_HOME pull")
-        sys.exit(1)
-    else:
-        print(bcolors.PASS, "BenchPRO version " + glob.version_site)
-
-
 def run():
 
     # Python version
     check_python_version()
-
-    # Check benchpro version
-    #check_benchpro_version(glob)
 
     # Sys envs
 
@@ -339,20 +318,24 @@ def run():
                          glob.stg['build_cfg_path'],
                          glob.stg['bench_tmpl_path'],
                          glob.stg['bench_cfg_path'],
-                         glob.stg['user_bin_path'],
-                         glob.stg['user_resource_path'],
+                         glob.stg['user_results_path'],
                          glob.stg['log_path'],
                          glob.stg['pending_path'],
                          glob.stg['captured_path'],
                          glob.stg['failed_path']])
 
     # Make files if missing
-    confirm_file_exists([os.path.join(glob.ev['BP_HOME'], "settings.ini")])
+    confirm_file_exists([os.path.join(glob.ev['BP_HOME'], "user.ini")])
+
+    # Error if dir not found
+    ensure_path_exists([glob.ev['BPS_HOME'],
+                        glob.ev['BPS_COLLECT']])
 
     # Check user write access
     check_write_priv([glob.ev['BP_HOME'],
                       glob.ev['BP_APPS'],
-                      glob.ev['BP_RESULTS']])
+                      glob.ev['BP_RESULTS'],
+                      glob.ev['BPS_COLLECT']])
 
     # Set access
     give_group_access([glob.ev['BP_APPS'],
@@ -361,10 +344,6 @@ def run():
     # Set perms
 #    set_permissions([glob.ev['BP_APPS'],
 #                     glob.ev['BP_RESULTS']])
-
-    # Error if dir not found
-    ensure_path_exists([glob.ev['BPS_HOME'],
-                        glob.ev['BPS_COLLECT']])
 
     # Check exe
     check_exe(['benchpro', 'benchset', 'stage', 'sinfo', 'sacct', 'git'])
@@ -378,29 +357,38 @@ def run():
     else:
         print(bcolors.WARN, "database access check disabled")
 
-    # Create validate file
-    with open(os.path.join(glob.ev['BP_HOME'], ".validated"), 'w') as val:
-        val.write(os.environ.get("BPS_VERSION_STR").split(".")[-1])
+    # Create version file
+    with open(os.path.join(glob.ev['BP_HOME'], ".version"), 'w') as val:
+        val.write(os.environ.get("BPS_VERSION") + "\n")
     print("Done.")
 
 
 # Test if our validation is out to date
 def we_need_to_validate():
-    if os.path.isfile(os.path.join(glob.ev['BP_HOME'], ".validated")):
-        # File exists
-        with open(os.path.join(glob.ev['BP_HOME'], ".validated"), 'r') as fp:
-            your_ver = fp.read().strip()
 
-        req_ver = os.environ.get("BPS_VERSION_STR").split(".")[-1]
-        # Compare validation versions
-        if str(your_ver) == str(req_ver):
-            return False
+    validate = True
+    # Not loaded
+    if not os.environ.get("BPS_HOME"):
+        print("It seems the BenchPRO module is not loaded.")
+        sys.exit(1)
 
-    return True
+    # Get site version from environment variable
+    site_version = version.parse(os.environ.get('BPS_VERSION'))
 
+    # Get user version from $BP_HOME/.version
+    version_file = os.path.join(os.environ.get('BP_HOME'), ".version")
+    if os.path.isfile(version_file):
+        with open(version_file, 'r') as fp:
+            client_version = version.parse(fp.readline())
+
+        # Don't validate if versions match
+        if site_version <= client_version:
+            validate = False
+
+    return validate
 
 # Check if validation has been run
-def check(glob_obj):
+def start(glob_obj):
 
     global glob
     glob = glob_obj
@@ -409,6 +397,7 @@ def check(glob_obj):
     # or if requested by user
     if we_need_to_validate() or glob.args.validate:
         run()
-
-    if glob.quit_after_val:
+   
+    # Exit if called from CLI
+    if glob.args.validate:
         sys.exit(0)
