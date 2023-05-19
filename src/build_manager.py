@@ -24,21 +24,16 @@ def check_for_previous_install() -> bool:
 
         if glob.stg['overwrite']:
 
-            glob.lib.msg.warn(["It seems this app is already installed. Deleting old build in " +
-                                glob.lib.rel_path(install_path) + " because 'overwrite=True'",
-                                "\033[0;31mDeleting in 5 seconds...\033[0m"])
+            glob.lib.msg.warn("It seems this application is already installed and 'overwrite=True'.")
+            glob.lib.misc.remove_app(install_path)
 
-            time.sleep(glob.stg['timeout'])
-            glob.lib.msg.high("No going back now...")
-
-            su.rmtree(install_path)
             # Installation not found (after delete)
             return False
         # Else warn and skip build
         else:
             glob.lib.msg.warn("Application already installed.") 
             glob.lib.msg.low(["Install path: " + glob.lib.rel_path(install_path),
-                            "The install directory already exists and 'overwrite=False' in $BP_HOME/settings.ini"])
+                            "The install directory already exists and 'overwrite=False' in $BP_HOME/user.ini"])
             glob.lib.msg.high("Skipping build.")
             return True
     # Installation not found
@@ -102,8 +97,8 @@ def build_code(input_dict: dict, glob_copy: object):
         glob.sched = {'sched': {'threads':8}}
 
     # Check for unused overload params (unless run from bench_manager)
-    if not glob.quiet_build:
-        glob.lib.overload.check_for_unused_overloads()
+#    if not glob.quiet_build:
+    glob.lib.overload.check_for_unused_overloads()
 
     # Apply system rules if not running locally
     if not glob.stg['build_mode'] == "local":
@@ -148,7 +143,7 @@ def build_code(input_dict: dict, glob_copy: object):
     # Clean up tmp files
     glob.lib.files.cleanup([])
 
-    glob.lib.msg.high(glob.success)
+    glob.lib.msg.heading(glob.success)
 
     # If dry_run
     if glob.stg['dry_run']:
@@ -179,11 +174,12 @@ def build_code(input_dict: dict, glob_copy: object):
             #Store PID for report
             glob.task_id = glob.prev_pid
 
+    # Generate build report
+    glob.lib.report.build()
+
     # Write to history file
     glob.lib.files.write_cmd_history()
 
-    # Generate build report
-    glob.lib.report.build()
 
     glob.lib.msg.high("Done.")
 
@@ -214,23 +210,23 @@ def init(glob: object):
 
     glob.stg['curr_tmpl_path'] = glob.stg['build_tmpl_path']
 
-    # Overload settings.ini with cmd line args
+    # Overload user.ini with cmd line args
     glob.lib.overload.replace(None)
 
     # Check for new results
-    if not glob.quiet_build:
-        glob.lib.msg.new_results()
+#    if not glob.quiet_build:
+    glob.lib.msg.new_results()
 
     #Check build_mode in set correctly
     if glob.stg['build_mode'] not in  ['sched', 'local']:
-        glob.lib.msg.error(["Unsupported build execution mode found: '" + glob.stg['bench_mode']+"' in $BP_HOME/settings.ini",
+        glob.lib.msg.error(["Unsupported build execution mode found: '" + glob.stg['bench_mode']+"' in $BP_HOME/user.ini",
                                     "Please specify 'sched' or 'local'."])
 
     # ----------------- IF CODE LABEL IS A LIST (FROM USER INPUT) --------------------------
     if isinstance(glob.args.build, list):
 
         build_list  = glob.args.build
-        # If user input is a suite - get string from settings.ini
+        # If user input is a suite - get string from user.ini
         if glob.args.build[0] in glob.suite.keys():
 
             build_list = glob.stg[glob.args.build[0]].split(" ")
