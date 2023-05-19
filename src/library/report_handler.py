@@ -5,6 +5,7 @@ from datetime import datetime
 import os
 import shutil as su
 import sys
+import time
 
 class init(object):
     def __init__(self, glob):
@@ -54,8 +55,11 @@ class init(object):
 
     def build(self):
 
+        self.glob.session_id = self.glob.lib.get_unique_id(10)
+
         # Construct content of report
         content = [ "[build]",
+                    "app_id         = "+ self.glob.session_id,
                     "username       = "+ self.glob.user,
                     "system         = "+ self.glob.config['general']['system'],
                     "arch           = "+ self.glob.config['config']['arch'],
@@ -67,15 +71,14 @@ class init(object):
                     "module_use     = "+ self.glob.config['general']['module_use'],
                     "modules        = "+ ", ".join([self.glob.modules[module]['full'] for module in self.glob.modules.keys()]),
                     "opt_flags      = "+ self.glob.config['config']['opt_flags'],
-                    "threads        = "+ self.glob.sched['sched']['threads'],
+                    "threads        = "+ str(self.glob.sched['sched']['threads']),
                     "bin_dir        = "+ self.glob.config['config']['bin_dir'],
                     "exe_file       = "+ self.glob.config['config']['exe'],
                     "path           = "+ self.glob.config['metadata']['working_path'],
-                    "submit_time    = "+ str(datetime.now()),
+                    "submit_time    = "+ str(datetime.now().strftime("%Y-%m-%d %H:%M")),
                     "script         = "+ self.glob.job_file,
                     "exec_mode      = "+ self.glob.stg['build_mode'],
                     "task_id        = "+ str(self.glob.task_id),
-                    "app_id         = "+ self.glob.lib.get_application_id(),
                     "stdout         = "+ self.glob.config['config']['stdout'],
                     "stderr         = "+ self.glob.config['config']['stderr']
 
@@ -85,6 +88,8 @@ class init(object):
         self.write(content, os.path.join(self.glob.config['metadata']['working_path'], self.glob.stg['build_report_file']))
 
     def bench(self):
+
+        self.glob.session_id = self.glob.lib.get_unique_id(12)
 
         content = ['[build]']
 
@@ -97,15 +102,17 @@ class init(object):
 
         # Construct content of bench report
         content.extend (["[bench]", 
+                        "result_id      = "+ self.glob.session_id,
                         "path           = "+ self.glob.config['metadata']['working_path'],
                         "system         = "+ self.glob.system['system'],
                         "launch_node    = "+ self.glob.hostname,
-                        "nodes          = "+ self.glob.config['runtime']['nodes'],
-                        "ranks          = "+ self.glob.config['runtime']['ranks_per_node'],
-                        "threads        = "+ self.glob.config['runtime']['threads'],
-                        "gpus           = "+ self.glob.config['runtime']['gpus'],
+                        "nodes          = "+ str(self.glob.config['runtime']['nodes']),
+                        "ranks          = "+ str(self.glob.config['runtime']['ranks_per_node']),
+                        "threads        = "+ str(self.glob.config['runtime']['threads']),
+                        "gpus           = "+ str(self.glob.config['runtime']['gpus']),
                         "dataset        = "+ self.glob.config['config']['dataset'],
-                        "start_time     = "+ str(datetime.now()),
+                        "bench_label    = "+ self.glob.config['config']['bench_label'],
+                        "submit_time    = "+ str(datetime.now().strftime("%Y-%m-%d %H:%M")),
                         "script         = "+ self.glob.config['metadata']['job_script'],
                         "exec_mode      = "+ self.glob.stg['bench_mode'],
                         "task_id        = "+ str(self.glob.task_id),
