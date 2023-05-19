@@ -10,6 +10,7 @@ import sys
 import time
 
 # Local Imports
+import src.library.capture_handler      as capture_handler
 import src.library.cfg_handler          as cfg_handler
 import src.library.db_handler           as db_handler
 import src.library.expr_handler         as expr_handler
@@ -20,6 +21,7 @@ import src.library.msg_handler          as msg_handler
 import src.library.overload_handler     as overload_handler
 import src.library.process_handler      as proc_handler
 import src.library.report_handler       as report_handler
+import src.library.result_handler       as result_handler
 import src.library.sched_handler        as sched_handler
 import src.library.template_handler     as template_handler
 
@@ -29,6 +31,7 @@ class init(object):
         self.glob = glob
 
         # Init all sub-libraries
+        self.capture  = capture_handler.init(self.glob)
         self.cfg      = cfg_handler.init(self.glob)
         self.db       = db_handler.init(self.glob)
         self.expr     = expr_handler.init(self.glob)
@@ -38,6 +41,7 @@ class init(object):
         self.msg      = msg_handler.init(self.glob)
         self.overload = overload_handler.init(self.glob)
         self.proc     = proc_handler.init(self.glob)
+        self.result   = result_handler.init(self.glob)
         self.report   = report_handler.init(self.glob)
         self.sched    = sched_handler.init(self.glob)
         self.template = template_handler.init(self.glob)
@@ -154,6 +158,8 @@ class init(object):
     def get_captured_results(self):
         captured = self.files.get_subdirs(self.glob.stg['captured_path'])
         captured.sort()
+        print("HERE")
+        print(captured)
         return captured
 
     # Get results in ./results/failed
@@ -185,7 +191,7 @@ class init(object):
                 elif exec_mode == "local":
                     pid = self.report.get_task_id("bench", result)
                     # pid_running=False -> complete=True
-                    complete = not self.proc.pid_running(pid)
+                    complete = self.proc.complete(pid)
 
 
                 # Dry_run - skip to next result
@@ -198,6 +204,23 @@ class init(object):
 
         matching_results.sort()
         return matching_results
+
+
+    # Extract bench_report from results
+    def get_result_paths(self, result_type=None):
+        result_paths = []
+        if not result_type:
+            for subpath in [self.glob.stg['pending_path'], 
+                            self.glob.stg['captured_path'], 
+                            self.glob.stg['failed_path']]:
+                result_paths.extend(self.glob.lib.files.get_subdirs_path(subpath))
+        return result_paths
+
+    # Return a list of result report dicts
+    def get_result_reports(self):
+        return [self.glob.lib.report.read(path) for path in self.get_result_paths()]
+        
+
 
     # Log cfg contents
     def send_inputs_to_log(self, label):
@@ -220,7 +243,7 @@ class init(object):
             no_mpi_hosts = self.glob.stg['mpi_blacklist'].split(',')
 
         except:
-            self.msg.error("unable to read list of MPI banned nodes (mpi_blacklist) in $BP_HOME/settings.ini")
+            self.msg.error("unable to read list of MPI banned nodes (mpi_blacklist) in $BP_HOME/user.ini")
         # If hostname contains any of the blacklisted terms, return False
         if any(x in self.glob.hostname for x in no_mpi_hosts):
             return False
@@ -314,7 +337,7 @@ class init(object):
                 return False
             else:
                 self.msg.error(["No installed applications match your selection criteria: ", ", ".join([search_dict[key] for key in search_dict]),
-                                "And 'build_if_missing=False' in $BP_HOME/settings.ini",
+                                "And 'build_if_missing=False' in $BP_HOME/user.ini",
                                 "Currently installed applications:"] + self.glob.installed_app_paths)
 
         # Multiple multiple matches
@@ -414,10 +437,10 @@ class init(object):
                 
 
     # Generate unique application ID based on current time
-    def get_application_id(self):
+    def get_unique_id(self, length: int):
         app_id = hashlib.sha1()
         app_id.update(str(time.time()).encode('utf-8'))
-        return app_id.hexdigest()[:10]
+        return app_id.hexdigest()[:length]
 
     # Parse all build cfg files into list
     def get_cfg_list(self, path_list):
@@ -453,7 +476,7 @@ class init(object):
         self.glob.bench_cfgs = self.get_cfg_list(self.glob.stg['bench_cfg_path'])
 
     # Convert cmdline string into a dict
-    def parse_input_str(self, input_str, default):
+    def parse_input_str(self, input_str: str, default: str) -> dict:
 
         # Handle plain application label : --build lammps
         if not "=" in input_str:
@@ -480,19 +503,5 @@ class init(object):
     # Parse input string for --bench
     def parse_bench_str(self, input_str):
         return self.parse_input_str(input_str, "bench_label")
-
-    def version_match(self):
-        # Compare versions
-        if version.parse(self.glob.version_site) > version.parse(self.glob.version_client):
-            return False
-        return True
-
-    # Check if the client version is up-to-date with site version
-    def check_version(self):
-            if not self.version_match():
-                self.msg.warn(["You are using BenchPRO " + self.glob.version_client + ", the site package is using " + self.glob.version_site + ".", \
-                                 "Update with: git -C ~/benchpro pull", \
-                                 "Continuing..."])
-                time.sleep(self.glob.stg['timeout'])
 
 
