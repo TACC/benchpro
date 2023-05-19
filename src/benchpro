@@ -8,52 +8,9 @@
 # System Imports
 import argparse
 import os
+from packaging import version
 import sys
 import traceback
-
-
-# MODULE NOT LOADED
-def check_module_version():
-
-    sys_dict = {'prod': {'frontera':    "/scratch1/hpc_tools/benchpro/modulefiles",
-                         'stampede2':   "/scratch/hpc_tools/benchpro/modulefiles",
-                         'ls6':         "/scratch/projects/benchtool/modulefiles"},
-                'dev':  {'frontera':    "/scratch1/hpc_tools/benchpro-dev/modulefiles",
-                         'stampede2':   "/scratch/hpc_tools/benchpro-dev/modulefiles",
-                         'ls6':         "/scratch/projects/benchtool-dev/modulefiles"}
-                }
-
-    mismatch = False
-    # Not loaded
-    if not os.environ.get("BPS_HOME"):
-        print("It seems the benchpro module is not loaded.")
-        mismatch = True
-
-    mod_version = os.environ.get('BPS_VERSION')
-    required_version = "1.7.6"
-    # Version mismatch
-    if mod_version != required_version:
-        print("Version mismatch: yours=" + mod_version + ", site=" + required_version + ". Reload the module with:\n")
-        mismatch = True
-
-    if mismatch:
-        print("Development site:")
-        print("ml use " + sys_dict['dev'][os.environ.get('TACC_SYSTEM')])
-        print()
-        print("Production site:")
-        print("ml use " + sys_dict['prod'][os.environ.get('TACC_SYSTEM')])
-        print()
-        print("ml benchpro")
-        print()
-        print("HINT: You can load BenchPRO automatically next time by adding it to your default module collection:")
-        print("ml save")
-        sys.exit(1)
-
-check_module_version()
-
-# Synchronize the user's benchpro repo with this site version
-#import src.sync_handler     as sync
-#sync.resync()
 
 # Local Imports
 try:
@@ -61,10 +18,7 @@ try:
     import src.build_manager    as  build_manager
     import src.global_settings  as  global_settings
     import src.notices          as  notices
-    import src.result_manager   as  result_manager
     import src.splash           as  splash
-    import src.validator        as  validator
-
 
 # Catch import exception
 except ImportError as e:
@@ -77,28 +31,20 @@ except ImportError as e:
 # Catch exception in a handler, write to log and quit
 def catch_major_exception(glob, e):
 
+    print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+    print("It appears something has gone wrong!")
+
     if not glob:
-        print("Failed to create glob object")
-        print(traceback.format_exc())
-        print(e)
-        sys.exit(1)
+        print("Failed to create global obj")
 
-    if not glob.stg['debug']:
 
-        print("It appears something has gone wrong!")
-        print(e)
+    if glob.log:
+        glob.log.debug(traceback.format_exc())
 
-        if glob.log:
-            glob.log.debug(traceback.format_exc())
-            print("Traceback written to log.")
-        else:
-            print(traceback.format_exc())
-        sys.exit(1)
-
-    else:
-        print(traceback.format_exc())
-        print(e)
-        sys.exit(1)
+    print(traceback.format_exc())
+    print(e)
+    print("Quitting.")
+    sys.exit(1)
 
 
 # Get cmdline arguments
@@ -226,12 +172,18 @@ def get_arguments():
         help="Query a local benchmark result for config info.")
 
     cmd_parser.add_argument(
-        "--dbResult",
+        "--dbList",
         nargs='?',
         const="all",
         type=str,
         help="Query database for benchmark results. Default is 'all'. Accepts comma delimited list \
                                     of key-value pairs as search criteria (username=mcawood,system=frontera).")
+
+    cmd_parser.add_argument(
+        "--dbResult",
+        default=False,
+        type=str,
+        help="Provide result job ID to print info report from database.")
 
     cmd_parser.add_argument(
         "--dbApp",
@@ -246,7 +198,7 @@ def get_arguments():
         help="Export database query to .csv file dbquery_[date].csv")
 
     cmd_parser.add_argument("--history", default=False, action='store_true',
-                            help="Print benchpro input history.")
+                            help="Print BenchPRO input history.")
 
     cmd_parser.add_argument("-L", "--last", nargs='?', const=1, type=int,
                             help="Print query from last build or bench task.")
@@ -322,9 +274,6 @@ def main():
     # Add args to glob
     glob.args = args
 
-    # Run validator checker, with --validate as 2nd arg. Forces if True
-    validator.check(glob)
-
     # Start build manager
     if glob.args.build:
         try:
@@ -342,7 +291,7 @@ def main():
     # Start result manager
     elif glob.args.capture:
         try:
-            result_manager.capture_result(glob)
+            glob.lib.capture.results()
         except Exception as e:
             catch_major_exception(glob, e)
 
@@ -370,21 +319,24 @@ def main():
     # Print cmd line history
     elif glob.args.history:
         glob.lib.misc.print_history()
-    # Query db for results
+    # Print result list from db
+    elif glob.args.dbList:
+        glob.lib.db.list_results()
+    # Query db for result
     elif glob.args.dbResult:
-        result_manager.query_db(glob)
+        glob.lib.db.result_report()
     # Query db for application
     elif glob.args.dbApp:
-        result_manager.print_app_from_table(glob)
+        glob.lib.db.app_report()
     # Show results and exit
     elif glob.args.listResults:
-        result_manager.list_results(glob)
+        glob.lib.msg.print_result_table()
     # Query result and exit
     elif glob.args.queryResult:
-        result_manager.query_result(glob, glob.args.queryResult)
+        glob.lib.result.query()
     # Remove result and exit
     elif glob.args.delResult:
-        result_manager.remove_result(glob)
+        glob.lib.result.remove()
     elif glob.args.keys:
         glob.lib.misc.print_keys()
     # Purge user files
@@ -404,7 +356,6 @@ def main():
     elif not glob.args.validate:
         notices.print_notices(False, False)
 
-    # Need to hit this one day...
     return 0
 
 if __name__ == "__main__":
