@@ -2,13 +2,23 @@
 # Script to swap between development and production installations of BenchPRO
 # Matthew Cawood
 # April 2022
+# v2.0 - generalized for different systems
+
+if [ -z $BPS_HOME ]; then
+    echo "No BenchPRO module loaded."
+    exit 1
+fi
+
+BP_ROOT=$(dirname $BPS_HOME)
 
 # DEV currently loaded
 if [[ $BP_DEV -eq 1 ]]; then
-    ml use      /scratch1/hpc_tools/benchpro/modulefiles
+    ml unuse    $BP_ROOT/benchpro-dev/modulefiles
+    ml use      $BP_ROOT/benchpro/modulefiles
 # PROD currently loaded
 else
-    ml use      /scratch1/hpc_tools/benchpro-dev/modulefiles
+    ml unuse    $BP_ROOT/benchpro/modulefiles
+    ml use      $BP_ROOT/benchpro-dev/modulefiles
 fi
 
 ml benchpro
