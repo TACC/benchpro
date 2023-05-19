@@ -4,5 +4,5 @@ prepend_path("BP_BIN",              install_path)
 prepend_path("LD_LIBRARY_PATH",     pathJoin(install_path, "lib64"))
 prepend_path("LD_LIBRARY_PATH",     pathJoin(install_path, "lib"))
 
-always_load(<<<mods>>>)
+depends_on(<<<mods>>>)
 family("<<<caps_code>>>")

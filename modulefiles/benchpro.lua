@@ -47,7 +47,7 @@ BP_RESULTS      - Directory for benchmarks run with BenchPRO
 BP_REPO         - Directory for BenchPRO's per-user file caching feature
 BP_NOTICE       - [1]: print site notices, [0], ignore notices
 BP_DEV          - [1]: use development release, [0]: use production (default)
-BP_DEBUG        - same as "debug=" in $BP_HOME/settings.ini, turns on/off additional output
+BP_DEBUG        - same as "debug=" in $BP_HOME/user.ini, turns on/off additional output
 
 # Maintainer Variables:
 -----------------------
@@ -104,7 +104,7 @@ set_alias("bp_switch", "source $BPS_BIN/toggle_dev_prod")
 -- add user's application directory tree to MODULEPATH
 prepend_path("MODULEPATH" ,  pathJoin(bp_apps, "modulefiles" ))
 
-always_load("python3")
+depends_on("python3")
 family("benchpro")
 
 -- Add BenchPRO module path to PYTHONPATH
@@ -112,4 +112,3 @@ local py_version =
 local bps_site =
 prepend_path("PYTHONPATH",         pathJoin(bps_site, "python/lib/python" .. py_version, "site-packages/" ))
 prepend_path("PATH",               pathJoin(bps_site, "python/bin" ))
-
