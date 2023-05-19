@@ -8,7 +8,7 @@ import sys
 
 class init(object):
     def __init__(self, glob):
-            self.glob = glob
+        self.glob = glob
 
     def read_template(self, input_template):
         # Check template file is defined - handles None type (in case of unknown compiler type = None compiler template)
@@ -138,18 +138,20 @@ class init(object):
     # If the setting in enabled, add the provenance data collection script to the script
     def collect_stats(self, template_obj):
         if self.glob.config['config']['collect_stats']:
-            if self.glob.lib.files.file_owner(os.path.join(self.glob.stg['user_bin_path'], "lshw")) == "root":
-                template_obj.append("\n# Provenance data collection script \n")
-                template_obj.append(self.glob.stg['user_bin_path'] + " " + \
-                                    self.glob.stg['user_bin_path'] + " " + \
-                                    os.path.join(self.glob.config['metadata']['working_path'], "hw_report") + "\n")
-            else:
 
-                #self.glob.lib.msg.warn(["Requested hardware stats but script permissions not set",
-                #                                "Run 'sudo -E $BP_HOME/resources/scripts/change_permissions'"])
-                self.glob.lib.msg.warn("Skipping hardware scan for now...")
+            collection_script = os.path.join(self.glob.stg['inc_env'], 
+                                            self.glob.stg['resource_subdir'], 
+                                            self.glob.stg['script_subdir'],
+                                            self.glob.stg['stats_subdir'],
+                                            "collect_stats")
 
-                pass
+
+            dest_dir = os.path.join(self.glob.lib.rel_path(self.glob.config['metadata']['working_path']),
+                                    "hw_report")
+
+            template_obj.append("# Provenance data collection script \n")
+            template_obj.append(collection_script + " " + dest_dir + "\n\n")
+
 
     # Add things to the bottom of the build script
     def build_epilog(self, template_obj):
@@ -165,8 +167,7 @@ class init(object):
     # Add things to the bootom of the bench script
     def bench_epilog(self, template_obj):
         # Collect stats
-        return 
-        #self.collect_stats(template_obj)
+        self.collect_stats(template_obj)
 
     # Add dependency to build process (if building locally)
     def add_process_dep(self, template_obj):
@@ -193,19 +194,16 @@ class init(object):
                 if isinstance(val, list):
                     val = val[0]
 
-                # If val not Null
-                if val:
-                    # Replace <<<blah>>> with key[val]
-                    template_obj = [line.replace("<<<" + str(key) + ">>>", str(val)) for line in template_obj]
-                    self.glob.lib.msg.log("Replacing " + "<<<" + str(key) + ">>> with " + str(val) + " from " + str(cfg))
+                # Replace <<<blah>>> with key[val]
+                template_obj = [line.replace("<<<" + str(key) + ">>>", str(val)) for line in template_obj]
+                self.glob.lib.msg.log("Replacing " + "<<<" + str(key) + ">>> with " + str(val) + " from " + str(cfg))
 
         return template_obj
-
     # Check for unpopulated <<<keys>>> in template file
     def test_template(self, template_file, template_obj):
 
         #print(self.glob.sched)
-        #print("ALLOCATION", self.glob.sched['sched']['slurm_account'])
+        #print("ALLOCATION", self.glob.sched['sched']['allocation'])
 
         key = "<<<.*>>>"
         unfilled_keys = [re.search(key, line) for line in template_obj]
@@ -388,7 +386,7 @@ class init(object):
         user_script = self.read_template(self.glob.config['template']) 
 
         # Add start time line
-        template_obj.append("#-------USER SECTION------\n\n")
+        template_obj.append("#-------USER SECTION------\n")
         template_obj.extend(user_script)
         # Add end time line
         template_obj.append("#-------------------------\n\n")
