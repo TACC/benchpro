@@ -36,7 +36,7 @@ class init(object):
         #print("START UPDATE~~~~~", search_dict)
 
         for pre_dict in list(self.glob.overloaded_dict.keys()):
-            if overload_key in pre_dict:
+            if overload_key == pre_dict:
                 self.glob.lib.msg.high("Skipping duplicate overload key: " + overload_key + "=" + str(self.glob.overloaded_dict[overload_key]))
 #                print("", overload_key)
                 self.glob.overload_dict.pop(overload_key)
@@ -144,12 +144,12 @@ class init(object):
     # Catch overload keys that are incompatible with local exec mode before checking for missed keys
     def catch_incompatible(self):
         # Runtime overload only works with sched exec_mode
-        bad_keys = ["runtime"]
+        bad_keys = ["runtime", "allocation", "queue", "reservation"]
         # Iterate over overload dict
         for key in copy.deepcopy(self.glob.overload_dict):
             # Pop incompatible (unmatchable) keys 
             if key in bad_keys:
-                self.glob.lib.msg.low("Ignoring bad overload key '" + key +  "' - incompatible with current exec_mode")
+                self.glob.lib.msg.low("Ignoring key '" + key +  "' - incompatible with current exec_mode")
                 self.glob.overload_dict.pop(key)
 
     # Print warning if overload dict not empty (unmatched keys)
@@ -169,7 +169,7 @@ class init(object):
                 self.glob.lib.msg.high("  " + key + "=" + str(self.glob.overload_dict[key]))
             self.glob.lib.msg.error("Invalid input arguments.")
 
-    # Confirm all required overloads are present in settings.ini
+    # Confirm all required overloads are present in user.ini
     def check_for_required_overloads(self):
 
 
