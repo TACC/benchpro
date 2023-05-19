@@ -6,10 +6,14 @@ import glob as gb
 import os
 import pwd
 import shutil as su
+import sys
 import tarfile
 import time
+from typing import List
 from urllib.request import urlopen
 from urllib.request import urlretrieve
+
+from src.modules import Result
 
 
 class init(object):
@@ -141,11 +145,20 @@ class init(object):
             return True
         return False
 
+
+    # Get a list of sub-directories, including full path
+    def get_subdirs_path(self, base):
+        try:
+            return [os.path.join(base, sub) for sub in os.listdir(base)
+                if os.path.isdir(os.path.join(base, sub))]
+        except Exception as e:
+            self.glob.lib.msg.error("Directory '" + base + "' not found, did you run --validate?")        
+
     # Get a list of sub-directories, called by 'search_tree'
     def get_subdirs(self, base):
         try:
-            return [name for name in os.listdir(base)
-                if os.path.isdir(os.path.join(base, name))]
+            return [sub for sub in os.listdir(base)
+                if os.path.isdir(os.path.join(base, sub))]
         except Exception as e:
             self.glob.lib.msg.error("Directory '" + base + "' not found, did you run --validate?")
 
@@ -162,7 +175,7 @@ class init(object):
                     self.search_tree(installed_list, new_dir, start_depth,current_depth + 1, max_depth)
 
     # Prune dir tree until not unique
-    def prune_tree(self, path):
+    def prune_tree(self, path: str) -> None:
         path_elems  = path.split(self.glob.stg['sl'])
         parent_path = self.glob.stg['sl'].join(path.split(self.glob.stg['sl'])[:-1])
         parent_dir  = path_elems[-2]
@@ -175,9 +188,8 @@ class init(object):
 
             try:         
                 su.rmtree(path)
-                print("Deleted : " + path)
             except:
-                print("Can't delete: " + path)
+                self.glob.lib.msg.exit("Can't delete: " + self.glob.lib.rel_path(path))
         # Else resurse with parent
         else:
             self.prune_tree(parent_path)
@@ -205,7 +217,7 @@ class init(object):
         return path
 
     # Copy tmp files to directory
-    def copy(self, dest, src, new_name, clean):
+    def copy(self, dest, src, new_name=None, clean=None):
 
         # Get file name
         if not new_name:
@@ -222,7 +234,7 @@ class init(object):
                 su.copyfile(src, os.path.join(dest, new_name))
             else:
                 su.copytree(src, os.path.join(dest, new_name))
-            self.glob.lib.msg.log("Copied file " + src + " into " + dest)
+            self.glob.lib.msg.log("Copied " + src + " into " + dest)
         except IOError as e:
             self.glob.lib.msg.high(e)
             self.glob.lib.msg.error(
@@ -509,16 +521,6 @@ class init(object):
 
         return cfg_dict
 
-    # Read client version number from file
-    def get_client_version(self):
-        try:
-            with open(os.path.join(self.glob.ev['BP_HOME'], ".version"), 'r') as fp:
-                self.glob.version_client = fp.readline().split(" ")[-1][1:].strip()
-                self.glob.version_client_date = fp.readline().strip()
-
-        except:
-            self.glob.lib.msg.error("Failed to read version info from $BP_HOME/.version")    
-
     # Delete all user files
     def purge(self):
         purge_paths = [ self.glob.ev['BP_HOME'],
@@ -531,3 +533,143 @@ class init(object):
             self.prune_tree(path)
 
         print("Done.")
+
+
+    # Move benchmark directory from complete to captured/failed, once processed
+    def move_to_archive(self, result_path: str, dest: str):
+        if not os.path.isdir(result_path):
+            self.glob.lib.msg.error("result directory '" + self.glob.lib.rel_path(result_path) + "' not found.")
+
+        # Move to archive
+        try:
+            su.move(result_path, dest)
+        # If folder exists, rename and try again
+        except:
+            self.glob.lib.msg.warn("Result directory already exists in archive. Appending suffix .dup")
+            # Rename result dir
+            su.move(result_path, result_path + ".dup")
+            # Try again
+            self.move_to_archive(result_path + ".dup", dest)
+
+
+    def copy_prov_data(self, record: Result, dest_dir: str):#file_list: List[str], src: str, dest: str) -> None:
+
+        if self.glob.stg['file_copy_handler'] == "cp":
+            if not self.glob.ev['BPS_COLLECT']:
+                self.glob.lib.msg.error("$BPS_COLLECT not set!")
+
+            # Check write permissions
+            if not self.glob.lib.files.write_permission(self.glob.ev['BPS_COLLECT']):
+                self.glob.lib.msg.error("Unable to write to " + self.glob.ev['BPS_COLLECT'])
+
+            # File destination
+            dest_path = os.path.join(self.glob.ev['BPS_COLLECT'], dest_dir)
+
+            self.glob.lib.files.create_dir(dest_path)
+
+            # Copy files to local directory
+            #self.glob.lib.files.copy(dest_path, self.output_path)
+
+            move_list = []
+            # First file to copy = user ouput file
+            if record.result['output_file']:
+                move_list.append(os.path.join(record.path, record.result['output_file']))
+
+            # Add standard files extentions
+            search_substrings = ["*.err", "*.out", "*.sched", "*.job", "*.txt", "*.log"]
+            for substring in search_substrings:
+                matching_files = gb.glob(os.path.join(record.path, substring))
+                move_list.extend(matching_files)
+
+            # Add folders
+            for directory in ["bench_files", "hw_report"]:
+                path = os.path.join(record.path, directory)
+                if os.path.isdir(path):
+                    move_list.append(path)
+
+            # Remove duplicates
+            move_list = [*set(move_list)]
+
+            # Copy
+            for src in move_list:
+                self.copy(dest_path, src)
+
+
+    # Return timestamp from file
+    def get_timestamp(self, keyword: str, search_file: str) -> str:
+
+        # Search for item line and return in
+        for line in search_file:
+            if line.startswith(keyword):
+                return line
+
+        # Time line not found
+        return None
+
+
+    def cache(self, record: Result) -> None:
+
+        # Only cache completed benchmarks
+        if record.complete:
+            cache_file = os.path.join(record.path, ".cache")
+
+            # Don't cache twice
+            if os.path.isfile(cache_file):
+                return
+
+            self.glob.lib.msg.log("Caching '" + str(record.value) + "' to " + cache_file)
+            with open(cache_file, "a") as fp:
+                fp.write("status = " + str(record.status) + "\n")
+                fp.write("result = " + str(record.value) + "\n")
+
+
+    def read_cache(self, cache_path: str, key: str) -> None:
+        cache_file = os.path.join(cache_path, ".cache")
+        if os.path.isfile(cache_file):
+            cache = self.read(cache_file)
+            for line in cache:
+                if line.startswith(key):
+                    value = line.split("=")[1].strip()
+                    try:
+                        value = float(value)
+                        return value
+                    except:
+                        return value
+        return None
+
+
+    # Read result from .cache
+    def decache_result(self, path: str) -> float:
+        result = self.read_cache(path, "result")
+        # Cast to float
+        try:
+            result = float(result)
+        except:
+            return None
+
+        # Result != 0.0
+        if result:
+            self.glob.lib.msg.log("Read " + str(result) + " from " + path)
+            return result
+
+        self.glob.lib.msg.log("No cached result in " + path)
+        return None
+
+    # Read status from .cache
+    def decache_status(self, path:str) -> str:
+        status = self.read_cache(path, "status")
+        self.glob.lib.msg.log("Read " + str(status) + " from " + path)
+        return status
+
+    # Remove directory
+    def delete_dir(self, path: str) -> None:
+
+        if not os.path.isdir(path):
+            self.glob.lib.msg.error("Cannot remove path " + self.glob.lib.rel_path(path) + ": does not exist.")
+        self.glob.lib.msg.log("Removing " + path)
+        su.rmtree(path)
+
+
+        
+
+
