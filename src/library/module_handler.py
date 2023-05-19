@@ -100,7 +100,7 @@ class init(object):
 
             if self.glob.stg['overwrite']:
                 self.glob.lib.msg.warn("Deleting old module in " + self.glob.lib.rel_path(mod_path) +
-                                                " because 'overwrite=True' in $BP_HOME/settings.ini")
+                                                " because 'overwrite=True'")
                 su.rmtree(mod_path)
                 os.makedirs(mod_path)
 
@@ -188,12 +188,15 @@ class init(object):
     
         self.check_for_previous_module(mod_path, mod_file)
     
-        template_filename = self.glob.config['general']['code'] + "_" + str(self.glob.config['general']['version']) + ".module" 
-        module_template = os.path.join(self.glob.stg['sys_tmpl_path'], template_filename)
+        template_filename = self.glob.config['general']['code'] + ".module" 
+
+        # Look for module file in user's build/template/ dir
+        module_template = os.path.join(self.glob.stg['build_tmpl_path'][0], template_filename)
 
         # Use generic module template if not found for this application
         if not os.path.isfile(module_template):
-            self.glob.lib.msg.low("Module template '" + template_filename + "' not found, generating a generic module.")
+            self.glob.lib.msg.low(["Module template '" + self.glob.lib.rel_path(module_template) + "' not found.", 
+                                    "Generating generic module file now..."])
             module_template = os.path.join(self.glob.stg['sys_tmpl_path'], "generic.module")
 
         self.glob.lib.msg.log("Using module template file: " + module_template)
