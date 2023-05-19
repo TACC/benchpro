@@ -33,14 +33,17 @@ class init(object):
         self.glob.lib.msg.low("Script started on local machine.")
 
     # Check if pid is running or not
-    def pid_running(self, pid):
-
+    def complete(self, pid: int) -> bool:
         # Check for pid in /proc
-        if os.path.isdir(os.path.join("/proc", pid)):
-            return True 
-
-        else:
+        if os.path.isdir(os.path.join("/proc", str(pid))):
             return False
+        return True
+
+
+    def task_status(self, pid: str) -> str:
+        if self.complete(pid):
+            return "COMPLETED"
+        return "RUNNING"
 
 
     # Display local shells to assist with determining if local job is still busy
@@ -54,5 +57,6 @@ class init(object):
             self.glob.lib.msg.error("Failed to run 'ps -aux'")
 
         for line in cmd.stdout.split("\n"):
-            print(" " + line)
+            if "bash" in line:
+                print(" " + line)
 
