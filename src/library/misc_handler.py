@@ -6,9 +6,6 @@ import subprocess
 import sys
 import time
 
-# Local Imports
-import src.result_manager as result_manager
-
 class init(object):
     def __init__(self, glob):
         self.glob = glob
@@ -50,9 +47,7 @@ class init(object):
             for f in file_list:
                 print(self.glob.lib.rel_path(f))
 
-            print("\033[0;31mDeleting in", self.glob.stg['timeout'], "seconds...\033[0m")
-            time.sleep(self.glob.stg['timeout'])
-            print("No going back now...")
+            self.glob.lib.msg.prompt()
             deleted = self.clean_matching_files(file_list)
             print("Done, " + str(deleted) + " files successfuly cleaned.")
 
@@ -67,24 +62,11 @@ class init(object):
         mod_path = os.path.join(self.glob.stg['module_path'],  app_path)
 
         # Delete application dir
-        try:
-            self.glob.lib.files.prune_tree(path)
-            print("Application removed.")
-        except:
-            print("Warning: Failed to remove application directory:")
-            print(">  "  + self.glob.lib.rel_path(path))
-            print("Do you own this application?")
-            print("Skipping")
-        print()
+        self.glob.lib.files.prune_tree(path)
+        print("Application removed.")
         # Detele module dir
-        try:
-            self.glob.lib.files.prune_tree(mod_path)
-            print("Module removed.")
-        except:
-            print("Warning: no associated module located in:")
-            print(">  " + self.glob.lib.rel_path(mod_dir))
-            print("Do you own this module?")
-            print("Skipping")
+        self.glob.lib.files.prune_tree(mod_path)
+        print("Module removed.")
         print()
        
 
@@ -92,11 +74,8 @@ class init(object):
         
         print("Deleting " + msg_str)
 
-        # Timeout
-        print()
-        print("\033[0;31mDeleting in", self.glob.stg['timeout'], "seconds\033[0m")
-        self.glob.lib.msg.wait()
-        print("\nNo going back now...")
+        # Prompt user
+        self.glob.lib.msg.prompt()
 
         for path in app_list:
             self.delete_app_path(path)
@@ -122,7 +101,7 @@ class init(object):
                 self.glob.lib.msg.error("Please provide unique identifier")
 
             elif len(matching_apps) == 0:
-                self.glob.lib.msg.error("No matching app found.")
+                self.glob.lib.msg.exit("No application found matching '" + search + "'")
 
             else:
                 return matching_apps[0]
@@ -185,7 +164,8 @@ class init(object):
                     #installed = self.glob.lib.check_if_installed(search_dict)
 
                     app_dict = self.id_app_to_remove(app)
-                    self.prep_delete([app_dict['path']], "app in " + self.glob.lib.rel_path(app_dict['path']))
+                    if app_dict:
+                        self.prep_delete([app_dict['path']], "application in " + self.glob.lib.rel_path(app_dict['path']))
 
 
                     #if installed:
@@ -197,23 +177,13 @@ class init(object):
 
     # Print build report of installed application
     def query_app(self, arg):
-        search_dict = {}
 
-        # Input is string
-        if not "/" in arg:
-            search_dict["code"] = arg
-
-        # Input is key-values
-        else:
-            # Disect search string into search dict
-            for search_elem in arg.split("/"):
-                search_dict[search_elem] =  search_elem
+        search_dict = self.glob.lib.parse_input_str(arg, "code")
 
         # Get installation directory from search dict
         app_dir = self.glob.lib.check_if_installed(search_dict)
         if not app_dir:
-            print("Not found.")
-            sys.exit(1)   
+            self.glob.lib.msg.exit("Not found.")
             
         app_path = app_dir['path']
 
@@ -234,17 +204,14 @@ class init(object):
             print("Failed to read " + self.glob.lib.rel_path(build_report))
             sys.exit(1)
 
-        print("Build report for application '" + report_dict['build']['code'] + "'")
         print("-------------------------------------------")
 
         # Print contents of report file 
         for sec in report_dict:
-            print("["+sec+"]")
             for key in report_dict[sec]:
-                print(key.ljust(15) + "= " + report_dict[sec][key])
+                print(key.ljust(20, ".") + " " + report_dict[sec][key])
 
         print("-------------------------------------------")
-        print()
 
         status = ""
         gap = max(len(report_dict['build']['exe_file']) + 9, 20)
@@ -252,57 +219,57 @@ class init(object):
         # Dry_run - do nothing
         if "dry" in report_dict['build']['task_id']:
             print("Build job was dry run. Skipping executable check")
-        else:
-            # Local build        
-            if report_dict['build']['exec_mode'] == "local":
-
-                running = self.glob.lib.proc.pid_running(report_dict['build']['task_id'])
-                
-                if running:
-                    print("Local build PID still running:")
-                    self.glob.lib.proc.print_local_pid(report_dict['build']['task_id'])
-
-                else:
-                    status = "COMPLETED"
-
-            # Sched build
+            return 
+        
+        # Local build        
+        if report_dict['build']['exec_mode'] == "local":
+            if self.glob.lib.proc.complete(report_dict['build']['task_id']):
+                status = "COMPLETED"
             else:
-                status = self.glob.lib.sched.get_job_status(report_dict['build']['task_id'])
+                print("Local build PID still running:")
+                self.glob.lib.proc.print_local_pid(report_dict['build']['task_id'])
+                return
+
+        # Sched build
+        else:
+            status = self.glob.lib.sched.task_status(report_dict['build']['task_id'])
                 
-                col=None
-                stream=None
+        col=None
+        stream=None
                 
-                if status == "PENDING":
-                    col = "\033[1;33m"       
-                # Running
-                elif status == "RUNNING":
-                    col = "\033[1;33m"
-                    stream = 'stdout'
-                # Job failed
-                elif status != "COMPLETED":
-                    col = "\033[1;31m" 
-                    stream = 'stderr'
+        if status == "PENDING":
+            col = "\033[1;33m"       
+        # Running
+        elif status == "RUNNING":
+            col = "\033[1;33m"
+            stream = 'stdout'
+        # Job failed
+        elif status != "COMPLETED":
+            col = "\033[1;31m" 
+            stream = 'stderr'
+        elif status == "COMPLETED":
+            col = "\033[0;32m"
+        elif status == "UNKNOWN":
+            col = "\033[1;33m"
 
-                elif status == "COMPLETED":
-                    col = "\033[0;32m"
+        print(("Job " + report_dict['build']['task_id'] + " status: ").ljust(gap) + col + status + "\033[0m")
 
-                elif status == "UNKNOWN":
-                    col = "\033[1;33m"
+        if status == "COMPLETED":
+            stat_str = ""
+            if self.glob.lib.files.exists(report_dict['build']['exe_file'], 
+                                          os.path.join(install_path, 
+                                                       report_dict['build']['bin_dir'])):
 
-                print(("Job " + report_dict['build']['task_id'] + " status: ").ljust(gap) + col + status + "\033[0m")
+                stat_str = "\033[0;32mFOUND\033[0m"
+            else:
+                stat_str = "\033[0;31mMISSING\033[0m"
+                stream = 'stderr'
 
-                if status == "COMPLETED":
-                    stat_str = ""
-                    if self.glob.lib.files.exists(report_dict['build']['exe_file'], os.path.join(install_path, report_dict['build']['bin_dir'])):
-                        stat_str = "\033[0;32mFOUND\033[0m"
-                    else:
-                        stat_str = "\033[0;31mMISSING\033[0m"
-                        stream = 'stderr'
+            print(("File "+report_dict['build']['exe_file']+": ").ljust(gap) + stat_str)
 
-                    print(("File "+report_dict['build']['exe_file']+": ").ljust(gap) + stat_str)
 
-                if stream:
-                    self.glob.lib.msg.print_file_tail(os.path.join(report_dict['build']['path'], report_dict['build'][stream]))       
+        if stream:
+            self.glob.lib.msg.print_file_tail(os.path.join(report_dict['build']['path'], report_dict['build'][stream]))       
 
 
     # Print currently installed apps as well as their exe status
@@ -447,7 +414,7 @@ class init(object):
             for key in self.glob.suite:
                 print ("  " + key.ljust(30) + "| "+ self.glob.suite[key])
 
-        if self.glob.args.avail not in ['code', 'bench', 'suite', 'all']:
+        if self.glob.args.avail not in ['apps', 'bench', 'suite', 'all']:
             print("Invalid input '"+self.glob.args.avail+"'")
 
 
@@ -459,7 +426,7 @@ class init(object):
             print("  " + key.ljust(18) + " = " + "\033[0;31mMISSING\033[0m")
 
 
-    # Print default params from settings.ini
+    # Print default params from user.ini
     def print_defaults(self):
 
         # Run overloads
@@ -491,12 +458,12 @@ class init(object):
 
         # Print BenchPRO settings
         print("------------------------------------------------------")
-        print("$BP_HOME/settings.ini")
+        print("$BP_HOME/user.ini")
         [self.print_setting(setting.split("=")[0].strip(), setting.split("=")[1].strip()) for setting in self.glob.defs_overload_list]
         print("------------------------------------------------------")
         print()
         print("Overload with '-o [SETTING1=ARG] [SETTING2=ARG]' on the command line for one-time changes.")
-        print("Edit $BP_HOME/settings.ini to apply persistant changes.")
+        print("Edit $BP_HOME/user.ini to apply persistant changes.")
         print("Use the 'bps' command to apply these persistant changes via the CLI, e.g.")
         print(">   bps dry_run=False\n\n")
 
@@ -513,7 +480,7 @@ class init(object):
 
     # Print version file and quit
     def print_version(self):
-        print("benchpro " + self.glob.version_site_full) #+ " (" + self.glob.version_site_date + ")")
+        print("BenchPRO " + self.glob.ev['BPS_VERSION_STR'] + " " + self.glob.dev_str)
 
 
     # Return the last line of the .outputs file
@@ -539,27 +506,20 @@ class init(object):
         # Get requested 
         last = self.get_last_history()
 
-        task_id = last.split("|")[1].strip()
+        last_id = last.split("|")[1].strip()
         output = last.split("|")[2].strip()
         op = last.split(" ")[1]
 
         # If last output was from build task
         if op in ["--build", "-b"]:
-
-            # Use task ID as query search term
-            search_term = task_id
-            # If job was a dry_run, use output string instead
-            if "dry" in task_id:
-                search_term = output
-            # Query app
-            self.query_app(search_term)
+            self.query_app("/"+last_id)
 
         # If last output was from bench task
         elif op in ["--bench", "-B"]:
-            result_manager.query_result(self.glob, output)
+            self.glob.lib.result.query("result_id="+last_id)
+
 
     # Generate input string with complete parameterization for history entry
-
     def get_input_str(self):
        
         # Build op
@@ -569,7 +529,7 @@ class init(object):
                     ",version="         + str(self.glob.config['general']['version'])   + \
                     ",compiler="        + self.glob.modules['compiler']['safe']         + \
                     ",mpi="             + self.glob.modules['mpi']['safe']              + \
-                    " | " + str(self.glob.task_id)                                      + \
+                    " | " + str(self.glob.session_id)                                   + \
                     " | " + self.glob.config['metadata']['working_dir']
         # Bench op
         elif self.glob.args.bench:
@@ -582,8 +542,9 @@ class init(object):
                     ",ranks_per_node="  + self.glob.config['runtime']['ranks_per_node']     + \
                     ",threads="         + self.glob.config['runtime']['threads']            + \
                     ",gpus="            + self.glob.config['runtime']['gpus']               + \
-                    " | " + str(self.glob.task_id)                                          + \
+                    " | " + str(self.glob.session_id)                                       + \
                     " | " + self.glob.config['metadata']['working_dir'] 
+
 
     # Print EV matching prefix str
     def print_env_matching_str(self, prefix):
