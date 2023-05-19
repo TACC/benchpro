@@ -12,11 +12,11 @@ then
 fi
 
 declare -a exe=("ibnetdiscover"
-		"lshw"
-		"lspci"
-		"rdmsr_all"
-		"TACC_HWP_set"
-				)
+        "lshw"
+        "lspci"
+        "rdmsr_all"
+        "TACC_HWP_set"
+        )
 
 path=$BP_HOME/resources/hw_utils
 

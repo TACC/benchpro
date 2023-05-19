@@ -1,24 +1,14 @@
-#!/bin/bash 
-
-output_dir=$1
-
-if type lshw 
-if type foo >/dev/null 2>&1; then 
-    echo "HW scripts in PATH, is BenchPRO loaded? Aborting."; 
-    exit 1
-fi  
-
-if [[ "$(stat -c %U lshw)" != "root" ]]; then
-    printf "Script permissions not set. Aborting.\n"
-    exit 1
-fi
+#!/bin/env bash
 
 if [[ -z $1 ]]; then 
-    printf "Provide output dir. Aborting\n"
+    printf "Missing collection output path. Aborting\n"
     exit 1
 fi
 
-mkdir -p ${output_dir}
+src_path=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+dest_path=$1
+
+mkdir -p ${dest_path}
 
 label=( "cpuid.all.raw" 
         "cpuid.core0" 
@@ -44,7 +34,13 @@ cmd=(   "cpuid -r"
 
 for ((i=0;i<${#label[@]};++i)); do
     echo "Running ${label[i]}"
-    ${cmd[i]} &> ${output_dir}/${label[i]}
+
+    script=${src_path}/${cmd[i]}
+    if [[ ! -f ${script} ]]; then
+        script=${cmd[i]}
+    fi
+
+    ${script} &> ${dest_path}/${label[i]}
 done
 echo "Done."
 exit 0
