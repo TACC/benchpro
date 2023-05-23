@@ -1,5 +1,5 @@
 ==========================
-Adding a Benchmark Profile
+Integrating your Benchmark
 ==========================
 
 The process of setting up an application benchmark is much the same as the build process; a config file is used to populate a benchmark template.

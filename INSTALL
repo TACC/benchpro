@@ -176,8 +176,8 @@ if [[ -z $BP_DEV ]]; then
 
     echo
     echo "------------------------------------------------"
-    echo "Benchtool successfully installed into $BPS_HOME"
-    echo "User files installed into $BP_HOME for testing"
+    echo "BenchPRO successfully installed into ${BPS_HOME}"
+    echo "User files installed into ${BP_HOME} for testing"
     echo "To use, load site module with:"
     echo "ml use ${BPS_MODULES}"
     echo "ml benchpro"

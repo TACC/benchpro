@@ -1,11 +1,11 @@
 =============================
-Adding an Application Profile
+Integrating your Application
 =============================
 
-BenchPRO requires two input files to build an application: a config file containing contextualization parameters, and a build template file which will be populated with these parameters and executed.
+BenchPRO requires two input files (collectively refered to as a 'profile') to build an application: a configuration file containing contextualization parameters, as well as a template script which will be populated with these parameters and executed.
 
-Application config file
------------------
+Config file
+-----------
 
 An application config file is seperated into the following sections
 
@@ -36,6 +36,13 @@ This section allows the user to have BenchPRO automatically collect input files 
     download = [list],[of],[URLs]
 
 This file staging process occurs in 1 of 2 ways, depending on the state of :code:`sync_staging` in :code:`$BP_HOME/user.ini`. BenchPRO will either synchronously copy/download/extract during the script creation process, alternatively the file staging will occur during job execution itself. In either case BenchPRO will confirm that the file or URL specified exists before continuing. 
+
+
+overload
+^^^^^^^^
+
+This section allows you to modify default parameters for this specific application. Refer to :ref:`Changing settings <setting>` for additional information.
+
 
 .. note::
    

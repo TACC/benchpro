@@ -5,6 +5,46 @@ File Format Reference
 This page provides a reference to the various input and file structures provided by BenchPRO.
 
 
+Environment Variables
+---------------------
+
+BenchPRO uses environment variables to configure paths and behaviour. Variables with prefix 'BP_' are user facing and editable via the setting overload mechanism detailed :ref:`here <settings>`. The variables with 'BPS_' prefix are used internally and should not be editted by the user.
+
+.. _variables:
+
++----------------------------+------------------------------------------------------------------------------------------+
+| Variable                   | Description                                                                              |
++============================+==========================================================================================+
+| $BPS_BIN                   | BenchPRO binaries, added to $PATH                                                        |
++----------------------------+------------------------------------------------------------------------------------------+
+| $BPS_COLLECT               | BenchPRO's result collection blackhole; used to cache results to be pushed to database.  |
++----------------------------+------------------------------------------------------------------------------------------+
+| $BPS_HOME                  | BenchPRO package installation directory.                                                 |
++----------------------------+------------------------------------------------------------------------------------------+
+| $BPS_INC                   | Site directory containing examples and configuration files.                              |
++----------------------------+------------------------------------------------------------------------------------------+
+| $BPS_LOG                   | Log file from package installation.                                                      |
++----------------------------+------------------------------------------------------------------------------------------+
+| $BPS_MODULES               | Path to BenchPRO's modulefiles directory.                                                |
++----------------------------+------------------------------------------------------------------------------------------+
+| $BPS_SYSTEM                | System label.                                                                            |
++----------------------------+------------------------------------------------------------------------------------------+
+| $BPS_VERSION               | Version information.                                                                     |
++----------------------------+------------------------------------------------------------------------------------------+
+| $BPS_VERSION_STR           | Version information, including build ID hash.                                            |
++----------------------------+------------------------------------------------------------------------------------------+
+| $BP_HOME                   | User file path [Default= $HOME/benchpro].                                                |
++----------------------------+------------------------------------------------------------------------------------------+
+| $BP_APPS                   | Application install root directory.                                                      |
++----------------------------+------------------------------------------------------------------------------------------+
+| $BP_RESULTS                | Benchmark root directory.                                                                |
++----------------------------+------------------------------------------------------------------------------------------+
+| $BP_REPO                   | Local file repository directory.                                                         |
++----------------------------+------------------------------------------------------------------------------------------+
+
+
+
+
 .. _layout:
 
 User files layout
@@ -13,82 +53,17 @@ User files layout
 .. code-block::
 
     ./benchpro
-    ├── config
-    │   ├── architecture_defaults.cfg
-    │   ├── bench
-    │   │   ├── amber16_jac_npt.cfg
-    │   │   ├── amber16_jac_nve.cfg
-    │   │   ├── .....
-    │   │   ├── frontera
-    │   │   │   ├── milc_18x18x18x36.cfg
-    │   │   │   └── .....
-    │   │   ├── stampede2
-    │   │   │   └── milc_18x18x18x36.cfg
-    │   │   ├── .....
-    │   │   └── wrf_maria1km_large.cfg
-    │   ├── build
-    │   │   ├── amber20_x86.cfg
-    │   │   ├── frontera
-    │   │   │   ├── amber20_cuda_rtx.cfg
-    │   │   │   └── .....
-    │   │   ├── gpcnet.cfg
-    │   │   ├── gromacs.cfg
-    │   │   ├── lammps.cfg
-    │   │   ├── longhorn
-    │   │   │   └── amber20_cuda_power9.cfg
-    │   │   ├── ls6
-    │   │   │   └── amber20_x86.cfg
-    │   │   ├── milc.cfg
-    │   │   ├── stampede2
-    │   │   │   ├── swift_dmo_v0.9.0.cfg
-    │   │   │   ├── swift_eagle_v0.9.0.cfg
-    │   │   │   └── wrf_v4.2.cfg
-    │   │   └── stream_mpi.cfg
-    │   ├── compiler.cfg
-    │   ├── rules
-    │   │   └── frontera.cfg
-    │   ├── sched
-    │   │   ├── slurm_frontera_normal.cfg
-    │   │   ├── .....
-    │   │   └── slurm_stampede2_test1.cfg
-    │   └── system.cfg
-    ├── resources
-    │   ├── hw_utils
-    │   │   ├── cpuid
-    │   │   ├── ibnetdiscover
-    │   │   ├── lshw
-    │   │   ├── lspci
-    │   │   ├── rdmsr_all
-    │   │   └── TACC_HWP_set
-    │   ├── images
-    │   │   ├── benchpro_black.png
-    │   │   └── benchpro_white.png
-    │   ├── modulefiles
-    │   │   └── cuda
-    │   │       └── 11.0.lua
-    │   └── scripts
-    │       ├── change_permissions
-    │       ├── collect_hw_info
-    │       └── results
-    │           ├── read_hpl_flops.sh
-    │           ├── read_quant_timing.sh
-    │           ├── read_swift_timing.py
-    │           └── read_wrf_timing.sh
-    ├── user.ini
-    ├── suites.ini
-    └── templates
     ├── bench
-    │   ├── amber_longhorn.template
-    │   ├── .....
-    │   └── wrf.template
+    │   ├── config
+    │   └── template
     ├── build
-    │   ├── amber20.template
-    │   ├── .....
-    │   └── wrf_v4.2.template
-    ├── compiler.template
-    ├── pid_dependency.template
-    └── sched
-        └── slurm.template
+    │   ├── config
+    │   └── template
+    ├── log
+    ├── resources
+    │   └── scripts
+    │       └── results
+    └── user.ini
 
 .. _arguments:
 
@@ -423,26 +398,6 @@ These config files contain parameters used to populate the benchmark template sc
 | unit                  | Y          | Result units.                                                                    |
 +-----------------------+------------+----------------------------------------------------------------------------------+
 
-Environment Variables
----------------------
-
-+----------------------------+--------------------------------------------------+
-| Variable                   | Description                                      |
-+============================+==================================================+
-| $BPS_VERSION               | Version information.                             |
-+----------------------------+--------------------------------------------------+
-| $BP_HOME                   | User file directory [Default= $HOME/benchpro].   |          
-+----------------------------+--------------------------------------------------+
-| $BPS_HOME                  | Site installation directroy.                     |
-+----------------------------+--------------------------------------------------+
-| $BP_REPO                   | Local file repository directory.                 |
-+----------------------------+--------------------------------------------------+
-| $BP_APPS                   | User application install root directory.         |
-+----------------------------+--------------------------------------------------+               
-| $BP_RESULTS                | User benchmark results root directory.           |
-+----------------------------+--------------------------------------------------+
-| $BPS_COLLECT               | Result collection black-hole directory.          |
-+----------------------------+--------------------------------------------------+
 
 Directory structure
 -------------------

@@ -40,7 +40,6 @@ Installing BenchPRO
 
     050_db_install
     060_site_install
-    070_user_setup
 
 Advanced Topics 
 ---------------

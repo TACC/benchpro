@@ -1,11 +1,13 @@
-=================
-Advanced Features
-=================
+===============
+Useful Features
+===============
 
 BenchPRO supports a number of additional features which may be of use.
 
-Overloading parameters
-----------------------
+Changing settings
+-----------------
+
+.. _setting:
 
 Useful for changing a setting for a onetime use. 
 Use `benchpro --setup` to confirm important default params from $BP_HOME/user.ini

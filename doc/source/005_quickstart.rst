@@ -2,7 +2,9 @@
 Quick Start
 ==============
 
-BenchPRO provides a number of example application and benchmark profiles. Lets try running an example. 
+.. _quickstart:
+
+BenchPRO provides a number of example application and benchmark profiles. This Quick Start walks through the process of building an application, running a benchmark and capturing the result on Frontera.
 
 1. Load the BenchPRO module:
 
@@ -11,7 +13,7 @@ BenchPRO provides a number of example application and benchmark profiles. Lets t
     ml use /scratch1/hpc_tools/benchpro/modulefiles
     ml benchpro
 
-2. Modify your SLURM allocation using the Benchsetter (bps) modifier interface:
+2. Provide your SLURM allocation using the BPS settings interface:
 
 .. code-block::
     
@@ -21,6 +23,7 @@ BenchPRO provides a number of example application and benchmark profiles. Lets t
 
 .. code-block::
 
+    bp -b lammps
     bp -B ljmelt
 
 4. Two jobs will have started, a LAMMPS complication job, and a LJ melt benchmark job. Check the status of LAMMPS with:
@@ -37,7 +40,7 @@ BenchPRO provides a number of example application and benchmark profiles. Lets t
     bp -lr
     bp -qr [jobid]
 
-6. Capture your result and provenance data to the database:
+6. Once the jobs are complete, capture your result and provenance data to the database:
 
 .. code-block::
 

@@ -2,17 +2,31 @@
 New User Guide
 ==============
 
-This guide explains how to use BenchPRO to build one of the provided applications, run a benchmark and capture the result. If you have not yet setup BenchPRO for your user slurm_account, refer to the :ref:`user_setup` page.
+This section describes how to use BenchPRO and its features to automate your benchmarking process. To get started fast, refer to the :ref:`Quick Start <quickstart>` guide.
 
 
 .. note::
 
    This guide uses long format input arguments for context, corresponding short format arguments are described :ref:`here <arguments>`.
 
-Build an Application
---------------------
 
-This section will walk you through installing the LAMMPS application (it builds faster than most other codes) onto TACC's Frontera system. This guide will work on other systems but certain assumptions need to be made about the environment & architecture where LAMMPS is being compiled to accurately describe the process.
+Terminology
+-----------
+
+Application: a program or set of programs compiled and used to execute benchmark workloads.
+Benchmark: a specific workload/simulation/dataset used to produce a figure of merit.
+Task: a execution instance (via the scheduler or locally) of a compilation or benchmark run.
+Config file: contains a set of variables used to populate the template.
+Template file: generalized shell script 
+Profile: an application or benchmark available within BenchPRO (i.e. a config & corresponding template file pair)
+Script: a shell script produced by populating the template with config variables. 
+Overload: the act of replacing a default setting or variable with a another one.
+
+
+Compiling an Application
+------------------------
+
+This section will walk you through installing the LAMMPS application (it compiles faster than most other codes) onto Frontera. This guide will work on other systems but certain assumptions need to be made about the environment & architecture where LAMMPS is being compiled to accurately describe the process.
 
 First, examine all the available applications and benchmarks currently provided by BenchPRO with
 
@@ -68,7 +82,7 @@ We can now run a benchmark with our LAMMPS installation.
 
 .. note::
 
-    There is no need to wait for the LAMMPS compilation job to complete, because BenchPRO is able create scheduler job dependencies between tasks as needed (i.e. the benchmark job will depend on the successful completion of the compilation job). In fact, if :code:`build_if_missing=True` in :code:`$BP_HOME/user.ini`, BenchPRO would detect that LAMMPS was not available for the current system when attempting to run a benchmark and build it automatically without us doing the steps above. The process to run a benchmark is similar to application compilation; a configation file is used to populate a template script. A benchmark run is specified with :code:`--bench / -B`. The benchmark identifier argument can either refer to a single benchmark or a benchmark 'suite' (i.e collection of benchmarks) defined in :code:`$BP_HOME/suites.ini`. Once again you can check for available benchmarks with the :code:`--avail` argument.
+    There is no need to wait for the LAMMPS compilation job to complete, BenchPRO is able create scheduler job dependencies between tasks as needed (i.e. the benchmark job will depend on the successful completion of the compilation job). In fact, if :code:`build_if_missing=True` in :code:`$BP_HOME/user.ini`, BenchPRO would detect that LAMMPS was not available for the current system when attempting to run a benchmark and build it automatically without us doing the steps above. The process to run a benchmark is similar to application compilation; a configation file is used to populate a template script. A benchmark run is specified with :code:`--bench / -B`. The benchmark identifier argument can either refer to a single benchmark or a benchmark 'suite' (i.e collection of benchmarks) defined in :code:`$BP_HOME/suites.ini`. Once again you can check for available benchmarks with the :code:`--avail` argument.
 
 If you haven't already, set :code:`dry_run=False` in :code:`$BP_HOME/user.ini` so that we don't have to overload manually overload the setting on the command line.
 

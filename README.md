@@ -22,7 +22,7 @@ The BenchPRO site package should already be installed on most TACC systems. If i
 |--------------------|------------------------------------------|
 | Frontera           | /scratch1/hpc\_tools/benchpro/modulefiles|
 | Stampede2          | /scratch/hpc\_tools/benchpro/modulefiles |
-| Lonestar6          | /scratch/projects/benchtool/modulefiles  |
+| Lonestar6          | /scratch/projects/benchpro/modulefiles  |
 
 1 Load the BenchPRO site package using the appropriate system path above, this module adds BenchPRO to PYTHONPATH and sets up your environment.
 ```
@@ -39,17 +39,9 @@ git clone https://github.com/TACC/benchpro.git $HOME/benchpro
 ```
 benchpro --validate
 ```
-NOTE: Some of the hardware data collection functionality provided by BenchPRO requires root access, you can either run the permissions script below to privilege said scripts, or manage without this data collection feature.
+5 Display some useful info
 ```
-sudo -E $BP_HOME/resources/scripts/change_permissions
-```
-4 Print help & version information:
-```
-benchpro --help
-benchpro --version
-```
-5 Display some useful defaults 
-```
+benchpro --notices
 benchpro --defaults
 ```
 These defaults are set by the $BP\_HOME/user.ini 
@@ -70,39 +62,43 @@ benchpro -b lammps
 ```
 benchpro -la
 ```
-You will see that LAMMPS is labelled as `DRY RUN` because `dry_run=True` in `$BP_HOME/user.ini` by default. Therefore BenchPRO generated a LAMMPS compilation script but did not submit it to the scheduler to execute the build process. You can obtain more information about your LAMMPS deployment with:
+You will see that this installation of LAMMPS was a dry run. This means that BenchPRO generated a LAMMPS compilation script but did not submit it to the scheduler to execute the build process. You can obtain more information about your dry install of LAMMPS with:
 ```
 benchpro -qa lammps
 ```
-You can examine the build script `build.batch` located in the `build_prefix` directory. Submit your LAMMPS compilation script to the scheduler manually, or
-4 Remove the dry\_run build:
+You can examine the build script `job.qsub` located in the `path` directory. Submit your LAMMPS compilation script to the scheduler manually, or
+4 Remove this instance of LAMMPS with:
 ```
 benchpro -da lammps
 ```
-5 Overload the default 'dry_run' value and rebuild LAMMPS with: 
+5 Overload the default 'dry\_run' value and rebuild LAMMPS with: 
 ```
 benchpro -b lammps -o dry\_run=False
 ```
-6 Now check the details and status of your LAMMPS compilation job with:
+Overloading settings on the command line will only take effect once, to permentantly disable dry\_run mode, use the interface tool 'bps':
+```
+bps dry_run=False
+```
+6 Now check the status of your LAMMPS compilation job with:
 ```
 benchpro -qa lammps
 ```
-In this example, parameters in `$BP_HOME/config/build/lammps.cfg` were used to contextualize the build template `$BP_HOME/templates/build/lammps.template` and produce a job script. Parameters for the job, system architecture, compile time optimizations and a module file were automatically generated. You can load your LAMMPS module with `ml lammps`. For each application that is built, a 'build_report' is generated in order to preserve metadata about the application. This build report is referenced whenever the application is used to run a benchmark, and also when this application is captured to the database. You can manually examine this report in the application directory or by using the `--queryApp / -qa` flag.
+In this example, parameters in `$BPS_INC/build/config/lammps.cfg` were used to contextualize the build template `$BPS_INC/build/templates/lammps.template` and produce a job script. Parameters for the job, system architecture, compile time optimizations and a module file were automatically generated. You can load your LAMMPS module with `ml lammps`. For each application that is built, a 'build\_report' is generated in order to preserve metadata about the application. This build report is referenced whenever the application is used to run a benchmark, and also when this application is captured to the database. You can manually examine this report in the application directory or by using the `--queryApp / -qa` flag.
 
 ### Run a Benchmark
 
 We can now run a benchmark with our LAMMPS installation. There is no need to wait for the LAMMPS build job to complete because BenchPRO is able create job dependencies between tasks when needed. In fact, if `build_if_missing=True` in `$BP_HOME/user.ini`, BenchPRO would detect that LAMMPS is not installed for the current system when attempting to run a benchmark and build it automatically without us doing the steps above. The process to run a benchmark is similar to compilation; a configation file is used to populate a template script. A benchmark run is specified with `--bench / -B`. The argument may be a single benchmark label, or a benchmark 'suite' (i.e collection of benchmarks) defined in `user.ini`. Once again you can check for available benchmarks with `--avail / -a`.  
 
-1 If you haven't already, modify `$BP_HOME/user.ini` to disable the dry\_run mode.
+1 If you haven't already, disable the dry\_run mode.
 ```
-dry_run = False
+bps dry_run=False
 ```
-2 Generate the LAMMPS Lennard-Jones benchmark with: 
+2 Execute a LAMMPS Lennard-Jones benchmark run with: 
 ```
 benchpro -B ljmelt 
 ```
 We changed `user.ini` so we don't need to use the `--overload / -o` flag to disable the dry\_run mode. 
-Note that BenchPRO will use the default scheduler parameters for your system from a file defined in `$BP_HOME/config/system.cfg`. You can overload individual parameters using `--overload`, or use another scheduler config file with the flag `--sched [FILENAME]`. 
+Note that BenchPRO will use the appropriate scheduler defaults for the current system. You can overload individual parameters using `--overload`, or use another scheduler config file with the flag `--sched [FILENAME]`. 
 
 3 Check the benchmark report with:
 ```
@@ -113,7 +109,7 @@ benchpro -qr ljmelt
 benchpro --last
 ```
 
-In this example, parameters in `$BP_HOME/config/bench/lammps_ljmelt.cfg` were used to contextualize the template `$BP_HOME/templates/bench/lammps.template`
+In this example, parameters in `$BPS_INC/bench/config/lammps_ljmelt.cfg` were used to contextualize the template `$BPS_INC/bench/templates/lammps.template`
 Much like the build process, a 'bench\_report' was generated to store metadata associated with this benchmark run. It is stored in the benchmark result direcotry and will be used in the next step to capture the result to the database.
 
 ### Capture Benchmark Result

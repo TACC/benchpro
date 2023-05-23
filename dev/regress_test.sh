@@ -8,7 +8,7 @@ BENCH="ljmelt"
 OUT="regress.out"
 
 
-benchset slurm_account=A-ccsc
+benchset allocation=A-ccsc
 benchset dry_run=True
 
 result(){
