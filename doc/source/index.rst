@@ -4,14 +4,10 @@ BenchPRO - Benchmark Performance & Reproducibility Orchestrator
 
 BenchPRO is a utility that automates, simplifies and standarizes the process of building applications, executing benchmarks and collecting results on HPC systems. 
 
-.. note::
-
-      This project is under active development.
-
 OVERVIEW
 --------
 
-BenchPRO is a benchmarking framework that enforces a standardized approach to compiling and running benchmarks. Additionally, the framework automatically records significant provenance and performance data for reference. The framework allows domain experts to share their well optimized applications and representative benchmark datasets in a reproducible manner. This way, an individual with a limited scientific or application background can run benchmarks through the framework, compare performance to previous results and examine provenance data to help identify the root cause of any discrepancies. This framework significantly enhances the reproducibility of benchmarking efforts and reduces the labor required to maintain a benchmark suite. The utility was designed to meet the following set of goals:
+BenchPRO provides a benchmarking framework that enforces a standardized approach to compiling and running performance benchmarks. The utility automatically collects and stores significant provenance data associated with the benchmark. The framework also allows performance engineers and domain experts to share their well optimized benchmark 'recipes' in a reproducible manner. This way, someone with limited background of a workflow or science domain can run benchmarks through the framework, compare performance to previous results and examine provenance data to help identify the root cause of any discrepancies. This framework significantly enhances the reproducibility of benchmarking efforts and reduces the labor required to maintain a benchmark suite. The utility was designed to meet the following set of goals:
 
 * Automate the process of building applications, running benchmarks and storing result data.
 * Structure the framework to promote the standardization of techniques and workflows as a step towards improving benchmark reproducibility.
