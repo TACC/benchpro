@@ -73,39 +73,39 @@ Input Arguments
 +-----------------------------------------------+---------------+-------------------------------------------------------------------------------+
 | Long Option                                   | Short Option  | Description                                                                   |
 +===============================================+===============+===============================================================================+
-| --help                                        | -h            | Print usage info.                                                             |  
+| \-\-help                                        | \-h            | Print usage info.                                                             |  
 +-----------------------------------------------+---------------+-------------------------------------------------------------------------------+
-| --validate                                    | -V            | Confirm the installation is correctly configured.                             |
+| \-\-validate                                    | \-V            | Confirm the installation is correctly configured.                             |
 +-----------------------------------------------+---------------+-------------------------------------------------------------------------------+
-| --clean                                       | -c            | Remove logs and other temp files left after an execption.                     |
+| \-\-clean                                       | \-c            | Remove logs and other temp files left after an execption.                     |
 +-----------------------------------------------+---------------+-------------------------------------------------------------------------------+
-| --avail                                       | -a            | Print the available application and benchmark profiles.                       |
+| \-\-avail                                       | \-a            | Print the available application and benchmark profiles.                       |
 +-----------------------------------------------+---------------+-------------------------------------------------------------------------------+
-| --build [LABEL]                               | -b            | Compile an available application.                                             |
+| \-\-build [LABEL]                               | \-b            | Compile an available application.                                             |
 +-----------------------------------------------+---------------+-------------------------------------------------------------------------------+
-| --listApps                                    | -la           | Print a list of currently installed applications.                             |
+| \-\-listApps                                    | \-la           | Print a list of currently installed applications.                             |
 +-----------------------------------------------+---------------+-------------------------------------------------------------------------------+
-| --queryApp [LABEL]                            | -qa           | Print compilation information for an installed app.                           |
+| \-\-queryApp [LABEL]                            | \-qa           | Print compilation information for an installed app.                           |
 +-----------------------------------------------+---------------+-------------------------------------------------------------------------------+
-| --delApp [LABEL]                              | -da           | Remove application installation matching inpout.                              |
+| \-\-delApp [LABEL]                              | \-da           | Remove application installation matching inpout.                              |
 +-----------------------------------------------+---------------+-------------------------------------------------------------------------------+
-| --bench [LABEL]                               | -B            | Run a benchmark.                                                              |
+| \-\-bench [LABEL]                               | \-B            | Run a benchmark.                                                              |
 +-----------------------------------------------+---------------+-------------------------------------------------------------------------------+
-| --sched [LABEL]                               |               | Use with '--build' or '--bench' to specify a custom scheduler config file.    |
+| \-\-sched [LABEL]                               |               | Use with '--build' or '--bench' to specify a custom scheduler config file.    |
 +-----------------------------------------------+---------------+-------------------------------------------------------------------------------+
-| --listResults [all/pending/captured/failed]   | -lr           | List all benchmark results in requested state.                                |
+| \-\-listResults [all/pending/captured/failed]   | \-lr           | List all benchmark results in requested state.                                |
 +-----------------------------------------------+---------------+-------------------------------------------------------------------------------+
-| --queryResult [LABEL]                         | -qr           | Print config and result of a benchmark run.                                   |
+| \-\-queryResult [LABEL]                         | \-qr           | Print config and result of a benchmark run.                                   |
 +-----------------------------------------------+---------------+-------------------------------------------------------------------------------+
-| --capture                                     | -C            | Validate and capture all pending results to the database.                     |
+| \-\-capture                                     | \-C            | Validate and capture all pending results to the database.                     |
 +-----------------------------------------------+---------------+-------------------------------------------------------------------------------+
-| --dbResult [all/LIST]                         |               | Display results matching comma delimited key-value search list.               |
+| \-\-dbResult [all/LIST]                         |               | Display results matching comma delimited key-value search list.               |
 +-----------------------------------------------+---------------+-------------------------------------------------------------------------------+
-| --dbApp [APPID]                               |               | Display application details                                                   |
+| \-\-dbApp [APPID]                               |               | Display application details                                                   |
 +-----------------------------------------------+---------------+-------------------------------------------------------------------------------+
-| --delResult [all/captured/failed/LABEL]       | -dr           | Remove local benchmark results matching input criteria.                       |
+| \-\-delResult [all/captured/failed/LABEL]       | \-dr           | Remove local benchmark results matching input criteria.                       |
 +-----------------------------------------------+---------------+-------------------------------------------------------------------------------+
-| --overload [LIST]                             | -o            | Replace options read from file, acceptes a comma delimited list of key-values.|
+| \-\-overload [LIST]                             | \-o            | Replace options read from file, acceptes a comma delimited list of key-values.|
 +-----------------------------------------------+---------------+-------------------------------------------------------------------------------+
 
 Global settings
