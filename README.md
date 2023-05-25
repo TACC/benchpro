@@ -14,37 +14,29 @@ BenchPRO - Benchmark Performance & Reproducibility Orchestrator, is a framework 
 
 ## Getting Started
 
-### Install
-
-The BenchPRO site package should already be installed on most TACC systems. If it is not, contact mcawood@tacc.utexas.edu or install it from the [benchpro](https://github.com/TACC/benchpro) repository. Assuming the site package is available, you need to install a local copy of the configuration and template files to use BenchPRO.
+The BenchPRO package should already be installed on most TACC systems. If it is not, contact mcawood@tacc.utexas.edu or install it following the guide [here](https://benchpro.readthedocs.io/en/latest/060_site_install.html) repository. 
 
 | System             | Module Path                              |
 |--------------------|------------------------------------------|
 | Frontera           | /scratch1/hpc\_tools/benchpro/modulefiles|
 | Stampede2          | /scratch/hpc\_tools/benchpro/modulefiles |
-| Lonestar6          | /scratch/projects/benchpro/modulefiles  |
+| Lonestar6          | /scratch/projects/benchpro/modulefiles   |
 
-1 Load the BenchPRO site package using the appropriate system path above, this module adds BenchPRO to PYTHONPATH and sets up your environment.
+1 On a login or staff node, load BenchPRO using the appropriate system path above, this module adds BenchPRO to PYTHONPATH and sets up your environment.
 ```
 ml python3
 ml use [module_path]
 ml benchpro
 ```
-2 You will likely get a warning stating you need to install missing user files. Follow the instructions to clone those files from this repository:
-```
-ml git
-git clone https://github.com/TACC/benchpro.git $HOME/benchpro
-```
-3 Finally, you need to run a validation process to confirm that your system, environment and directory structures are correctly configured before using BenchPRO for the first time. Run this with:
+2 BenchPRO needs to setup a directory structure (in $HOME/benchpro by default). Run the validation process to confirm that your system, environment and directory structures are correctly configured before using BenchPRO for the first time. Run this with:
 ```
 benchpro --validate
 ```
-5 Display some useful info
+3 Display some useful info
 ```
 benchpro --notices
 benchpro --defaults
 ```
-These defaults are set by the $BP\_HOME/user.ini 
 
 
 ### Build an Application
@@ -97,14 +89,14 @@ bps dry_run=False
 ```
 benchpro -B ljmelt 
 ```
-We changed `user.ini` so we don't need to use the `--overload / -o` flag to disable the dry\_run mode. 
+We modified `user.ini` (via bps) so we don't need to use the `--overload / -o` flag to disable the dry\_run mode. 
 Note that BenchPRO will use the appropriate scheduler defaults for the current system. You can overload individual parameters using `--overload`, or use another scheduler config file with the flag `--sched [FILENAME]`. 
 
 3 Check the benchmark report with:
 ```
 benchpro -qr ljmelt
 ```
-4 Because this Lennard-Jones benchmark was the last BenchPRO job executed, a useful shortcut is available to check this report:
+4 Because this Lennard-Jones benchmark was the last BenchPRO job executed, a useful shortcut is available to check its status:
 ```
 benchpro --last
 ```
@@ -124,21 +116,25 @@ benchpro -lr
 ```
 benchpro -C
 ```
-3 You can now query your result in the database with :
+3 You can query all capture results within the database with:
+```
+benchpro --dbList
+```
+4 You can also query your result in the database with:
 ```
 benchpro --dbResult 
 ```
-4 You can provide search criteria to narrow the results and export these results to a .csv file with:
+5 You can provide search criteria to narrow the results and export these results to a .csv file with:
 ```
 benchpro --dbResult username=$USER system=$TACC_SYSTEM submit_time=$(date +"%Y-%m-%d") --export
 ```
 Because your LAMMPS application was recently compiled and not present in the database, it was added to the application table automatically. An identifier string is generated and assigned to each unique application instance when added to the database, this identifier [APPID] can be used to query the application.
 
-5 Query your application details using the [APPID] displayed from the query in the previous step:
+6 Query your application details using the [APPID] displayed from the query in the previous step:
 ```
 benchpro --dbApp [APPID]
 ```
-6 Once you are satisfied the benchmark result and its associated files have been uploaded to the database, you can remove the local copy with:
+7 Once you are satisfied the benchmark result and its associated files have been uploaded to the database, you can remove the local copy with:
 ```
 benchpro --delResult captured
 ```
@@ -151,7 +147,7 @@ The captured applications and benchmark results are available through a web fron
 
 You can print the default values of several important parameters with:
 ```
-benchpro --setup
+benchpro --defaults
 ```
 
 It may be useful to review your previous BenchPRO commands, do this with:
@@ -171,7 +167,7 @@ benchpro --delApp all
 
 ## Site Installation
 
-Before installing, ensure that your system has a stanza in the `site.sh` contextualization file. BenchPRO is installed as a Python3 package.
+Before installing, ensure that your system has a stanza in the `site.sh` install file. BenchPRO is installed as a Python3 package.
 
 1 Load system Python3 module
 ``` 
