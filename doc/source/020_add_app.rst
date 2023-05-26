@@ -2,7 +2,7 @@
 Integrating your Application
 =============================
 
-BenchPRO requires two input files (collectively refered to as a 'profile') to build an application: a configuration file containing contextualization parameters, as well as a template script which will be populated with these parameters and executed.
+BenchPRO requires two input files (collectively refered to as a 'profile') to build an application: a configuration file containing variables, as well as a template script which will be populated with these variables and executed.
 
 Configuration file
 -----------
@@ -13,7 +13,7 @@ Configuration file
 
 general
 ^^^^^^^
-Fields for general application info are provide, such as name and version. You can also manually specify a system label, which limits this application to that specific system (useful for avoiding inadertantly building the wrong application on a given system). By default BenchPRO will attempt to match this config file with its corresponsing template file using the application name. You can overwrite this default template file by adding the :code:`template` field to this section.
+Fields for general application info are provide, such as name and version. You can also specify a custom system label, which limits this application to that specific system (useful for avoiding inadvertantly building the wrong application on a given system). By default BenchPRO will attempt to match this config file with its corresponsing template file using the application name. You can overwrite this default template file by adding the :code:`template` field to this section.
 
 modules
 ^^^^^^^
