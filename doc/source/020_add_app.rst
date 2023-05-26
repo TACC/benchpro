@@ -4,10 +4,12 @@ Integrating your Application
 
 BenchPRO requires two input files (collectively refered to as a 'profile') to build an application: a configuration file containing contextualization parameters, as well as a template script which will be populated with these parameters and executed.
 
-Config file
+Configuration file
 -----------
 
-An application config file is seperated into the following sections
+.. note::
+   
+   This section describes what each section of the config files does, a detailed list of config fields is provided :ref:`here <app_config_fields>`
 
 general
 ^^^^^^^
@@ -43,10 +45,6 @@ overload
 
 This section allows you to modify default parameters for this specific application. Refer to :ref:`Changing settings <setting>` for additional information.
 
-
-.. note::
-   
-   A detailed list of config fields are provided :ref:`here <app_config_fields>`
 
 Build template file
 -------------------
