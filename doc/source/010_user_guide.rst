@@ -13,15 +13,14 @@ This section describes how to use BenchPRO and its features to automate your ben
 Terminology
 -----------
 
-Application: a program or set of programs compiled and used to execute benchmark workloads.  
-Benchmark: a specific workload/simulation/dataset used to produce a figure of merit.  
-Task: a execution instance (via the scheduler or locally) of a compilation or benchmark run.  
-Config file: contains a set of variables used to populate the template.  
-Template file: a shell script with some variables declared.  
-Profile: an application or benchmark available within BenchPRO (i.e. a config & corresponding template file pair)  
-Script: a shell script produced by populating the template with config variables.  
-Overload: the act of replacing a default setting or variable with a another one.  
-
+| Application: a program or set of programs compiled and used to execute benchmark workloads.  
+| Benchmark: a specific workload/simulation/dataset used to produce a figure of merit. Typically has an application dependency. 
+| Task: a execution instance (via the scheduler or locally on the node) of a compilation or benchmark run.  
+| Template file: a shell script with some variables declared.  
+| Config file: contains a set of variable key-value pairs used to populate the template.  
+| Profile: an application or benchmark available within BenchPRO (i.e. a config & corresponding template file pair)  
+| Script: a shell script produced by populating the template with config variables.  
+| Overload: the act of replacing a default setting or variable with a another one.  
 
 Compiling an Application
 ------------------------
