@@ -50,6 +50,8 @@ BenchPRO uses environment variables to configure paths and behaviour. Variables 
 User files layout
 -----------------
 
+The file structure of the BenchPRO user directory is configured as follows:
+
 .. code-block::
 
     ./benchpro
@@ -405,14 +407,15 @@ Directory structure
 +----------------------------+----------------------------------------------------------------------------------------------------+
 | Directory                  | Purpose                                                                                            |
 +============================+====================================================================================================+
-| $BP_HOME/config            | config files containing template parameters.                                                       |
+| $BP_HOME/build             | config and template files for compiling applications.                                              |
++----------------------------+----------------------------------------------------------------------------------------------------+
+| $BP_HOME/bench             | config and template files for running benchmarks.                                                  |
 +----------------------------+----------------------------------------------------------------------------------------------------+
 | $BP_HOME/log               | Build, bench and catpure log files.                                                                |
 +----------------------------+----------------------------------------------------------------------------------------------------+
 | $BP_HOME/resources         | Contains useful content including modulefiles, hardware collection and result validation scripts.  |
 +----------------------------+----------------------------------------------------------------------------------------------------+
-| $BP_HOME/templates         | job template files                                                                                 |
-+----------------------------+----------------------------------------------------------------------------------------------------+
+
 
 ===================
 Database Structures
