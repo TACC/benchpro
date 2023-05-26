@@ -21,8 +21,8 @@ Terminology
 | Profile: an application or benchmark available within BenchPRO (i.e. a config & corresponding template file pair)  
 | Overload: the act of replacing a default setting or variable with a another one.  
 
-Compiling an Application
-------------------------
+Compile an Application
+----------------------
 
 This section will walk you through installing the LAMMPS application (it compiles faster than most other codes) onto Frontera. This guide should also work on other TACC systems.
 
