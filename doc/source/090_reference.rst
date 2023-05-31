@@ -307,13 +307,13 @@ These config files contain parameters used to populate the application build tem
 +-------------------+-----------+----------------------------------------------------------------------------------+
 | module_use        | N         | Path to be added to MODULEPATH, for using nonstandard modules.                   |
 +-------------------+-----------+----------------------------------------------------------------------------------+
-| sched_cfg         | N         | Name of nonstandard scheduler config file to use in $BP_HOME/config/sched.       |
+| sched_cfg         | N         | Name of nonstandard scheduler config file to use.                                |
 +-------------------+-----------+----------------------------------------------------------------------------------+
 | **[modules]**     |          NOTE: user may add as many custom fields to this section as needed.                 |
 +-------------------+-----------+----------------------------------------------------------------------------------+
-| compiler          | Y         | Module name of compile, eg: 'intel/18.0.2' or just 'intel' for Lmod default.     |
+| compiler          | Y         | Module name of compiler, eg: 'intel/18.0.2' or just 'intel' for default.         |
 +-------------------+-----------+----------------------------------------------------------------------------------+
-| mpi               | Y         | Module name of MPI, eg: 'impi/18.0.2' or just 'impi' for Lmod default.           |
+| mpi               | Y         | Module name of MPI, eg: 'impi/18.0.2' or just 'impi' for default.                |
 +-------------------+-----------+----------------------------------------------------------------------------------+
 | **[config]**      |          NOTE: user may add as many fields to this section as needed.                        |
 +-------------------+-----------+----------------------------------------------------------------------------------+
@@ -326,7 +326,7 @@ These config files contain parameters used to populate the application build tem
 | build_label       | N         | Custom build label, replaces arch default eg: skylake-xeon. Required if          |
 |                   |           | 'opt_flags' is set and 'arch' is not                                             |
 +-------------------+-----------+----------------------------------------------------------------------------------+
-| bin_dir           | N         | Set bin dir suffix to add executable to PATH, eg: bin, run etc.                  | 
+| bin_dir           | N         | Path to executable within application directory, eg: bin, run etc.               | 
 +-------------------+-----------+----------------------------------------------------------------------------------+
 | exe               | Y         | Name of application executable, used to check compilation was successful.        |
 +-------------------+-----------+----------------------------------------------------------------------------------+
@@ -392,7 +392,7 @@ These config files contain parameters used to populate the benchmark template sc
 +-----------------------+------------+----------------------------------------------------------------------------------+
 | method                | Y          | Results extraction method. Currently 'expr' or 'script' modes supported.         |
 +-----------------------+------------+----------------------------------------------------------------------------------+
-| expr                  | Depends    | Required if 'method=expr'. Expression for result extraction                      | 
+| expr                  | Depends    | Required if 'method=expr'. Expression for result extraction from file            | 
 |                       |            | (Eg: "grep 'Performance' <file> | cut -d ' ' -f 2")".                            |
 +-----------------------+------------+----------------------------------------------------------------------------------+
 | script                | Depends    | Required if 'method=script'. Filename of script for result extraction.           |
