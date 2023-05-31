@@ -311,9 +311,9 @@ These config files contain parameters used to populate the application build tem
 +-------------------+-----------+----------------------------------------------------------------------------------+
 | **[modules]**     |          NOTE: user may add as many custom fields to this section as needed.                 |
 +-------------------+-----------+----------------------------------------------------------------------------------+
-| compiler          | Y         | Module name of compile, eg: 'intel/18.0.2' or just 'intel' for LMod default.     |
+| compiler          | Y         | Module name of compile, eg: 'intel/18.0.2' or just 'intel' for Lmod default.     |
 +-------------------+-----------+----------------------------------------------------------------------------------+
-| mpi               | Y         | Module name of MPI, eg: 'impi/18.0.2' or just 'impi' for LMod default.           |
+| mpi               | Y         | Module name of MPI, eg: 'impi/18.0.2' or just 'impi' for Lmod default.           |
 +-------------------+-----------+----------------------------------------------------------------------------------+
 | **[config]**      |          NOTE: user may add as many fields to this section as needed.                        |
 +-------------------+-----------+----------------------------------------------------------------------------------+
