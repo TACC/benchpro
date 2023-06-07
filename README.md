@@ -65,7 +65,7 @@ benchpro -da lammps
 ```
 5 Overload the default 'dry\_run' value and rebuild LAMMPS with: 
 ```
-benchpro -b lammps -o dry\_run=False
+benchpro -b lammps -o dry_run=False
 ```
 Overloading settings on the command line will only take effect once, to permentantly disable dry\_run mode, use the interface tool 'bps':
 ```
