@@ -52,7 +52,7 @@ The above example enforces synchronous file staging as well as execution on the 
 
 3. Permentantly, via user.ini
 
-You are able to permenantly modify defaults. Do this by adding key-value pairs to :code:`$BP_HOME/user.ini`. These parameters will be applied to every task BenchPRO executes. To simplify interacting with this overloads, use the BenchPRO Setter (:code:`bps`) utility.
+You are able to permenantly modify defaults. Do this by adding key-value pairs to :code:`$BP_HOME/user.ini`. These parameters will be applied to every task BenchPRO executes. To simplify interacting with this overloads, use the BenchSET (:code:`bps`) utility.
 
 Example
 
