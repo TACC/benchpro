@@ -512,7 +512,7 @@ class init(object):
 
         # If last output was from build task
         if op in ["--build", "-b"]:
-            self.query_app("/"+last_id)
+            self.query_app(last_id)
 
         # If last output was from bench task
         elif op in ["--bench", "-B"]:

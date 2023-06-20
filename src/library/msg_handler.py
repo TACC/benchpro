@@ -227,7 +227,7 @@ class init(object):
             # Add row to table
             table.append(row) 
  
-        table.sort(key=lambda x: x[0])
+        table.sort(key=lambda x: x[4])
 
         # Add header now
         table = [[  "APP_ID",

@@ -69,27 +69,29 @@ class init(object):
         # Add module loads
         template_obj.append("# Load modules \n")
         template_obj.append("ml use " + self.glob.stg['site_mod_path'] + " \n")
-        template_obj.append("ml benchpro \n")
-   
-        template_obj.append("\n")
-        # Stage input files
-        if not self.glob.stg['sync_staging']:
-            template_obj.append("# [files]\n")
-            self.stage_input_files(template_obj)
-            template_obj.append("\n")
+
 
         # add 'module use' if set
         if self.glob.config['general']['module_use']:
             template_obj.append("ml use " + self.glob.config['general']['module_use'] + "\n")
 
-        # Add non Null modules 
+
+        template_obj.append("ml benchpro \n")
+
+        # Add non Null modules
         for mod in self.glob.modules:
             if self.glob.modules[mod]['full']:
                 template_obj.append("ml " + self.glob.modules[mod]['full'] + "\n")
         template_obj.append("ml \n")
 
+        template_obj.append("\n")
+        # Stage input files
+        if not self.glob.stg['sync_staging']:
+            template_obj.append("# Stage Files\n")
+            self.stage_input_files(template_obj)
+
         # Compiler variables
-        template_obj.append("\n# Compiler variables")
+        template_obj.append("# Compiler variables")
         self.append_to_template(template_obj, self.glob.compiler['template'])
 
         # MPI variables
@@ -112,7 +114,10 @@ class init(object):
         if self.glob.config['metadata']['app_mod']:
             template_obj.append("# Load Modules \n")
             template_obj.append("ml use " + self.glob.stg['site_mod_path'] + " \n")
+            template_obj.append("ml use ${base_module} \n")
             template_obj.append("ml benchpro \n")
+            template_obj.append("ml ${app_module} \n")
+            template_obj.append("ml \n")
 
             template_obj.append("\n")
             # Stage input files
@@ -120,11 +125,6 @@ class init(object):
                 template_obj.append("# [files]\n")
                 self.stage_input_files(template_obj)
                 template_obj.append("\n")
-
-            template_obj.append("ml use ${base_module} \n")
-            template_obj.append("ml ${app_module} \n")
-            template_obj.append("ml \n")
-            template_obj.append("\n")
 
     # Get input files asynchronously
     def stage_input_files(self, template_obj):

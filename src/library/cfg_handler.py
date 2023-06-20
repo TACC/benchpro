@@ -157,9 +157,6 @@ class init(object):
     # Generate module metadata from user input
     def setup_module_dict(self, cfg_dict):
 
-        comp_input = cfg_dict['modules']['compiler'] 
-        mpi_input = cfg_dict['modules']['mpi']
-
         # Generate list of default modules
         self.glob.lib.module.set_default_module_list(cfg_dict['general']['module_use'])
 
@@ -205,6 +202,7 @@ class init(object):
         self.check_dict_key(    cfg_dict['metadata']['cfg_file'], cfg_dict, 'general', 'code')
         self.check_dict_key(    cfg_dict['metadata']['cfg_file'], cfg_dict, 'general', 'version')
 
+        self.check_dict_section(cfg_dict['metadata']['cfg_file'], cfg_dict, 'modules')
         self.check_dict_key(    cfg_dict['metadata']['cfg_file'], cfg_dict, 'modules', 'compiler')
         self.check_dict_key(    cfg_dict['metadata']['cfg_file'], cfg_dict, 'modules', 'mpi')
 
@@ -300,14 +298,17 @@ class init(object):
         if not cfg_dict['config']['opt_flags']:
 
             # if comp_type available for this architecture
-            if self.glob.modules['compiler']['family'] in arch_dict[cfg_dict['config']['arch']].keys():
-                    cfg_dict['config']['opt_flags'] = arch_dict[cfg_dict['config']['arch']][self.glob.modules['compiler']['family']]
+            if 'compiler' in self.glob.modules:
+                if self.glob.modules['compiler']['family'] in arch_dict[cfg_dict['config']['arch']].keys():
+                        cfg_dict['config']['opt_flags'] = arch_dict[cfg_dict['config']['arch']][self.glob.modules['compiler']['family']]
 
             # Print warning if no matching compiler key not set for this archicture
+                else:
+                    self.glob.lib.msg.warn("Unable to determine default optimization flags for '" + \
+                                            self.glob.modules['compiler']['type'] + "' compiler label(s) " + \
+                                            "on arch '" + cfg_dict['config']['arch'] + "'")
             else:
-                self.glob.lib.msg.warn("Unable to determine default optimization flags for '" + \
-                                        self.glob.modules['compiler']['type'] + "' compiler label(s) " + \
-                                        "on arch '" + cfg_dict['config']['arch'] + "'")
+                self.glob.lib.msg.warn("No compiler module provided.")
 
         # Set default build label
         if not cfg_dict['config']['build_label']:

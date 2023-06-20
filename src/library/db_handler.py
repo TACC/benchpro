@@ -224,21 +224,12 @@ class init(object):
 
         input_str = input_str or self.glob.args.dbList
 
-
-        print("INPUT_STR", input_str)
-
         # Get fields in table
         self.model_fields = self.glob.lib.db.get_table_fields(self.glob.stg['result_table'])
-
-
-        print("PARSED", self.parse_input_str(input_str))
 
         # Get sql query statement
         statement = "SELECT * FROM " + self.glob.stg['result_table'] + " " + self.parse_input_str(input_str)
         query_results = self.glob.lib.db.exec_query(statement)
-
-        print("HERE")
-        print(query_results)
 
         # If query produced no records
         if not query_results:

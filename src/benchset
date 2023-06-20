@@ -94,6 +94,18 @@ def drop_setting(key: str):
         print("\nNo keys match '" + key + "'")
 
 
+# Print contents of $BPS_INC/defaults.ini
+def print_defaults():
+    site_path = os.environ["BPS_INC"]
+    defaults_file = os.path.join(site_path, "defaults.ini")
+
+    if os.path.isfile(defaults_file):
+        with open(defaults_file, 'r') as f:
+            print(f.read())
+    else:
+        print("Unable to read file \n" + defaults_file)
+
+
 def main():
 
     # Check user.ini is present
@@ -111,7 +123,7 @@ def main():
         if sys.argv[1] in ['-h', '--help']:
             print(
                 """
-                Benchsetter (BPS) is used to change default parameters used
+                BenchSET (BPS) is used to change default parameters used
                 by BenchPRO.
                 Usage: bps
                     List user's current defaults (default, no arguments)
@@ -123,10 +135,13 @@ def main():
                     Update value of parameter KEY to VALUE
 
                 -a, --add       Optional flag to add new parameter key-value.
-                                Assumed if no flag is provided.
-                -d, --drop      Remove parameter KEY from defaults.
-
+                                Default if no argument is provided.
+                -r, --remove    Remove parameter KEY from defaults.
+                -d, --defaults  Print system defaults.
                 """)
+
+        elif sys.argv[1] in ["--defaults", "-d"]:
+            print_defaults()
 
         elif "=" in sys.argv[1]:
             # Change setting
@@ -140,7 +155,7 @@ def main():
         if sys.argv[1] in ["--add", "-a"]:
             change_setting(sys.argv[2].split("="))
 
-        elif sys.argv[1] in ["--drop", "-d"]:
+        elif sys.argv[1] in ["--remove", "-r"]:
             drop_setting(sys.argv[2])
 
         else:
