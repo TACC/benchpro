@@ -73,7 +73,7 @@ class init(object):
 
             # 1. Check not present
             if self.glob.lib.db.result_in_table(result.task_id):
-                self.glob.lib.msg.warn("Result already in database, skipping.")
+                self.glob.lib.capture.failed("Result already in database: ", result)
                 continue
 
             # 2. Get insert dict
