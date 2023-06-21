@@ -32,12 +32,12 @@ Add BenchPRO to your MODULEPATH and load it:
    ml benchpro
    ml save (optional)
 
-Set your SLURM allocation and confirm BenchPRO is working:
+Run the initial setup, set your SLURM allocation, then print some helpful info:
 
 .. code-block::
 
-   bps allocation=A-ccsc
    bp --validate
+   bps allocation=A-ccsc
    bp --version
    bp --help
    bp --defaults
