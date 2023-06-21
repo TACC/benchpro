@@ -57,7 +57,7 @@ The configuration files used for running benchmarks contains the following field
 | description           | N          | Result explanation/description.                                                  |
 +-----------------------+------------+----------------------------------------------------------------------------------+
 | output_file           | N          | File to redirect stdout, if empty will use stdout for sched jobs, or             |
-|                       |            | 'output_file' from user.ini for local job.                                   |
+|                       |            | 'output_file' from user.ini for local job.                                       |
 +-----------------------+------------+----------------------------------------------------------------------------------+
 | method                | Y          | Results extraction method. Currently 'expr' or 'script' modes supported.         |
 +-----------------------+------------+----------------------------------------------------------------------------------+
