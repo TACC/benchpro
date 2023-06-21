@@ -30,6 +30,7 @@ Add BenchPRO to your MODULEPATH and load it:
 
    ml use /scratch1/hpc_tools/benchpro/modulefiles
    ml benchpro
+   ml save (optional)
 
 Set your SLURM allocation and confirm BenchPRO is working:
 
@@ -45,7 +46,7 @@ Set your SLURM allocation and confirm BenchPRO is working:
 Compile an Application
 ----------------------
 
-This section will walk you through installing the LAMMPS application (it compiles faster than most other codes) onto Frontera. This guide should also work on other TACC systems.
+This section will walk you through installing the LAMMPS application onto Frontera. This guide should also work on other example applications and other TACC systems.
 
 First, print all the pre-configured example applications and benchmark profiles currently provided by BenchPRO with
 
