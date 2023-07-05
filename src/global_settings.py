@@ -97,7 +97,6 @@ class setup(object):
         if ("BP_" in key or "BPS_" in key) and (key != "BP_DEV"):
             ev[key]  = val
 
-
     # Resolve relative paths and EVs in $BP_HOME/user.ini
     def resolve(self, value: str) -> str:
 
@@ -150,6 +149,7 @@ class setup(object):
                 return
 
         ini_parser = configparser.RawConfigParser(allow_no_value=True)
+        ini_parser.optionxform=str
 
         # This reading method allows for [sections] be present or not
         with open(ini_file) as fp:
@@ -423,12 +423,6 @@ class setup(object):
         # Overwrite defaults with user settings in $BP_HOME/user.ini
         self.read_user_settings()
 
-        # Derive variables
-        self.derived_variables()
-
-        # Start validator
-        validator.start(self)
-
         # Parse $BP_HOME/suites.ini
         self.read_suites()
 
@@ -438,15 +432,21 @@ class setup(object):
         # Run Overloads
         self.lib.overload.replace(None)
 
-        # Add user's app path
-        self.bp_apps    += [self.ev['BP_APPS']]
-        self.bp_results += [self.ev['BP_RESULTS']]
-
         # Check group stuff
         self.check_group()
 
         # Update EV dict from overloads
         self.lib.overload.replace(self.ev)
+
+        # Derive variables
+        self.derived_variables()
+
+        # Start validator
+        validator.start(self)
+
+        # Add user's app path
+        self.bp_apps    += [self.ev['BP_APPS']]
+        self.bp_results += [self.ev['BP_RESULTS']]
 
         # Set module path
         self.stg['module_path']      = os.path.join(

@@ -309,6 +309,10 @@ def run():
     # Check group memebership
     #check_group_membership()
 
+
+    print("NOW")
+    print(glob.ev)
+
     # Make directories if missing
     confirm_path_exists([glob.ev['BP_HOME'],
                          glob.ev['BP_REPO'],
