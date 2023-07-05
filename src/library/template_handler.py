@@ -61,8 +61,8 @@ class init(object):
 
         template_obj.append("\n# [modules]\n")
         # export module names
-        for mod in self.glob.config['modules']:
-            template_obj.append("export" + mod.rjust(20) + "=" + self.glob.config['modules'][mod] + "\n")
+        for mod in self.glob.modules:
+            template_obj.append("export" + self.glob.modules[mod]['label'].rjust(20) + "=" + self.glob.modules[mod]['full'] + "\n")
 
         template_obj.append("\n")
 
@@ -80,10 +80,9 @@ class init(object):
 
         # Add non Null modules
         for mod in self.glob.modules:
-            if self.glob.modules[mod]['full']:
-                template_obj.append("ml " + self.glob.modules[mod]['full'] + "\n")
-        template_obj.append("ml \n")
+            template_obj.append("ml $" + self.glob.modules[mod]['label'] + "\n")
 
+        template_obj.append("ml \n")
         template_obj.append("\n")
         # Stage input files
         if not self.glob.stg['sync_staging']:

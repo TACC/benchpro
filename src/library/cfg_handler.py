@@ -171,7 +171,9 @@ class init(object):
                 continue
 
             self.glob.modules[key]  = { 'input':    mod,
-                                        'full':     self.glob.lib.module.check_module_exists(key, mod)
+                                        'full':     self.glob.lib.module.check_module_exists(key, mod),
+                                        'label':    key,
+                                        'type':     ""
                                       }
 
             # Get filesystem safe module name from full version
@@ -186,8 +188,7 @@ class init(object):
 
             # Set type for compiler/mpi
             if key in ["compiler", "mpi"]:
-                self.glob.modules[key]['type'] =  self.glob.modules[key]['full'].split('/')[0]
-                self.glob.modules[key]['family'] = self.glob.modules[key]['full'].split('/')[0]
+                self.glob.modules[key]['type']   = self.glob.modules[key]['full'].split('/')[0]
                 
 
                 # Add special version check: intel > 20: type += oneapi
@@ -299,8 +300,8 @@ class init(object):
 
             # if comp_type available for this architecture
             if 'compiler' in self.glob.modules:
-                if self.glob.modules['compiler']['family'] in arch_dict[cfg_dict['config']['arch']].keys():
-                        cfg_dict['config']['opt_flags'] = arch_dict[cfg_dict['config']['arch']][self.glob.modules['compiler']['family']]
+                if self.glob.modules['compiler']['type'] in arch_dict[cfg_dict['config']['arch']].keys():
+                        cfg_dict['config']['opt_flags'] = arch_dict[cfg_dict['config']['arch']][self.glob.modules['compiler']['type']]
 
             # Print warning if no matching compiler key not set for this archicture
                 else:

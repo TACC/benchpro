@@ -135,7 +135,7 @@ class init(object):
                 mod_obj.append("prepend_path(\"MODULEPATH\", pathJoin(" + project + ", \"" + self.glob.config['general']['module_use'][len(project)+2:] + "\"))\n")
 
             else:
-                mod_obj.append("prepend_path( \"MODULEPATH\" , \"" + self.glob.config['general']['module_use'] + "\") \n")
+                mod_obj.append("prepend_path(\"MODULEPATH\" , \"" + self.glob.config['general']['module_use'] + "\") \n")
 
         with open(module_template, 'r') as inp:
             mod_obj.extend(inp.readlines())
@@ -202,15 +202,20 @@ class init(object):
         self.glob.lib.msg.log("Using module template file: " + module_template)
 
         # Copy base module template to 
-        if self.glob.config['config']['bin_dir']:
-            self.glob.paths += [os.path.join(self.glob.config['metadata']['install_path'], self.glob.config['config']['bin_dir'])]
-        else:
-            self.glob.paths += [self.glob.config['metadata']['install_path']]
+        #if self.glob.config['config']['bin_dir']:
+        #    self.glob.paths += [os.path.join(self.glob.config['metadata']['install_path'], self.glob.config['config']['bin_dir'])]
+        #else:
+        #    self.glob.paths += [self.glob.config['metadata']['install_path']]
 
         mod_obj = self.copy_mod_template(module_template)
 
         # Populuate template with config params
         mod_obj = self.populate_mod_template(mod_obj)
+
+        # Add depends_on lines
+        for mod in self.glob.config['modules']:
+            mod_obj.append("depends_on(\"" + self.glob.config['modules'][mod] + "\")\n")
+
         # Test module template
         tmp_mod_file = os.path.join(self.glob.ev['BP_HOME'], "tmp." + mod_file)
         self.glob.lib.template.test_template(tmp_mod_file, mod_obj)
