@@ -24,7 +24,7 @@ class init(object):
             print(sig)
         # Send to log
         elif self.glob.log:
-            self.high('    Writing to log, cleaning up and aborting...')
+            self.high('    Writing to log, cleaning up and quitting...')
             self.glob.lib.msg.log("Caught user interrupt, exitting.")
         else:
             print("    Quitting.")
@@ -260,6 +260,9 @@ class init(object):
         # Add result 
         if record.value:
             row.append(str(record.value) + " " + record.unit)
+
+        elif record.status:
+            row.append(record.status)
         else:
             row.append("-")
 
@@ -290,7 +293,7 @@ class init(object):
         table = [[  "RESULT_ID",
                     "TASK_ID",
                     "BENCH_LABEL",
-                    "START_TIME",
+                    "SUBMIT_TIME",
                     "DATASET",
                     "NODES",
                     "RESULT"]] +\
@@ -325,6 +328,11 @@ class init(object):
     
     # Get y/n from user
     def get_yes(self) -> bool:
+
+        # Assume True if not in interactive mode
+        if not self.glob.stg['interactive']:
+            return True
+
         if input("Are you sure? [Y/n] \n") in ["Y", "y", "yes", "Yes", "1"]:
             return True
         return False

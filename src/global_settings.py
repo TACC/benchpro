@@ -1,6 +1,7 @@
 # System Imports
 import configparser
 from datetime import datetime
+import getpass
 import inspect
 import itertools
 import os
@@ -77,7 +78,7 @@ class setup(object):
     cmd                         = None
 
     # Context variables
-    user                        = os.path.expandvars("$USER")
+    user                        = getpass.getuser()
     home                        = os.path.expandvars("$HOME")
     hostname                    = str(socket.gethostname())
 
@@ -89,7 +90,7 @@ class setup(object):
     try:
         cwd                     = os.getcwd()
     except BaseException:
-        print("It seems your current working directory doesn't exist. Aborting.")
+        print("It seems your current working directory doesn't exist. Quitting.")
         sys.exit(1)
 
     # Ingest EVs
@@ -206,7 +207,6 @@ class setup(object):
 
         # Create overload dict from user.ini & --overload
         self.lib.overload.init_overload_dict()
-        self.lib.overload.check_for_required_overloads()
 
 
     def join(self, path1, path2):
@@ -414,6 +414,7 @@ class setup(object):
         # Init function library
         self.lib = lib.init(self)
 
+
         # Parse $BPS_HOME/package/defaults.ini
         self.read_default_settings()
 
@@ -422,6 +423,9 @@ class setup(object):
 
         # Overwrite defaults with user settings in $BP_HOME/user.ini
         self.read_user_settings()
+
+        # Run purge with args.purge=True
+        self.lib.files.purge()
 
         # Parse $BP_HOME/suites.ini
         self.read_suites()
@@ -443,6 +447,14 @@ class setup(object):
 
         # Start validator
         validator.start(self)
+
+        # Check version compatiblity 
+        self.lib.version.check()
+
+
+        # Check all required overload variables are set
+        self.lib.overload.check_for_required_overloads()
+
 
         # Add user's app path
         self.bp_apps    += [self.ev['BP_APPS']]

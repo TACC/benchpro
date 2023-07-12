@@ -6,24 +6,52 @@
 from datetime import datetime
 import os
 import time
+from packaging import version
 
 
-class Application:
+class Report():
 
-    glob = None
+    def read_report(self):
 
-    def __init__(self, app_path: str):
-        pass
+        try:
+            self.report         = self.glob.lib.report.read(self.path)
+            self.success        = True
+        except:
+            self.success        = False
+            return
 
-class Result:
+        self.metadata           = self.report['metadata']
+        self.version            = self.metadata['format_version']
 
-    glob = None
+    def __init__(self, path: str):
+        self.path = path
+        self.read_report()
+
+class Application(Report):
+
 
     def process(self):
-        self.status         = self.glob.lib.result.status(self)
-        self.complete       = self.glob.lib.result.complete(self)
-        self.value          = self.glob.lib.result.retrieve(self.path)
-        self.glob.lib.files.cache(self)
+        self.content = self.report['build']
+        self.result = None
+
+    def __init__(self, app_path: str):
+        super().__init__(app_path)
+        self.process()
+            
+class Result():
+
+    def process(self):
+
+
+        self.status = "OLD"
+        self.complete = False
+        self.value = None
+
+        if self.success:
+            self.status         = self.glob.lib.result.status(self)
+            self.complete       = self.glob.lib.result.complete(self)
+            self.value          = self.glob.lib.result.retrieve(self.path)
+            self.glob.lib.files.cache(self)
 
 
     def set_vars(self):
@@ -32,16 +60,21 @@ class Result:
         self.label          = self.path.split('/')[-1]
         self.task_id        = self.glob.lib.result.task_id(self.bench['task_id'])
         self.result_id      = self.bench['result_id']
-        self.app_id         = self.glob.lib.result.app_id(self.build)
+        #self.app_id         = self.glob.lib.result.app_id(self.build)
         self.dry_run        = self.glob.lib.result.dry_run(self.bench['task_id'])
 
 
     def read_report(self):
         self.report         = self.glob.lib.report.read(self.path)
-        self.build          = self.report['build']
+
+        self.build = None
+        if 'build' in self.report: 
+            self.build      = self.report['build']
+
         self.bench          = self.report['bench']
         self.result         = self.report['result']
         self.unit           = self.result['unit']
+        self.metadata       = self.report['metadata']
 
 
     def set_stdout(self) -> None:
@@ -105,6 +138,13 @@ class Result:
 
 
     def __init__(self, result_path: str) -> None:
+        
         self.path           = result_path
-        self.read_report()
+        try:
+            self.read_report()
+            self.success = True
+        except:
+            self.success = False
+            return
+
         self.set_vars()

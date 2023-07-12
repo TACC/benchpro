@@ -46,7 +46,7 @@ class init(object):
 
         # No outstanding results
         if not complete_results_list:
-            self.glob.lib.msg.error("No new results found in " + self.glob.lib.rel_path(self.glob.stg['pending_path']))
+            self.glob.lib.msg.error("No valid results found in " + self.glob.lib.rel_path(self.glob.stg['pending_path']))
 
         self.glob.lib.msg.log("Capturing " + str(num_results) + " results")
         captured = 0
@@ -56,6 +56,11 @@ class init(object):
         else: self.glob.lib.msg.heading("Starting capture for " + str(num_results) + " new results.")
 
         for result in complete_results_list:
+
+
+            if not result.success:
+                self.glob.lib.msg.high("Skipping capture of old report: " + result.label)
+                return
 
             self.glob.lib.msg.low("Capturing " + result.label)
             # Capture application profile for this result to db if not already present

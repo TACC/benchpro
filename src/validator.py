@@ -309,10 +309,6 @@ def run():
     # Check group memebership
     #check_group_membership()
 
-
-    print("NOW")
-    print(glob.ev)
-
     # Make directories if missing
     confirm_path_exists([glob.ev['BP_HOME'],
                          glob.ev['BP_REPO'],
@@ -361,10 +357,10 @@ def run():
     else:
         print(bcolors.WARN, "database access check disabled")
 
-    # Create version file
-    with open(os.path.join(glob.ev['BP_HOME'], ".version"), 'w') as val:
-        val.write(os.environ.get("BPS_VERSION") + "\n")
-    print("Done.")
+    ## Create version file
+    #with open(os.path.join(glob.ev['BP_HOME'], ".version"), 'w') as val:
+    #    val.write(os.environ.get("BPS_VERSION") + "\n")
+    #print("Done.")
 
 
 # Test if our validation is out to date
@@ -399,7 +395,7 @@ def start(glob_obj):
 
     # Run validator if we detect validation version mismatch,
     # or if requested by user
-    if we_need_to_validate() or glob.args.validate:
+    if glob.args.validate: #we_need_to_validate() or glob.args.validate:
         run()
    
     # Exit if called from CLI

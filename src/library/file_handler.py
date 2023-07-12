@@ -206,6 +206,21 @@ class init(object):
         # Add to cleanup list
         self.glob.cleanup.append(path)
 
+
+    # Delete directory after user prompt
+    def purge_dir(self, path):
+
+        if os.path.isdir(path):
+            self.glob.lib.msg.high("Delete " + path + " ?")
+            self.glob.lib.msg.prompt()
+            su.rmtree(path)
+            print("Done.\n")
+
+        else:
+            self.glob.lib.msg.high("Skipping " + path + ": does not exist.")
+
+
+
     # Get list of files in search path
     def get_files_in_path(self, search_path):
         return gb.glob(os.path.join(search_path, "*.cfg"))
@@ -523,16 +538,19 @@ class init(object):
 
     # Delete all user files
     def purge(self):
-        purge_paths = [ self.glob.ev['BP_HOME'],
-                        self.glob.ev['BP_APPS'],
-                        self.glob.ev['BP_RESULTS']]
+        if self.glob.args.purge:
+            purge_paths = [ self.glob.ev['BP_HOME'],
+                            self.glob.ev['BP_APPS'],
+                            self.glob.ev['BP_RESULTS']]
 
-        # clean up
-        for path in purge_paths:
-            print("Purging " + path)
-            self.prune_tree(path)
+            # Purge MUST be interactive
+            self.glob.stg['interactive'] = True
 
-        print("Done.")
+            # clean up
+            for path in purge_paths:
+                self.purge_dir(path)
+
+            sys.exit(0)
 
 
     # Move benchmark directory from complete to captured/failed, once processed
@@ -668,8 +686,5 @@ class init(object):
             self.glob.lib.msg.error("Cannot remove path " + self.glob.lib.rel_path(path) + ": does not exist.")
         self.glob.lib.msg.log("Removing " + path)
         su.rmtree(path)
-
-
-        
 
 

@@ -160,7 +160,7 @@ def main():
 
         else:
             print("Unknown input format")
-            print("Expected --add/-a or --drop/-d")
+            print("Expected --add/-a or --remove/-r")
             sys.exit(1)
 
     else:

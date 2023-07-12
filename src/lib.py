@@ -24,6 +24,7 @@ import src.library.report_handler       as report_handler
 import src.library.result_handler       as result_handler
 import src.library.sched_handler        as sched_handler
 import src.library.template_handler     as template_handler
+import src.library.version_handler      as version_handler
 
 # Contains several useful functions, mostly used by bench_manager and build_manager
 class init(object):
@@ -45,6 +46,7 @@ class init(object):
         self.report   = report_handler.init(self.glob)
         self.sched    = sched_handler.init(self.glob)
         self.template = template_handler.init(self.glob)
+        self.version  = version_handler.init(self.glob)
 
     # Convert string to dtype
     def cast_to(self, var: str, dtype: type):
@@ -86,14 +88,6 @@ class init(object):
         # if not any of the above
         return path
 
-    # Convert key-less application list to dict 
-    def app_list_to_dict(self, app_list):
-        return {"code":     app_list[5], 
-                "version":  app_list[6],
-                "system":   app_list[1],
-                "arch":     app_list[2],
-                "compiler": app_list[3],
-                "mpi":      app_list[4]}
 
     # Get list of installed apps
     def set_installed_apps(self):
@@ -114,15 +108,14 @@ class init(object):
             # For each app 
             for app_path in app_paths:
 
-                report_path = os.path.join(self.glob.resolve(app_path), self.glob.stg['build_report_file'])
-                report = self.glob.lib.report.read(report_path)
+                report = self.glob.lib.report.read(app_path)
 
                 if not report:
 
                     # Ignore broken apps
                     if not self.glob.stg['delete_broken']:
-                        self.msg.warn(["Skipping unreadable application report: ", 
-                                            self.rel_path(report_path)])
+                        self.msg.warn(["Skipping unreadable application report in: ", 
+                                            self.rel_path(app_path)])
                     # Delete broken apps
                     else:
                         self.glob.lib.msg.warn(["Found invalid application in " + self.rel_path(app_path), "'delete_broken=True', deleting now"])
@@ -158,8 +151,6 @@ class init(object):
     def get_captured_results(self):
         captured = self.files.get_subdirs(self.glob.stg['captured_path'])
         captured.sort()
-        print("HERE")
-        print(captured)
         return captured
 
     # Get results in ./results/failed

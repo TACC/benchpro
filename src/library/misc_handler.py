@@ -140,39 +140,10 @@ class init(object):
             else:
                 # Accept space delimited list of apps
                 for app in arg_list:
-                    # Create search dict from search elements
-                    #search_dict = {}
-               
-                    # If input str is int
-                    #if self.int_input(app):
-                    #    search_dict = self.glob.lib.app_list_to_dict(self.get_app_list_from_id(app))
-
-                    # Handle / delimited paths
-                    #if "/" in app:
-                    #    for elem in app.split("/"):
-                    #        search_dict[elem] = elem
-
-                    # Handle , delimited couples
-                    #else:
-                    #    for elem in app.split(","):
-                    #        if not "=" in elem:
-                    #            search_dict['code'] = elem
-                    #        else:
-                    #            search_dict[elem.split("=")[0]] = elem.split("=")[1]
-
-                    # If installed, add to remove list
-                    #installed = self.glob.lib.check_if_installed(search_dict)
 
                     app_dict = self.id_app_to_remove(app)
                     if app_dict:
                         self.prep_delete([app_dict['path']], "application in " + self.glob.lib.rel_path(app_dict['path']))
-
-
-                    #if installed:
-                    #    self.prep_delete([installed['path']], "")
-
-                    #else:
-                    #    print("No installed application matching '" + app + "'")
 
 
     # Print build report of installed application
@@ -198,7 +169,7 @@ class init(object):
         install_path = os.path.join(app_full_path, self.glob.stg['install_subdir'])
 
         # Read contents of build report file
-        report_dict = self.glob.lib.report.read(build_report)
+        report_dict = self.glob.lib.report.read(app_full_path)
 
         if not report_dict: 
             print("Failed to read " + self.glob.lib.rel_path(build_report))

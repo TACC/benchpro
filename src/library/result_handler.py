@@ -301,7 +301,13 @@ class init(object):
     def construct_list(self, top_path: str) -> List[Result]:
         result_list = []
         for result_dir in self.glob.lib.files.get_subdirs(top_path):
-            result_list.append(Result(os.path.join(top_path, result_dir)))
+            # Read report
+            report = Result(os.path.join(top_path, result_dir))
+            if report.success:
+                result_list.append(report)
+            else:
+                result_list.append(report)
+                #print("Incompatible report format.")
         return result_list
 
 
@@ -319,11 +325,14 @@ class init(object):
 
     def get_completed(self) -> List[Result]:
         pending_results = self.get_pending()
+        complete_results = []
+
         for result in pending_results:
             result.process()
-            if not result.complete:
-                pending_results.remove(result)
-        return pending_results
+            if result.success and result.complete and not result.dry_run:
+                complete_results.append(result)
+        
+        return complete_results
 
 
     def collect_reports(self, result_type: str = None) -> List[Result]:
@@ -353,7 +362,7 @@ class init(object):
 
         # Convert str input to search dict
         search_str = search_str or self.glob.args.queryResult
-        search_dict = self.glob.lib.parse_input_str(search_str, "task_id")
+        search_dict = self.glob.lib.parse_input_str(search_str, "result_id")
 
         # Get all result reports
         report_list = self.glob.lib.result.collect_reports()
@@ -369,10 +378,11 @@ class init(object):
                     if search_dict[key] == report.bench[key]:
                         match = True
                 # Key match in [build] section
-                if key in report.build:
-                    # Value match
-                    if search_dict[key] == report.build[key]:
-                        match = True
+                if report.build:
+                    if key in report.build:
+                        # Value match
+                        if search_dict[key] == report.build[key]:
+                            match = True
 
                 if not match:   
                     report_list.remove(report)
@@ -489,6 +499,10 @@ class init(object):
         cached_status = self.glob.lib.files.decache_status(report.path)
         if cached_status:
             return cached_status
+
+        # Dry run
+        if "dry" in report.bench['task_id']:
+            return report.bench['task_id']
 
         # Query scheduler
         if report.bench['exec_mode'] == "sched":

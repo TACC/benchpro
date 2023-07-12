@@ -75,7 +75,7 @@ class init(object):
         running_jobs_list = []
         job_list = None
 
-        success, stdout, stderr = self.slurm_exec("sacct -u mcawood")
+        success, stdout, stderr = self.slurm_exec("sacct -u " + self.glob.user)
         job_list = stdout.split("\n")
 
         # Add RUNNING job IDs to list
@@ -246,9 +246,9 @@ class init(object):
                                                                 app, 
                                                                 self.glob.stg['install_subdir'], 
                                                                 bin_dir)):
-                    return '\033[0;32mEXE FOUND\033[0m'
+                    return '\033[0;32mSUCCESS\033[0m'
 
-            return '\033[0;31mEXE NOT FOUND\033[0m'
+            return '\033[0;31mFAILED\033[0m'
 
         if status in ["RUNNING","PENDING"]:
             return '\033[0;33mJOB '+status+'\033[0m'

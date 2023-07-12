@@ -93,7 +93,7 @@ def get_app_info():
 
     # Get app info from build report
     install_path = os.path.join(glob.ev['BP_APPS'], glob.config['metadata']['code_path'])
-    glob.build_report = glob.lib.report.read(os.path.join(install_path, glob.stg['build_report_file']))['build']
+    glob.build_report = glob.lib.report.read(install_path)['build']
 
     # If not set, add exe file label from build report in bench cfg for populating template later
     if not glob.config['config']['exe']:

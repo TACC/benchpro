@@ -37,8 +37,7 @@ def catch_major_exception(glob, e):
     if not glob:
         print("Failed to create global obj")
 
-
-    if glob.log:
+    elif glob.log:
         glob.log.debug(traceback.format_exc())
 
     print(traceback.format_exc())
@@ -221,7 +220,7 @@ def get_arguments():
         "--purge",
         default=False,
         action='store_true',
-        help="Delete all local user files, forever(!). Do not use this unless you know what you are doing.")
+        help="Delete all local user files. Forever(!).")
 
     cmd_parser.add_argument(
         "-V",
@@ -266,6 +265,7 @@ def main():
     args.sched = "system"
 
     # Create glob obj
+    glob = None
     try:
         glob = init_glob()
     except Exception as e:
@@ -341,9 +341,8 @@ def main():
         glob.lib.misc.print_keys()
     # Purge user files
     elif glob.args.purge:
-        #glob.lib.files.purge()
-        print("Purge disabled for now...")
-        sys.exit(0)
+        glob.lib.files.purge()
+        #print("Purge disabled for now...")
     elif glob.args.version:
         glob.lib.misc.print_version()
     elif glob.args.last:
