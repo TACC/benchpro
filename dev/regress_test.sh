@@ -10,6 +10,10 @@ OUT="regress.out"
 
 benchset allocation=A-ccsc
 benchset dry_run=True
+benchset interactive=False
+
+rm $BP_HOME/.version
+
 
 result(){
     op=`echo $2 | cut -d " " -f1`
@@ -39,6 +43,7 @@ declare cases=( "help"
             "delApp $APP "
             "capture"
             "listResults all"
+            "dbList all"
             "dbResult dataset=$BENCH --export"
             "dbApp code=$APP"
             "history"
