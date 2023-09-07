@@ -1,0 +1,3 @@
+echo "I am a BenchPRO hello world example"
+# Executable stub to pass sanity test
+install -D -m 700 /dev/null ${install_path}/${bin_dir}/${exe}
