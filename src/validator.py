@@ -16,7 +16,11 @@ import subprocess
 import sys
 import time
 
+# Validate database connectivity
 db = True
+# Validate scheduler
+sched = True
+
 try:
     import psycopg2
     from psycopg2 import sql
@@ -346,7 +350,10 @@ def run():
 #                     glob.ev['BP_RESULTS']])
 
     # Check exe
-    check_exe(['benchpro', 'benchset', 'stage', 'sinfo', 'sacct', 'git'])
+    exes = ['benchpro', 'benchset', 'stage', 'git']
+    if sched:
+        exes.extend(['sinfo', 'sacct'])
+    check_exe(exes)
 
     # Check db host access
     connection = check_db_access(glob)
