@@ -9,7 +9,7 @@ set() {
 
 # SETUP
 set BPS_SYSTEM      $TACC_SYSTEM
-set BPS_VERSION "1.8.2"
+set BPS_VERSION "1.8.3"
 [[ -z $BP_DEV ]] && set BP_DEV 1
 set BUILD_HASH `echo $RANDOM | md5sum | head -c 8`
 
