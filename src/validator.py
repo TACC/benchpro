@@ -16,16 +16,12 @@ import subprocess
 import sys
 import time
 
-# Validate database connectivity
-db = True
-# Validate scheduler
-sched = True
-
+db_module = True
 try:
     import psycopg2
     from psycopg2 import sql
 except ImportError:
-    db = False
+    db_module = False
     print("No psycopg2 module available, db access will not be available!")
 
 glob = None
@@ -351,16 +347,19 @@ def run():
 
     # Check exe
     exes = ['benchpro', 'benchset', 'stage', 'git']
-    if sched:
+    if not glob.stg['disable_sched']:
         exes.extend(['sinfo', 'sacct'])
+    else:
+        print(bcolors.WARN, "scheduler integration disabled")
     check_exe(exes)
 
-    # Check db host access
-    connection = check_db_access(glob)
-
     # Check db connection
-    if db and connection:
-        check_db_connect(glob)
+    if not glob.stg['disable_db'] and db_module:
+        # Check db host access
+        connection = check_db_access(glob)
+        # Check db access
+        if connection:
+            check_db_connect(glob)
     else:
         print(bcolors.WARN, "database access check disabled")
 
