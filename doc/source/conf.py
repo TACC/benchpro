@@ -6,8 +6,8 @@ project = 'BenchPRO'
 copyright = '2022, Cawood'
 author = 'Matthew Cawood'
 
-release = '1.3'
-version = '1.3.5'
+release = '1.8'
+version = '1.8.2'
 
 # -- General configuration
 
