@@ -63,7 +63,7 @@ def build_code(input_dict: dict, glob_copy: object):
     global glob
     glob = glob_copy
 
-    input_str = ",".join([key + "=" + input_dict[key] for key in input_dict.keys() if key])
+    input_str = ",".join([key + "=" + str(input_dict[key]) for key in input_dict.keys() if key])
 
     glob.lib.overload.replace(None)
 
@@ -82,7 +82,7 @@ def build_code(input_dict: dict, glob_copy: object):
                     ">  " + glob.lib.rel_path(glob.config['metadata']['cfg_file'])])
 
     # Get sched config dict if exec_mode=sched, otherwise set default threads for local build
-    if glob.stg['build_mode'] == "sched":
+    if glob.stg['mode'] == "sched":
         # If sched config file not specified, use system default
         if not glob.config['general']['sched_cfg']:
             glob.config['general']['sched_cfg'] = glob.lib.get_sched_cfg()
@@ -101,7 +101,7 @@ def build_code(input_dict: dict, glob_copy: object):
     glob.lib.overload.check_for_unused_overloads()
 
     # Apply system rules if not running locally
-    if not glob.stg['build_mode'] == "local":
+    if not glob.stg['mode'] == "local":
         glob.lib.expr.apply_system_rules()
 
     glob.lib.msg.brk()
@@ -137,7 +137,7 @@ def build_code(input_dict: dict, glob_copy: object):
     glob.lib.files.copy(provenance_path, glob.config['template'], "build.template", False)
 
     # Copy sched config file if building via sched
-    if glob.stg['build_mode'] == "sched":
+    if glob.stg['mode'] == "sched":
         glob.lib.files.copy(provenance_path, glob.sched['metadata']['cfg_file'], None, False)
 
     # Clean up tmp files
@@ -156,7 +156,7 @@ def build_code(input_dict: dict, glob_copy: object):
 
     else:
         # Submit job to sched
-        if glob.stg['build_mode'] == "sched":
+        if glob.stg['mode'] == "sched":
             # Check max running build jobs
             try:
                 job_limit = int(glob.stg['max_running_jobs'])
@@ -218,8 +218,8 @@ def init(glob: object):
     glob.lib.msg.new_results()
 
     #Check build_mode in set correctly
-    if glob.stg['build_mode'] not in  ['sched', 'local']:
-        glob.lib.msg.error(["Unsupported build execution mode found: '" + glob.stg['bench_mode']+"' in $BP_HOME/user.ini",
+    if glob.stg['mode'] not in  ['sched', 'local']:
+        glob.lib.msg.error(["Unsupported build execution mode found: '" + glob.stg['mode']+"' in $BP_HOME/user.ini",
                                     "Please specify 'sched' or 'local'."])
 
     # ----------------- IF CODE LABEL IS A LIST (FROM USER INPUT) --------------------------

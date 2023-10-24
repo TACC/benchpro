@@ -34,6 +34,7 @@ class init(object):
                 # Iter over all search terms
                 match = True
                 found = False
+
                 for key in search_dict.keys():
                     # For each section of cfg
                     for sec in cfg.keys():
@@ -71,7 +72,7 @@ class init(object):
 
         # No matches after scanning all dirs
         if not matching_cfgs:
-            self.glob.lib.msg.error("No config file found matching search criteria '" + ",".join([key + "=" + search_dict[key] for key in search_dict.keys()]) + "'")
+            self.glob.lib.msg.error("No config file found matching search criteria '" + ",".join([key + "=" + str(search_dict[key]) for key in search_dict.keys()]) + "'")
 
     # Check cfg file exists
     def find_cfg_file(self, cfg_type, cfg_name):
@@ -340,7 +341,7 @@ class init(object):
         # Path to copy files to
         cfg_dict['metadata']['copy_path']    = cfg_dict['metadata']['build_path']
 
-        if not cfg_dict['general']['sched_cfg']:
+        if self.glob.stg['mode'] == "sched" and not cfg_dict['general']['sched_cfg']:
             cfg_dict['general']['sched_cfg'] = os.path.join(self.glob.stg['sched_cfg_path'], self.glob.system['default_sched'])
 
         # Set sched nodes to 1 for build jobs
@@ -466,12 +467,12 @@ class init(object):
                                     self.glob.lib.rel_path(cfg_dict['metadata']['cfg_file']))
     
         #Check bench_mode in set correctly
-        if self.glob.stg['bench_mode'] not in  ["sched", "local"]:
+        if self.glob.stg['mode'] not in  ["sched", "local"]:
             self.glob.lib.msg.error("Unsupported benchmark execution mode found: '"+glob.stg['bench_mode']+ \
                                     "' in $BP_HOME/user.ini, please specify 'sched' or 'local'.")
     
         # Check for hostfile/hostlist if exec_mode is local (mpirun)
-        if self.glob.stg['bench_mode'] == "local":
+        if self.glob.stg['mode'] == "local":
             # Both hostfile and hostlist is set?
             if cfg_dict['runtime']['hostfile'] and cfg_dict['runtime']['hostlist']:
                 self.glob.lib.msg.error("both 'hostlist' and 'hostfile' set in " + \
@@ -488,10 +489,9 @@ class init(object):
     
             # Error if neither is set
             else:
-                self.glob.lib.msg.error("if using 'bench_mode=local' in $BP_HOME/user.ini, " + \
-                                        "provide either a 'hostfile' or 'hostlist' under [runtime] in " + \
-                                        self.glob.lib.rel_path(cfg_dict['metadata']['cfg_file']))
-    
+                cfg_dict['runtime']['host_str'] = "-host localhost"
+
+
         # Deal with empty values
         if not cfg_dict['runtime']['max_running_jobs']:
             cfg_dict['runtime']['max_running_jobs'] = 10

@@ -40,7 +40,7 @@ def get_app_info():
     if not glob.lib.check_if_installed(glob.config['requirements']):
         glob.lib.msg.warn("No installed application meeting benchmark requirements: '" +
                           "', '".join([i + "=" + 
-                          glob.config['requirements'][i] for i in glob.config['requirements'].keys() if  glob.config['requirements'][i]]) + 
+                          str(glob.config['requirements'][i]) for i in glob.config['requirements'].keys() if  glob.config['requirements'][i]]) + 
                           "'")
         # If only searching with task ID, don't attempt a build
         if task_only: 
@@ -112,7 +112,7 @@ def get_app_info():
             # check_exe=True
             if glob.stg['check_exe']:
                 # bench_mode=sched
-                if glob.stg['bench_mode'] == 'sched':
+                if glob.stg['mode'] == 'sched':
                     # exe not null
                     if glob.build_report['exe_file']:
                         glob.lib.msg.exe_check(glob.build_report['exe_file'], 
@@ -199,7 +199,7 @@ def start_task():
     glob.lib.files.copy(provenance_path, glob.config['template'], "bench.template", False)
 
     # If bench_mode == sched
-    if glob.stg['bench_mode'] == "sched":
+    if glob.stg['mode'] == "sched":
         glob.lib.files.copy(provenance_path, glob.sched['metadata']['cfg_file'], None, False)
         glob.lib.files.copy(provenance_path, glob.sched_template, None, False)
 
@@ -217,7 +217,7 @@ def start_task():
     # dry_run = False
     else:
         # bench_mode = sched
-        if glob.stg['bench_mode'] == "sched":
+        if glob.stg['mode'] == "sched":
             # Get dep list
             try:
                 job_limit = int(glob.config['runtime']['max_running_jobs'])
@@ -237,7 +237,7 @@ def start_task():
             glob.prev_task_id.append(glob.task_id)
 
         # bench_mode = local
-        elif glob.stg['bench_mode'] == "local":
+        elif glob.stg['mode'] == "local":
             # For local bench, use default output file name if not set (can't use stdout)
             if not glob.config['result']['output_file']:
                 glob.config['result']['output_file'] = glob.stg['output_file']
@@ -294,7 +294,7 @@ def run_bench(input_str: str, glob_copy: object) -> int:
         glob.config['metadata']['build_running'] = False
 
     # Get bench config cfgs
-    if glob.stg['bench_mode'] == "sched":
+    if glob.stg['mode'] == "sched":
         glob.lib.cfg.ingest('sched', glob.lib.get_sched_cfg())
 
         # Get job label
@@ -307,7 +307,7 @@ def run_bench(input_str: str, glob_copy: object) -> int:
     glob.lib.overload.check_for_unused_overloads()
 
     # Check if MPI is allow on this host
-    if glob.stg['bench_mode'] == "local" and not glob.stg['dry_run'] and not glob.lib.check_mpi_allowed():
+    if glob.stg['mode'] == "local" and not glob.stg['dry_run'] and not glob.lib.check_mpi_allowed():
             glob.lib.msg.error("MPI execution is not allowed on this host!")
 
     
@@ -351,7 +351,7 @@ def run_bench(input_str: str, glob_copy: object) -> int:
                 glob.config['runtime']['gpus'] = gpu
 
                 # Apply system rules if not running locally
-                if not glob.stg['bench_mode'] == "local":
+                if not glob.stg['mode'] == "local":
                     glob.lib.expr.apply_system_rules()
 
                 # Generate bench script

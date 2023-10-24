@@ -369,14 +369,16 @@ class init(object):
 
         # Iterate over result reports
         for report in list(report_list):
+
             # Iterate over search criteria
             for key in search_dict:
                 match = False
                 # Key match in [bench] section
-                if key in report.bench:
-                    # Value match
-                    if search_dict[key] == report.bench[key]:
-                        match = True
+                if report.bench:
+                    if key in report.bench:
+                        # Value match
+                        if search_dict[key] == report.bench[key]:
+                            match = True
                 # Key match in [build] section
                 if report.build:
                     if key in report.build:
@@ -506,6 +508,7 @@ class init(object):
 
         # Query scheduler
         if report.bench['exec_mode'] == "sched":
+
             return self.glob.lib.sched.task_status(str(report.task_id))
         # Query OS PID
         elif report.bench['exec_mode'] == "local":

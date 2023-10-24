@@ -230,7 +230,7 @@ class init(object):
         self.glob.job_file = self.glob.stg['build_job_file']
         self.glob.tmp_job_file = os.path.join(self.glob.ev['BP_HOME'], "tmp." + self.glob.stg['build_job_file'])
 
-        if self.glob.stg['build_mode'] == "sched":
+        if self.glob.stg['mode'] == "sched":
             self.glob.sched['template'] = self.glob.lib.files.find_exact(self.glob.sched['sched']['type'] + \
                                                                         ".template", self.glob.stg['sched_tmpl_path'])
 
@@ -278,7 +278,7 @@ class init(object):
         self.set_build_files()
 
         # Add scheduler directives if constructing job script
-        if self.glob.stg['build_mode'] == "sched":
+        if self.glob.stg['mode'] == "sched":
             # Get ranks from threads (?)
             self.glob.sched['sched']['ranks'] = 1
             # Get job label
@@ -331,7 +331,7 @@ class init(object):
         self.glob.tmp_job_file = os.path.join(self.glob.ev['BP_HOME'], "tmp." + self.glob.stg['bench_job_file']) 
     
         # Scheduler template file
-        if self.glob.stg['bench_mode'] == "sched":
+        if self.glob.stg['mode'] == "sched":
             self.glob.sched['template'] = self.glob.lib.files.find_exact(self.glob.sched['sched']['type'] + ".template", \
                                                                          self.glob.stg['sched_tmpl_path'])
 
@@ -358,7 +358,7 @@ class init(object):
             self.glob.config['template'] = matches[0]
 
         self.glob.config['metadata']['job_script'] = self.glob.config['config']['bench_label'] + "-bench." + \
-                                                        self.glob.stg['bench_mode']
+                                                        self.glob.stg['mode']
 
     # Sets the mpi_exec string for schduler or local exec modes
     def set_mpi_exec_str(self):
@@ -368,11 +368,11 @@ class init(object):
                                                 int(self.glob.config['runtime']['nodes'])
 
         # Standard ibrun call
-        if self.glob.stg['bench_mode'] == "sched":
+        if self.glob.stg['mode'] == "sched":
             self.glob.config['runtime']['mpi_exec'] = self.glob.stg['sched_mpi'] + " "
 
         # MPI exec for local host
-        elif self.glob.stg['bench_mode'] == "local":
+        elif self.glob.stg['mode'] == "local":
             self.glob.config['runtime']['mpi_exec'] = "\"" + self.glob.stg['local_mpi'] + " -np " + \
                                                 str(self.glob.config['runtime']['ranks']) + " -ppn " + \
                                                 str(self.glob.config['runtime']['ranks_per_node']) + \
@@ -411,7 +411,7 @@ class init(object):
             self.add_process_dep(template_obj)  
 
         # If generate sched script
-        if self.glob.stg['bench_mode'] == "sched":
+        if self.glob.stg['mode'] == "sched":
             self.append_to_template(template_obj, self.glob.sched['template'])
             self.glob.sched['sched']['job_label'] = self.glob.config['config']['bench_label']
             self.add_reservation(template_obj)
@@ -440,7 +440,7 @@ class init(object):
 
         self.glob.lib.msg.low("Populating template...")
         # Take multiple config dicts and populate script template
-        if self.glob.stg['bench_mode'] == "sched":
+        if self.glob.stg['mode'] == "sched":
             template_obj = self.populate_template([self.glob.config['metadata'], \
                                              self.glob.config['runtime'], \
                                              self.glob.config['config'], \

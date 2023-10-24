@@ -307,6 +307,16 @@ class setup(object):
         # Get text wrap chars
         self.stg['width'] = min(self.stg['width'], self.session['columns'])
 
+        self.stg['mode'] = None
+        if self.args.build:
+            self.stg['mode'] = self.stg['build_mode']
+        elif self.args.bench:
+            self.stg['mode'] = self.stg['bench_mode']
+        
+        if self.stg['disable_sched']:
+            self.stg['mode'] = 'local'
+
+
 
     # Read suites.ini
     def read_suites(self):

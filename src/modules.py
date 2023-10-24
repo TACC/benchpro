@@ -13,18 +13,21 @@ class Report():
 
     def read_report(self):
 
-        try:
-            self.report         = self.glob.lib.report.read(self.path)
-            self.success        = True
-        except:
-            self.success        = False
-            return
+        self.report         = self.glob.lib.report.read(self.path)
+
+        self.success = True
+        if not self.report:
+            self.success = False
+            return 
 
         self.metadata           = self.report['metadata']
         self.version            = self.metadata['format_version']
 
     def __init__(self, path: str):
         self.path = path
+        self.build = {}
+        self.bench = {}
+        self.result = {}
         self.read_report()
 
 class Application(Report):
@@ -36,18 +39,23 @@ class Application(Report):
 
     def __init__(self, app_path: str):
         super().__init__(app_path)
-        self.process()
+        if self.success:
+            self.process()
             
-class Result():
+class Result(Report):
 
     def process(self):
-
 
         self.status = "OLD"
         self.complete = False
         self.value = None
 
         if self.success:
+
+            self.bench = self.report['bench']
+            self.result = self.report['result']
+            self.unit = self.result['unit']
+            self.task_id        = self.glob.lib.result.task_id(self.bench['task_id'])
             self.status         = self.glob.lib.result.status(self)
             self.complete       = self.glob.lib.result.complete(self)
             self.value          = self.glob.lib.result.retrieve(self.path)
@@ -62,19 +70,6 @@ class Result():
         self.result_id      = self.bench['result_id']
         #self.app_id         = self.glob.lib.result.app_id(self.build)
         self.dry_run        = self.glob.lib.result.dry_run(self.bench['task_id'])
-
-
-    def read_report(self):
-        self.report         = self.glob.lib.report.read(self.path)
-
-        self.build = None
-        if 'build' in self.report: 
-            self.build      = self.report['build']
-
-        self.bench          = self.report['bench']
-        self.result         = self.report['result']
-        self.unit           = self.result['unit']
-        self.metadata       = self.report['metadata']
 
 
     def set_stdout(self) -> None:
@@ -138,13 +133,8 @@ class Result():
 
 
     def __init__(self, result_path: str) -> None:
-        
-        self.path           = result_path
-        try:
-            self.read_report()
-            self.success = True
-        except:
-            self.success = False
-            return
+        super().__init__(result_path)
 
-        self.set_vars()
+        if self.success:
+            self.process()
+            self.set_vars()
