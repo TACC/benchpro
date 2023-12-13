@@ -69,7 +69,7 @@ class init(object):
         if (not '/' in module) or all(not char.isdigit() for char in module):
             # Get default module version from lmod
             for default in self.glob.default_module_list:
-                if module+"/" in default:
+                if default.startswith(module):
                     return default
             else:
                 self.glob.lib.msg.error("module '" + module + "': format error.")

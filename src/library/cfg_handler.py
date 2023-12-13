@@ -179,7 +179,7 @@ class init(object):
 
             # Get filesystem safe module name from full version
             self.glob.modules[key]['safe']  = self.glob.lib.module.get_label(self.glob.modules[key]['full']) 
-            
+           
             # Check name was resolved successfully - fail if compiler or mpi (required)
             if not self.glob.modules[key]['full']:
                 self.glob.lib.msg.error("Failed to identify module '" + self.glob.modules[key]['input'] + "'")
