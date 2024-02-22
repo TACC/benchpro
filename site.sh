@@ -16,6 +16,7 @@ set BUILD_HASH `echo $RANDOM | md5sum | head -c 8`
 set BUILD_DATE      "$(date +'%Y-%m-%d %H:%m:%S')"
 set BPS_VERSION_STR "${BPS_VERSION}-${BUILD_HASH}"
 set PY_VERSION      "3.`python3 --version | head -n 1 | cut -d '.' -f 2`"
+set PY_LIB          $TACC_PYTHON_LIB
 
 # USER VARIABLES [dynamic]
 set BP_HOME         '$HOME/benchpro'

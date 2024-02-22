@@ -137,7 +137,7 @@ sed -i "/local bp_apps/c\local bp_apps = \"${BP_APPS}\""                    ${BP
 sed -i "/local bp_results/c\local bp_results = \"${BP_RESULTS}\""           ${BPS_MODULES}/benchpro/${BPS_VERSION}.lua
 sed -i "/local py_version/c\local py_version = \"${PY_VERSION}\""           ${BPS_MODULES}/benchpro/${BPS_VERSION}.lua
 sed -i "/local bps_site/c\local bps_site = \"${BPS_HOME}\""                 ${BPS_MODULES}/benchpro/${BPS_VERSION}.lua
-
+sed -i "/local py_lib/c\local py_lib = \"${PY_LIB}\""                       ${BPS_MODULES}/benchpro/${BPS_VERSION}.lua
 
 printf "Done.\n"
 printf "\nLoading module...\n"
