@@ -236,7 +236,7 @@ class init(object):
                     "VERSION",
                     "SUBMIT_TIME",
                     "BUILD_LABEL",
-                    "\x1b[0;37mSTATUS\x1b[0m"]] + \
+                    "STATUS"]] + \
                     table 
 
         print(tabulate(table, headers="firstrow", tablefmt="simple_outline"))
