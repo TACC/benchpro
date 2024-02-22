@@ -61,15 +61,15 @@ class init(object):
         if not isinstance(var, str):
             return var
 
+        # Int
+        if var.isdigit():
+            return int(var)
         # True
-        if var in ["1", "T", "t", "True", "true"]:
+        elif var in ["1", "T", "t", "True", "true"]:
             return True
         # False
         elif var in ["0", "F", "f", "False", "false"]:
             return False
-        # Int
-        elif var.isdigit():
-            return int(var)
         # String
         else:
             return var
