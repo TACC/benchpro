@@ -112,3 +112,6 @@ local py_version =
 local bps_site =
 prepend_path("PYTHONPATH",         pathJoin(bps_site, "python/lib/python" .. py_version, "site-packages/" ))
 prepend_path("PATH",               pathJoin(bps_site, "python/bin" ))
+-- Add build Python lib to LD_LIBRARY_PATH, else switching module versions breaks linking
+local py_lib =
+append_path("LD_LIBRARY_PATH",     py_lib)
