@@ -66,7 +66,7 @@ class setup(object):
     # Contents of user's user.ini
     defs_overload_list          = []
     defs_overload_dict          = {}
-    required_overload_keys      = ['allocation']
+    required_overload_keys      = []
 
     # Lists of application/result base dirs
     bp_apps                     = []
