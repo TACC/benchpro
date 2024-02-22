@@ -254,12 +254,12 @@ def main():
         notices.print_notices(False, True)
 
     # No input = print notice
-    no_input = True
-    for key in args.__dict__:
-        if args.__dict__[key]:
-            no_input = False
-    if no_input:
-        notices.info()
+    #no_input = True
+    #for key in args.__dict__:
+    #    if args.__dict__[key]:
+    #        no_input = False
+    #if no_input:
+    #    notices.info()
 
     # Set default for sched input
     args.sched = "system"
