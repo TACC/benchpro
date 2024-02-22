@@ -95,16 +95,25 @@ class init(object):
                 if search in app.values():
                     matching_apps.append(app)
 
+            # Multiple matches
             if len(matching_apps) > 1:
-                self.glob.lib.msg.high("Application selection was not unique")
-                self.glob.lib.msg.print_app_table(matching_apps)
-                self.glob.lib.msg.error("Please provide unique identifier")
 
+                # Accept multiple matching apps if --force provided
+                if self.glob.args.force:
+                    return matching_apps
+                        
+                else:
+                    self.glob.lib.msg.high("Application selection was not unique")
+                    self.glob.lib.msg.print_app_table(matching_apps)
+                    self.glob.lib.msg.error("Please provide unique identifier or add --force")
+
+            # No matches
             elif len(matching_apps) == 0:
                 self.glob.lib.msg.exit("No application found matching '" + search + "'")
 
+            # Unique match
             else:
-                return matching_apps[0]
+                return [matching_apps[0]]
 
 
     def remove_app(self, app_path=None):
@@ -140,10 +149,12 @@ class init(object):
             else:
                 # Accept space delimited list of apps
                 for app in arg_list:
-
-                    app_dict = self.id_app_to_remove(app)
-                    if app_dict:
-                        self.prep_delete([app_dict['path']], "application in " + self.glob.lib.rel_path(app_dict['path']))
+                    delete_list = []
+                    # Get list of app dicts to delete
+                    delete_list.extend(self.id_app_to_remove(app))
+                    for app_dict in delete_list:
+                        if app_dict:
+                            self.prep_delete([app_dict['path']], "application in " + self.glob.lib.rel_path(app_dict['path']))
 
 
     # Print build report of installed application
@@ -367,6 +378,8 @@ class init(object):
 
         # User or all
         search_locs = self.glob.stg['build_cfg_path']
+
+        print("^ print locs", search_locs) 
 
         if self.glob.args.avail in ['apps', 'all']:
             self.print_avail_type("application", search_locs)
