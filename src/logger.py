@@ -14,9 +14,7 @@ def start_logging(log_label, log_file, glob):
     # Log file location
     log_path = os.path.join(glob.stg['log_path'], glob.log_file)
 
-    formatter = lg.Formatter("{0}: ".format(log_label) + glob.user + "@" +
-                            glob.hostname + ": " +
-                            "%(asctime)s: %(filename)s;%(funcName)s();%(lineno)d: %(message)s")
+    formatter = lg.Formatter("{0}: ".format(log_label) + "%(asctime)s: %(message)s")
 
     # Init logger
     glob.log = lg.getLogger(log_label)
