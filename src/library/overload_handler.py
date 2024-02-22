@@ -56,6 +56,7 @@ class init(object):
 
             # If old value was a list, iterate through new overload value and add to new list
             if isinstance(old_val, list):
+
                 dtype = type(old_val[0])
                 search_dict[overload_key] = []
                 # For each elem of commadelimited list of new overload values
