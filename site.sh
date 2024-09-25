@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
-ml python3
+
+# Can't assume system has python3 module
+#ml python3
 
 set() {
     echo "$1=$2"
@@ -9,7 +11,7 @@ set() {
 
 # SETUP
 set BPS_SYSTEM      $TACC_SYSTEM
-set BPS_VERSION "1.8.4"
+set BPS_VERSION "1.8.7"
 [[ -z $BP_DEV ]] && set BP_DEV 1
 set BUILD_HASH `echo $RANDOM | md5sum | head -c 8`
 
@@ -33,6 +35,10 @@ set REMOTE_PATH     "/home/benchpro/benchdb/data_store"
 if [[ $BPS_SYSTEM = "frontera" ]]; then
     set TACC_SCRATCH    "/scratch1"
     SITE="${TACC_SCRATCH}/hpc_tools/benchpro"
+
+elif [[ $BPS_SYSTEM = "vista" ]]; then
+    set TACC_SCRATCH    "/scratch"
+    SITE="${TACC_SCRATCH}/projects/benchpro"
 
 elif [[ $BPS_SYSTEM = "ls6" ]]; then
     set TACC_SCRATCH    "/scratch"
