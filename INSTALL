@@ -38,6 +38,12 @@ patch_wrapper() {
 
 # Install Python package and set group permissions
 install() {
+
+
+    export CC=gcc
+    export CXX=g++
+    export FC=gfortran
+
     python3 -m pip uninstall -y benchpro  &>> $BPS_LOG
     python3 setup.py install --prefix=${BPS_HOME}/python/ &>> $BPS_LOG
 
@@ -70,7 +76,7 @@ mkdir -p $BPS_HOME && printf "\nWe have write permission to ${BPS_HOME}\n" || qu
 # Get path to SSH key - not stored in repo
 SSH_KEY=""
 if [[ "$1" = "" ]]; then
-    SSH_KEY=$HOME/.ssh/id_rsa
+    SSH_KEY=$HOME/.ssh/id_ed25519
 # Quick install
 elif [[ "$1" = "-d" ]]; then
     printf "Debug mode"
