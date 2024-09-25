@@ -66,7 +66,7 @@ class setup(object):
     # Contents of user's user.ini
     defs_overload_list          = []
     defs_overload_dict          = {}
-    required_overload_keys      = []
+    required_overload_keys      = ['allocation']
 
     # Lists of application/result base dirs
     bp_apps                     = []
@@ -307,14 +307,17 @@ class setup(object):
         # Get text wrap chars
         self.stg['width'] = min(self.stg['width'], self.session['columns'])
 
-        self.stg['mode'] = None
+        self.stg['exec_mode'] = None
+        self.stg['op_mode'] = None
         if self.args.build:
-            self.stg['mode'] = self.stg['build_mode']
+            self.stg['exec_mode'] = self.stg['build_mode']
+            self.stg['op_mode'] = 'build'
         elif self.args.bench:
-            self.stg['mode'] = self.stg['bench_mode']
+            self.stg['exec_mode'] = self.stg['bench_mode']
+            self.stg['op_mode'] = 'bench'
         
         if self.stg['disable_sched']:
-            self.stg['mode'] = 'local'
+            self.stg['exec_mode'] = 'local'
 
 
 
@@ -405,6 +408,9 @@ class setup(object):
         # Compiler dict
         self.compiler                    = {}
         self.mpi                         = {}
+        self.mod_name_map                = {}
+        self.mod_name_map['nvidia']      = 'nvhpc'
+
 
         # System dict
         self.system                      = {}

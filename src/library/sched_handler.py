@@ -17,8 +17,8 @@ class init(object):
 
         # If command failed
         except subprocess.CalledProcessError as e:
-            self.glob.lib.msg.high(e)
-            return False, "", ""
+            self.glob.lib.msg.log(e.output.split("\n"))
+            return False, "", e.output.split("\n")
 
         # If command succeeded
         return True, cmd.stdout, cmd.stderr
@@ -166,7 +166,7 @@ class init(object):
         success, stdout, stderr = self.slurm_exec("sbatch " + self.get_dep_str() + script_path)
 
         if not success:
-            self.glob.lib.msg.error(["failed to submit job to scheduler:", stdout, stderr])
+            self.glob.lib.msg.error(["failed to submit job to scheduler:"] + stderr)
 
         self.glob.lib.msg.log(stdout)
         self.glob.lib.msg.log(stderr)
@@ -244,9 +244,9 @@ class init(object):
             if exe:
                 if self.glob.lib.files.exists(exe, os.path.join(self.glob.ev['BP_APPS'], 
                                                                 app, 
-                                                                self.glob.stg['install_subdir'], 
-                                                                bin_dir)):
-                    return '\033[0;32mSUCCESS\033[0m'
+                                                                self.glob.stg['install_subdir'])): 
+                                                                #bin_dir)):
+                    return self.glob.success
 
             return '\033[0;31mFAILED\033[0m'
 

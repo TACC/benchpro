@@ -29,6 +29,7 @@ class init(object):
 
         matching_cfgs = []
         # Iter over all avail cfg files
+
         for avail_cfgs in avail_cfgs_list:
             for cfg in avail_cfgs:
                 # Iter over all search terms
@@ -161,6 +162,8 @@ class init(object):
         # Generate list of default modules
         self.glob.lib.module.set_default_module_list(cfg_dict['general']['module_use'])
 
+
+
         # Process each module
         for key in cfg_dict['modules']:
 
@@ -196,6 +199,13 @@ class init(object):
 #                if (self.glob.modules[key]['type'] == "intel") and (int(self.glob.modules[key]['version'].split('.')[0]) > 20):
 #                    # Prioritize oneapi
 #                    self.glob.modules[key]['type'] = "oneapi"
+
+
+            # Add compiler name conversion for for modules
+            if self.glob.modules[key]['type'] in self.glob.mod_name_map: 
+                self.glob.modules[key]['type'] = self.glob.mod_name_map[self.glob.modules[key]['type']]
+
+
 
     # Check build config file and add required fields
     def process_build_cfg(self, cfg_dict):
@@ -341,7 +351,7 @@ class init(object):
         # Path to copy files to
         cfg_dict['metadata']['copy_path']    = cfg_dict['metadata']['build_path']
 
-        if self.glob.stg['mode'] == "sched" and not cfg_dict['general']['sched_cfg']:
+        if self.glob.stg['exec_mode'] == "sched" and not cfg_dict['general']['sched_cfg']:
             cfg_dict['general']['sched_cfg'] = os.path.join(self.glob.stg['sched_cfg_path'], self.glob.system['default_sched'])
 
         # Set sched nodes to 1 for build jobs
@@ -368,6 +378,11 @@ class init(object):
         self.check_dict_key(    cfg_dict['metadata']['cfg_file'], cfg_dict, 'result', 'method')
         self.check_dict_key(    cfg_dict['metadata']['cfg_file'], cfg_dict, 'result', 'unit')
 
+        # Add sections if missing
+        if not 'general'          in cfg_dict.keys():              cfg_dict['general'] = {}
+        if not 'files'            in cfg_dict.keys():              cfg_dict['files'] = {}
+        if not 'overload'         in cfg_dict.keys():              cfg_dict['overload'] = {}
+
         # Instantiate missing optional parameters
         if not 'code'               in cfg_dict['requirements'].keys():  cfg_dict['requirements']['code']       = ""
         if not 'version'            in cfg_dict['requirements'].keys():  cfg_dict['requirements']['version']    = ""
@@ -393,13 +408,15 @@ class init(object):
         if not 'description'        in cfg_dict['result'].keys():   cfg_dict['result']['description']           = ""
         if not 'output_file'        in cfg_dict['result'].keys():   cfg_dict['result']['output_file']           = ""
 
-        # Add sections if missing
-        if not 'general'          in cfg_dict.keys():              cfg_dict['general'] = {}
-        if not 'files'            in cfg_dict.keys():              cfg_dict['files'] = {}
-        if not 'overload'         in cfg_dict.keys():              cfg_dict['overload'] = {}
+        if not 'inherit'            in cfg_dict['overload'].keys():	cfg_dict['overload']['inherit']             = ""
+
 
         # Convert cfg keys to correct datatype
         self.get_val_types(cfg_dict)
+
+        # Inherit from parent
+        if cfg_dict['overload']['inherit']:
+            self.inherit("bench", cfg_dict['overload']['inherit'])
 
         # Add overload params to overload dict
         self.add_overloads(cfg_dict['overload'])
@@ -467,12 +484,12 @@ class init(object):
                                     self.glob.lib.rel_path(cfg_dict['metadata']['cfg_file']))
     
         #Check bench_mode in set correctly
-        if self.glob.stg['mode'] not in  ["sched", "local"]:
+        if self.glob.stg['exec_mode'] not in  ["sched", "local"]:
             self.glob.lib.msg.error("Unsupported benchmark execution mode found: '"+glob.stg['bench_mode']+ \
                                     "' in $BP_HOME/user.ini, please specify 'sched' or 'local'.")
     
         # Check for hostfile/hostlist if exec_mode is local (mpirun)
-        if self.glob.stg['mode'] == "local":
+        if self.glob.stg['exec_mode'] == "local":
             # Both hostfile and hostlist is set?
             if cfg_dict['runtime']['hostfile'] and cfg_dict['runtime']['hostlist']:
                 self.glob.lib.msg.error("both 'hostlist' and 'hostfile' set in " + \
@@ -525,27 +542,35 @@ class init(object):
         if not cfg_dict['sched']['threads']:
             cfg_dict['sched']['threads'] = 1
             self.glob.lib.msg.log("Set threads = " + cfg_dict['sched']['threads'])
-    
+
+
+    # Inherit from another .cfg
+    def inherit(self, cfg_type, search_str):
+        search_dict = glob.lib.parse_bench_str(search_str) 
+        self.glob.lib.cfg.ingest(cfg_type, search, True) 
+        sys.exit(1) 
+
+
     # Read input param config and test 
-    def ingest(self, cfg_type, search):
+    def ingest(self, cfg_type, search_dict, inherit=False):
 
         # Process and store build cfg 
         if cfg_type == 'build':
-            cfg_dict = self.search_cfg_with_dict(search, self.glob.build_cfgs, True)
+            cfg_dict = self.search_cfg_with_dict(search_dict, self.glob.build_cfgs, True)
             self.glob.lib.msg.log("Starting build cfg processing.")
             self.process_build_cfg(cfg_dict)
             self.glob.config.update(cfg_dict)
     
         # Process and store bench cfg 
         elif cfg_type == 'bench':
-            cfg_dict = self.search_cfg_with_dict(search, self.glob.bench_cfgs, False)
+            cfg_dict = self.search_cfg_with_dict(search_dict, self.glob.bench_cfgs, False)
             self.glob.lib.msg.log("Starting bench cfg processing.")
             self.process_bench_cfg(cfg_dict)
             self.glob.config.update(cfg_dict)
     
         # Process and store sched cfg 
         elif cfg_type == 'sched':
-            cfg_file = os.path.join(self.glob.stg['sched_cfg_path'], search)
+            cfg_file = os.path.join(self.glob.stg['sched_cfg_path'], search_dict)
             cfg_dict = self.glob.lib.files.read_cfg(cfg_file)
             self.glob.lib.msg.log("Starting sched cfg processing.")
             self.process_sched_cfg(cfg_dict)

@@ -174,7 +174,7 @@ class init(object):
                 else:
                     self.search_tree(installed_list, new_dir, start_depth,current_depth + 1, max_depth)
 
-    # Prune dir tree until not unique
+    # Prune dir tree until not unique or hit system dir
     def prune_tree(self, path: str) -> None:
         path_elems  = path.split(self.glob.stg['sl'])
         parent_path = self.glob.stg['sl'].join(path.split(self.glob.stg['sl'])[:-1])
@@ -186,9 +186,10 @@ class init(object):
            (parent_dir == os.path.basename(self.glob.ev['BPS_COLLECT'])) or \
            (len(gb.glob(os.path.join(parent_path,"*"))) > 1):
 
-            try:         
+            try:     
                 su.rmtree(path)
-            except:
+            except OSError as err:
+                print(err)
                 self.glob.lib.msg.exit("Can't delete: " + self.glob.lib.rel_path(path))
         # Else resurse with parent
         else:
@@ -521,7 +522,7 @@ class init(object):
 
 
         if not os.path.isfile(cfg_file):
-            self.glob.lib.msg.error("Unable to read cfg file " + self.glob.lib.real_path(cfg_file))
+            self.glob.lib.msg.error("Unable to read cfg file " + self.glob.lib.rel_path(cfg_file))
 
         # Add file name & label to dict
         cfg_dict = {}
@@ -685,6 +686,11 @@ class init(object):
         if not os.path.isdir(path):
             self.glob.lib.msg.error("Cannot remove path " + self.glob.lib.rel_path(path) + ": does not exist.")
         self.glob.lib.msg.log("Removing " + path)
-        su.rmtree(path)
+        try:
+            su.rmtree(path)
+        except OSError as err:
+            print(err)
+            self.glob.lib.msg.exit("Can't delete: " + self.glob.lib.rel_path(path))
+
 
 

@@ -4,6 +4,7 @@ import copy
 import os
 import random
 import signal
+import subprocess
 import sys
 import time
 from tabulate import tabulate
@@ -65,6 +66,11 @@ class init(object):
         # For each line of message
         for line in message:
             if line:
+
+                # Cast to line contents string
+                if type(line) == subprocess.CalledProcessError:
+                    line = line.output
+
                 # Write to log 
                 self.log(line)
                 # Print to stdout if debug=True or high priority message
