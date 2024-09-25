@@ -1,0 +1,5 @@
+
+if [[ -f ${working_path}/${bin_dir}/${exe} ]]; then
+    cp ${working_path}/${bin_dir}/${exe} ${install_path}/
+    ldd ${install_path}/${exe}
+fi

@@ -1,4 +1,9 @@
+local working_path = "<<<working_path>>>"
+setenv("<<<caps_code>>>_WORKING_DIR",       working_path)
 local install_path = "<<<install_path>>>"
+setenv("<<<caps_code>>>_INSTALL_DIR",       install_path)
+local build_path = "<<<build_path>>>"
+setenv("<<<caps_code>>>_BUILD_DIR",       build_path)
 setenv("<<<caps_code>>>_DIR",       install_path)
 prepend_path("PATH",                install_path)
 prepend_path("LD_LIBRARY_PATH",     pathJoin(install_path, "lib64"))
