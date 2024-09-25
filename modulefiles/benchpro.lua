@@ -104,7 +104,7 @@ set_alias("bp_switch", "source $BPS_BIN/toggle_dev_prod")
 -- add user's application directory tree to MODULEPATH
 prepend_path("MODULEPATH" ,  pathJoin(bp_apps, "modulefiles" ))
 
-depends_on("python3")
+-- depends_on("python3")
 family("benchpro")
 
 -- Add BenchPRO module path to PYTHONPATH
