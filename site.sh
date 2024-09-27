@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-#ml python3
-
 set() {
     echo "$1=$2"
     export $1="$2"
@@ -9,7 +7,7 @@ set() {
 
 # SETUP
 set BPS_SYSTEM      $TACC_SYSTEM
-set BPS_VERSION "1.8.4"
+set BPS_VERSION "1.8.8"
 [[ -z $BP_DEV ]] && set BP_DEV 1
 set BUILD_HASH `echo $RANDOM | md5sum | head -c 8`
 
@@ -30,10 +28,18 @@ set DB_USER         "benchpro"
 set DB_HOST         "benchpro.tacc.utexas.edu"
 set REMOTE_PATH     "/home/benchpro/benchdb/data_store"
 
+SSH_KEY=$HOME/.ssh/id_rsa
+
 # SYSTEM SPECIFIC
 if [[ $BPS_SYSTEM = "frontera" ]]; then
     set TACC_SCRATCH    "/scratch1"
     SITE="${TACC_SCRATCH}/hpc_tools/benchpro"
+    ml python3
+
+elif [[ $BPS_SYSTEM = "vista" ]]; then
+    set TACC_SCRATCH    "/scratch"
+    SITE="${TACC_SCRATCH}/projects/benchpro"
+    SSH_KEY=$HOME/.ssh/id_ed25519
 
 elif [[ $BPS_SYSTEM = "ls6" ]]; then
     set TACC_SCRATCH    "/scratch"

@@ -38,6 +38,12 @@ patch_wrapper() {
 
 # Install Python package and set group permissions
 install() {
+
+
+    export CC=gcc
+    export CXX=g++
+    export FC=gfortran
+
     python3 -m pip uninstall -y benchpro  &>> $BPS_LOG
     python3 setup.py install --prefix=${BPS_HOME}/python/ &>> $BPS_LOG
 
@@ -67,17 +73,11 @@ source $SOURCE_FILE
 # Test that BPS_HOME is writable
 mkdir -p $BPS_HOME && printf "\nWe have write permission to ${BPS_HOME}\n" || quit "\nCan't write to ${BPS_HOME}\n" 
 
-# Get path to SSH key - not stored in repo
-SSH_KEY=""
-if [[ "$1" = "" ]]; then
-    SSH_KEY=$HOME/.ssh/id_rsa
 # Quick install
-elif [[ "$1" = "-d" ]]; then
+if [[ "$1" = "-d" ]]; then
     printf "Debug mode"
     install
     exit 0
-else
-    SSH_KEY=$1
 fi
 
 # Check if SSH key exists
@@ -192,28 +192,23 @@ printf "\nDone.\n"
 # Clean build files
 ${SRC_PATH}/clean >/dev/null 
 
-
 #----------------------TEST DB CONNECTION------------------------------
 # Check SSH connection
 printf "\nTesting Connection to DB...\n"
 ssh -i ${SSH_KEY} ${DB_USER}@${DB_HOST} -t "printf 'Connection test\n'" > /dev/null 2>&1
 [[ ${PIPESTATUS[0]} -ne 0 ]] && quit "\nSSH connection failed\n"
 
-if [[ -z $BP_DEV ]]; then 
+printf "\n"
+printf "------------------------------------------------\n"
+printf "BenchPRO successfully installed into ${BPS_HOME}\n"
+printf "User files installed into ${BP_HOME} for testing\n"
+printf "To use, load site module with:\n"
+printf "ml use ${BPS_MODULES}\n"
+printf "ml benchpro\n"
+printf "\n"
+printf "------------------------------------------------\n"
+printf "Add the following lines to your crontab:\n"
+printf "5 * * * * /bin/rsync --remove-source-files -av -e \"ssh -i $SSH_KEY\" $BPS_HOME/collection/* $DB_USER@$DB_HOST:$REMOTE_PATH/ >> $BPS_HOME/logs/collect_\`date +\\%Y\\-%m-%d\`.log 2>&1\n"
+printf "0 0 * * * /bin/rsync -av /home1/06280/mcawood/work2/repo_backup/ $BP_REPO/ | tee -a $BPS_HOME/logs/repo_\`date +\\%Y\\-%m-%d\`.log\n"
 
-    printf \n
-    printf "------------------------------------------------"
-    printf "BenchPRO successfully installed into ${BPS_HOME}"
-    printf "User files installed into ${BP_HOME} for testing"
-    printf "To use, load site module with:"
-    printf "ml use ${BPS_MODULES}"
-    printf "ml benchpro"
-    printf
-    printf "------------------------------------------------"
-    printf "Add the following lines to your crontab:"
-    printf "5 * * * * /bin/rsync --remove-source-files -av -e \"ssh -i $SSH_KEY\" $BPS_HOME/collection/* $DB_USER@$DB_HOST:$REMOTE_PATH/ >> $BPS_HOME/logs/collect_\`date +\\%Y\\-%m-%d\`.log 2>&1"
-    printf "0 0 * * * /bin/rsync -av /home1/06280/mcawood/work2/repo_backup/ $BP_REPO/ | tee -a $BPS_HOME/logs/repo_\`date +\\%Y\\-%m-%d\`.log"
-    printf 
-fi
-
-printf "Done. \n"
+printf "\nDone.\n"

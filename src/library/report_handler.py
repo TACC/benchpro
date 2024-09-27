@@ -93,7 +93,7 @@ class init(object):
                     "path           = "+ self.glob.config['metadata']['working_path'],
                     "submit_time    = "+ str(datetime.now().strftime("%Y-%m-%d %H:%M")),
                     "script         = "+ self.glob.job_file,
-                    "exec_mode      = "+ self.glob.stg['mode'],
+                    "exec_mode      = "+ self.glob.stg['exec_mode'],
                     "task_id        = "+ str(self.glob.task_id),
                     "stdout         = "+ self.glob.config['config']['stdout'],
                     "stderr         = "+ self.glob.config['config']['stderr']
@@ -131,7 +131,7 @@ class init(object):
                         "bench_label    = "+ self.glob.config['config']['bench_label'],
                         "submit_time    = "+ str(datetime.now().strftime("%Y-%m-%d %H:%M")),
                         "script         = "+ self.glob.config['metadata']['job_script'],
-                        "exec_mode      = "+ self.glob.stg['mode'],
+                        "exec_mode      = "+ self.glob.stg['exec_mode'],
                         "task_id        = "+ str(self.glob.task_id),
                         "stdout         = "+ self.glob.config['config']['stdout'],
                         "stderr         = "+ self.glob.config['config']['stderr']

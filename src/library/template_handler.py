@@ -51,23 +51,24 @@ class init(object):
     def add_standard_build_definitions(self, template_obj):
     
         # Take system template path
-        header_template = os.path.join(self.glob.stg['build_tmpl_path'][1], self.glob.stg['header_file'])
-        self.append_to_template(template_obj, header_template)
+        prolog_template = os.path.join(self.glob.stg['sys_tmpl_path'], self.glob.stg['op_mode'] + "_" + self.glob.stg['prolog_file'])
+        self.append_to_template(template_obj, prolog_template)
 
         # Add config key-values
         template_obj.append("\n# [config]\n")
         for key in self.glob.config['config']:
-            template_obj.append("export "+ key.rjust(20) + "=" + str(self.glob.config['config'][key]) + "\n")
+            template_obj.append("export "+ key.rjust(20) + "=\"" + str(self.glob.config['config'][key]) + "\"\n")
 
         template_obj.append("\n# [modules]\n")
         # export module names
         for mod in self.glob.modules:
-            template_obj.append("export" + self.glob.modules[mod]['label'].rjust(20) + "=" + self.glob.modules[mod]['full'] + "\n")
+            template_obj.append("export" + self.glob.modules[mod]['label'].rjust(20) + "=\"" + self.glob.modules[mod]['full'] + "\"\n")
 
         template_obj.append("\n")
 
         # Add module loads
         template_obj.append("# Load modules \n")
+        template_obj.append("ml reset \n")
         template_obj.append("ml use " + self.glob.stg['site_mod_path'] + " \n")
 
 
@@ -100,8 +101,8 @@ class init(object):
     # Add standard lines to bench template
     def add_standard_bench_definitions(self, template_obj):
         # Take system template path
-        header_template = os.path.join(self.glob.stg['bench_tmpl_path'][1], self.glob.stg['header_file'])
-        self.append_to_template(template_obj, header_template)
+        prolog_template = os.path.join(self.glob.stg['sys_tmpl_path'], self.glob.stg['op_mode'] + "_" + self.glob.stg['prolog_file'])
+        self.append_to_template(template_obj, prolog_template)
 
         # add parameters from [config] section of cfg file to script
         for key in self.glob.config['config']:
@@ -156,9 +157,14 @@ class init(object):
     def build_epilog(self, template_obj):
 
         # Add sanity check
-        if self.glob.config['config']['exe']:
-            template_obj.append("ldd " + os.path.join("${install_path}", self.glob.config['config']['bin_dir'], \
-                                self.glob.config['config']['exe']) + " \n")
+        if self.glob.config['config']['exe'] and self.glob.stg['add_epilog']:
+            epilog_file = os.path.join(self.glob.stg['sys_tmpl_path'], self.glob.stg['epilog_file'])
+            if os.path.isfile(epilog_file):
+                with open(epilog_file, 'r') as fp:
+                    template_obj.extend(fp.readlines())
+
+        else:
+            self.glob.lib.msg.error("Unable to read epilog template " + self.glob.lib.rel_path(epilog_file))
 
         # Add hardware collection script to job script
         #self.collect_stats(template_obj)
@@ -230,7 +236,7 @@ class init(object):
         self.glob.job_file = self.glob.stg['build_job_file']
         self.glob.tmp_job_file = os.path.join(self.glob.ev['BP_HOME'], "tmp." + self.glob.stg['build_job_file'])
 
-        if self.glob.stg['mode'] == "sched":
+        if self.glob.stg['exec_mode'] == "sched":
             self.glob.sched['template'] = self.glob.lib.files.find_exact(self.glob.sched['sched']['type'] + \
                                                                         ".template", self.glob.stg['sched_tmpl_path'])
 
@@ -246,8 +252,13 @@ class init(object):
 
         # Error if not found
         if not build_template_search:
-            self.glob.lib.msg.error("failed to locate build template '" + self.glob.config['template'] + \
-                                    "' in any of these locations:" + [self.glob.lib.rel_path(p) for p in self.glob.stg['build_tmpl_path']])
+
+            self.glob.lib.msg.error("failed to locate template file '" + input_template + " in any of these locations:" + \
+                                                            [self.glob.lib.rel_path(p) for p in self.glob.stg['curr_tmpl_path']])
+
+
+#            self.glob.lib.msg.error(["failed to locate build template '" + self.glob.config['template'] + \
+#                                    "' in any of these locations:"] + [self.glob.lib.rel_path(p) for p in self.glob.stg['curr_tmpl_path']])
     
         self.glob.config['template'] = build_template_search
 
@@ -255,7 +266,7 @@ class init(object):
         if not self.glob.modules['compiler']['type']:# in [self.glob.compiler[keys] for :
             self.glob.lib.msg.error("Unrecognized compiler type '" + self.glob.modules['compiler']['type']  + "'")
 
-        # Get compiler cmds for gcc/intel/pgi, otherwise compiler type is unknown
+        # Get compiler cmds for gcc/intel/pgi/nvhpc, otherwise compiler type is unknown
         self.glob.compiler['common'] = self.glob.compiler[self.glob.modules['compiler']['type']]
         self.glob.compiler['template'] = os.path.join(self.glob.stg['sys_tmpl_path'], self.glob.stg['compile_tmpl_file'])
      
@@ -278,7 +289,7 @@ class init(object):
         self.set_build_files()
 
         # Add scheduler directives if constructing job script
-        if self.glob.stg['mode'] == "sched":
+        if self.glob.stg['exec_mode'] == "sched":
             # Get ranks from threads (?)
             self.glob.sched['sched']['ranks'] = 1
             # Get job label
@@ -331,7 +342,7 @@ class init(object):
         self.glob.tmp_job_file = os.path.join(self.glob.ev['BP_HOME'], "tmp." + self.glob.stg['bench_job_file']) 
     
         # Scheduler template file
-        if self.glob.stg['mode'] == "sched":
+        if self.glob.stg['exec_mode'] == "sched":
             self.glob.sched['template'] = self.glob.lib.files.find_exact(self.glob.sched['sched']['type'] + ".template", \
                                                                          self.glob.stg['sched_tmpl_path'])
 
@@ -352,13 +363,13 @@ class init(object):
 
         # if no template match found 
         if not matches:
-            self.glob.lib.msg.error("failed to locate bench template '" + self.glob.config['template'] + \
-                                    "' in " + self.glob.lib.rel_path(self.glob.stg['bench_tmpl_path']))
+            self.glob.lib.msg.error(["failed to locate bench template '" + self.glob.config['template'] + \
+                                    "' in "] + [self.glob.lib.rel_path(p) for p in self.glob.stg['curr_tmpl_path']])
         else:
             self.glob.config['template'] = matches[0]
 
         self.glob.config['metadata']['job_script'] = self.glob.config['config']['bench_label'] + "-bench." + \
-                                                        self.glob.stg['mode']
+                                                        self.glob.stg['exec_mode']
 
     # Sets the mpi_exec string for schduler or local exec modes
     def set_mpi_exec_str(self):
@@ -368,11 +379,11 @@ class init(object):
                                                 int(self.glob.config['runtime']['nodes'])
 
         # Standard ibrun call
-        if self.glob.stg['mode'] == "sched":
+        if self.glob.stg['exec_mode'] == "sched":
             self.glob.config['runtime']['mpi_exec'] = self.glob.stg['sched_mpi'] + " "
 
         # MPI exec for local host
-        elif self.glob.stg['mode'] == "local":
+        elif self.glob.stg['exec_mode'] == "local":
             self.glob.config['runtime']['mpi_exec'] = "\"" + self.glob.stg['local_mpi'] + " -np " + \
                                                 str(self.glob.config['runtime']['ranks']) + " -ppn " + \
                                                 str(self.glob.config['runtime']['ranks_per_node']) + \
@@ -411,7 +422,7 @@ class init(object):
             self.add_process_dep(template_obj)  
 
         # If generate sched script
-        if self.glob.stg['mode'] == "sched":
+        if self.glob.stg['exec_mode'] == "sched":
             self.append_to_template(template_obj, self.glob.sched['template'])
             self.glob.sched['sched']['job_label'] = self.glob.config['config']['bench_label']
             self.add_reservation(template_obj)
@@ -440,7 +451,7 @@ class init(object):
 
         self.glob.lib.msg.low("Populating template...")
         # Take multiple config dicts and populate script template
-        if self.glob.stg['mode'] == "sched":
+        if self.glob.stg['exec_mode'] == "sched":
             template_obj = self.populate_template([self.glob.config['metadata'], \
                                              self.glob.config['runtime'], \
                                              self.glob.config['config'], \
