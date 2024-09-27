@@ -31,7 +31,7 @@ set DB_USER         "benchpro"
 set DB_HOST         "benchpro.tacc.utexas.edu"
 set REMOTE_PATH     "/home/benchpro/benchdb/data_store"
 
-SSH_KEY=$HOME/.ssh/id_rsa.pub
+SSH_KEY=$HOME/.ssh/id_rsa
 
 # SYSTEM SPECIFIC
 if [[ $BPS_SYSTEM = "frontera" ]]; then
