@@ -173,10 +173,10 @@ fi
 #----------------------INSTALL PYTHON PACKAGE-----------------------
 
 
-printf "\nLoading module...\n"
-ml unload benchpro
-ml use                                                                      ${BPS_MODULES}
-ml benchpro || quit "\nCan't load module\n"
+#printf "\nLoading module...\n"
+#ml unload benchpro
+#ml use                                                                      ${BPS_MODULES}
+#ml benchpro || quit "\nCan't load module\n"
 
 #progress &
 #MYID=$!
