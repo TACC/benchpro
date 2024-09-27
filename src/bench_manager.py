@@ -95,6 +95,9 @@ def get_app_info():
     install_path = os.path.join(glob.ev['BP_APPS'], glob.config['metadata']['code_path'])
     glob.build_report = glob.lib.report.read(install_path)['build']
 
+    if not glob.build_report:
+        glob.msg.error("Application was compiled with incompatible version of BenchPRO!")
+
     # If not set, add exe file label from build report in bench cfg for populating template later
     if not glob.config['config']['exe']:
         glob.config['config']['exe'] = glob.build_report['exe_file']

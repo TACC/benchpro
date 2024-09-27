@@ -13,15 +13,17 @@ class Report():
 
     def read_report(self):
 
-        self.report         = self.glob.lib.report.read(self.path)
-
         self.success = True
+        self.report         = self.glob.lib.report.read(self.path)
         if not self.report:
             self.success = False
             return 
 
-        self.metadata           = self.report['metadata']
-        self.version            = self.metadata['format_version']
+        try:
+            self.metadata           = self.report['metadata']
+            self.version            = self.metadata['format_version']
+        except:
+            self.glob.msg.warn("Report " + self.path + " ")
 
     def __init__(self, path: str):
         self.path = path

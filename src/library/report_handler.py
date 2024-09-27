@@ -48,16 +48,14 @@ class init(object):
 
         # Read report file from disk
         report = self.ingest(report_file)
-        return report
-
 
         # Compatible report
-        #if self.glob.lib.version.compat_report(report):
-        #    return report
+        if self.glob.lib.version.compat_report(report):
+            return report
         # Incompatible
-        #else:
-        #    self.glob.lib.msg.high("This report file is no longer compatible.")
-        #    return False
+        else:
+            self.glob.lib.msg.high("Report file is no longer compatible.")
+            return False
 
 
     # Write generic report to file
