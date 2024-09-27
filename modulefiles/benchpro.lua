@@ -104,12 +104,16 @@ set_alias("bp_switch", "source $BPS_BIN/toggle_dev_prod")
 -- add user's application directory tree to MODULEPATH
 prepend_path("MODULEPATH" ,  pathJoin(bp_apps, "modulefiles" ))
 
-depends_on("python3")
+local py_mod =
+depends_on(py_mod)
 family("benchpro")
 
 -- Add BenchPRO module path to PYTHONPATH
 local py_version =
 local bps_site =
+
+source_sh('bash', pathJoin(bps_site, "bp_env/bin/activate"))
+
 prepend_path("PYTHONPATH",         pathJoin(bps_site, "python/lib/python" .. py_version, "site-packages/" ))
 prepend_path("PATH",               pathJoin(bps_site, "python/bin" ))
 -- Add build Python lib to LD_LIBRARY_PATH, else switching module versions breaks linking

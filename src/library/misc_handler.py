@@ -123,38 +123,50 @@ class init(object):
         # OPTION 1: App path provided
         if app_path:
             self.prep_delete([app_path], "application in " + self.glob.lib.rel_path(app_path))
+            return 
 
-        # OPTION 2: Use args
-        else:
-            # Split arg string by ","
-            arg_list = self.glob.args.delApp
-            self.glob.lib.set_installed_apps()
+        # TEST
+        arg=self.glob.args.delApp
+        search_dict = self.glob.lib.parse_input_str(arg, "code")
 
-            # OPTION 2.a: args = all; get list of installed apps
-            if arg_list[0] == 'all':
+        # Get installation directory from search dict
+        app_dir = self.glob.lib.check_if_installed(search_dict)
+        if not app_dir:
+            self.glob.lib.msg.exit("Not found.")
 
-                del_list = self.glob.installed_apps_list
+        app_path = app_dir['path']
 
-                if not del_list:
-                    print("No applications installed.")
-                    return
+        self.prep_delete([app_path], "application in " + self.glob.lib.rel_path(app_path))
 
-                # Print apps to remove
-                self.glob.lib.msg.print_app_table(None)
-
-                # Delete
-                self.prep_delete([app['path'] for app in del_list], "all aplications")
-
-            # OPTION 2.b: Delete comma delimited arg list of apps
-            else:
-                # Accept space delimited list of apps
-                for app in arg_list:
-                    delete_list = []
-                    # Get list of app dicts to delete
-                    delete_list.extend(self.id_app_to_remove(app))
-                    for app_dict in delete_list:
-                        if app_dict:
-                            self.prep_delete([app_dict['path']], "application in " + self.glob.lib.rel_path(app_dict['path']))
+#            # Split arg string by ","
+#            arg_list = self.glob.args.delApp
+#            self.glob.lib.set_installed_apps()
+#
+#            # OPTION 2.a: args = all; get list of installed apps
+#            if arg_list[0] == 'all':
+#
+#                del_list = self.glob.installed_apps_list
+#
+#                if not del_list:
+#                    print("No applications installed.")
+#                    return
+#
+#                # Print apps to remove
+#                self.glob.lib.msg.print_app_table(None)
+#
+#                # Delete
+#                self.prep_delete([app['path'] for app in del_list], "all aplications")
+#
+#            # OPTION 2.b: Delete comma delimited arg list of apps
+#            else:
+#                # Accept space delimited list of apps
+#                for app in arg_list:
+#                    delete_list = []
+#                    # Get list of app dicts to delete
+#                    delete_list.extend(self.id_app_to_remove(app))
+#                    for app_dict in delete_list:
+#                        if app_dict:
+#                            self.prep_delete([app_dict['path']], "application in " + self.glob.lib.rel_path(app_dict['path']))
 
 
     # Print build report of installed application
@@ -238,9 +250,8 @@ class init(object):
 
         if status == "COMPLETED":
             stat_str = ""
-            if self.glob.lib.files.exists(report_dict['build']['exe_file'], 
-                                          os.path.join(install_path, 
-                                                       report_dict['build']['bin_dir'])):
+            print("Looking for " + report_dict['build']['exe_file'] + " in " + self.glob.lib.rel_path(install_path) + "...")
+            if self.glob.lib.files.exists(report_dict['build']['exe_file'], install_path):
 
                 stat_str = "\033[0;32mFOUND\033[0m"
             else:

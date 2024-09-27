@@ -211,5 +211,5 @@ class init(object):
                 self.eval_rule(line)
 
         else:
-            self.glob.lib.msg.warn("No " + self.glob.system['system'] + " rules file  found:" + rules_file)
+            self.glob.lib.msg.log("No " + self.glob.system['system'] + " rules file  found:" + rules_file)
 

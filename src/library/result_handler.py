@@ -102,7 +102,6 @@ class init(object):
                             self.report_dict['result']['unit'])
 
         except subprocess.CalledProcessError as e:
-            print(e)
             self.glob.lib.msg.warn("Running script '" + self.glob.lib.rel_path(result_script) + "' on file " + \
                                                 self.glob.lib.rel_path(self.output_path) + \
                                             " failed to find a valid a result." )

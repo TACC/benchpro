@@ -1,0 +1,16 @@
+
+echo "JobID:    ${SLURM_JOB_ID}"
+echo "User:     ${USER}"
+echo "Hostlist: ${SLURM_NODELIST}"
+
+export   working_path="<<<build_path>>>"
+export   install_path="<<<install_path>>>"
+export     local_repo="<<<local_repo>>>"
+export           code="<<<code>>>"
+export        version="<<<version>>>"
+export        threads="<<<threads>>>"
+
+# Create application directories
+mkdir -p ${install_path}
+mkdir -p ${working_path} && cd ${working_path}
+
