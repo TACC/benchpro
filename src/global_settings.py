@@ -324,11 +324,11 @@ class setup(object):
     # Read suites.ini
     def read_suites(self):
 
-        for suite_path in [os.path.join(self.ev['BP_HOME'], "suites.ini"), os.path.join(self.ev['BPS_HOME'], "suites.ini")]:
+        for suite_path in [os.path.join(self.ev['BPS_INC'], "suites.ini"), os.path.join(self.ev['BP_HOME'], "suites.ini")]:
             suite_parser = self.read_ini(suite_path, False)
             if suite_parser:
                 # Read suites into own dict
-                self.suite.extend(dict(suite_parser.items('suites')))
+                self.suite.update(dict(suite_parser.items('suites')))
 
     # Get system EV
     def get_system_label(self):
