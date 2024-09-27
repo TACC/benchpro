@@ -99,8 +99,8 @@ class init(object):
         for overload_key in list(self.glob.overload_dict):
 
             # Check valid key in $BPS_INC/system/config/valid_keys.cfg
-            if not overload_key in self.glob.valid_keys:
-                self.glob.lib.msg.error([key for key in self.glob.valid_keys] + ["Invalid setting: '" + overload_key + "'"])
+            #if not overload_key in self.glob.valid_keys:
+            #    self.glob.lib.msg.error([key for key in self.glob.valid_keys] + ["Invalid setting: '" + overload_key + "'"])
 
             self.glob.lib.msg.log("Attempting to overload key " + overload_key + "...")            
             # Search for match in searchable dicts

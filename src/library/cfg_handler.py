@@ -408,15 +408,15 @@ class init(object):
         if not 'description'        in cfg_dict['result'].keys():   cfg_dict['result']['description']           = ""
         if not 'output_file'        in cfg_dict['result'].keys():   cfg_dict['result']['output_file']           = ""
 
-        if not 'inherit'            in cfg_dict['overload'].keys():	cfg_dict['overload']['inherit']             = ""
+        #if not 'inherit'            in cfg_dict['overload'].keys():	cfg_dict['overload']['inherit']             = ""
 
 
         # Convert cfg keys to correct datatype
         self.get_val_types(cfg_dict)
 
         # Inherit from parent
-        if cfg_dict['overload']['inherit']:
-            self.inherit("bench", cfg_dict['overload']['inherit'])
+        #if cfg_dict['overload']['inherit']:
+        #    self.inherit("bench", cfg_dict['overload']['inherit'])
 
         # Add overload params to overload dict
         self.add_overloads(cfg_dict['overload'])
