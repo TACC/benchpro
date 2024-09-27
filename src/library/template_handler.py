@@ -76,7 +76,7 @@ class init(object):
             template_obj.append("ml use " + self.glob.config['general']['module_use'] + "\n")
 
 
-        template_obj.append("ml benchpro \n")
+        template_obj.append("ml " + self.glob.stg['bp_module'] + " \n")
 
         # Add non Null modules
         for mod in self.glob.modules:
@@ -114,7 +114,7 @@ class init(object):
             template_obj.append("# Load Modules \n")
             template_obj.append("ml use " + self.glob.stg['site_mod_path'] + " \n")
             template_obj.append("ml use ${base_module} \n")
-            template_obj.append("ml benchpro \n")
+            template_obj.append("ml " + self.glob.stg['bp_module'] + " \n")
             template_obj.append("ml ${app_module} \n")
             template_obj.append("ml \n")
 

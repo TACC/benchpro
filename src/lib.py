@@ -83,7 +83,7 @@ class init(object):
 
         for key in self.glob.ev:
             if path.startswith(self.glob.ev[key]):
-                return path.replace(self.glob.ev[key], "$"+key)
+                return path.replace(self.glob.ev[key], "$"+key) 
 
         # if not any of the above
         return path
