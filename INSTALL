@@ -117,7 +117,7 @@ cp ${SRC_PATH}/modulefiles/benchpro.lua                                     ${BP
 
 function update_mod() {
     # Check val is set
-    [[ -z $2 ]] && echo "$1 not set" && exit 1
+    [[ -z $2 ]] && printf "$1 not set" && exit 1
     sed -i "3 i setenv(\"$1\", \"$2\")"                                     ${BPS_MODULES}/benchpro/${BPS_VERSION}.lua
 }
 
@@ -136,25 +136,52 @@ sed -i "/local bp_repo/c\local bp_repo = \"${BP_REPO}\""                    ${BP
 sed -i "/local bp_apps/c\local bp_apps = \"${BP_APPS}\""                    ${BPS_MODULES}/benchpro/${BPS_VERSION}.lua
 sed -i "/local bp_results/c\local bp_results = \"${BP_RESULTS}\""           ${BPS_MODULES}/benchpro/${BPS_VERSION}.lua
 sed -i "/local py_version/c\local py_version = \"${PY_VERSION}\""           ${BPS_MODULES}/benchpro/${BPS_VERSION}.lua
+sed -i "/local py_mod/c\local py_mod = \"${PY_MODULE}\""                    ${BPS_MODULES}/benchpro/${BPS_VERSION}.lua
 sed -i "/local bps_site/c\local bps_site = \"${BPS_HOME}\""                 ${BPS_MODULES}/benchpro/${BPS_VERSION}.lua
 sed -i "/local py_lib/c\local py_lib = \"${PY_LIB}\""                       ${BPS_MODULES}/benchpro/${BPS_VERSION}.lua
 
+# Python module or Python env 
+
+if [[ $PY_ENV ]]; then
+    sed -i "/depends_on/s/^/--/ "                                           ${BPS_MODULES}/benchpro/${BPS_VERSION}.lua
+else
+    sed -i "/source_sh/s/^/--/ "                                            ${BPS_MODULES}/benchpro/${BPS_VERSION}.lua
+fi
+
+
 printf "Done.\n"
-printf "\nLoading module...\n"
 
 chmod -R a+rX                                                               ${BPS_MODULES}
 
-ml unload benchpro
-ml use                                                                      ${BPS_MODULES}
-ml benchpro || quit "\nCan't load module\n"
+
+#-----------------------CREATE VIRTENV------------------------------
+
+if [[ $PY_ENV ]]; then
+    deactivate
+    printf "Creating virtual env...\n"
+    printf "`type python3`\n"
+    python3 -m virtualenv --system-site-packages    $BPS_HOME/bp_env
+    [[ $? ]] && exit 1
+    printf "Sourcing $BPS_HOME/bp_env/bin/activate..."
+    source $BPS_HOME/bp_env/bin/activate
+    chmod -R a+rX                                   $BPS_HOME/bp_env
+    printf "`type python3`\n"
+fi
 
 printf "Done.\n"
 
 #----------------------INSTALL PYTHON PACKAGE-----------------------
 
+
+printf "\nLoading module...\n"
+ml unload benchpro
+ml use                                                                      ${BPS_MODULES}
+ml benchpro || quit "\nCan't load module\n"
+
 #progress &
 #MYID=$!
-printf "\nInstalling Package..."
+printf "\nInstalling Package...\n"
+
 install
 # Kill progress
 #kill -9 $MYID > /dev/null
@@ -169,24 +196,24 @@ ${SRC_PATH}/clean >/dev/null
 #----------------------TEST DB CONNECTION------------------------------
 # Check SSH connection
 printf "\nTesting Connection to DB...\n"
-ssh -i ${SSH_KEY} ${DB_USER}@${DB_HOST} -t "echo 'Connection test'" > /dev/null 2>&1
+ssh -i ${SSH_KEY} ${DB_USER}@${DB_HOST} -t "printf 'Connection test\n'" > /dev/null 2>&1
 [[ ${PIPESTATUS[0]} -ne 0 ]] && quit "\nSSH connection failed\n"
 
 if [[ -z $BP_DEV ]]; then 
 
-    echo
-    echo "------------------------------------------------"
-    echo "BenchPRO successfully installed into ${BPS_HOME}"
-    echo "User files installed into ${BP_HOME} for testing"
-    echo "To use, load site module with:"
-    echo "ml use ${BPS_MODULES}"
-    echo "ml benchpro"
-    echo
-    echo "------------------------------------------------"
-    echo "Add the following lines to your crontab:"
-    echo "5 * * * * /bin/rsync --remove-source-files -av -e \"ssh -i $SSH_KEY\" $BPS_HOME/collection/* $DB_USER@$DB_HOST:$REMOTE_PATH/ >> $BPS_HOME/logs/collect_\`date +\\%Y\\-%m-%d\`.log 2>&1"
-    echo "0 0 * * * /bin/rsync -av /home1/06280/mcawood/work2/repo_backup/ $BP_REPO/ | tee -a $BPS_HOME/logs/repo_\`date +\\%Y\\-%m-%d\`.log"
-    echo 
+    printf \n
+    printf "------------------------------------------------"
+    printf "BenchPRO successfully installed into ${BPS_HOME}"
+    printf "User files installed into ${BP_HOME} for testing"
+    printf "To use, load site module with:"
+    printf "ml use ${BPS_MODULES}"
+    printf "ml benchpro"
+    printf
+    printf "------------------------------------------------"
+    printf "Add the following lines to your crontab:"
+    printf "5 * * * * /bin/rsync --remove-source-files -av -e \"ssh -i $SSH_KEY\" $BPS_HOME/collection/* $DB_USER@$DB_HOST:$REMOTE_PATH/ >> $BPS_HOME/logs/collect_\`date +\\%Y\\-%m-%d\`.log 2>&1"
+    printf "0 0 * * * /bin/rsync -av /home1/06280/mcawood/work2/repo_backup/ $BP_REPO/ | tee -a $BPS_HOME/logs/repo_\`date +\\%Y\\-%m-%d\`.log"
+    printf 
 fi
 
-echo "Done."
+printf "Done. \n"
