@@ -252,9 +252,7 @@ class init(object):
 
         # Error if not found
         if not build_template_search:
-
-            self.glob.lib.msg.error("failed to locate template file '" + input_template + " in any of these locations:" + \
-                                                            [self.glob.lib.rel_path(p) for p in self.glob.stg['curr_tmpl_path']])
+            self.glob.lib.msg.error(["failed to locate template file '" + self.glob.config['template'] + " in any of these locations:"] + [self.glob.lib.rel_path(p) for p in self.glob.stg['curr_tmpl_path']])
 
 
 #            self.glob.lib.msg.error(["failed to locate build template '" + self.glob.config['template'] + \
