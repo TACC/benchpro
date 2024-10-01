@@ -142,12 +142,13 @@ sed -i "/local py_lib/c\local py_lib = \"${PY_LIB}\""                       ${BP
 
 # Python module or Python env 
 
-if [[ $PY_ENV ]]; then
-    sed -i "/depends_on/s/^/--/ "                                           ${BPS_MODULES}/benchpro/${BPS_VERSION}.lua
-else
+if [[ -z $PY_ENV ]]; then
     sed -i "/source_sh/s/^/--/ "                                            ${BPS_MODULES}/benchpro/${BPS_VERSION}.lua
 fi
 
+if [[ $PY_MOD_LOAD == 0 ]]; then
+    sed -i "/depends_on/s/^/--/ "                                           ${BPS_MODULES}/benchpro/${BPS_VERSION}.lua
+fi
 
 printf "Done.\n"
 
