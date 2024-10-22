@@ -58,14 +58,14 @@ class init(object):
     def delete_app_path(self, path: str):
         
         # Get module dir from app dir, by adding 'modulefiles' prefix and stripping [version] suffix
-        app_path = self.glob.stg['sl'].join(path.split(self.glob.stg['sl'])[path.split(self.glob.stg['sl']).index(self.glob.stg['build_topdir'])+1:-1])
-        mod_path = os.path.join(self.glob.stg['module_path'],  app_path)
+        app_path = self.glob.stg['sl'].join(path.split(self.glob.stg['sl'])[path.split(self.glob.stg['sl']).index(self.glob.stg['build_topdir'])+1:])
+        mod_file = os.path.join(self.glob.stg['module_path'],  app_path + ".lua")
 
         # Delete application dir
         self.glob.lib.files.prune_tree(path)
         print("Application removed.")
         # Detele module dir
-        self.glob.lib.files.prune_tree(mod_path)
+        self.glob.lib.files.delete_file(mod_file)
         print("Module removed.")
         print()
        
