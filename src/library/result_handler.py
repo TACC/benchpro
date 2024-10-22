@@ -102,9 +102,9 @@ class init(object):
                             self.report_dict['result']['unit'])
 
         except subprocess.CalledProcessError as e:
-            self.glob.lib.msg.warn("Running script '" + self.glob.lib.rel_path(result_script) + "' on file " + \
+            self.glob.lib.msg.log("Running script '" + self.glob.lib.rel_path(result_script) + "' on file " + \
                                                 self.glob.lib.rel_path(self.output_path) + \
-                                            " failed to find a valid a result." )
+                                            " failed to find a valid result." )
             return None
 
         return result_str
@@ -133,7 +133,7 @@ class init(object):
         try:
             result = round(float(result_str), 2)
         except:
-            self.glob.lib.msg.warn("result extracted from " + self.glob.lib.rel_path(self.output_path) + " is not a float: '" + \
+            self.glob.lib.msg.log("result extracted from " + self.glob.lib.rel_path(self.output_path) + " is not a float: '" + \
                                     result_str + "'")
 
             self.glob.lib.msg.print_file_tail(os.path.join(self.report_dict['bench']['path'], self.report_dict['bench']['stderr']))
@@ -416,7 +416,7 @@ class init(object):
         for section in match.report:
             print("------------ " + section.upper() + " -------------")
             for key in match.report[section]:
-                print(key.ljust(20, ".") + match.report[section][key])
+                print(key.ljust(20, ".") + " " +  match.report[section][key])
 
         print("----------------------------------------")
 
