@@ -692,5 +692,14 @@ class init(object):
             print(err)
             self.glob.lib.msg.exit("Can't delete: " + self.glob.lib.rel_path(path))
 
-
+	# Remove file
+    def delete_file(self, file: str) -> None:
+        if not os.path.isfile(file):
+            self.glob.lib.msg.error("Cannot remove file " + self.glob.lib.rel_path(file) + ": does not exist.")
+        self.glob.lib.msg.log("Removing " + file)
+        try:
+            os.remove(file)
+        except OSError as err:
+            print(err)
+            self.glob.lib.msg.exit("Can't delete: " + self.glob.lib.rel_path(file))
 
