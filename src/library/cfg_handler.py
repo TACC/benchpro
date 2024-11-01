@@ -532,6 +532,8 @@ class init(object):
         # Instantiate missing optional parameters
         if not 'allocation'  in    cfg_dict['sched'].keys():   cfg_dict['sched']['allocation']    = None
         if not 'reservation' in    cfg_dict['sched'].keys():   cfg_dict['sched']['reservation']   = None
+        if not 'qos'         in    cfg_dict['sched'].keys():   cfg_dict['sched']['qos']           = None
+
 
         self.glob.lib.overload.replace(cfg_dict['sched'])
 
