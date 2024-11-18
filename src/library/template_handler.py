@@ -45,12 +45,12 @@ class init(object):
     # Add sched reservation
     def add_reservation(self, template_obj):
         if self.glob.sched['sched']['reservation']:
-                template_obj.append("#SBATCH -r " + self.glob.sched['sched']['reservation'] + "\n")
+                template_obj.append("#SBATCH --reservation=" + self.glob.sched['sched']['reservation'] + "\n")
 
     # Add sched qos
     def add_qos(self, template_obj):
         if self.glob.sched['sched']['qos']:
-                template_obj.append("#SBATCH -q " + self.glob.sched['sched']['qos'] + "\n")
+                template_obj.append("#SBATCH --qos=" + self.glob.sched['sched']['qos'] + "\n")
 
 
     # Add standard lines to build template

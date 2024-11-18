@@ -530,9 +530,9 @@ class init(object):
         self.check_dict_key(    cfg_dict['metadata']['cfg_file'], cfg_dict, 'sched', 'queue')
    
         # Instantiate missing optional parameters
-        if not 'allocation'  in    cfg_dict['sched'].keys():   cfg_dict['sched']['allocation']    = None
-        if not 'reservation' in    cfg_dict['sched'].keys():   cfg_dict['sched']['reservation']   = None
-        if not 'qos'         in    cfg_dict['sched'].keys():   cfg_dict['sched']['qos']           = None
+        if not 'allocation'  in    cfg_dict['sched'].keys():   cfg_dict['sched']['allocation']    = ""
+        if not 'reservation' in    cfg_dict['sched'].keys():   cfg_dict['sched']['reservation']   = ""
+        if not 'qos'         in    cfg_dict['sched'].keys():   cfg_dict['sched']['qos']           = ""
 
 
         self.glob.lib.overload.replace(cfg_dict['sched'])
