@@ -131,7 +131,7 @@ class init(object):
 
          # Cast to float
         try:
-            result = round(float(result_str), 2)
+            result = float(result_str)
         except:
             self.glob.lib.msg.log("result extracted from " + self.glob.lib.rel_path(self.output_path) + " is not a float: '" + \
                                     result_str + "'")
