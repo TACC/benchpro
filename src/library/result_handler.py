@@ -130,21 +130,24 @@ class init(object):
     def validate(self, result_str: str) -> float:
 
          # Cast to float
-        try:
-            result = float(result_str)
-        except:
+        #try:
+        #    result = float(result_str)
+        #except:
+
+        if "\n" in result_str:
             self.glob.lib.msg.log("result extracted from " + self.glob.lib.rel_path(self.output_path) + " is not a float: '" + \
                                     result_str + "'")
 
             self.glob.lib.msg.print_file_tail(os.path.join(self.report_dict['bench']['path'], self.report_dict['bench']['stderr']))
             return None
 
-        # Check float non-zero
-        if not result:
-            self.glob.lib.msg.warn("result extracted from " + self.glob.lib.rel_path(self.output_path) + " is '0.0'.")
-            return None
 
-        return result
+        # Check float non-zero
+        #if not result:
+        #    self.glob.lib.msg.warn("result extracted from " + self.glob.lib.rel_path(self.output_path) + " is '0.0'.")
+        #    return None
+
+        return result_str
 
 
     # Retrieve result value from output file
@@ -160,7 +163,7 @@ class init(object):
             return 0.
 
         # Validate result 
-        valid_result = self.validate(result)
+        valid_result =self.validate(result)
         if not valid_result:
             return 0.
 

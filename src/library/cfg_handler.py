@@ -376,7 +376,6 @@ class init(object):
 
         self.check_dict_section(cfg_dict['metadata']['cfg_file'], cfg_dict, 'result')
         self.check_dict_key(    cfg_dict['metadata']['cfg_file'], cfg_dict, 'result', 'method')
-        self.check_dict_key(    cfg_dict['metadata']['cfg_file'], cfg_dict, 'result', 'unit')
 
         # Add sections if missing
         if not 'general'          in cfg_dict.keys():              cfg_dict['general'] = {}
@@ -407,6 +406,7 @@ class init(object):
 
         if not 'description'        in cfg_dict['result'].keys():   cfg_dict['result']['description']           = ""
         if not 'output_file'        in cfg_dict['result'].keys():   cfg_dict['result']['output_file']           = ""
+        if not 'unit'               in cfg_dict['result'].keys():   cfg_dict['result']['unit']                  = ""
 
         #if not 'inherit'            in cfg_dict['overload'].keys():	cfg_dict['overload']['inherit']             = ""
 
