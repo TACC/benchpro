@@ -533,6 +533,7 @@ class init(object):
         if not 'allocation'  in    cfg_dict['sched'].keys():   cfg_dict['sched']['allocation']    = ""
         if not 'reservation' in    cfg_dict['sched'].keys():   cfg_dict['sched']['reservation']   = ""
         if not 'qos'         in    cfg_dict['sched'].keys():   cfg_dict['sched']['qos']           = ""
+        if not 'node_exclusive' in cfg_dict['sched'].keys():   cfg_dict['sched']['node_exclusive']= True
 
 
         self.glob.lib.overload.replace(cfg_dict['sched'])
