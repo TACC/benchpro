@@ -146,7 +146,7 @@ class init(object):
     # Catch overload keys that are incompatible with local exec mode before checking for missed keys
     def catch_incompatible(self):
         # Runtime overload only works with sched exec_mode
-        bad_keys = ["runtime", "allocation", "queue", "reservation"]
+        bad_keys = ["runtime", "allocation", "queue", "reservation", "qos"]
         # Iterate over overload dict
         for key in copy.deepcopy(self.glob.overload_dict):
             # Pop incompatible (unmatchable) keys 

@@ -47,6 +47,16 @@ class init(object):
         if self.glob.sched['sched']['reservation']:
                 template_obj.append("#SBATCH --reservation=" + self.glob.sched['sched']['reservation'] + "\n")
 
+    # Add sched qos
+    def add_qos(self, template_obj):
+        if self.glob.sched['sched']['qos']:
+                template_obj.append("#SBATCH --qos=" + self.glob.sched['sched']['qos'] + "\n")
+
+
+    def add_oversubscribe(self, template_obj):
+        if not self.glob.sched['sched']['node_exclusive']:
+            template_obj.append("#SBATCH --oversubscribe \n")
+
     # Add standard lines to build template
     def add_standard_build_definitions(self, template_obj):
     
@@ -298,6 +308,8 @@ class init(object):
 
             # Add reservation line to SLURM params if set
             self.add_reservation(template_obj)
+            self.add_qos(template_obj)
+            self.add_oversubscribe(template_obj)
 
         # Timestamp
         template_obj.append("echo \"START `date +\"%Y\"-%m-%dT%T` `date +\"%s\"`\" \n")
@@ -424,6 +436,8 @@ class init(object):
             self.append_to_template(template_obj, self.glob.sched['template'])
             self.glob.sched['sched']['job_label'] = self.glob.config['config']['bench_label']
             self.add_reservation(template_obj)
+            self.add_qos(template_obj)
+            self.add_oversubscribe(template_obj)
 
         # Timestamp
         template_obj.append("echo \"START `date +\"%Y\"-%m-%dT%T` `date +\"%s\"`\" \n")

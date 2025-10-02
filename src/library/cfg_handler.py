@@ -376,7 +376,6 @@ class init(object):
 
         self.check_dict_section(cfg_dict['metadata']['cfg_file'], cfg_dict, 'result')
         self.check_dict_key(    cfg_dict['metadata']['cfg_file'], cfg_dict, 'result', 'method')
-        self.check_dict_key(    cfg_dict['metadata']['cfg_file'], cfg_dict, 'result', 'unit')
 
         # Add sections if missing
         if not 'general'          in cfg_dict.keys():              cfg_dict['general'] = {}
@@ -407,6 +406,7 @@ class init(object):
 
         if not 'description'        in cfg_dict['result'].keys():   cfg_dict['result']['description']           = ""
         if not 'output_file'        in cfg_dict['result'].keys():   cfg_dict['result']['output_file']           = ""
+        if not 'unit'               in cfg_dict['result'].keys():   cfg_dict['result']['unit']                  = ""
 
         #if not 'inherit'            in cfg_dict['overload'].keys():	cfg_dict['overload']['inherit']             = ""
 
@@ -530,8 +530,11 @@ class init(object):
         self.check_dict_key(    cfg_dict['metadata']['cfg_file'], cfg_dict, 'sched', 'queue')
    
         # Instantiate missing optional parameters
-        if not 'allocation'  in    cfg_dict['sched'].keys():   cfg_dict['sched']['allocation']    = None
-        if not 'reservation' in    cfg_dict['sched'].keys():   cfg_dict['sched']['reservation']   = None
+        if not 'allocation'  in    cfg_dict['sched'].keys():   cfg_dict['sched']['allocation']    = ""
+        if not 'reservation' in    cfg_dict['sched'].keys():   cfg_dict['sched']['reservation']   = ""
+        if not 'qos'         in    cfg_dict['sched'].keys():   cfg_dict['sched']['qos']           = ""
+        if not 'node_exclusive' in cfg_dict['sched'].keys():   cfg_dict['sched']['node_exclusive']= True
+
 
         self.glob.lib.overload.replace(cfg_dict['sched'])
 

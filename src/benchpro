@@ -112,7 +112,7 @@ def get_arguments():
         nargs='?',
         const="all",
         type=str,
-        help="Provide summary of benchmarks results. Default is 'all', also takes 'complete', 'complete', 'captured' or \
+        help="Provide summary of benchmarks results. Default is 'all', also takes 'complete', 'captured' or \
                                     'failed'")
 
     cmd_parser.add_argument(

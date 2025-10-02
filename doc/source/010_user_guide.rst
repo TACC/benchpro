@@ -72,7 +72,7 @@ You should see that the status of LAMMPS is :code:`DRY RUN`, this is because dry
 
     benchpro --queryApp lammps
 
-Pertenant information is shown here, you can also examine the build script (by default named :code:`job.qsub`) located in the :code:`path` directory. You can submit this LAMMPS compilation script to the scheduler manually, or
+Pertinent information is shown here, you can also examine the build script (by default named :code:`job.qsub`) located in the :code:`path` directory. You can submit this LAMMPS compilation script to the scheduler manually, or
 
 Remove the existing dry_run version of LAMMPS with
 
