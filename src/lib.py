@@ -299,8 +299,8 @@ class init(object):
             # Assume not a matching app
             match = False
 
-            # If all values in search dict are present in app_dict, app is a match
-            if all(search_elem in installed_app_dict.values() for search_elem in search_dict.values()):
+            # If all values in search dict are present in app_dict, app is a match (only compare if value != Null)
+            if all(search_elem in installed_app_dict.values() for search_elem in search_dict.values() if search_elem):
                 match = True
 
             if match:
