@@ -5,9 +5,6 @@ from benchpro.core.domain import Benchmark, Task, Job, ResourceRequest, TaskStat
 from benchpro.core.executor import Executor
 from benchpro.core.scheduler import SlurmBackend
 
-# Explicit mark for all async tests
-pytestmark = pytest.mark.asyncio
-
 @pytest.fixture
 def mock_result_store():
     return MagicMock()
@@ -30,6 +27,7 @@ def basic_benchmark():
     )
     return Benchmark(benchmark_id="b1", suite_id="s1", tasks=[task])
 
+@pytest.mark.asyncio
 async def test_run_benchmarks_local(mock_result_store, mock_config, basic_benchmark):
     executor = Executor(backend="local", result_store=mock_result_store, config=mock_config)
     
@@ -42,6 +40,7 @@ async def test_run_benchmarks_local(mock_result_store, mock_config, basic_benchm
     # Check that run was saved
     mock_result_store.save_run.assert_called_once()
     
+@pytest.mark.asyncio
 async def test_run_local_task_execution(mock_result_store, mock_config):
     executor = Executor(backend="local", result_store=mock_result_store, config=mock_config)
     task = Task(
@@ -65,6 +64,7 @@ async def test_run_local_task_execution(mock_result_store, mock_config):
     assert task.exit_code == 0
     mock_result_store.save_task.assert_called()
 
+@pytest.mark.asyncio
 async def test_run_local_task_failure(mock_result_store, mock_config):
     executor = Executor(backend="local", result_store=mock_result_store, config=mock_config)
     task = Task(task_id="t1", suite_id="s1", resources=ResourceRequest(nodes=1), command="fail")

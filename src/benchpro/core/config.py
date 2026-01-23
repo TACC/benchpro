@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import yaml
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from benchpro.core.logger import get_logger
 from benchpro.core.exceptions import ConfigError
 
@@ -53,16 +53,14 @@ class JobConfig(BaseModel):
     threads: Optional[int] = None
     gpus: Optional[int] = None
     walltime: Optional[str] = None
-    
-    class Config:
-        extra = "allow"
+
+    model_config = ConfigDict(extra="allow")
 
 class DefaultsConfig(BaseModel):
     compiler: Optional[str] = None
     mpi: Optional[str] = None
-    
-    class Config:
-        extra = "allow"
+
+    model_config = ConfigDict(extra="allow")
 
 class Config(BaseModel):
     benchpro: BenchProConfig = Field(default_factory=BenchProConfig)

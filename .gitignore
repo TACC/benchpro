@@ -11,6 +11,9 @@ dist/
 .coverage
 htmlcov/
 .pytest_cache/
+.cursorindexingignore
+.specstory/
+MagicMock/
 
 
 builds/
